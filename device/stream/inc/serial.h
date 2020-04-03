@@ -47,6 +47,6 @@ typedef struct _sio_t
 } sio_t;
 
 
-sio_res_e serial_io_init(sio_t *init);
+sio_res_e serial_init(sio_t *init);
 
 #endif /* INC_SERIAL_IO_H_ */

@@ -107,6 +107,7 @@ em_msg GpioPinRead(GpioPin_t *pin, bool *value);
  * direction.
  */
 em_msg GpioPinWrite(GpioPin_t *pin, bool value);
+em_msg GpioPinToggle(GpioPin_t *pin);
 
 em_msg GpioPortRead(GpioPort_t *port, uint32_t *value);
 em_msg GpioPortWrite(GpioPort_t *port, uint32_t value);

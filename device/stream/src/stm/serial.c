@@ -40,17 +40,21 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/times.h>
-#if defined(STM32F407xx)
+#if defined(STM32F303xC)
+#include "stm32f3xx.h"
+#elif defined(STM32F407xx)
 #include "stm32f4xx.h"
-#else
+#elif defined(STM32L476xx)
 #include "stm32l4xx.h"
+#else
+#error Undefined platform
 #endif
-#include "serial_io.h"
+#include "serial.h"
 
 
 static sio_t sio;
 
-sio_res_e serial_io_init(sio_t* init)
+sio_res_e serial_init(sio_t* init)
 {
 	sio = *init;
 	sio.ready[SIO_RX] = true;
