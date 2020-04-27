@@ -80,11 +80,11 @@ gtest_all_path = googletest_framework_root + "/googletest/src/gtest-all.cc"
 gmock_all_path = googletest_framework_root + "/googlemock/src/gmock-all.cc"
 
 if ARGUMENTS.get('debug', '0') == '1':
-    print "*** Debug build..."
+    print("*** Debug build...")
     binFolder = 'bin/Debug/'
     debug = True
 else:
-    print "*** Release build..."
+    print("*** Release build...")
     binFolder = 'bin/Release/'
 
 target = ARGUMENTS.get('target', '')
@@ -103,9 +103,13 @@ linkLibs =(cutLib,testComLib)
 if  target == 'test_common':
     print("Create common tests.")
     cutFolders += ('./src/',)
-    testCutFolders = ('./test/',)
+    testCutFolders = ('./common/test/',)
     ccFlags  = '-DUNIT_TEST '
+    incPath+=('common/inc/',)
+    incPath+=('common/test/',)
     incPath  += ('test/',)
+    incPath+=(googletest_include_paths,)
+    linkLibs +=('pthread',)   
     linkFlags = '-Xlinker -Map=output.map'
 elif target == 'test_display':
     print("Create display tests.")

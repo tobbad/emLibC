@@ -7,6 +7,13 @@
 
 #include "ringbuffer.h"
 
+const rbuf_t rbuf_clear = {
+		.empty = true,
+		.nxtRdIdx = 0,
+		.nxtWrIdx = 0,
+};
+
+
 static uin16_t free_space(rbuf_t *rbuf)
 {
 	uint16_t count=0;

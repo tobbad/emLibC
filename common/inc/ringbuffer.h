@@ -10,7 +10,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+#include "common.h"
+#include "ringbuffer_config.h"
 /*
  * wrIdx Points to the location for the next write
  * rdIdx Points to the location for the next read
@@ -23,16 +24,10 @@ typedef struct rbuf_t_
 	bool empty;
 	uint16_t nxtWrIdx;
 	uint16_t nxtRdIdx;
-	uint8_t data[BDEV_BUFFERSIZE];
+	uint8_t data[RBUF_BUFFERSIZE];
 } rbuf_t;
 
-static const rbuf_t rbuf_clear = {
-		.empty = True,
-		.nxtRdIdx = 0,
-		.nxtWrIdx = 0,
-};
-
-
+extern const rbuf_t rbuf_clear;
 
 #ifdef __cplusplus
 }
