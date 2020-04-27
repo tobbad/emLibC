@@ -15,6 +15,7 @@ extern "C" {
 
 #ifdef UNIT_TEST
 #define STATIC
+#include <stdio.h>
 //#include "hal_defines.h"
 #else
 #define STATIC static

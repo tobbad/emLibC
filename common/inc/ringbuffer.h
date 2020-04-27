@@ -24,10 +24,26 @@ typedef struct rbuf_t_
 	bool empty;
 	uint16_t nxtWrIdx;
 	uint16_t nxtRdIdx;
-	uint8_t data[RBUF_BUFFERSIZE];
+	uint8_t *buffer;
+    uint16_t buffer_size;
 } rbuf_t;
 
+
+
+typedef int8_t rbuf_hdl_t;
+
+/* 
+ * Reset all fields 
+ * even sets the buffer to NULL without freeing it!!!
+ */
 extern const rbuf_t rbuf_clear;
+
+void rbuf_init(void);
+rbuf_hdl_t rbuf_register(rbuf_t *rbuf);
+rbuf_hdl_t rbuf_deregister(rbuf_hdl_t hdl);
+
+uint16_t rbuf_size(rbuf_hdl_t hdl);
+elres_t rbuf_write_byte(rbuf_hdl_t hdl, uint8_t byte);
 
 #ifdef __cplusplus
 }

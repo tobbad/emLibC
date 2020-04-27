@@ -11,7 +11,7 @@
 extern "C" {
 #endif
     
-#define RBUF_BUFFERSIZE 16
+#define RBUF_REGISTERS 5
 
 #ifdef __cplusplus
 }

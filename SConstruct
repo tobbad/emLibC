@@ -102,7 +102,7 @@ linkLibs =(cutLib,testComLib)
 
 if  target == 'test_common':
     print("Create common tests.")
-    cutFolders += ('./src/',)
+    cutFolders += ('./common/src/',)
     testCutFolders = ('./common/test/',)
     ccFlags  = '-DUNIT_TEST '
     incPath+=('common/inc/',)
