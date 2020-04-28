@@ -208,9 +208,115 @@ TEST_F(RingbufferReadWriteSizeTest, MaximalSizeOfBytesCanBeWrittenAndSizeDecreme
         uint16_t free_obtained = rbuf_size(hdl);
         
         EXPECT_EQ(EMLIB_OK, res);
-        EXPECT_EQ(free_expected, free_obtained);
+        EXPECT_EQ(free_expected, free_obtained) << "Pushed " << int(i+1) << " items";
     }
     
     elres_t res = rbuf_write_byte(hdl, i);
     EXPECT_EQ(EMLIB_ERROR, res);
 }
+TEST_F(RingbufferReadWriteSizeTest, ReadWithNullPointerReturnsError)
+{
+    elres_t res = rbuf_read_byte(hdl, NULL);
+    EXPECT_EQ(EMLIB_ERROR, res);
+}
+
+TEST_F(RingbufferReadWriteSizeTest, ReadOnEmptyBufferDoesNotChangeValue)
+{
+    uint8_t value_obt = 42;
+    uint8_t value_exp = value_obt;
+    elres_t res = rbuf_read_byte(hdl, &value_obt);
+    EXPECT_EQ(EMLIB_ERROR, res);
+    EXPECT_EQ(value_exp, value_obt);
+}
+
+TEST_F(RingbufferReadWriteSizeTest, WriteValueReadValueNoError)
+{
+    uint8_t value_obt = 0;
+    uint8_t value_exp = 42;
+    elres_t res1 = rbuf_write_byte(hdl, value_exp);
+    elres_t res2 = rbuf_read_byte(hdl, &value_obt);
+    EXPECT_EQ(EMLIB_OK, res1);
+    EXPECT_EQ(EMLIB_OK, res2);
+    EXPECT_EQ(value_exp, value_obt);
+}
+
+TEST_F(RingbufferReadWriteSizeTest, WriteTwoValuesReadValuesNoError)
+{
+    uint8_t value1_obt = 0;
+    uint8_t value2_obt = 0;
+    uint8_t value1_exp = 42;
+    uint8_t value2_exp = 203;
+    elres_t res = rbuf_write_byte(hdl, value1_exp);
+    EXPECT_EQ(EMLIB_OK, res);
+    res = rbuf_write_byte(hdl, value2_exp);
+    EXPECT_EQ(EMLIB_OK, res);
+    res = rbuf_read_byte(hdl, &value1_obt);
+    EXPECT_EQ(EMLIB_OK, res);
+    res = rbuf_read_byte(hdl, &value2_obt);
+    EXPECT_EQ(EMLIB_OK, res);
+    EXPECT_EQ(value1_exp, value1_obt);
+    EXPECT_EQ(value2_exp, value2_obt);
+}
+
+
+TEST_F(RingbufferReadWriteSizeTest, WriteDecrementsSizeReadIncrementsBeyondBoundary)
+{
+    uint16_t offset = 15;
+    uint16_t size = rbuf_size(hdl);
+    uint8_t cnt_written;
+    uint8_t free_expected = size;
+
+
+    ASSERT_EQ(RBUF_TEST_SIZE, size);
+    for (offset = 1;offset<RBUF_TEST_SIZE;offset++)
+    {
+        SetUp();
+        free_expected = size;
+        for (cnt_written = 1;cnt_written<size*2+3;cnt_written++)
+        {
+            elres_t res = rbuf_write_byte(hdl, cnt_written);
+            free_expected--;
+            uint16_t free_obtained = rbuf_size(hdl);
+
+            ASSERT_EQ(EMLIB_OK, res);
+            ASSERT_EQ(free_expected, free_obtained) << "Pushed " << int(cnt_written) << " items";
+            /*
+             * Do the read if difference is > offset
+             */
+            if (cnt_written>offset)
+            {
+                uint8_t value_obtained;
+                uint8_t value_expected = cnt_written-offset;
+                elres_t res = rbuf_read_byte(hdl, &value_obtained);
+                free_expected++;
+                uint16_t free_obtained = rbuf_size(hdl);
+
+                ASSERT_EQ(EMLIB_OK, res);
+                ASSERT_EQ(free_expected, free_obtained) << "RD: "<< rbuf[hdl].nxtRdIdx << " WR: " << rbuf[hdl].nxtWrIdx;
+                ASSERT_EQ(value_expected, value_obtained) << "Read after pushed " << int(cnt_written+1) << " values";
+
+
+            }
+        }
+    }
+}
+
+TEST_F(RingbufferReadWriteSizeTest, WriteOnFullFailsAndDoesNotDestroiesValuse)
+{
+    uint16_t size = rbuf_size(hdl);
+    uint8_t value_obt;
+
+    for (uint8_t i=0;i<size;i++)
+    {
+        elres_t res = rbuf_write_byte(hdl, i);
+        ASSERT_EQ(EMLIB_OK, res);
+    }
+    elres_t res = rbuf_write_byte(hdl, 56);
+    for (uint8_t i=0;i<size;i++)
+    {
+        elres_t res = rbuf_read_byte(hdl, &value_obt);
+        ASSERT_EQ(EMLIB_OK, res);
+        ASSERT_EQ(i, value_obt);
+    }
+}
+

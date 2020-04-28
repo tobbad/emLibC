@@ -85,11 +85,15 @@ uint16_t rbuf_size(rbuf_hdl_t hdl)
     { 
         if (rbuf->nxtRdIdx < rbuf->nxtWrIdx)
         {
-            count = rbuf->nxtWrIdx-rbuf->nxtRdIdx;
+            count = (rbuf->nxtRdIdx+rbuf->buffer_size)-rbuf->nxtWrIdx;
+        }
+        else if (rbuf->nxtRdIdx == rbuf->nxtWrIdx)
+        {
+            count = 0;
         }
         else if (rbuf->nxtRdIdx > rbuf->nxtWrIdx)
         {
-            count = (rbuf->buffer_size+rbuf->nxtWrIdx)-rbuf->nxtRdIdx;
+            count = rbuf->nxtRdIdx-rbuf->nxtWrIdx;
         }
     }
 	return count;
@@ -98,16 +102,40 @@ uint16_t rbuf_size(rbuf_hdl_t hdl)
 
 elres_t rbuf_write_byte(rbuf_hdl_t hdl, uint8_t byte)
 {
+    elres_t res = EMLIB_ERROR;
     rbuf_t *rbuf = get_rbuf(hdl);
     if (rbuf == NULL)
     {
-        return EMLIB_ERROR;
+        return res;
     }
-    
-   
-    return EMLIB_OK;
+    if ((rbuf->empty) || (rbuf->nxtWrIdx != rbuf->nxtRdIdx))
+    {
+        rbuf->buffer[rbuf->nxtWrIdx] = byte;
+        rbuf->nxtWrIdx = (rbuf->nxtWrIdx+1) % rbuf->buffer_size;
+        /* ToDo protect by semaphore */
+        rbuf->empty = false;
+        res = EMLIB_OK;
+    }
+    return res;
 }
 
+elres_t rbuf_read_byte(rbuf_hdl_t hdl, uint8_t *byte)
+{
+    elres_t res = EMLIB_ERROR;
+    rbuf_t *rbuf = get_rbuf(hdl);
+    if (rbuf == NULL)
+    {
+        return res;
+    }
+    if (!rbuf->empty)
+    {
+        *byte = rbuf->buffer[rbuf->nxtRdIdx];
+        rbuf->nxtRdIdx = (rbuf->nxtRdIdx+1) % rbuf->buffer_size;
+        res = EMLIB_OK;
+    }
+
+    return res;
+}
 #ifdef __cplusplus
 }
 #endif

@@ -44,6 +44,7 @@ rbuf_hdl_t rbuf_deregister(rbuf_hdl_t hdl);
 
 uint16_t rbuf_size(rbuf_hdl_t hdl);
 elres_t rbuf_write_byte(rbuf_hdl_t hdl, uint8_t byte);
+elres_t rbuf_read_byte(rbuf_hdl_t hdl, uint8_t *byte);
 
 #ifdef __cplusplus
 }
