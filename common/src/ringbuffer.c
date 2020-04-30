@@ -72,7 +72,7 @@ rbuf_hdl_t rbuf_deregister(rbuf_hdl_t hdl)
     return -1;
 }
 
-uint16_t rbuf_size(rbuf_hdl_t hdl)
+uint16_t rbuf_free(rbuf_hdl_t hdl)
 {
 	uint16_t count=0;
     rbuf_t *rbuf = get_rbuf(hdl);
@@ -118,6 +118,26 @@ elres_t rbuf_write_byte(rbuf_hdl_t hdl, uint8_t byte)
     }
     return res;
 }
+elres_t rbuf_write_bytes(rbuf_hdl_t hdl, uint8_t* bytes, uint16_t count){
+    elres_t res = EMLIB_ERROR;
+    rbuf_t *rbuf = get_rbuf(hdl);
+    uint16_t free;
+    if (rbuf == NULL)
+    {
+        return res;
+    }
+    free = rbuf_free(hdl);
+    if (free>=count)
+    {
+        res = EMLIB_OK;
+        for (uint16_t i = 0;i<count && (res == EMLIB_OK);i++)
+        {
+            res = rbuf_write_byte(hdl, bytes[i]);
+        }
+    }
+    return res;
+}
+
 
 elres_t rbuf_read_byte(rbuf_hdl_t hdl, uint8_t *byte)
 {
@@ -131,11 +151,37 @@ elres_t rbuf_read_byte(rbuf_hdl_t hdl, uint8_t *byte)
     {
         *byte = rbuf->buffer[rbuf->nxtRdIdx];
         rbuf->nxtRdIdx = (rbuf->nxtRdIdx+1) % rbuf->buffer_size;
+        if (rbuf->nxtRdIdx == rbuf->nxtWrIdx)
+        {
+            rbuf->empty = true;
+        }
         res = EMLIB_OK;
     }
 
     return res;
 }
+
+elres_t rbuf_read_bytes(rbuf_hdl_t hdl, uint8_t *bytes, uint16_t *count){
+    elres_t res = EMLIB_ERROR;
+    rbuf_t *rbuf = get_rbuf(hdl);
+    uint16_t available;
+    if (rbuf == NULL)
+    {
+        return res;
+    }
+    available = rbuf->buffer_size-rbuf_free(hdl);
+    if (!rbuf->empty)
+    {
+        *count = *count<available?*count:available;
+        res = EMLIB_OK;
+        for (uint16_t i = 0;i<*count && (res == EMLIB_OK);i++)
+        {
+            res = rbuf_read_byte(hdl, &bytes[i]);
+        }
+    }
+    return res;
+}
+
 #ifdef __cplusplus
 }
 #endif
