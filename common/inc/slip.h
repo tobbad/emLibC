@@ -52,7 +52,7 @@ extern const uint8_t slip_map[][2];
 //
 void slip_init(void);
 slip_handle_e slip_start(elres_t (*write)(uint8_t value), slip_function_t state);
-elres_t slip_write(slip_handle_e hdl, uint8_t * buffer, uint16_t length);
+elres_t slip_write(slip_handle_e hdl, const uint8_t * buffer, uint16_t length);
 slip_handle_e slip_end(slip_handle_e hdl);
 
 #ifdef __cplusplus

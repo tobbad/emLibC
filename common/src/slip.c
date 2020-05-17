@@ -102,7 +102,7 @@ slip_handle_e slip_start(elres_t (*write)(uint8_t value), slip_function_t state)
     return hdl;
 }
 
-elres_t slip_write(slip_handle_e hdl, uint8_t * buffer, uint16_t length)
+elres_t slip_write(slip_handle_e hdl, const uint8_t * buffer, uint16_t length)
 {
     elres_t res = EMLIB_ERROR;
     if ((NULL != codec[hdl].write) && (hdl>=0) && (hdl<SLIP_HANDLE_CNT))
