@@ -81,11 +81,9 @@ gmock_all_path = googletest_framework_root + "/googlemock/src/gmock-all.cc"
 
 if ARGUMENTS.get('debug', '0') == '1':
     print("*** Debug build...")
-    binFolder = 'bin/Debug/'
     debug = True
 else:
     print("*** Release build...")
-    binFolder = 'bin/Release/'
 
 target = ARGUMENTS.get('target', '')
 testComFiles =()
@@ -111,6 +109,7 @@ if  target == 'test_common':
     incPath+=(googletest_include_paths,)
     linkLibs +=('pthread',)   
     linkFlags = '-Xlinker -Map=output.map'
+    debug = True
 elif target == 'test_display':
     print("Create display tests.")
     cutFolders += ('./display/src/', )
@@ -149,6 +148,14 @@ else:
     print("Unknown target {0}".format(target))
     sys.exit()
 
+if debug:
+    print("*** Debug build...")
+    binFolder = 'bin/Debug/'
+else:
+    print("*** Release build...")
+    binFolder = 'bin/Release/'
+
+
 #linkLibs += ('CppUTest','CppUTestExt')
 testCutFiles += getSrcFromFolder(testCutFolders,'*test.cpp',binFolder)
 testComFiles += getSrcFromFolder(genTestFolders,'AllTests.cpp',binFolder)
@@ -163,7 +170,7 @@ print(linkLibs)
 libPath  = binFolder
 ccDebFlags = '-g '
 ccFlags  += '-Wall ' + ("" if not debug else " %s" % ccDebFlags)
-cflags  =" -std=c11"
+cflags  =" -std=c11 -fstack-protector-strong"
 cxxflags=" -std=c++1z"
 env = Environment(variant_dir=binFolder,
                   LIBPATH=binFolder,

@@ -32,7 +32,7 @@ typedef enum {
     DEV_LAST,
     DEV_NOCMD = 0x7FFF
 } dev_command_t;
-
+#define ELCNT(array) (sizeof((array))/sizeof((array[0])))
 #define DEV_HANDLE_NOTDEFINED   -1
 
 typedef int8_t dev_handle;  /**< A value >=0 is OK, otherwise this is invalid */
