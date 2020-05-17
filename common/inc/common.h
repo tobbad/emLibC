@@ -61,6 +61,15 @@ elres_t device_check(const device_t * dev, dev_func_t dev_type);
 elres_t device_free(device_t * dev);
 void device_print(const device_t * dev);
 
+/*
+ * Function to serialize the content of buffer as neaty formated
+ * string in out. Format is:
+ * 0xXXXX xx xx xx xx xx xx xx xx xx  xx xx xx xx xx xx xx xx  aaaaaaaa aaaaaaaa
+ * XXXX = Addres relative to start of buffer of the 16 following bytes
+ * xx   = Hex encoded data byte
+ * a    = printable asci otherwise "."
+ */
+uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer, uint16_t buffer_size, bool write_asci);
 
 #ifdef __cplusplus
 }

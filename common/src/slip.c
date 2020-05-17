@@ -108,11 +108,12 @@ elres_t slip_write(slip_handle_e hdl, const uint8_t * buffer, uint16_t length)
     if ((NULL != codec[hdl].write) && (hdl>=0) && (hdl<SLIP_HANDLE_CNT))
     {
         uint8_t map_size = codec[hdl].set==SLIP_ESC_SIMPLE_SET?SLIP_SIMPLE_MAP_SIZE:SLIP_MAP_SIZE;
-
         if (codec[hdl].state == SLIP_STATE_ENCODE_STARTED)
         {
+            codec[hdl].size=0;
             codec[hdl].write(SLIP_PKT_LIMIT);
             codec[hdl].state = SLIP_STATE_NORMAL;
+            codec[hdl].size++;
         }
         res = EMLIB_OK;
         for (uint16_t idx = 0;idx < length && (res == EMLIB_OK); idx++)
@@ -128,6 +129,7 @@ elres_t slip_write(slip_handle_e hdl, const uint8_t * buffer, uint16_t length)
                     if (value == slip_map[mapIdx][0])
                     {
                         codec[hdl].write(SLIP_ESCAPE);
+                        codec[hdl].size++;
                         value = slip_map[mapIdx][1];
                         DEB_ENCODE("New value 0x%02x\n", value);
                         break;
@@ -135,6 +137,7 @@ elres_t slip_write(slip_handle_e hdl, const uint8_t * buffer, uint16_t length)
                 }
                 DEB_ENCODE("Write Value %d\n", value);
                 res = codec[hdl].write(value);
+                codec[hdl].size++;
             } else {
                 DEB_DECODE("Decode %d\n", value);
                 if (SLIP_STATE_DECODE_WFF == codec[hdl].state)
@@ -159,8 +162,6 @@ elres_t slip_write(slip_handle_e hdl, const uint8_t * buffer, uint16_t length)
                             DEB_DECODE("EOP size = %d\n", codec[hdl].size);
                             //this is the end of a packet
                             codec[hdl].state = SLIP_STATE_DECODE_END;
-                            // Return decoded size
-                            res = codec[hdl].size;
                             continue;
                         }
                     }
@@ -191,6 +192,7 @@ elres_t slip_write(slip_handle_e hdl, const uint8_t * buffer, uint16_t length)
                     DEB_DECODE("Ignore 0x%02x\n", value);
                     continue;
                 }
+                DEB_DECODE("Write 0x%02x to output\n", value);
                 res = codec[hdl].write(value);
                 codec[hdl].size++;
             }
@@ -199,14 +201,18 @@ elres_t slip_write(slip_handle_e hdl, const uint8_t * buffer, uint16_t length)
     return res;
 }
 
-slip_handle_e slip_end(slip_handle_e hdl)
+uint16_t slip_end(slip_handle_e hdl)
 {
-    slip_handle_e res = hdl;
+    uint16_t res = 0;
     if ((NULL != codec[hdl].write) && (hdl>=0) && (hdl<SLIP_HANDLE_CNT))
     {
-        res = codec[hdl].write(SLIP_PKT_LIMIT);
+        if (codec[hdl].function == SLIP_ENCODE)
+        {
+            codec[hdl].write(SLIP_PKT_LIMIT);
+            codec[hdl].size++;
+        }
+        res = codec[hdl].size;
         codec[hdl] = reset_codec;
-        res = SLIP_HANDLE_ERROR;
     }
     return res;
 }

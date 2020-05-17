@@ -92,7 +92,9 @@ TEST_F(SlipTest, GetStartValueInReceiveBuffer)
     slip_handle_e hdl = slip_start(test_write, SLIP_ENCODE_SIMPLE);
     EXPECT_EQ(SLIP_HANDLE_0, hdl);
     elres_t res = slip_write(hdl, &value, 1);
+    uint16_t size = slip_end(hdl);
     EXPECT_EQ(EMLIB_OK, res);
+    EXPECT_EQ(3, size);
     EXPECT_EQ(SLIP_PKT_LIMIT, rcv_buffer[0]);
     EXPECT_EQ(value, rcv_buffer[1]);
 }
@@ -102,6 +104,7 @@ TEST_F(SlipTest, CheckEncodeMapping)
     uint8_t buf[] = {0xC0};
 
     elres_t res;
+    uint16_t ser_size;
     for (uint16_t value = 0; value<256;value++)
     {
         bool is_esc = false;
@@ -125,16 +128,19 @@ TEST_F(SlipTest, CheckEncodeMapping)
             }
             buf[0] = (uint8_t)value;
             res = slip_write(hdl, buf, 1);
+            ser_size = slip_end(hdl);
+
             EXPECT_EQ(EMLIB_OK, res);
             if (is_esc)
             {
+                EXPECT_EQ(4, ser_size);
                 EXPECT_EQ(SLIP_ESCAPE, rcv_buffer[idx++]);
                 EXPECT_EQ(slip_map[escMapIdx][1], rcv_buffer[idx++]);
             } else {
+                EXPECT_EQ(3, ser_size);
                 EXPECT_EQ(value, rcv_buffer[idx++]) << "State " << encode_map[enc];
             }
-            hdl = slip_end(hdl);;
-            EXPECT_EQ(SLIP_HANDLE_ERROR, hdl);
+
             EXPECT_EQ(SLIP_PKT_LIMIT, rcv_buffer[idx++]) << "State " << encode_map[enc];
         }
     }
@@ -145,7 +151,7 @@ TEST_F(SlipTest, CheckDecodeMapping)
 {
     uint8_t buf[10];
 
-    elres_t res;
+    uint16_t res;
     slip_function_t encode_map[] = {SLIP_ENCODE_SIMPLE, SLIP_ENCODE_OOF_FLOW_CONTROL};
     slip_function_t decode_map[] = {SLIP_DECODE_SIMPLE, SLIP_DECODE_OOF_FLOW_CONTROL};
     for (uint8_t enc =0;enc<2;enc++)
@@ -159,9 +165,8 @@ TEST_F(SlipTest, CheckDecodeMapping)
 
             buf[0] = value;
             slip_write(hdl_e, buf, 1);
-            hdl_e = slip_end(hdl_e);
+            encode_size = slip_end(hdl_e);
 
-            encode_size = rbuf.used;
             memcpy(buf, rbuf.buffer, encode_size);
             EXPECT_LE(encode_size, 4);
             /* printf("0x%02x ->", value);
@@ -171,13 +176,57 @@ TEST_F(SlipTest, CheckDecodeMapping)
             }
             printf("\n");*/
             test_reset(&rbuf);
-            res = slip_write(hdl_dut, buf, encode_size);
+            slip_write(hdl_dut, buf, encode_size);
+            res = slip_end(hdl_dut);
             EXPECT_EQ(1, res);
-            hdl_dut = slip_end(hdl_dut);
             EXPECT_EQ(value, rcv_buffer[0]) << "State " << decode_map[enc];
         }
     }
 }
+
+
+TEST_F(SlipTest, AllUint8ValueCodec)
+{
+    static const uint32_t PRSIZE = (6+2+15*3+2+16+1)*16+1;
+    elres_t res;
+    uint16_t size;
+    uint8_t buffer[300];
+    char prbuf[PRSIZE];
+    uint16_t value;
+    for (value = 0; value<256; value++)
+    {
+        buffer[value] = value;
+    }
+    /*
+     * Set up the test
+     */
+    test_reset(&rbuf);
+    slip_handle_e hdl_dut = slip_start(test_write, SLIP_ENCODE_SIMPLE);
+    res = slip_write(hdl_dut, buffer, value);
+    size = slip_end(hdl_dut);
+    EXPECT_EQ(EMLIB_OK, res);
+    memcpy(buffer, rbuf.buffer, size);
+
+    //printf("Serialized %d bytes\n", size);
+    //to_hex(prbuf, sizeof(prbuf), buffer, size, true);
+    //printf(prbuf);
+
+    test_reset(&rbuf);
+    hdl_dut = slip_start(test_write, SLIP_DECODE_SIMPLE);
+    res = slip_write(hdl_dut, buffer, size);
+    size = slip_end(hdl_dut);
+    EXPECT_EQ(EMLIB_OK, res);
+    EXPECT_EQ(value, size);
+
+    //printf("Deserialized %d bytes\n", size);
+    //to_hex(prbuf, sizeof(prbuf), rbuf.buffer, size, true);
+    //printf(prbuf);
+    for (value = 0; value<256; value++)
+    {
+        EXPECT_EQ(value, rbuf.buffer[value]) << "At " << value;
+    }
+}
+
 struct slip_tc_t_ {
     const slip_function_t fun;
     const uint8_t *in;
@@ -201,7 +250,7 @@ TEST_F(SlipTest, TestcaseRunner)
     uint8_t tc_idx;
     for (tc_idx=0;tc_idx<tc_cnt;tc_idx++)
     {
-        elres_t dec_size;
+        uint16_t dec_size;
         slip_function_t fun = tc[tc_idx].fun;
         const uint8_t * in = tc[tc_idx].in;
         uint16_t in_size = tc[tc_idx].in_size;
@@ -212,13 +261,12 @@ TEST_F(SlipTest, TestcaseRunner)
          * Set up the test
          */
         test_reset(&rbuf);
-        dec_size = slip_write(hdl_dut, in, in_size);
-        hdl_dut = slip_end(hdl_dut);
+        slip_write(hdl_dut, in, in_size);
+        dec_size = slip_end(hdl_dut);
         /*
          *
          */
         EXPECT_EQ(exp_size, dec_size) << "Testcase " << tc_idx;
-        EXPECT_EQ(SLIP_HANDLE_ERROR, hdl_dut) << "Testcase " << tc_idx;
         if (exp_size == dec_size)
         {
             for (uint16_t i=0;i<dec_size;i++)
