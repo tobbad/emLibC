@@ -218,9 +218,9 @@ TEST_F(SlipTest, AllUint8ValueCodec)
     EXPECT_EQ(EMLIB_OK, res);
     EXPECT_EQ(value, size);
 
-    printf("Deserialized %d bytes\n", size);
-    to_hex(prbuf, sizeof(prbuf), rbuf.buffer, size, true);
-    printf(prbuf);
+    //printf("Deserialized %d bytes\n", size);
+    //to_hex(prbuf, sizeof(prbuf), rbuf.buffer, size, true);
+    //printf(prbuf);
     for (value = 0; value<256; value++)
     {
         EXPECT_EQ(value, rbuf.buffer[value]) << "At " << value;
