@@ -187,10 +187,10 @@ TEST_F(SlipTest, CheckDecodeMapping)
 
 TEST_F(SlipTest, AllUint8ValueCodec)
 {
-    static const uint32_t PRSIZE = (6+2+15*3+2+16+1)*16+1;
+    static const uint32_t PRSIZE = (6+2+16*3+3+16+1)*16+1;
     elres_t res;
     uint16_t size;
-    uint8_t buffer[300];
+    uint8_t buffer[1024];
     char prbuf[PRSIZE];
     uint16_t value;
     for (value = 0; value<256; value++)
@@ -218,9 +218,9 @@ TEST_F(SlipTest, AllUint8ValueCodec)
     EXPECT_EQ(EMLIB_OK, res);
     EXPECT_EQ(value, size);
 
-    //printf("Deserialized %d bytes\n", size);
-    //to_hex(prbuf, sizeof(prbuf), rbuf.buffer, size, true);
-    //printf(prbuf);
+    printf("Deserialized %d bytes\n", size);
+    to_hex(prbuf, sizeof(prbuf), rbuf.buffer, size, true);
+    printf(prbuf);
     for (value = 0; value<256; value++)
     {
         EXPECT_EQ(value, rbuf.buffer[value]) << "At " << value;

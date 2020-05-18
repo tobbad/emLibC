@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <ctype.h>
 #include "common.h"
 
 static const device_t dev_reset={.open=NULL,.read=NULL, .write=NULL, .ioctrl=NULL, .close=NULL};
@@ -56,7 +57,7 @@ uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer, uint16_t buffer_s
     // = 48 + '\0' = 56 characters
     static const char SP78[] = "  ";
     static const char INTERCHARSP[] = " ";
-    static const addr_inc = 16;
+    static const uint8_t addr_inc = 16;
     char ascii[17];
     uint8_t abuf_idx = 0;
     uint16_t out_idx=0;
@@ -82,17 +83,17 @@ uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer, uint16_t buffer_s
                 ava_size -= wr_size;
                 if (isprint(buffer[laddr])>0)
                 {
-                    sprintf(ascii, "%s%c", ascii, buffer[laddr]);
+                    abuf_idx += sprintf(&ascii[abuf_idx], "%c", buffer[laddr]);
                 }
                 else
                 {
-                    sprintf(ascii, "%s.", ascii);
+                    abuf_idx += sprintf(&ascii[abuf_idx], ".");
                 }
             } else {
-                wr_size = snprintf(&out[out_idx], ava_size, " %s",INTERCHARSP);
+                wr_size = snprintf(&out[out_idx], ava_size, "  %s",INTERCHARSP);
                 out_idx += wr_size;
                 ava_size -= wr_size;
-                sprintf(ascii, "%s ", ascii);
+                abuf_idx += sprintf(&ascii[abuf_idx], " ");
             }
             if (laddr%8 == 7)
             {
@@ -101,7 +102,6 @@ uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer, uint16_t buffer_s
                 ava_size -= wr_size;
             }
         }
-        ascii[abuf_idx] = '\0';
         if (write_asci)
         {
             wr_size = snprintf(&out[out_idx], ava_size, "%s", ascii);
