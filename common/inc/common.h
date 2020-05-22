@@ -16,7 +16,6 @@ extern "C" {
 #ifdef UNIT_TEST
 #define STATIC
 #include <stdio.h>
-//#include "hal_defines.h"
 #else
 #define STATIC static
 #endif
@@ -49,6 +48,8 @@ typedef enum {
 
 
 typedef struct device_s {
+    uint8_t devtype;
+    uint8_t reserved[3];
     dev_handle (*open)(void);
     elres_t (*read)(uint8_t *buffer, uint16_t cnt);
     elres_t (*write)(uint8_t *buffer, uint16_t cnt);
