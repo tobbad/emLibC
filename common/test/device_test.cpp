@@ -7,11 +7,11 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-dev_handle dummy_open(void){ return 0; };
-elres_t dummy_read(uint8_t *buffer, uint16_t cnt){ return EMLIB_ERROR;};
-elres_t dummy_write(uint8_t *buffer, uint16_t cnt){ return EMLIB_ERROR;};
-elres_t dummy_ioctrl(dev_command_t cmd, uint16_t value){ return EMLIB_ERROR;};
-elres_t dummy_close(dev_handle hdl){ return EMLIB_ERROR;};
+dev_handle dummy_open(void * data){ return 0; };
+elres_t dummy_read(void * data, uint8_t *buffer, uint16_t cnt){ return EMLIB_ERROR;};
+elres_t dummy_write(void * data, const uint8_t *buffer, uint16_t cnt){ return EMLIB_ERROR;};
+elres_t dummy_ioctrl(void * data, dev_command_t cmd, uint16_t value){ return EMLIB_ERROR;};
+elres_t dummy_close(void * data, dev_handle hdl){ return EMLIB_ERROR;};
 
 
 class DeviceTest : public ::testing::Test {
@@ -111,7 +111,7 @@ TEST_F(DeviceTest, Device_reset){
 
     init_struct(DEV_ALL);
 
-    device_free(&dev);
+    device_reset(&dev);
 
     EXPECT_TRUE(NULL==dev.open);
     EXPECT_TRUE(NULL==dev.read);

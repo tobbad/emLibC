@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <string.h>
 #include <stdint.h>
+#include "device.h"
 #include "slip.h"
 
 #include "gtest/gtest.h"
@@ -26,25 +27,37 @@ uint8_t rcv_buffer[RCV_BUF_SIZE];
 
 static buffer_t rbuf = {RCV_BUF_SIZE, 0, rcv_buffer};
 
-elres_t test_reset(buffer_t *rbuf)
+elres_t test_reset(buffer_t *buf)
 {
     //printf("buffer_t Reset\n");
-    rbuf->used = 0;
-    memset(rbuf->buffer, 0, rbuf->size);
+    buf->used = 0;
+    memset(buf->buffer, 0, buf->size);
     return EMLIB_OK;
 }
 
-elres_t test_write(void *data, uint8_t value)
+elres_t test_write(void *data, const uint8_t *value, uint16_t count)
 {
     buffer_t *buf = (buffer_t *)data;
-    if ((NULL != buf) && (buf->size-buf->used >= 1))
+    if ((NULL != buf) && (buf->size-buf->used >= 1) && (NULL != value))
     {
-        //printf("buf[%d] = %d\n", rbuf.used, value);
-        buf->buffer[buf->used++] = value;
+        for (uint16_t i = 0;i<count; i++)
+        {
+            //printf("buf[%d] = %d\n", rbuf.used, value[i]);
+            buf->buffer[buf->used++] = value[i];
+        }
         return EMLIB_OK;
     }
     return EMLIB_ERROR;
 }
+
+device_t slip_dev = {
+    .user_data=&rbuf,
+    .open=NULL,
+    .read=NULL,
+    .write=test_write,
+    .ioctrl=NULL,
+    .close=NULL,
+};
 
 class SlipTest : public ::testing::Test {
     protected:
@@ -60,29 +73,39 @@ class SlipTest : public ::testing::Test {
     }
 };
 
-TEST_F(SlipTest, ErrorIfSlipStartWithNullFunction)
+TEST_F(SlipTest, ErrorIfSlipStartWithNullDevice)
 {
-    slip_handle_e hdl = slip_start(NULL, NULL, SLIP_ENCODE_SIMPLE);
+    slip_handle_e hdl = slip_start(NULL, SLIP_ENCODE_SIMPLE);
+
+    EXPECT_EQ(SLIP_HANDLE_ERROR, hdl);
+}
+
+TEST_F(SlipTest, ErrorIfSlipStartWithNullWriteFunc)
+{
+    device_t test = slip_dev;
+    test.write = NULL;
+
+    slip_handle_e hdl = slip_start(&test, SLIP_ENCODE_SIMPLE);
 
     EXPECT_EQ(SLIP_HANDLE_ERROR, hdl);
 }
 
 TEST_F(SlipTest, OkIfSlipStartWithValidFunction)
 {
-    slip_handle_e hdl = slip_start(&rbuf, test_write, SLIP_ENCODE_SIMPLE);
+    slip_handle_e hdl = slip_start(&slip_dev, SLIP_ENCODE_SIMPLE);
     EXPECT_EQ(SLIP_HANDLE_0, hdl);
 
-    hdl = slip_start(&rbuf, test_write, SLIP_ENCODE_SIMPLE);
+    hdl = slip_start(&slip_dev, SLIP_ENCODE_SIMPLE);
     EXPECT_EQ(SLIP_HANDLE_1, hdl);
 
-    hdl = slip_start(&rbuf, test_write, SLIP_ENCODE_SIMPLE);
+    hdl = slip_start(&slip_dev, SLIP_ENCODE_SIMPLE);
     EXPECT_EQ(SLIP_HANDLE_ERROR, hdl);
 
 }
 
 TEST_F(SlipTest, ErrorOnInvalidState)
 {
-    slip_handle_e hdl = slip_start(&rbuf, test_write, SLIP_STATE_CNT);
+    slip_handle_e hdl = slip_start(&slip_dev, SLIP_STATE_CNT);
 
     EXPECT_EQ(SLIP_HANDLE_ERROR, hdl);
 }
@@ -90,7 +113,7 @@ TEST_F(SlipTest, ErrorOnInvalidState)
 TEST_F(SlipTest, GetStartValueInReceiveBuffer)
 {
     uint8_t value = 42;
-    slip_handle_e hdl = slip_start(&rbuf, test_write, SLIP_ENCODE_SIMPLE);
+    slip_handle_e hdl = slip_start(&slip_dev, SLIP_ENCODE_SIMPLE);
     EXPECT_EQ(SLIP_HANDLE_0, hdl);
     elres_t res = slip_write(hdl, &value, 1);
     uint16_t size = slip_end(hdl);
@@ -116,7 +139,7 @@ TEST_F(SlipTest, CheckEncodeMapping)
             uint16_t idx=1;
             test_reset(&rbuf);
             slip_init();
-            slip_handle_e hdl = slip_start(&rbuf, test_write, encode_map[enc]);
+            slip_handle_e hdl = slip_start(&slip_dev, encode_map[enc]);
             EXPECT_NE(SLIP_HANDLE_ERROR, hdl);
 
             for (escMapIdx = 0; escMapIdx<2*(enc+1);escMapIdx++)
@@ -161,8 +184,8 @@ TEST_F(SlipTest, CheckDecodeMapping)
         {
             uint8_t encode_size = 0;
             test_reset(&rbuf);
-            slip_handle_e hdl_e = slip_start(&rbuf, test_write, encode_map[enc]);
-            slip_handle_e hdl_dut = slip_start(&rbuf, test_write, decode_map[enc]);
+            slip_handle_e hdl_e = slip_start(&slip_dev, encode_map[enc]);
+            slip_handle_e hdl_dut = slip_start(&slip_dev, decode_map[enc]);
 
             buf[0] = value;
             slip_write(hdl_e, buf, 1);
@@ -202,7 +225,7 @@ TEST_F(SlipTest, AllUint8ValueCodec)
      * Set up the test
      */
     test_reset(&rbuf);
-    slip_handle_e hdl_dut = slip_start(&rbuf, test_write, SLIP_ENCODE_SIMPLE);
+    slip_handle_e hdl_dut = slip_start(&slip_dev, SLIP_ENCODE_SIMPLE);
     res = slip_write(hdl_dut, buffer, value);
     size = slip_end(hdl_dut);
     EXPECT_EQ(EMLIB_OK, res);
@@ -213,7 +236,7 @@ TEST_F(SlipTest, AllUint8ValueCodec)
     //printf(prbuf);
 
     test_reset(&rbuf);
-    hdl_dut = slip_start(&rbuf, test_write, SLIP_DECODE_SIMPLE);
+    hdl_dut = slip_start(&slip_dev, SLIP_DECODE_SIMPLE);
     res = slip_write(hdl_dut, buffer, size);
     size = slip_end(hdl_dut);
     EXPECT_EQ(EMLIB_OK, res);
@@ -257,7 +280,7 @@ TEST_F(SlipTest, TestcaseRunner)
         uint16_t in_size = tc[tc_idx].in_size;
         const uint8_t * exp = tc[tc_idx].out;
         uint16_t exp_size = tc[tc_idx].out_size;
-        slip_handle_e hdl_dut = slip_start(&rbuf, test_write, fun);
+        slip_handle_e hdl_dut = slip_start(&slip_dev, fun);
         /*
          * Set up the test
          */

@@ -6,7 +6,14 @@
  */
 #include "device.h"
 
-static const device_t dev_reset={.open=NULL,.read=NULL, .write=NULL, .ioctrl=NULL, .close=NULL};
+const device_t DEVICE_RESET={
+    .open=NULL,
+    .read=NULL,
+    .write=NULL,
+    .ioctrl=NULL,
+    .close=NULL,
+    .user_data=NULL,
+};
 
 /*
  * \brief Check if at least the functions indicated by dev_type are set in the structure dev
@@ -25,15 +32,24 @@ elres_t device_check(const device_t * dev, dev_func_t dev_type) {
     return is_ok?EMLIB_OK:EMLIB_ERROR;
 }
 
-
-elres_t device_free(device_t * dev) {
+elres_t device_reset(device_t * dev) {
     elres_t res = EMLIB_ERROR;
     if (dev != NULL) {
-        *dev = dev_reset;
+        *dev = DEVICE_RESET;
         res = EMLIB_OK;
     }
     return res;
 }
+
+elres_t device_write(device_t * dev, const uint8_t *buffer, uint16_t cnt){
+    elres_t res = EMLIB_ERROR;
+    if ((dev != NULL) && (NULL != dev->write)) {
+        res = dev->write(dev->user_data, buffer, cnt);
+    }
+    return res;
+}
+
+
 
 void device_print(const device_t * dev){
     if (dev != NULL) {
@@ -42,6 +58,7 @@ void device_print(const device_t * dev){
         printf("write = %p\n",dev->write);
         printf("ioctrl= %p\n",dev->ioctrl);
         printf("close = %p\n",dev->close);
+        printf("udata = %p\n",dev->user_data);
     }
 }
 

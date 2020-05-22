@@ -6,6 +6,7 @@
  */
 #include <string.h>
 #include "common.h"
+#include "device.h"
 #include "slip.h"
 
 //#define DEBUG
@@ -40,13 +41,11 @@ typedef enum {
 
 typedef struct slip_codec_t_
 {
+    device_t dev;
     slip_escape_set_t set;
     slip_codec_function_t function;
     slip_codec_state_t state;
     uint16_t size;
-    // use this function for writting encoded or decoded data
-    elres_t (*write)(void * data, uint8_t value);
-    void * user_data;
 } slip_codec_t;
 
 static slip_codec_t codec[SLIP_HANDLE_CNT];
@@ -56,8 +55,6 @@ static const slip_codec_t reset_codec={
     .function = 0,
     .state = 0,
     .size = 0,
-    .write = NULL,
-    .user_data = NULL,
 };
 
 const uint8_t slip_map[][2]={
@@ -76,29 +73,32 @@ void slip_init(void)
 }
 
 
-slip_handle_e slip_start(void * user_data, elres_t (*write)(void * data, uint8_t value), slip_function_t state)
+slip_handle_e slip_start(device_t *dev, slip_function_t state)
 {
     slip_handle_e hdl = SLIP_HANDLE_ERROR;
-    if ((NULL != write) && (state<SLIP_STATE_CNT))
+    if ((NULL != dev) && (state<SLIP_STATE_CNT))
     {
-        for (uint8_t index=0;index<SLIP_HANDLE_CNT;index++)
+        elres_t res = device_check(dev, DEV_WRITE);
+        if (EMLIB_OK == res)
         {
-            if (NULL == codec[index].write)
+            for (uint8_t index=0;index<SLIP_HANDLE_CNT;index++)
             {
-                DEB_PRINTF("Return handle %d\n", index);
-                codec[index].write = write;
-                codec[index].user_data = user_data;
-                codec[index].set = state>>1;
-                codec[index].function = state&0x01;
-                codec[index].size = 0;
-                if (SLIP_ENCODE == codec[index].function)
+                if (NULL == codec[index].dev.write)
                 {
-                    codec[index].state = SLIP_STATE_ENCODE_STARTED;
-                } else {
-                    codec[index].state = SLIP_STATE_DECODE_WFF;
+                    DEB_PRINTF("Return handle %d\n", index);
+                    codec[index].dev = *dev;
+                    codec[index].set = state>>1;
+                    codec[index].function = state&0x01;
+                    codec[index].size = 0;
+                    if (SLIP_ENCODE == codec[index].function)
+                    {
+                        codec[index].state = SLIP_STATE_ENCODE_STARTED;
+                    } else {
+                        codec[index].state = SLIP_STATE_DECODE_WFF;
+                    }
+                    hdl = index;
+                    break;
                 }
-                hdl = index;
-                break;
             }
         }
     }
@@ -108,13 +108,15 @@ slip_handle_e slip_start(void * user_data, elres_t (*write)(void * data, uint8_t
 elres_t slip_write(slip_handle_e hdl, const uint8_t * buffer, uint16_t length)
 {
     elres_t res = EMLIB_ERROR;
-    if ((NULL != codec[hdl].write) && (hdl>=0) && (hdl<SLIP_HANDLE_CNT))
+    if ((hdl>=0) && (hdl<SLIP_HANDLE_CNT))
     {
+        uint8_t value;
         uint8_t map_size = codec[hdl].set==SLIP_ESC_SIMPLE_SET?SLIP_SIMPLE_MAP_SIZE:SLIP_MAP_SIZE;
         if (codec[hdl].state == SLIP_STATE_ENCODE_STARTED)
         {
+            value = SLIP_PKT_LIMIT;
             codec[hdl].size=0;
-            codec[hdl].write(codec[hdl].user_data, SLIP_PKT_LIMIT);
+            device_write(&codec[hdl].dev, &value, 1);
             codec[hdl].state = SLIP_STATE_NORMAL;
             codec[hdl].size++;
         }
@@ -131,7 +133,8 @@ elres_t slip_write(slip_handle_e hdl, const uint8_t * buffer, uint16_t length)
                     DEB_ENCODE("Value %d == %d\n", value, slip_map[mapIdx][0]);
                     if (value == slip_map[mapIdx][0])
                     {
-                        codec[hdl].write(codec[hdl].user_data, SLIP_ESCAPE);
+                        uint8_t esc = SLIP_ESCAPE;
+                        device_write(&codec[hdl].dev, &esc, 1);
                         codec[hdl].size++;
                         value = slip_map[mapIdx][1];
                         DEB_ENCODE("New value 0x%02x\n", value);
@@ -139,7 +142,7 @@ elres_t slip_write(slip_handle_e hdl, const uint8_t * buffer, uint16_t length)
                     }
                 }
                 DEB_ENCODE("Write Value %d\n", value);
-                res = codec[hdl].write(codec[hdl].user_data, value);
+                device_write(&codec[hdl].dev, &value, 1);
                 codec[hdl].size++;
             } else {
                 DEB_DECODE("Decode %d\n", value);
@@ -196,7 +199,7 @@ elres_t slip_write(slip_handle_e hdl, const uint8_t * buffer, uint16_t length)
                     continue;
                 }
                 DEB_DECODE("Write 0x%02x to output\n", value);
-                res = codec[hdl].write(codec[hdl].user_data, value);
+                device_write(&codec[hdl].dev, &value, 1);
                 codec[hdl].size++;
             }
         }
@@ -207,15 +210,17 @@ elres_t slip_write(slip_handle_e hdl, const uint8_t * buffer, uint16_t length)
 uint16_t slip_end(slip_handle_e hdl)
 {
     uint16_t res = 0;
-    if ((NULL != codec[hdl].write) && (hdl>=0) && (hdl<SLIP_HANDLE_CNT))
+    if ((NULL != codec[hdl].dev.write) && (hdl>=0) && (hdl<SLIP_HANDLE_CNT))
     {
         if (codec[hdl].function == SLIP_ENCODE)
         {
-            codec[hdl].write(codec[hdl].user_data, SLIP_PKT_LIMIT);
+            uint8_t value = SLIP_PKT_LIMIT;
+            codec[hdl].dev.write(codec[hdl].dev.user_data, &value, 1);
             codec[hdl].size++;
         }
         res = codec[hdl].size;
         codec[hdl] = reset_codec;
+        device_reset(&codec[hdl].dev);
     }
     return res;
 }
