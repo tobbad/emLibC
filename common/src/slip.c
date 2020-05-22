@@ -45,7 +45,8 @@ typedef struct slip_codec_t_
     slip_codec_state_t state;
     uint16_t size;
     // use this function for writting encoded or decoded data
-    elres_t (*write)(uint8_t value);
+    elres_t (*write)(void * data, uint8_t value);
+    void * user_data;
 } slip_codec_t;
 
 static slip_codec_t codec[SLIP_HANDLE_CNT];
@@ -55,7 +56,8 @@ static const slip_codec_t reset_codec={
     .function = 0,
     .state = 0,
     .size = 0,
-    .write = 0,
+    .write = NULL,
+    .user_data = NULL,
 };
 
 const uint8_t slip_map[][2]={
@@ -74,7 +76,7 @@ void slip_init(void)
 }
 
 
-slip_handle_e slip_start(elres_t (*write)(uint8_t value), slip_function_t state)
+slip_handle_e slip_start(void * user_data, elres_t (*write)(void * data, uint8_t value), slip_function_t state)
 {
     slip_handle_e hdl = SLIP_HANDLE_ERROR;
     if ((NULL != write) && (state<SLIP_STATE_CNT))
@@ -85,6 +87,7 @@ slip_handle_e slip_start(elres_t (*write)(uint8_t value), slip_function_t state)
             {
                 DEB_PRINTF("Return handle %d\n", index);
                 codec[index].write = write;
+                codec[index].user_data = user_data;
                 codec[index].set = state>>1;
                 codec[index].function = state&0x01;
                 codec[index].size = 0;
@@ -111,7 +114,7 @@ elres_t slip_write(slip_handle_e hdl, const uint8_t * buffer, uint16_t length)
         if (codec[hdl].state == SLIP_STATE_ENCODE_STARTED)
         {
             codec[hdl].size=0;
-            codec[hdl].write(SLIP_PKT_LIMIT);
+            codec[hdl].write(codec[hdl].user_data, SLIP_PKT_LIMIT);
             codec[hdl].state = SLIP_STATE_NORMAL;
             codec[hdl].size++;
         }
@@ -128,7 +131,7 @@ elres_t slip_write(slip_handle_e hdl, const uint8_t * buffer, uint16_t length)
                     DEB_ENCODE("Value %d == %d\n", value, slip_map[mapIdx][0]);
                     if (value == slip_map[mapIdx][0])
                     {
-                        codec[hdl].write(SLIP_ESCAPE);
+                        codec[hdl].write(codec[hdl].user_data, SLIP_ESCAPE);
                         codec[hdl].size++;
                         value = slip_map[mapIdx][1];
                         DEB_ENCODE("New value 0x%02x\n", value);
@@ -136,7 +139,7 @@ elres_t slip_write(slip_handle_e hdl, const uint8_t * buffer, uint16_t length)
                     }
                 }
                 DEB_ENCODE("Write Value %d\n", value);
-                res = codec[hdl].write(value);
+                res = codec[hdl].write(codec[hdl].user_data, value);
                 codec[hdl].size++;
             } else {
                 DEB_DECODE("Decode %d\n", value);
@@ -193,7 +196,7 @@ elres_t slip_write(slip_handle_e hdl, const uint8_t * buffer, uint16_t length)
                     continue;
                 }
                 DEB_DECODE("Write 0x%02x to output\n", value);
-                res = codec[hdl].write(value);
+                res = codec[hdl].write(codec[hdl].user_data, value);
                 codec[hdl].size++;
             }
         }
@@ -208,7 +211,7 @@ uint16_t slip_end(slip_handle_e hdl)
     {
         if (codec[hdl].function == SLIP_ENCODE)
         {
-            codec[hdl].write(SLIP_PKT_LIMIT);
+            codec[hdl].write(codec[hdl].user_data, SLIP_PKT_LIMIT);
             codec[hdl].size++;
         }
         res = codec[hdl].size;

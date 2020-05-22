@@ -48,10 +48,14 @@ typedef enum {
 #define SLIP_DC3_ESC 0xDF
 const uint8_t SIMPLE_MAP_SIZE = 2;
 
+/*
+ * Map of values (col 0)
+ * to escaped values (col 1)
+ */
 extern const uint8_t slip_map[][2];
 //
 void slip_init(void);
-slip_handle_e slip_start(elres_t (*write)(uint8_t value), slip_function_t state);
+slip_handle_e slip_start(void * user_data, elres_t (*write)(void * data, uint8_t value), slip_function_t state);
 elres_t slip_write(slip_handle_e hdl, const uint8_t * buffer, uint16_t length);
 uint16_t slip_end(slip_handle_e hdl);
 
