@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <cstdint>
-#include "common.h"
+#include "device.h"
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
