@@ -44,7 +44,7 @@
 #include "stm32f3xx.h"
 #elif defined(STM32F407xx)
 #include "stm32f4xx.h"
-#elif defined(STM32L476xx)
+#elif defined(STM32L476xx) || defined(STM32L412xx)
 #include "stm32l4xx.h"
 #else
 #error Undefined platform

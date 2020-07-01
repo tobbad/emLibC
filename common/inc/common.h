@@ -27,6 +27,11 @@ typedef enum {
 
 #define ELCNT(array) (sizeof((array))/sizeof((array[0])))
 
+typedef union {
+    const uint8_t *cptr;
+    uint8_t *ptr;
+} cPtrAway_u;
+
 /*
  * Function to serialize the content of buffer as neaty formated
  * string in out. Format is:
