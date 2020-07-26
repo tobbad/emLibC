@@ -121,6 +121,7 @@ TEST_F(SlipTest, GetStartValueInReceiveBuffer)
     EXPECT_EQ(3, size);
     EXPECT_EQ(SLIP_PKT_LIMIT, rcv_buffer[0]);
     EXPECT_EQ(value, rcv_buffer[1]);
+    EXPECT_EQ(SLIP_PKT_LIMIT, rcv_buffer[2]);
 }
 
 TEST_F(SlipTest, CheckEncodeMapping)
@@ -211,7 +212,7 @@ TEST_F(SlipTest, CheckDecodeMapping)
 
 TEST_F(SlipTest, AllUint8ValueCodec)
 {
-    static const uint32_t PRSIZE = (6+2+16*3+3+16+1)*16+1;
+    static const uint32_t PRSIZE = (6+8*3+2*8*3+3+16+1)*17+1;
     elres_t res;
     uint16_t size;
     uint8_t buffer[1024];
@@ -228,12 +229,16 @@ TEST_F(SlipTest, AllUint8ValueCodec)
     slip_handle_e hdl_dut = slip_start(&slip_dev, SLIP_ENCODE_SIMPLE);
     res = slip_write(hdl_dut, buffer, value);
     size = slip_end(hdl_dut);
+    EXPECT_EQ(size, 256+/*Start/Stop 0x0c*/2+/*Count of ESC*/2);
     EXPECT_EQ(EMLIB_OK, res);
+    EXPECT_EQ(SLIP_PKT_LIMIT, rbuf.buffer[size-1]);
     memcpy(buffer, rbuf.buffer, size);
 
-    //printf("Serialized %d bytes\n", size);
-    //to_hex(prbuf, sizeof(prbuf), buffer, size, true);
-    //printf(prbuf);
+    /*
+    printf("Serialized %d bytes\n", size);
+    to_hex(prbuf, sizeof(prbuf), buffer, size, true);
+    printf(prbuf);
+    */
 
     test_reset(&rbuf);
     hdl_dut = slip_start(&slip_dev, SLIP_DECODE_SIMPLE);

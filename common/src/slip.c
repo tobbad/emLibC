@@ -128,24 +128,24 @@ elres_t slip_write(slip_handle_e hdl, const uint8_t * buffer, uint16_t length)
             if (codec[hdl].function == SLIP_ENCODE)
             {
                 uint8_t mapIdx = 0;
+                DEB_ENCODE("Write Value 0x%02x => ", value);
                 for (mapIdx=0; mapIdx<map_size;mapIdx++)
                 {
-                    DEB_ENCODE("Value %d == %d\n", value, slip_map[mapIdx][0]);
                     if (value == slip_map[mapIdx][0])
                     {
                         uint8_t esc = SLIP_ESCAPE;
                         device_write(&codec[hdl].dev, &esc, 1);
                         codec[hdl].size++;
                         value = slip_map[mapIdx][1];
-                        DEB_ENCODE("New value 0x%02x\n", value);
+                        DEB_ENCODE("ESC ");
                         break;
                     }
                 }
-                DEB_ENCODE("Write Value %d\n", value);
+                DEB_ENCODE("0x%02x\n", value);
                 device_write(&codec[hdl].dev, &value, 1);
                 codec[hdl].size++;
             } else {
-                DEB_DECODE("Decode %d\n", value);
+                DEB_DECODE("Decode %d => ", value);
                 if (SLIP_STATE_DECODE_WFF == codec[hdl].state)
                 {
                     if (value == SLIP_PKT_LIMIT)
@@ -185,7 +185,7 @@ elres_t slip_write(slip_handle_e hdl, const uint8_t * buffer, uint16_t length)
                     {
                         if (value == slip_map[mapIdx][1])
                         {
-                            DEB_DECODE("DE map 0x%02x -> 0x%02x\n",value, slip_map[mapIdx][0]);
+                            DEB_DECODE("ESC 0x%02x -> ",value, slip_map[mapIdx][0]);
                             value = slip_map[mapIdx][0];
                             codec[hdl].state = SLIP_STATE_NORMAL;
                             break;
@@ -198,7 +198,7 @@ elres_t slip_write(slip_handle_e hdl, const uint8_t * buffer, uint16_t length)
                     DEB_DECODE("Ignore 0x%02x\n", value);
                     continue;
                 }
-                DEB_DECODE("Write 0x%02x to output\n", value);
+                DEB_DECODE("0x%02x \n", value);
                 device_write(&codec[hdl].dev, &value, 1);
                 codec[hdl].size++;
             }
@@ -217,6 +217,7 @@ uint16_t slip_end(slip_handle_e hdl)
             uint8_t value = SLIP_PKT_LIMIT;
             codec[hdl].dev.write(codec[hdl].dev.user_data, &value, 1);
             codec[hdl].size++;
+            DEB_ENCODE("Wrote terminating 0x%02x to output\n", value);
         }
         res = codec[hdl].size;
         codec[hdl] = reset_codec;
