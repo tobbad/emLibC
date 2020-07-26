@@ -44,7 +44,7 @@
 #include "stm32f3xx.h"
 #elif defined(STM32F407xx)
 #include "stm32f4xx.h"
-#elif defined(STM32L476xx) || defined(STM32L412xx)
+#elif defined(STM32L476xx) || defined(STM32L412xx) || defined(STM32L475xx)
 #include "stm32l4xx.h"
 #else
 #error Undefined platform
@@ -59,6 +59,11 @@ sio_res_e serial_init(sio_t* init)
 	sio = *init;
 	sio.ready[SIO_RX] = true;
 	sio.ready[SIO_TX] = true;
+	if ( (sio.buffer_size[SIO_RX]>0) || (sio.buffer_size[SIO_TX]>0))
+	{
+	    // Buffered Output is not supported
+	    return SIO_ERROR;
+	}
 
 	return SIO_OK;
 }
@@ -103,14 +108,6 @@ int _write(int32_t file, uint8_t *ptr, int32_t len)
 		}
 	}
 	return (status==HAL_OK)?len:-1;
-}
-
-
-void HAL_UART_TxCpltCallback(UART_HandleTypeDef *UartHandle)
-{
-  /* Set transmission flag: transfer complete*/
-  sio.ready[SIO_TX] = true;
-  sio.bytes_in_buffer[SIO_TX] = 0;
 }
 
 

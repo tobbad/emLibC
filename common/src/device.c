@@ -5,7 +5,7 @@
  *      Author: badi
  */
 #include "device.h"
-
+#include <string.h>
 const device_t DEVICE_RESET={
     .open=NULL,
     .read=NULL,

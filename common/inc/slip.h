@@ -22,7 +22,9 @@
 extern "C"
 {
 #endif
+
 #include "common.h"
+
 typedef enum {
     SLIP_ENCODE_SIMPLE,
     SLIP_DECODE_SIMPLE,
@@ -46,7 +48,6 @@ typedef enum {
 #define SLIP_DC1_ESC 0xDE
 #define SLIP_DC3 0x13
 #define SLIP_DC3_ESC 0xDF
-const uint8_t SIMPLE_MAP_SIZE = 2;
 
 /*
  * Map of values (col 0)

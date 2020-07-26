@@ -20,12 +20,21 @@ extern "C" {
 #define STATIC static
 #endif
 
+#define ELCNT(array) (sizeof((array))/sizeof((array[0])))
+
+#if !defined(MIN)
+#define MIN(a, b) ((a)<(b)?(a):(b))
+#endif
+
+#if !defined(MAX)
+#define MAX(a, b) ((a)>(b)?(a):(b))
+#endif
+
 typedef enum {
+    EMLIB_NOT_READY = -2,
     EMLIB_ERROR = -1,
     EMLIB_OK = 0,
 } elres_t;
-
-#define ELCNT(array) (sizeof((array))/sizeof((array[0])))
 
 typedef union {
     const uint8_t *cptr;

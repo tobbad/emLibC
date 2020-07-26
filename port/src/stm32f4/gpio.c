@@ -4,8 +4,7 @@
  *  Created on: 28.12.2019
  *      Author: badi
  */
-//#include "stm32f4xx_hal.h"
-#include "stm32f4xx_ll_gpio.h"
+#include "hal_port.h"
 #include "gpio.h"
 
 

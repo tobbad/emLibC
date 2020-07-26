@@ -36,9 +36,10 @@
 typedef enum {SIO_ERROR=-1, SIO_OK=0, } sio_res_e;
 typedef enum {SIO_RX=0, SIO_TX, SIO_RXTX_CNT} sio_channel_e;
 
+
 typedef struct _sio_t
 {
-	UART_HandleTypeDef *uart;
+    void *   uart;
 	bool	 ready[SIO_RXTX_CNT];	/* Internal use only */
 	uint16_t buffer_size[SIO_RXTX_CNT];
 	int16_t  bytes_in_buffer[SIO_RXTX_CNT];

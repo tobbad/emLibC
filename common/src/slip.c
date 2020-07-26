@@ -9,9 +9,9 @@
 #include "device.h"
 #include "slip.h"
 
-//#define DEBUG
+//#define HOST_DEBUG
 
-#if defined(DEBUG)
+#if defined(HOST_DEBUG)
 #define DEB_DECODE(...) printf(__VA_ARGS__)
 #define DEB_ENCODE(...) printf(__VA_ARGS__)
 #define DEB_PRINTF(...) printf(__VA_ARGS__)
