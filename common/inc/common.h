@@ -41,6 +41,12 @@ typedef union {
     uint8_t *ptr;
 } cPtrAway_u;
 
+
+typedef struct buffer_t_ {
+    uint16_t size;
+    uint8_t *mem;
+} buffer_t;
+
 /*
  * Function to serialize the content of buffer as neaty formated
  * string in out. Format is:
