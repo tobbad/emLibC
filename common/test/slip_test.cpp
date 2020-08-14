@@ -17,17 +17,17 @@ using ::testing::Return;
 
 #define RCV_BUF_SIZE 4096
 
-typedef struct buffer_t_
+typedef struct slip_test_buffer_t_
 {
     const uint16_t size;
     uint16_t used;
     uint8_t *buffer;
-} buffer_t;
+} slip_test_buffer_t;
 uint8_t rcv_buffer[RCV_BUF_SIZE];
 
-static buffer_t rbuf = {RCV_BUF_SIZE, 0, rcv_buffer};
+static slip_test_buffer_t rbuf = {RCV_BUF_SIZE, 0, rcv_buffer};
 
-elres_t test_reset(buffer_t *buf)
+elres_t test_reset(slip_test_buffer_t *buf)
 {
     //printf("buffer_t Reset\n");
     buf->used = 0;
@@ -37,7 +37,7 @@ elres_t test_reset(buffer_t *buf)
 
 elres_t test_write(void *data, const uint8_t *value, uint16_t count)
 {
-    buffer_t *buf = (buffer_t *)data;
+    slip_test_buffer_t *buf = (slip_test_buffer_t *)data;
     if ((NULL != buf) && (buf->size-buf->used >= 1) && (NULL != value))
     {
         for (uint16_t i = 0;i<count; i++)
