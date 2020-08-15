@@ -44,7 +44,7 @@
 #include "stm32f3xx.h"
 #elif defined(STM32F407xx)
 #include "stm32f4xx.h"
-#elif defined(STM32H755xx)
+#elif defined(STM32H755xx) || defined(STM32H743xx)
 #include "stm32h7xx.h"
 #elif defined(STM32L476xx) || defined(STM32L412xx) || defined(STM32L475xx)
 #include "stm32l4xx.h"
