@@ -338,3 +338,19 @@ em_msg GpioPortWrite(GpioPort_t *port, uint32_t value)
 #endif
 
 
+em_msg GpioPinToggle(GpioPin_t *pin) {
+    em_msg res = CheckGpio(pin);
+    if (EM_OK == res)
+    {
+        bool value;
+        res = GpioPinRead(pin, &value);
+        if (EM_OK == res) {
+            value = !value;
+            res = GpioPinWrite(pin, value);
+        }
+    }
+    return res;
+
+}
+
+
