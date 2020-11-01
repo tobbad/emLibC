@@ -9,7 +9,7 @@
 #include "device.h"
 #include "slip.h"
 
-//#define HOST_DEBUG
+#define HOST_DEBUG
 
 #if defined(HOST_DEBUG)
 #define DEB_DECODE(...) printf(__VA_ARGS__)
@@ -78,6 +78,7 @@ slip_handle_e slip_start(device_t *dev, slip_function_t state)
     slip_handle_e hdl = SLIP_HANDLE_ERROR;
     if ((NULL != dev) && (state<SLIP_STATE_CNT))
     {
+        printf("Do it\n");
         elres_t res = device_check(dev, DEV_WRITE);
         if (EMLIB_OK == res)
         {
@@ -185,7 +186,7 @@ elres_t slip_write(slip_handle_e hdl, const uint8_t * buffer, uint16_t length)
                     {
                         if (value == slip_map[mapIdx][1])
                         {
-                            DEB_DECODE("ESC 0x%02x -> ",value, slip_map[mapIdx][0]);
+                            DEB_DECODE("ESC 0x%02x -> 0x%02x",value, slip_map[mapIdx][0]);
                             value = slip_map[mapIdx][0];
                             codec[hdl].state = SLIP_STATE_NORMAL;
                             break;

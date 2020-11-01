@@ -404,3 +404,45 @@ TEST_F(RingbufferReadWriteMultipleBytes, AfterWriteOnlyOneReadReturnsAValue)
     ASSERT_EQ(values_exp_cnt, values_obt_cnt);
 }
 
+
+class RingbufferDeviceHandling : public ::testing::Test {
+    protected:
+
+    static const rbuf_hdl_t hdl = RBUF_REGISTERS-1;
+
+    uint8_t e[RBUF_TEST_SIZE2];
+    uint8_t o[RBUF_TEST_SIZE2];
+
+    void SetUp() override {
+        rbuf_init();
+        for (uint8_t i=0;i<RBUF_REGISTERS;i++)
+        {
+            rbuf[i] = rbuf_clear;
+            rbuf[i].buffer = buffer[i];
+            memset(rbuf[i].buffer, 0, RBUF_TEST_SIZE);
+            rbuf[i].buffer_size = RBUF_TEST_SIZE;
+            if (-1 == rbuf_register(&rbuf[i]))
+            {
+                break;
+            }
+        }
+    }
+
+    void TearDown() override
+    {
+    }
+};
+
+
+TEST_F(RingbufferDeviceHandling, NULLDevice)
+{
+    uint16_t values_exp_cnt = RBUF_TEST_SIZE;
+    uint16_t values_obt_cnt=RBUF_TEST_SIZE2;
+
+    memset(e, 255, RBUF_TEST_SIZE2);
+    elres_t res = rbuf_get_device(hdl, NULL, DEV_NONE);
+    EXPECT_EQ(EMLIB_OK, res);
+    res = rbuf_get_device(hdl, NULL, DEV_ALL);
+    EXPECT_EQ(EMLIB_ERROR, res);
+}
+

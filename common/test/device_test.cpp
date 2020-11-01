@@ -7,11 +7,11 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-dev_handle dummy_open(void * data){ return 0; };
+dev_handle_t dummy_open(void * data){ return 0; };
 elres_t dummy_read(void * data, uint8_t *buffer, uint16_t cnt){ return EMLIB_ERROR;};
 elres_t dummy_write(void * data, const uint8_t *buffer, uint16_t cnt){ return EMLIB_ERROR;};
 elres_t dummy_ioctrl(void * data, dev_command_t cmd, uint16_t value){ return EMLIB_ERROR;};
-elres_t dummy_close(void * data, dev_handle hdl){ return EMLIB_ERROR;};
+elres_t dummy_close(void * data, dev_handle_t hdl){ return EMLIB_ERROR;};
 
 
 class DeviceTest : public ::testing::Test {
@@ -122,7 +122,7 @@ TEST_F(DeviceTest, Device_reset){
 }
 
 TEST_F(DeviceTest, Check_with_Null_Pointer) {
-    dev_handle act, exp = EMLIB_ERROR;
+    dev_handle_t act, exp = EMLIB_ERROR;
     act = device_check(NULL, DEV_NONE);
     EXPECT_EQ(exp, act);
 }
@@ -136,9 +136,9 @@ TEST_F(DeviceTest, Create_with_missing_function){
     for ( i=0;i<(1<<5);i++) {
         init_struct(i);
         for ( j=0;j<(1<<5);j++) {
-            dev_handle act;
+            dev_handle_t act;
             /* If more than needed function are defined - that's OK! */
-            dev_handle exp = ((i&j)==j)?EMLIB_OK:EMLIB_ERROR;
+            dev_handle_t exp = ((i&j)==j)?EMLIB_OK:EMLIB_ERROR;
             act = device_check(&dev,(dev_func_t)j);
             EXPECT_EQ(exp, act);
         }

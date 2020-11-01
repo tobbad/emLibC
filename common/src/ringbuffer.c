@@ -8,6 +8,7 @@
 extern "C" {
 #endif
 #include "common.h"    
+#include "device.h"
     
 #include <string.h>
 
@@ -118,7 +119,7 @@ elres_t rbuf_write_byte(rbuf_hdl_t hdl, uint8_t byte)
     }
     return res;
 }
-elres_t rbuf_write_bytes(rbuf_hdl_t hdl, uint8_t* bytes, uint16_t count){
+elres_t rbuf_write_bytes(rbuf_hdl_t hdl, const uint8_t* bytes, uint16_t count){
     elres_t res = EMLIB_ERROR;
     rbuf_t *rbuf = get_rbuf(hdl);
     uint16_t free;
@@ -178,6 +179,26 @@ elres_t rbuf_read_bytes(rbuf_hdl_t hdl, uint8_t *bytes, uint16_t *count){
         {
             res = rbuf_read_byte(hdl, &bytes[i]);
         }
+    }
+    return res;
+}
+
+elres_t rbuf_get_device(rbuf_hdl_t hdl, device_t *device, dev_func_t dev_type) {
+    elres_t res = EMLIB_ERROR;
+    if (NULL==device) {
+        if (DEV_NONE == dev_type) {
+            res = EMLIB_OK;
+        }
+    } else {
+       res = EMLIB_OK;
+       memset(device, 0, sizeof(device_t));
+       if (dev_type & DEV_READ){
+           device->read = rbuf_read_bytes;
+       }
+       if (dev_type & DEV_WRITE){
+           device->read = rbuf_write_bytes;
+       }
+       device->user_data = hdl;
     }
     return res;
 }

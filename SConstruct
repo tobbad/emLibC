@@ -96,7 +96,7 @@ incPath  += ('mcal/',)
 
 drvFiles =()
 drvFolder =()
-linkLibs =(cutLib,testComLib)
+linkLibs =(testComLib, cutLib)
 
 if  target == 'test_common':
     print("Create common tests.")
@@ -158,6 +158,7 @@ else:
 
 #linkLibs += ('CppUTest','CppUTestExt')
 testCutFiles += getSrcFromFolder(testCutFolders,'*test.cpp',binFolder)
+testComFiles += getSrcFromFolder(testCutFolders,'common/*.c*',binFolder)
 testComFiles += getSrcFromFolder(genTestFolders,'AllTests.cpp',binFolder)
 testComFiles += getSrcFromFolder((googletest_framework_root,), "googletest/src/gtest-all.cc",binFolder)
 testComFiles += getSrcFromFolder((googletest_framework_root,), "googlemock/src/gmock-all.cc",binFolder)

@@ -11,6 +11,7 @@
 extern "C" {
 #endif
 #include "common.h"
+#include "device.h"
 #include "ringbuffer_config.h"
 /*
  * wrIdx Points to the location for the next write
@@ -47,13 +48,15 @@ elres_t rbuf_write_byte(rbuf_hdl_t hdl, uint8_t byte);
 /*
  * Only succeeds if there are count bytes free in the buffer
  */
-elres_t rbuf_write_bytes(rbuf_hdl_t hdl, uint8_t* bytes, uint16_t count);
+elres_t rbuf_write_bytes(rbuf_hdl_t hdl, const uint8_t* bytes, uint16_t count);
 
 elres_t rbuf_read_byte(rbuf_hdl_t hdl, uint8_t *byte);
 /*
  * Read at most count (input) bytes, really count of bytes is in the returned count value
  */
 elres_t rbuf_read_bytes(rbuf_hdl_t hdl, uint8_t *bytes, uint16_t *count);
+
+elres_t rbuf_get_device(rbuf_hdl_t hdl, device_t *device, dev_func_t dev_type);
 
 #ifdef __cplusplus
 }

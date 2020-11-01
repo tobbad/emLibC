@@ -44,7 +44,9 @@ typedef union {
 
 typedef struct buffer_t_ {
     uint16_t size;
-    uint8_t *mem;
+    uint16_t used; /* used count of bytes pl[used] is  the to next usable byte */
+    uint8_t* pl;   /* pointer to first byte used in buffer */
+    uint8_t* mem;  /* Start of memory */
 } buffer_t;
 
 /*
@@ -56,6 +58,7 @@ typedef struct buffer_t_ {
  * a    = printable asci otherwise "."
  */
 uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer, uint16_t buffer_size, bool write_asci);
+uint16_t common_crc16(uint8_t *data_p, uint16_t length);
 
 #ifdef __cplusplus
 }
