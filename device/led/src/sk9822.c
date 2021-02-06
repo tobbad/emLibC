@@ -6,6 +6,7 @@
  */
 
 #include "assert.h"
+#include "common.h"
 #include "device.h"
 #include "sk9822.h"
 

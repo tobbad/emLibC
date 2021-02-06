@@ -16,10 +16,11 @@ extern "C"
 {
 #endif
 
-#define PACKET_DEV_COUNT 13
+#define PACKET_DEV_COUNT 10
 #define PACKET_MAX_LENGTH 4096
 
 typedef struct __attribute__((__packed__)) packet_bitfield_s {
+	/* Lowest position bits start here */
     uint8_t  seq_nr :3;
     uint8_t  ack_nr :3;
     bool     is_checked: 1; /* Data integrity check present 16 bit CCITT-CRC after payload */
@@ -53,7 +54,6 @@ typedef enum {
     PACKET_CH11,
     PACKET_CH12,
     PACKET_CH13,
-    PACKET_CH14,
     PACKET_LINK_CONTROL = 15,
 } packet_t;
 
@@ -69,11 +69,11 @@ typedef enum {
 
 typedef uint16_t packet_tail_t;
 
-#define PACKET_HEADER_SIZE sizeof(packet_header_t)
 #define PACKET_TAIL_SIZE sizeof(packet_tail_t)
+#define PACKET_HEADER_SIZE sizeof(packet_header_t)
 
 elres_t packet_init(void);
-dev_handle_t packet_open(device_t * outDev, packet_t type, packet_reliable_t reliable, packet_integrity_e checked);
+dev_handle_t packet_open(packet_t type, packet_reliable_t reliable, packet_integrity_e checked);
 elres_t packet_write(dev_handle_t pktHdl, buffer_t *data);
 elres_t packet_close(dev_handle_t pktHdl);
 

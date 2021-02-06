@@ -4,6 +4,7 @@
  *  Created on: 22.05.2020
  *      Author: badi
  */
+#include "common.h"
 #include "device.h"
 #include <string.h>
 const device_t DEVICE_RESET={

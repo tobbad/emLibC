@@ -92,6 +92,10 @@ uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer, uint16_t buffer_s
 // represent the 17 bit value.
  * From
  * http://www8.cs.umu.se/~isak/snippets/crc-16.c
+ *
+ * In python crcmod this is the predefined x-25 crc Calculation:
+ * Name     Polynomial  Reversed?   Init-value  XOR-out     Check
+ * x-25     0x11021     True        0x0000      0xFFFF      0x906E
 */
 uint16_t common_crc16(uint8_t *data_p, uint16_t length)
 {

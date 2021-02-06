@@ -11,7 +11,6 @@
 extern "C"
 {
 #endif
-#include "common.h"
 
 #define DEV_HANDLE_NOTDEFINED   -1
 
