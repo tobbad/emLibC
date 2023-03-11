@@ -26,10 +26,10 @@ typedef enum  {
 } gpio_mode_t;
 
 typedef enum  {
-	OTYPE_PP = 0, /* Push pull type */
-	OTYPE_OD = 1, /* Open drain type */
-	PIN_OTYPE_CNT
-} gpio_otype_t;
+	PIN_PP = 0, /* Push pull type */
+	PIN_OD = 1, /* Open drain type */
+	PIN_CNT
+} gpio_pin_t;
 
 typedef enum  {
 	LOW     = 0,
@@ -69,7 +69,7 @@ typedef enum  {
 typedef struct GpioMode_t_
 {
 	gpio_mode_t mode;
-	gpio_otype_t otype;
+	gpio_pin_t pin_t;
 	gpio_speed_t speed;
 	gpio_pupd_t pupd;
 	gpio_af_t af;
