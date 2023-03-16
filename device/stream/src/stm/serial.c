@@ -123,7 +123,7 @@ int _read(int32_t file, uint8_t *ptr, int32_t len)
 	{
 		if (sio.uart != NULL)
 		{
-			int8_t buf[]= "abcdefgh";
+			char buf[]= "abcdefgh";
 			sio.ready[SIO_RX] = false;
 			if (1==1)
 			{

@@ -29,7 +29,6 @@
 
 #ifndef INC_SERIAL_IO_H_
 #define INC_SERIAL_IO_H_
-
 #define UART_TIMEOUT_MS 100
 #define NEWLINE  "\r\n"
 #define NL  NEWLINE

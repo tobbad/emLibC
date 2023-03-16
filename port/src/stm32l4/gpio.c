@@ -5,6 +5,7 @@
  *      Author: badi
  */
 //#include "stm32f4xx_hal.h"
+#include <stdio.h>
 #include "stm32l4xx_ll_gpio.h"
 #include "gpio.h"
 
