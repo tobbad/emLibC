@@ -12,6 +12,7 @@ extern "C" {
 #endif
 #include <stdint.h>
 #include <stdbool.h>    
+#include <stdio.h>
 
 #ifdef UNIT_TEST
 #define STATIC

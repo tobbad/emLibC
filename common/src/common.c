@@ -26,7 +26,7 @@ uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer, uint16_t buffer_s
     int wr_size;
     for (uint32_t addr=0;addr<buffer_size;addr+=addr_inc)
     {
-        wr_size = snprintf(&out[out_idx], ava_size, "0x%04X ", addr);
+        wr_size = snprintf(&out[out_idx], ava_size, "0x%04X ",(unsigned int) addr);
         out_idx += wr_size;
         ava_size -= wr_size;
         /*
