@@ -4,8 +4,9 @@
  *  Created on: 28.12.2019
  *      Author: badi
  */
-#include "hal_port.h"
+#include "stm32f4xx.h"
 #include "gpio.h"
+#include "stm32f4xx_ll_gpio.h"
 
 
 static GPIO_TypeDef* PORT_MAP[PORT_CNT] =
@@ -16,10 +17,22 @@ static GPIO_TypeDef* PORT_MAP[PORT_CNT] =
 	GPIOC,
 	GPIOD,
 	GPIOE,
+#ifdef GPIOF
 	GPIOF,
+#else
+	NULL,
+#endif
+#ifdef GPIOG
 	GPIOG,
+#else
+	NULL,
+#endif
 	GPIOH,
+#ifdef GPIOI
 	GPIOI,
+#else
+	NULL,
+#endif
 };
 
 static uint32_t PIN_MAP[PIN_MAX] =
@@ -50,8 +63,7 @@ static uint32_t MODE_MAP[PIN_MODE_CNT] =
     LL_GPIO_MODE_ANALOG    ,  /* Select analog mode */
 };
 
-static uint32_t OTYPE_MAP[PIN_OTYPE_CNT] =
-{
+static uint32_t OTYPE_MAP[PIN_CNT] ={
 	LL_GPIO_OUTPUT_PUSHPULL , /* Select push-pull as output type */
 	LL_GPIO_OUTPUT_OPENDRAIN, /* Select open-drain as output type */
 };
@@ -105,7 +117,7 @@ inline static em_msg CheckConf(GpioConf_t *conf)
 {
 	em_msg res = EM_ERR;
 	if ((conf->mode < PIN_MODE_CNT) &&
-		(conf->otype < PIN_OTYPE_CNT) &&
+		(conf->pin<PIN_CNT) &&
 		(conf->speed < PIN_SPEED_CNT) &&
 		(conf->pupd<PIN_PUPD_CNT) &&
 		(conf->af < PIN_AF_CNT))
@@ -134,7 +146,7 @@ static void MapConf(GpioConf_t *conf, LL_GPIO_InitTypeDef  *ll_gpio)
 {
 	ll_gpio->Mode = MODE_MAP[conf->mode];
 	ll_gpio->Speed = SPEED_MAP[conf->speed];
-	ll_gpio->OutputType = OTYPE_MAP[conf->otype];
+	ll_gpio->Pin = PIN_MAP[conf->pin];
 	ll_gpio->Pull = PUPD_MAP[conf->pupd];
 	ll_gpio->Alternate = AF_MAP[conf->af];
 }

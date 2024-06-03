@@ -20,7 +20,7 @@
  **************************************************************************/
 #include "main.h"
 #include "common.h"
-#include "lspi.h"
+#include "e_spi.h"
 spi_t spi_init(void * spi_dev, spi_t *spi, GpioPin_t *sel_pin, uint8_t cpol, uint8_t cpha){
 	spi_t ret;
 	return ret;

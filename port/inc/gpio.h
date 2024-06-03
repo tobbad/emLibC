@@ -69,7 +69,7 @@ typedef enum  {
 typedef struct GpioMode_t_
 {
 	gpio_mode_t mode;
-	gpio_pin_t pin_t;
+	gpio_pin_t pin;
 	gpio_speed_t speed;
 	gpio_pupd_t pupd;
 	gpio_af_t af;

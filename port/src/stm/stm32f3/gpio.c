@@ -51,8 +51,7 @@ static uint32_t MODE_MAP[PIN_MODE_CNT] =
     LL_GPIO_MODE_ANALOG    ,  /* Select analog mode */
 };
 
-static uint32_t OTYPE_MAP[PIN_OTYPE_CNT] =
-{
+static uint32_t OTYPE_MAP[PIN_OTYPE_CNT] ={
 	LL_GPIO_OUTPUT_PUSHPULL , /* Select push-pull as output type */
 	LL_GPIO_OUTPUT_OPENDRAIN, /* Select open-drain as output type */
 };

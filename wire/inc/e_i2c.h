@@ -23,7 +23,6 @@
 extern "C" {
 #endif
 
-#include "ht16k33.h"
 #define I2C_HANDLLE_CNT 1
 #define MAX_TRANSFER_SIZE 10
 typedef struct _i2c_t

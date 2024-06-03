@@ -43,7 +43,7 @@
 #include <sys/times.h>
 #if defined(STM32F303xC)
 #include "stm32f3xx.h"
-#elif defined(STM32F407xx)
+#elif defined(STM32F407xx) ||defined(STM32F401xE)
 #include "stm32f4xx.h"
 #elif defined(STM32H755xx) || defined(STM32H743xx)
 #include "stm32h7xx.h"
