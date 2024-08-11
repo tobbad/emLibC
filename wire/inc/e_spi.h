@@ -41,7 +41,7 @@ typedef enum _spi_dir
 	READ = 1,
 	CMD = 2,
 } spi_dir;
-spi_t spi_init(void * spi_dev, spi_t *spi, GpioPin_t *sel_pin, uint8_t cpol, uint8_t cpha);
+spi_t * spi_init(void * spi_dev, spi_t *spi, GpioPin_t *sel_pin, uint8_t cpol, uint8_t cpha);
 elres_t spi_readWrite(spi_t *spi_dev, int16_t adr, spi_dir dir, uint8_t cnt, uint8_t *);
 
 elres_t spi_writeCmd(spi_t *spi_dev, uint8_t cmd);

@@ -56,7 +56,8 @@ elres_t i2c_read(i2c_handle i2c_h, uint8_t cnt, uint8_t *rxbuffer)
 {
 	if ((i2c_h > 0) && (my_dev[i2c_h].i2c = NULL) && (cnt <MAX_TRANSFER_SIZE))
 	{
-		uint16_t adr =  my_dev[i2c_h].adr&0xFE;;
+		uint16_t adr =  my_dev[i2c_h].adr&0xFE;
+		UNUSED(adr);
 	} else {
 		printf("Invalid read"NL);
 		return EMLIB_ERROR;

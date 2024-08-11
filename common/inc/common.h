@@ -50,6 +50,7 @@ typedef struct buffer_t_ {
     uint8_t* mem;  /* Start of memory */
 } buffer_t;
 
+#define DEV_CNT 1
 /*
  * Function to serialize the content of buffer as neaty formated
  * string in out. Format is:

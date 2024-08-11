@@ -20,10 +20,12 @@
  **************************************************************************/
 #include "main.h"
 #include "common.h"
+#include "gpio.h"
 #include "e_spi.h"
-spi_t spi_init(void * spi_dev, spi_t *spi, GpioPin_t *sel_pin, uint8_t cpol, uint8_t cpha){
-	spi_t ret;
-	return ret;
+static spi_t myDev[DEV_CNT];
+
+spi_t* spi_init(void * spi_dev, spi_t *spi, GpioPin_t *sel_pin, uint8_t cpol, uint8_t cpha){
+	return &myDev[0];
 }
 
 elres_t spi_readWrite(spi_t *spi_dev, int16_t adr, spi_dir dir, uint8_t cnt, uint8_t *){
