@@ -21,7 +21,7 @@
 #include "common.h"
 #include "main.h"
 
-#include "e_i2c.h"
+#include "i2c.h"
 static i2c_t my_dev[I2C_HANDLLE_CNT+1];
 
 i2c_handle li2c_init(void * i2c_dev, uint8_t i2cAdr)

@@ -21,7 +21,7 @@
 #include "main.h"
 #include "common.h"
 #include "gpio.h"
-#include "e_spi.h"
+#include "spi.h"
 static spi_t myDev[DEV_CNT];
 
 spi_t* spi_init(void * spi_dev, spi_t *spi, GpioPin_t *sel_pin, uint8_t cpol, uint8_t cpha){
