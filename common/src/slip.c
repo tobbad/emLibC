@@ -8,6 +8,7 @@
 #include "common.h"
 #include "device.h"
 #include "slip.h"
+#include "main.h"
 
 #define HOST_DEBUG
 
@@ -68,7 +69,7 @@ static const uint8_t SLIP_MAP_SIZE = ELCNT(slip_map);
 
 void slip_init(void)
 {
-    DEB_PRINTF("Erased %ld bytes %ld\n", sizeof(codec), sizeof(slip_codec_t));
+    DEB_PRINTF("Erased %ld bytes %ld"NL, sizeof(codec), sizeof(slip_codec_t));
     memset(codec, 0, sizeof(codec));
 }
 
@@ -86,7 +87,7 @@ slip_handle_e slip_start(device_t *dev, slip_function_t state)
             {
                 if (NULL == codec[index].dev.write)
                 {
-                    DEB_PRINTF("Return handle %d\n", index);
+                    DEB_PRINTF("Return handle %d"NL, index);
                     codec[index].dev = *dev;
                     codec[index].set = state>>1;
                     codec[index].function = state&0x01;

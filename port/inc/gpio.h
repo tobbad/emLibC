@@ -32,11 +32,11 @@ typedef enum  {
 } gpio_pin_t;
 
 typedef enum  {
-	LOW     = 0,
-	MEDIUM,
-	HIGH,
-	VERY_HIGH,
-	PIN_SPEED_CNT
+	s_LOW     = 0,
+	s_MEDIUM,
+	s_HIGH,
+	s_VERY_HIGH,
+	s_PIN_SPEED_CNT
 } gpio_speed_t;
 
 typedef enum  {
