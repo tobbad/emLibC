@@ -23,6 +23,9 @@ extern "C" {
 
 #define ELCNT(array) (sizeof((array))/sizeof((array[0])))
 
+#define NEWLINE  "\r\n"
+#define NL  NEWLINE
+
 #if !defined(MIN)
 #define MIN(a, b) ((a)<(b)?(a):(b))
 #endif
