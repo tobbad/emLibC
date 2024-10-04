@@ -1,4 +1,4 @@
-*
+/*
  * simple test.h
  *
  *  Created on: 26.10.2020
@@ -6,7 +6,7 @@
  */
 #ifndef COMMON_INC_SIMPLE_TEST_H_
 #define COMMON_INC_SIMPLE_TEST_H_
-#include <stdio>
+#include <stdio.h>
 #include <string.h>
 #include <stdint.h>
 

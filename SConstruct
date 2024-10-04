@@ -4,6 +4,7 @@ import sys
 import re
 
 def normalizeLieEnding(fdir):
+        # Add trailing / to path
     return fdir if fdir[-1] == os.sep else fdir+os.sep
 
 def getSrcFromFolder(srcDirs, srcPattern, trgtDir):
@@ -157,17 +158,17 @@ else:
 
 
 #linkLibs += ('CppUTest','CppUTestExt')
-testCutFiles += getSrcFromFolder(testCutFolders,'*test.cpp',binFolder)
+testCutFiles += getSrcFromFolder(testCutFolders,'*_test.cpp',binFolder)
 testComFiles += getSrcFromFolder(testCutFolders,'common/*.c*',binFolder)
 testComFiles += getSrcFromFolder(genTestFolders,'AllTests.cpp',binFolder)
 testComFiles += getSrcFromFolder((googletest_framework_root,), "googletest/src/gtest-all.cc",binFolder)
 testComFiles += getSrcFromFolder((googletest_framework_root,), "googlemock/src/gmock-all.cc",binFolder)
 cutFiles  = getSrcFromFolder(cutFolders,'*.cpp',binFolder)
 cutFiles += getSrcFromFolder(cutFolders,'*.c',binFolder)
-print(testComFiles)
-print(testCutFiles)
-print(cutFiles)
-print(linkLibs)
+print("testComFiles : %s" % " ".join(i for i in testComFiles))
+print("testCutFiles : %s" % " ".join(i for i in testCutFiles))
+print("cutFiles     : %s" % " ".join(i for i in cutFiles))
+print("linkLibs     : %s" % " ".join(i for i in linkLibs))
 libPath  = binFolder
 ccDebFlags = '-g '
 ccFlags  += '-Wall ' + ("" if not debug else " %s" % ccDebFlags)
