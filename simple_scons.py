@@ -4,17 +4,19 @@ import sys
 import re
 
 
-def checkDirEnding(fdir):
+def normalizeLieEnding(fdir):
+    # Add trailing / to path
+    print("Tye od dir is %s" % type(fdir))
     return fdir if fdir[-1] == os.sep else fdir+os.sep
 
 
 def getSrcFromFolder(srcDirs, srcPattern, trgtDir):
     #print("Extract files from " , srcDirs)
     res=[]
-    trgtDir = checkDirEnding(trgtDir)
+    trgtDir = normalizeLieEnding(trgtDir)
     print(trgtDir)
     for srcF in srcDirs:
-        srcF = checkDirEnding(srcF)
+        srcF = normalizeLieEnding(srcF)
         print("Process %s folder" % srcF)
         for f in glob.glob(srcF+srcPattern):
             res.append(trgtDir+f)
@@ -23,14 +25,14 @@ def getSrcFromFolder(srcDirs, srcPattern, trgtDir):
 def RegisterSrcFolderInEnv(srcDirs, env, trgtDir):
     for srcF in srcDirs:
         print("Register folder %s" % (srcF))
-        srcF = checkDirEnding(srcF)
+        srcF = normalizeLieEnding(srcF)
         env.VariantDir(trgtDir+srcF, srcF, duplicate=0)
 
 
 def RegisterSrcFolderInEnv(srcDirs, env, trgtDir):
     for srcF in srcDirs:
         print("Register folder %s" % (srcF))
-        srcF = checkDirEnding(srcF)
+        srcF = normalizeLieEnding(srcF)
         env.VariantDir(trgtDir+srcF, srcF, duplicate=0)
 
 #
@@ -55,21 +57,24 @@ cutLib  =   'cut'
 linkLibs =(testComLib, cutLib)
 incPath  = ('inc/',)
 cutFolders =()
+testCutFiles = ()
 
 
-debug = False
+debug = ARGUMENTS.get('debug', '0')
 target = ARGUMENTS.get('target', '0')
-print(target)
-if ARGUMENTS.get('debug', '0') == '1':
+print("Build target is %s" % (target))
+print("Debug is %s" % (debug))
+
+if  debug == '1':
     print("*** Debug build...")
     debug = True
 else:
     print("*** Release build...")
 
 
-if  target == 'test_common':
+if  target == 'simple':
     print("Create hello world tests.")
-    cutFolders += ('./test/src/',)
+    cutFolders += ('./common/src/',)
     testCutFolders = ('./common/test/',)
     ccFlags  = '-DUNIT_TEST '
     linkFlags = ''
@@ -85,8 +90,8 @@ else:
     print("Unknown target {0}".format(target))
     sys.exit()
 
-testCutFiles += getSrcFromFolder(testCutFolders,'*test.cpp',binFolder)
-testComFiles += getSrcFromFolder(testCutFolders,'common/*.c*',binFolder)
+testCutFiles += getSrcFromFolder(testCutFolders,'simple_test.cpp',binFolder)
+testComFiles += getSrcFromFolder(testCutFolders,'common/simple*.c*',binFolder)
 testComFiles += getSrcFromFolder(genTestFolders,'AllTests.cpp',binFolder)
 testComFiles += getSrcFromFolder((googletest_framework_root,), "googletest/src/gtest-all.cc",binFolder)
 testComFiles += getSrcFromFolder((googletest_framework_root,), "googlemock/src/gmock-all.cc",binFolder)
@@ -103,7 +108,7 @@ env = Environment(variant_dir=binFolder,
                   CFLAGS=cflags, CXXFLAGS=cxxflags,
                   LINKFLAGS=linkFlags, **compile_opt)
 
-cutFiles = getSrcFromFolder(cutFolders,'*.c',binFolder)
+cutFiles = getSrcFromFolder(cutFolders,'simple_test.c',binFolder)
     
 RegisterSrcFolderInEnv(cutFolders, env, binFolder)
 RegisterSrcFolderInEnv(testCutFolders, env, binFolder)

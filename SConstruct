@@ -3,15 +3,15 @@ import os
 import sys
 import re
 
-def checkDirEnding(fdir):
+def normalizeLieEnding(fdir):
     return fdir if fdir[-1] == os.sep else fdir+os.sep
 
 def getSrcFromFolder(srcDirs, srcPattern, trgtDir):
     #print("Extract files from " , srcDirs)
     res=[]
-    trgtDir = checkDirEnding(trgtDir)
+    trgtDir = normalizeLieEnding(trgtDir)
     for srcF in srcDirs:
-        srcF = checkDirEnding(srcF)
+        srcF = normalizeLieEnding(srcF)
         print("Process %s folder" % srcF)
         for f in glob.glob(srcF+srcPattern):
             res.append(trgtDir+f)
@@ -20,7 +20,7 @@ def getSrcFromFolder(srcDirs, srcPattern, trgtDir):
 def RegisterSrcFolderInEnv(srcDirs, env, trgtDir):
     for srcF in srcDirs:
         print("Register folder %s" % (srcF))
-        srcF = checkDirEnding(srcF)
+        srcF = normalizeLieEnding(srcF)
         env.VariantDir(trgtDir+srcF, srcF, duplicate=0)
 
 def modify_chip_definitions(files=None, define_name='PERIPH_BASE'):
