@@ -1,5 +1,5 @@
 /*
- * simple test.h
+ * simple_test.h
  *
  *  Created on: 26.10.2020
  *      Author: badi
@@ -10,6 +10,14 @@
 #include <string.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 uint8_t square(uint8_t val);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* COMMON_INC_SIMPLE_TEST_H_ */

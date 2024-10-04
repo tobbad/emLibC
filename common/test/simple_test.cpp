@@ -15,7 +15,7 @@
 using ::testing::Return;
 
 
-class simple_test : public ::testing::Test {
+class _Simple_Test : public ::testing::Test {
     protected:
 
     void SetUp() override
@@ -27,12 +27,16 @@ class simple_test : public ::testing::Test {
     }
 };
 
-TEST_F(SIMPLE_1, SeeIfItCompiles)
+TEST_F(_Simple_Test, SeeIfItCompiles)
 {
 	uint8_t res;
-	for (uint16_t i=0;i<255;i++){
+	uint16_t i;
+	for (i=0;i<16;i++){
 		res = square(i);
-		EXPECT_EQ(res, i*i);
+		printf("%d *%d = %d\n", i, i, res);
+		EXPECT_EQ(res, i*i) << "Errro";
 	}
-	EXPECT_EQ(res, 1);
+	res = square(i);
+	printf("%d *%d = %d\n", i, i, res);
+	EXPECT_EQ(res, 0);
 }

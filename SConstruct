@@ -4,7 +4,7 @@ import sys
 import re
 
 def normalizeLieEnding(fdir):
-        # Add trailing / to path
+    # Add trailing / to path
     return fdir if fdir[-1] == os.sep else fdir+os.sep
 
 def getSrcFromFolder(srcDirs, srcPattern, trgtDir):
@@ -174,6 +174,7 @@ ccDebFlags = '-g '
 ccFlags  += '-Wall ' + ("" if not debug else " %s" % ccDebFlags)
 cflags  =" -std=c11 -fstack-protector-strong"
 cxxflags=" -std=c++1z"
+
 env = Environment(variant_dir=binFolder,
                   LIBPATH=binFolder,
                   LIBS=linkLibs,
@@ -200,4 +201,5 @@ if target != 'emlib':
         print("Build executable %s" % of)
         env.Program(binFolder+of, (f,))
 else:
+    print("Start build")
     env.Program(binFolder+of, (f,))
