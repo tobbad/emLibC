@@ -4,7 +4,6 @@
  *  Created on: 16.05.2020
  *      Author: badi
  */
-#include <cstddef>
 #include <cstdio>
 #include <string.h>
 #include <stdint.h>
@@ -16,7 +15,7 @@
 using ::testing::Return;
 
 
-class SlipTest : public ::testing::Test {
+class simple_test : public ::testing::Test {
     protected:
 
     void SetUp() override
@@ -28,10 +27,10 @@ class SlipTest : public ::testing::Test {
     }
 };
 
-TEST_F(SIMPLE_1, ErrorIfSlipStartWithNullDevice)
+TEST_F(SIMPLE_1, SeeIfItCompiles)
 {
 	uint8_t res;
-	for (uint16_t i=0;i++;i<255){
+	for (uint16_t i=0;i<255;i++){
 		res = square(i);
 		EXPECT_EQ(res, i*i);
 	}
