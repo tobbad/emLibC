@@ -3,16 +3,15 @@ import os
 import sys
 import re
 
-def normalizeLieEnding(fdir):
-    # Add trailing / to path
+def checkDirEnding(fdir):
     return fdir if fdir[-1] == os.sep else fdir+os.sep
 
 def getSrcFromFolder(srcDirs, srcPattern, trgtDir):
     #print("Extract files from " , srcDirs)
     res=[]
-    trgtDir = normalizeLieEnding(trgtDir)
+    trgtDir = checkDirEnding(trgtDir)
     for srcF in srcDirs:
-        srcF = normalizeLieEnding(srcF)
+        srcF = checkDirEnding(srcF)
         print("Process %s folder" % srcF)
         for f in glob.glob(srcF+srcPattern):
             res.append(trgtDir+f)
@@ -21,7 +20,7 @@ def getSrcFromFolder(srcDirs, srcPattern, trgtDir):
 def RegisterSrcFolderInEnv(srcDirs, env, trgtDir):
     for srcF in srcDirs:
         print("Register folder %s" % (srcF))
-        srcF = normalizeLieEnding(srcF)
+        srcF = checkDirEnding(srcF)
         env.VariantDir(trgtDir+srcF, srcF, duplicate=0)
 
 def modify_chip_definitions(files=None, define_name='PERIPH_BASE'):
@@ -158,23 +157,22 @@ else:
 
 
 #linkLibs += ('CppUTest','CppUTestExt')
-testCutFiles += getSrcFromFolder(testCutFolders,'*_test.cpp',binFolder)
+testCutFiles += getSrcFromFolder(testCutFolders,'*test.cpp',binFolder)
 testComFiles += getSrcFromFolder(testCutFolders,'common/*.c*',binFolder)
 testComFiles += getSrcFromFolder(genTestFolders,'AllTests.cpp',binFolder)
 testComFiles += getSrcFromFolder((googletest_framework_root,), "googletest/src/gtest-all.cc",binFolder)
 testComFiles += getSrcFromFolder((googletest_framework_root,), "googlemock/src/gmock-all.cc",binFolder)
 cutFiles  = getSrcFromFolder(cutFolders,'*.cpp',binFolder)
 cutFiles += getSrcFromFolder(cutFolders,'*.c',binFolder)
-print("testComFiles : %s" % " ".join(i for i in testComFiles))
-print("testCutFiles : %s" % " ".join(i for i in testCutFiles))
-print("cutFiles     : %s" % " ".join(i for i in cutFiles))
-print("linkLibs     : %s" % " ".join(i for i in linkLibs))
+print(testComFiles)
+print(testCutFiles)
+print(cutFiles)
+print(linkLibs)
 libPath  = binFolder
 ccDebFlags = '-g '
 ccFlags  += '-Wall ' + ("" if not debug else " %s" % ccDebFlags)
 cflags  =" -std=c11 -fstack-protector-strong"
 cxxflags=" -std=c++1z"
-
 env = Environment(variant_dir=binFolder,
                   LIBPATH=binFolder,
                   LIBS=linkLibs,
@@ -186,9 +184,9 @@ RegisterSrcFolderInEnv(cutFolders, env, binFolder)
 env.Library(target=binFolder+cutLib, source= cutFiles)
 
 if len(drvFiles)>0:
-	print("Build driver library")
-	RegisterSrcFolderInEnv(drvFolder, env, binFolder)
-	env.Library(target=binFolder+drvLib, source= drvFiles)
+    print("Build driver library")
+    RegisterSrcFolderInEnv(drvFolder, env, binFolder)
+    env.Library(target=binFolder+drvLib, source= drvFiles)
 
 RegisterSrcFolderInEnv(testCutFolders, env, binFolder)
 
@@ -201,5 +199,4 @@ if target != 'emlib':
         print("Build executable %s" % of)
         env.Program(binFolder+of, (f,))
 else:
-    print("Start build")
     env.Program(binFolder+of, (f,))
