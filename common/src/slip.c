@@ -8,7 +8,6 @@
 #include "common.h"
 #include "device.h"
 #include "slip.h"
-#include "main.h"
 
 #define HOST_DEBUG
 

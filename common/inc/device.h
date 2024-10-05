@@ -11,7 +11,7 @@
 extern "C"
 {
 #endif
-
+#include "common.h"
 #define DEV_HANDLE_NOTDEFINED   -1
 
 typedef int8_t dev_handle_t;  /**< A value >=0 is OK, otherwise this is invalid */
@@ -30,7 +30,7 @@ typedef enum {
 typedef struct device_s {
     void * user_data;
     dev_handle_t (*open)(void * user_data);
-    elres_t (*read)(void * user_data, uint8_t *buffer, uint16_t cnt);
+    elres_t (*read)(void * user_data, uint8_t *buffer, uint16_t *cnt);
     elres_t (*write)(void * user_data, const uint8_t *buffer, uint16_t cnt);
     elres_t (*ioctrl)(void * user_data, dev_command_t cmd, uint16_t value);
     elres_t (*close)(void * user_data, dev_handle_t hdl);
@@ -52,7 +52,7 @@ typedef enum {
 
 
 elres_t device_check(const device_t * dev, dev_func_t dev_type);
-elres_t device_read(device_t * dev, uint8_t *buffer, uint16_t cnt);
+elres_t device_read(device_t * dev, uint8_t *buffer, uint16_t *cnt);
 elres_t device_write(device_t * dev, const uint8_t *buffer, uint16_t cnt);
 elres_t device_reset(device_t * dev);
 void device_print(const device_t * dev);

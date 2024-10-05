@@ -8,7 +8,7 @@
 #include "gmock/gmock.h"
 
 dev_handle_t dummy_open(void * data){ return 0; };
-elres_t dummy_read(void * data, uint8_t *buffer, uint16_t cnt){ return EMLIB_ERROR;};
+elres_t dummy_read(void * data, uint8_t *buffer, uint16_t *cnt){ return EMLIB_ERROR;};
 elres_t dummy_write(void * data, const uint8_t *buffer, uint16_t cnt){ return EMLIB_ERROR;};
 elres_t dummy_ioctrl(void * data, dev_command_t cmd, uint16_t value){ return EMLIB_ERROR;};
 elres_t dummy_close(void * data, dev_handle_t hdl){ return EMLIB_ERROR;};

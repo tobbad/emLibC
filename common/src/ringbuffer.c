@@ -198,7 +198,7 @@ elres_t rbuf_get_device(rbuf_hdl_t hdl, device_t *device, dev_func_t dev_type) {
        if (dev_type & DEV_WRITE){
            device->read = rbuf_write_bytes;
        }
-       device->user_data = hdl;
+       device->user_data = (void*)&hdl;
     }
     return res;
 }

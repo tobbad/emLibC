@@ -58,7 +58,7 @@ elres_t device_write(device_t * dev, const uint8_t *buffer, uint16_t cnt){
     return res;
 }
 
-elres_t device_read(device_t * dev, uint8_t *buffer, uint16_t cnt){
+elres_t device_read(device_t * dev, uint8_t *buffer, uint16_t *cnt){
     elres_t res = EMLIB_ERROR;
     if ((dev != NULL) && (NULL != dev->read)) {
         res = dev->read(dev->user_data, buffer, cnt);
