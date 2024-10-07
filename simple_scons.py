@@ -4,26 +4,27 @@ import sys
 import re
 
 
-def normalizeLieEnding(fdir):
+def normalizeLineEnding(fdir):
     # Add trailing / to path
     return fdir if fdir[-1] == os.sep else fdir+os.sep
 
 def getSrcFromFolder(srcDirs, srcPattern, trgtDir):
     #print("Extract files from " , srcDirs)
     res=[]
-    trgtDir = normalizeLieEnding(trgtDir)
+    trgtDir = normalizeLineEnding(trgtDir)
     for srcF in srcDirs:
-        srcF = normalizeLieEnding(srcF)
+        srcF = normalizeLineEnding(srcF)
         print("Process %s folder" % srcF)
         for f in glob.glob(srcF+srcPattern):
-            res.append(f)
+             print("  Append %s" %(trgtDir+f))
+             res.append(trgtDir+f)
     return tuple(res)
 
 def RegisterSrcFolderInEnv(srcDirs, env, trgtDir):
     for srcF in srcDirs:
         print("Register folder %s" % (srcF))
-        srcF = normalizeLieEnding(srcF)
-        env.VariantDir(srcF, srcF, duplicate=0)
+        srcF = normalizeLineEnding(srcF)
+        env.VariantDir(trgtDir+srcF, srcF, duplicate=0)
 
 testComLib = 'ctest'
 cutLib  =   'cut'
@@ -79,10 +80,10 @@ else:
 
 if debug:
     print("*** Debug build...")
-    binFolder = 'bin/Debug/'
+    binFolder = '.'
 else:
     print("*** Release build...")
-    binFolder = 'bin/Release/'
+    binFolder = '.'
 
 linkLibs += ('CppUTest','CppUTestExt')
 cutFiles = getSrcFromFolder(cutFolders,'simple_*.c',binFolder)
