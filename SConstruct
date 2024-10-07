@@ -21,15 +21,15 @@ def getSrcFromFolder(srcDirs, srcPattern, trgtDir):
     for srcF in srcDirs:
         srcF = normalizeLineEnding(srcF)
         print("Process %s folder with pattern \"%s\"" % (srcF,srcF+srcPattern))
-        #Sprint(glob.glob(srcF+srcPattern))
+        #print(glob.glob(srcF+srcPattern))
         for f in glob.glob(srcF+srcPattern):
-            print("Append %s" %f) 
+            print("  Append %s" %(trgtDir+f)) 
             res.append(trgtDir+f)
     return tuple(res)
 
 def RegisterSrcFolderInEnv(srcDirs, env, trgtDir):
     for srcF in srcDirs:
-        print("Register folder %s" % (srcF))
+        print("Register folder %s" % (trgtDir+srcF))
         srcF = normalizeLineEnding(srcF)
         env.VariantDir(trgtDir+srcF, srcF, duplicate=0)
 
@@ -157,10 +157,10 @@ else:
 
 if debug:
     print("*** Debug build...")
-    binFolder = 'bin/Debug/'
+    binFolder = './bin/Debug/'
 else:
     print("*** Release build...")
-    binFolder = 'bin/Release/'
+    binFolder = './bin/Release/'
 
 
 linkLibs += ('CppUTest','CppUTestExt')
@@ -200,7 +200,7 @@ env.Library(target=testCutFolders, source= testCutFiles)
 
 print("Process %s" % genTestFolders)
 RegisterSrcFolderInEnv(genTestFolders, env, binFolder)
-print("Register library %s" %genTestFolders)
+print("Register library %s with " %(genTestFolders, str(testComFiles)))
 env.Library(target=genTestFolders, source= testComFiles)
 
 if target != 'emlib':

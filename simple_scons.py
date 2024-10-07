@@ -9,12 +9,12 @@ def normalizeLineEnding(fdir):
     return fdir if fdir[-1] == os.sep else fdir+os.sep
 
 def getSrcFromFolder(srcDirs, srcPattern, trgtDir):
-    #print("Extract files from " , srcDirs)
+    print("Extract files from " , srcDirs)
     res=[]
     trgtDir = normalizeLineEnding(trgtDir)
     for srcF in srcDirs:
         srcF = normalizeLineEnding(srcF)
-        print("Process %s folder" % srcF)
+        print("Process %s folder with pattern \"%s\"" % (srcF,srcF+srcPattern))
         for f in glob.glob(srcF+srcPattern):
              print("  Append %s" %(trgtDir+f))
              res.append(trgtDir+f)
