@@ -3,12 +3,11 @@ import os
 import sys
 import re
 
-pattern ="./common/test/*_test.cpp"
-files= glob.glob(pattern)
 cwd= os.getcwd()
 print("Start in %s" % cwd)
-tpath =cwd+pattern
-print("Show content of %s: %s" %(tpath,files))
+
+
+env = Environment()
 
 def normalizeLineEnding(fdir):
     # Add trailing / to path
@@ -77,14 +76,11 @@ compile_opt={}
 #
 # Google test setup from :http://www.solasistim.net/posts/scons_and_google_mock/
 #
-googletest_framework_root = "test/googletest"
+googletest_framework_root = "./test/googletest"
 
 googletest_include_paths = (
-    googletest_framework_root + "/googletest",
     googletest_framework_root + "/googletest/include",
-    googletest_framework_root + "/googlemock",
-    googletest_framework_root + "/googlemock/include"
-)
+    googletest_framework_root + "/googlemock/include")
 
 gtest_all_path = googletest_framework_root + "/googletest/src/gtest-all.cc"
 gmock_all_path = googletest_framework_root + "/googlemock/src/gmock-all.cc"
@@ -99,11 +95,10 @@ testCutFiles = ()
 cutFolders =()
 testCutFolders = ()
 genTestFolders = ('./test/',)
-incPath  = ('inc/',)
-incPath  += ('mcal/',)
+incPath  = ()
 
 
-linkLibs =(testComLib, cutLib)
+linkLibs =()
 
 if  target == 'test_common':
     print("Create common tests.")
@@ -113,7 +108,8 @@ if  target == 'test_common':
     incPath +=('./common/inc/',)
     incPath +=('./common/test/',)
     incPath += ('./test/',)
-    incPath +=(googletest_include_paths,)
+    incPath+= (googletest_include_paths[0],)
+    incPath+= (googletest_include_paths[1],)
     linkLibs +=('pthread',)   
     linkFlags = '-Xlinker -Map=output.map'
     debug = True
@@ -157,25 +153,49 @@ else:
 
 if debug:
     print("*** Debug build...")
-    binFolder = './bin/Debug/'
+    binFolder = './'
 else:
     print("*** Release build...")
-    binFolder = './bin/Release/'
+    binFolder = './'
 
 
 linkLibs += ('CppUTest','CppUTestExt')
+print("Get source for libcut")
 cutFiles = getSrcFromFolder(cutFolders,'*.c',binFolder)
-testCutFiles += getSrcFromFolder(testCutFolders,'*_test.cpp',binFolder)
-testComFiles += getSrcFromFolder(genTestFolders,'AllTests.cpp',binFolder)
-testComFiles += getSrcFromFolder((googletest_framework_root,), "googletest/src/gtest-all.cc",binFolder)
-testComFiles += getSrcFromFolder((googletest_framework_root,), "googlemock/src/gmock-all.cc",binFolder)
+print("Get source for testCut")
+testCutFiles = getSrcFromFolder(testCutFolders,'*_test.cpp',binFolder)
+print("Get source for genTest")
+mainFile = getSrcFromFolder(genTestFolders,'AllTests.cpp',binFolder)
+print("Get source for testCom")
+testComFiles  = getSrcFromFolder((googletest_framework_root,), "googletest/src/gtest-all.cc",binFolder)
+testComFiles  += getSrcFromFolder((googletest_framework_root,), "googlemock/src/gmock-all.cc",binFolder)
 
+googlelibs= getSrcFromFolder((googletest_framework_root+"/lib/",), "*.a", ".")
+googleLib=Dir(googletest_framework_root+"/lib/")
+linkLibs+=(googlelibs)
+lib  =   'cut'
+env.SharedLibrary(
+target = lib,
+source = cutFiles)
+linkLibs += ("lib"+lib,)
 
+lib  =   'testcom'
+env.SharedLibrary(
+target = lib,
+source = testComFiles)
+linkLibs += ("lib"+lib,)
+print("LinkLibs =%s" % str(linkLibs))
+
+print("Include path : %s" % " ".join(i for i in incPath)) 
 print("cutFiles     : %s" % " ".join(i for i in cutFiles))
 print("testCutFiles : %s" % " ".join(i for i in testCutFiles))
 print("testComFiles : %s" % " ".join(i for i in testComFiles))
+print("libGoogle    : %s" % " ".join(i for i in googlelibs))
 print("linkLibs     : %s" % " ".join(i for i in linkLibs))
-
+include =Dir("#/common/inc")
+env.Environment(CPPPATH=include)
+#env.Environment(CPPPATH=incPath)
+env.Environment(CPPFLAGS="-I"+str(incPath))
 
 libPath  = binFolder
 ccDebFlags = '-g '
@@ -183,31 +203,16 @@ ccFlags  += '-Wall ' + ("" if not debug else " %s" % ccDebFlags)
 cflags  =" -std=c11 -fstack-protector-strong"
 cxxflags=" -std=c++1z"
 
-env = Environment(variant_dir=binFolder,
-                  LIBPATH=binFolder,
-                  LIBS=linkLibs,
-                  CPPPATH=incPath, CCFLAGS=ccFlags,
-                  CFLAGS=cflags, CXXFLAGS=cxxflags,
-                  LINKFLAGS=linkFlags, **compile_opt)
-
-RegisterSrcFolderInEnv(cutFolders, env, binFolder)
-print("Register library %s with %s" %(cutFolders,str(cutFiles)))
-env.Library(target=cutLib, source= cutFiles)
-
-RegisterSrcFolderInEnv(testCutFolders, env, binFolder)
-print("Register library %s with %s" %(testCutFolders, str(testCutFiles)))
-env.Library(target=testCutFolders, source= testCutFiles)
-
-print("Process %s" % genTestFolders)
-RegisterSrcFolderInEnv(genTestFolders, env, binFolder)
-print("Register library %s with " %(genTestFolders, str(testComFiles)))
-env.Library(target=genTestFolders, source= testComFiles)
-
 if target != 'emlib':
     print(testCutFiles)
     for f in testCutFiles:
         of=f.split(os.sep)[-1].split('.')[0]
-        print("Build executable %s" % of)
-        env.Program(binFolder+of, (f,))
-else:
-    env.Program(binFolder+of, (f,))
+        name = of.split("_")[0]
+        print("Build executable %s" % name)
+        env.Program(
+            VariantDir=("build/"+name,),
+            src=[f, mainFile],
+            target = name,
+            libs= linkLibs )
+ 
+env.Dump()
