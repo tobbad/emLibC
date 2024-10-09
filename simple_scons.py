@@ -88,13 +88,14 @@ else:
 linkLibs += ('CppUTest','CppUTestExt')
 cutFiles = getSrcFromFolder(cutFolders,'simple_*.c',binFolder)
 testCutFiles += getSrcFromFolder(testCutFolders,'simple_*.cpp',binFolder)
-testComFiles += getSrcFromFolder(genTestFolders,'AllTests.cpp',binFolder)
-testComFiles += getSrcFromFolder((googletest_framework_root,), "googletest/src/gtest-all.cc",binFolder)
+mainFile = getSrcFromFolder(genTestFolders,'AllTests.cpp',binFolder)
+testComFiles = getSrcFromFolder((googletest_framework_root,), "googletest/src/gtest-all.cc",binFolder)
 testComFiles += getSrcFromFolder((googletest_framework_root,), "googlemock/src/gmock-all.cc",binFolder)
 
 print("testComFiles : %s" % " ".join(i for i in testComFiles))
 print("testCutFiles : %s" % " ".join(i for i in testCutFiles))
 print("cutFiles     : %s" % " ".join(i for i in cutFiles))
+print("mainFile     : %s" % " ".join(i for i in mainFile))
 print("linkLibs     : %s" % " ".join(i for i in linkLibs))
 
 
@@ -125,4 +126,4 @@ env = Environment(variant_dir=binFolder,
 #env.Library(target=genTestFolders, source= testComFiles)
 
 print("Build executable %s" % "simple")
-env.Program("simple", (cutFiles, testCutFiles, testComFiles))
+env.Program("simple", (cutFiles, testCutFiles, testComFiles, mainFile))
