@@ -141,7 +141,7 @@ print(executables)
 
 # Build each executable and place them in the binaries folder
 for exe_name, source in executables:
-    env.Program(target=os.path.join(binaries_dir, exe_name), source=[source, libcut, libtestCut, googlelibs])
+    env.Program(target=os.path.join(binaries_dir, exe_name), source=[source, libcut, libtestCut, googlelibs], libs=linkLibs)
 
 # Default target
 Default([os.path.join(binaries_dir, exe_name) for exe_name, _ in executables])
