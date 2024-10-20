@@ -5,6 +5,13 @@
  *      Author: badi
  */
 #include "main.h"
+static char* key_state_c[]={
+	"   ",
+	"BLI",
+	"ON ",
+	"NA ",
+};
+
 keypad_t default_keymap ={
 	.row ={ //Inputs
 		{.port=PORTB, .pin=PIN_10, .conf= {.mode=INPUT, .pin =PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
