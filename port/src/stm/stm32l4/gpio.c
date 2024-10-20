@@ -235,7 +235,7 @@ em_msg GpioSetPortMode(GpioPort_t *port, gpio_mode_t mode)
  * Set output when needed: 158
  * Set output when needed low level: 149
  */
-em_msg GpioPinWrite(GpioPin_t *pin, bool value)
+em_msg GpioPinWrite(GpioPin_t *pin, uint8_t value)
 {
 	em_msg res = EM_ERR;//CheckGpio(pin);
 	if (pin->ll.port != NULL)
@@ -260,15 +260,13 @@ em_msg GpioPinWrite(GpioPin_t *pin, bool value)
 	return res;
 }
 
-em_msg GpioPinRead(GpioPin_t *pin, bool *value)
+em_msg GpioPinRead(GpioPin_t *pin, uint8_t *value)
 {
 	em_msg res = CheckGpio(pin);
 	if (EM_OK == res)
 	{
-		GPIO_TypeDef *hal_gpio = PORT_MAP[pin->port];
-		uint16_t hal_pin = PIN_MAP[pin->pin];
-		GPIO_PinState state = HAL_GPIO_ReadPin(hal_gpio, hal_pin);
-		*value = state==GPIO_PIN_SET?true:false;
+		GPIO_PinState state = HAL_GPIO_ReadPin(pin->ll.port, pin->ll.pin_mask);
+		*value = state==GPIO_PIN_SET?1:0;
 		res = EM_OK;
 	}
 	return res;
@@ -284,7 +282,7 @@ em_msg GpioPortRead(GpioPort_t *port, uint32_t *value)
 		*value = 0;
 		for (uint8_t bitNr=0;bitNr<PORTW_MAX;bitNr++)
 		{
-			bool bitVal = false;
+			uint8_t bitVal = 0;
 			pin.pin = port->gpio[bitNr].pin;
 			pin.port = port->gpio[bitNr].port;
 			res = GpioPinRead(&pin, &bitVal);
@@ -346,10 +344,10 @@ em_msg GpioPinToggle(GpioPin_t *pin) {
     em_msg res = CheckGpio(pin);
     if (EM_OK == res)
     {
-        bool value;
+        uint8_t value;
         res = GpioPinRead(pin, &value);
         if (EM_OK == res) {
-            value = !value;
+            value = value^0x01;
             res = GpioPinWrite(pin, value);
         }
     }

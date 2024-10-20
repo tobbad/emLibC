@@ -210,7 +210,7 @@ em_msg GpioSetPortMode(GpioPort_t *port, gpio_mode_t mode)
  * Set output when needed: 158
  * Set output when needed low level: 149
  */
-em_msg GpioPinWrite(GpioPin_t *pin, bool value)
+em_msg GpioPinWrite(GpioPin_t *pin, uint8_t value)
 {
 	em_msg res = CheckGpio(pin);
 	if (pin->ll.port != NULL)
@@ -235,7 +235,7 @@ em_msg GpioPinWrite(GpioPin_t *pin, bool value)
 	return res;
 }
 
-em_msg GpioPinRead(GpioPin_t *pin, bool *value)
+em_msg GpioPinRead(GpioPin_t *pin, uint8_t *value)
 {
 	em_msg res = CheckGpio(pin);
 	if (EM_OK == res)
