@@ -5,14 +5,14 @@
  *      Author: badi
  */
 #include "main.h"
-static char* key_state_c[]={
+static char* x_state_c[]={
 	"   ",
 	"BLI",
 	"ON ",
 	"NA ",
 };
 
-keypad_t default_keymap ={
+xpad_t default_keymap ={
 	.row ={ //Inputs
 		{.port=PORTB, .pin=PIN_10, .conf= {.mode=INPUT, .pin =PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
 		{.port=PORTB, .pin=PIN_4, .conf= {.mode=INPUT,  .pin= PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
@@ -25,63 +25,139 @@ keypad_t default_keymap ={
 		{.port = PORTA, .pin = PIN_4,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}} ,
 		{.port = PORTB, .pin = PIN_0,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}}
 	},
-	.keys = { {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0},  {0,0,0},  {0,0,0},  {0,0,0}},
+	.key = { {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0},  {0,0,0},  {0,0,0},  {0,0,0}},
 	.state = {OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
-	.stable_cnt = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 	.labels = "0123456789ABCDEF",
+	.dirty = false,
 };
-keypad_t my_keypad;
+xpad_t my_xpad;
 
-static uint8_t keypad_read_row();
-static void keypad_set_col(uint8_t col_nr);
-static void keypad_reset_col(uint8_t col_nr);
+static uint8_t xpad_read_row();
+static void xpad_set_col(uint8_t col_nr);
+static void xpad_reset_col(uint8_t col_nr);
+static bool xpad_update();
 
-void keypad_init(keypad_t *key_pad){
-	if (key_pad != NULL){
-		my_keypad = *key_pad;
+void xpad_init(xpad_t *x_pad){
+	if (x_pad != NULL){
+		my_xpad = *x_pad;
 	} else {
-		my_keypad = default_keymap;
+		my_xpad = default_keymap;
 	}
 	for (uint8_t col_idx= 0; col_idx<COL_CNT; col_idx++){
-		GpioPinInit(&my_keypad.col[col_idx]);
+		GpioPinInit(&my_xpad.col[col_idx]);
 	}
 	for (uint8_t row_idx= 0; row_idx<ROW_CNT; row_idx++){
-		GpioPinInit(&my_keypad.row[row_idx]);
+		GpioPinInit(&my_xpad.row[row_idx]);
 	}
 	for (uint8_t c=0;c<COL_CNT;c++){
-		  keypad_set_col(c);
+		  xpad_set_col(c);
 	}
 }
 
-static uint8_t keypad_read_row(){
+static uint8_t xpad_read_row(){
 	uint8_t res=0;
 	for (uint8_t r=0;r<ROW_CNT; r++)	{
 		uint8_t pin=0;
-		GpioPinRead(&my_keypad.row[r], &pin);
+		GpioPinRead(&my_xpad.row[r], &pin);
 		pin =!pin;
+		if (pin) my_xpad.dirty=true;
 		res = res | (pin<<r);
 	}
 	return res;
 }
-static void keypad_set_col(uint8_t col_nr){
-	GpioPinWrite(&my_keypad.col[col_nr], GPIO_PIN_SET);
+static void xpad_set_col(uint8_t col_nr){
+	GpioPinWrite(&my_xpad.col[col_nr], GPIO_PIN_SET);
 	return;
 }
-static void keypad_reset_col(uint8_t col_nr){
-	GpioPinWrite(&my_keypad.col[col_nr], GPIO_PIN_RESET );
+static void xpad_reset_col(uint8_t col_nr){
+	GpioPinWrite(&my_xpad.col[col_nr], GPIO_PIN_RESET );
 	return;
 }
 
-uint16_t keypad_scan(){
+bool xpad_scan(){
 	uint16_t res=0;
 	for (uint8_t c=0;c<COL_CNT;c++){
 		uint8_t ir=0;
-		keypad_reset_col(c);
+		xpad_reset_col(c);
 		HAL_Delay(SCAN_MS);
-		ir = keypad_read_row();
+		ir = xpad_read_row();
 		res =  res |( ir<<(4*c));
-		keypad_set_col(c);
+		xpad_set_col(c);
 	}
-	return res;
+	return xpad_update();
 }
+
+bool xpad_update(){
+
+	return my_xpad.dirty;
+}
+
+xpad_r_t *xpad_state(xpad_t *state){
+	static xpad_r_t ret;
+	uint8_t i=0;
+	if (!state->dirty) {
+		return NULL;
+	}
+	for (i=0; i<X_BUTTON_CNT; i++){
+		ret.state[i] = state->state[i];
+	}
+	ret.labels[i] = state->labels[i];
+	return &ret;
+}
+
+void  xpad_print(xpad_r_t *state, char* start){
+	if (!state){
+		printf("%s Nothing returned"NL, start);
+		return;
+	}
+	printf("%sLabel", start);
+	for (uint8_t i=0;i<X_BUTTON_CNT;i++){
+		printf(" %c ", state->labels[i]);
+	}
+	printf("%sState", start);
+	for (uint8_t i=0;i<X_BUTTON_CNT;i++){
+		printf("%s", x_state_c[state->state[i]]);
+	}
+}
+
+void  xpad_iprint(xpad_t *state, char* start){
+	const uint8_t maxcnt = MINIMAL_LINESTART+7;
+	char text[maxcnt+1];
+	if (!state){
+		printf("%s Nothing returned"NL, start);
+		return;
+	}
+	snprintf(text,maxcnt, "%s%s", start, "Labels  " );
+	printf(text);
+	for (uint8_t i=0;i<X_BUTTON_CNT;i++){
+		printf(" %c ", state->labels[i]);
+	}
+	printf(NL);
+	snprintf(text, maxcnt, "%s%s", start, "State   " );
+	printf(text);
+	for (uint8_t i=0;i<X_BUTTON_CNT;i++){
+		printf("%s", x_state_c[state->state[i]]);
+	}
+	printf(NL);
+	snprintf(text,maxcnt, "%s%s", start, "key.last" );
+
+	for (uint8_t i=0;i<X_BUTTON_CNT;i++){
+		printf("%03d", state->key[i].last);
+	}
+	printf(NL);
+	snprintf(text,maxcnt, "%s%s", start, "key.cur" );
+
+	for (uint8_t i=0;i<X_BUTTON_CNT;i++){
+		printf("%03d", state->key[i].current);
+	}
+	printf(NL);
+	snprintf(text,maxcnt, "%s%s", start, "key.cnt" );
+
+	for (uint8_t i=0;i<X_BUTTON_CNT;i++){
+		printf("%03d", state->key[i].cnt);
+	}
+	printf(NL);
+
+}
+
 

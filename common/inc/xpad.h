@@ -10,7 +10,7 @@
 
 #define COL_CNT 4
 #define ROW_CNT 4
-#define BUTTON_CNT (ROW_CNT*COL_CNT)
+#define X_BUTTON_CNT (ROW_CNT*COL_CNT)
 #define SCAN_MS	5
 #define STABLE_CNT 4
 typedef enum{
@@ -20,32 +20,35 @@ typedef enum{
 	KEY_STAT_CNT
 }key_state_e;
 
+#define MINIMAL_LINESTART 8
+
 typedef struct key_s{
 	bool last;
 	bool current;
 	uint8_t cnt;
 } mkey_t;
 
-typedef struct keypad_s{
+typedef struct xpad_s{
 	 GpioPin_t row[ROW_CNT];
 	 GpioPin_t col[COL_CNT];
-	 mkey_t key[BUTTON_CNT];
-	 key_state_e state[BUTTON_CNT];
-	 uint8_t labels_n[BUTTON_CNT];
-	 char labels[BUTTON_CNT+1];
-	 uint8_t last[2];
-}keypad_t;
+	 mkey_t key[X_BUTTON_CNT];
+	 bool  second[X_BUTTON_CNT]; // True when whithin 10*STABLE_CNT a button was pressed;
+	 key_state_e state[X_BUTTON_CNT];
+	 uint8_t labels_n[X_BUTTON_CNT];
+	 char labels[X_BUTTON_CNT+1];
+	 bool dirty;
+}xpad_t;
 
-typedef struct keypad_r_s{
-	 key_state_e state[BUTTON_CNT];
-	 char labels[BUTTON_CNT+1];
-}keypad_r_t;
+typedef struct xpad_r_s{
+	 key_state_e state[X_BUTTON_CNT];
+	 char labels[X_BUTTON_CNT+1];
+}xpad_r_t;
 
-void keypad_init(keypad_t *key_pad);
-bool keypad_scan();
-keypad_r_t* keypad_state();
-void  keypad_print(keypad_r_t *state, char* start);
-
+void xpad_init(xpad_t *x_pad);
+bool xpad_scan();
+xpad_r_t* xpad_state();
+void  xpad_print(xpad_r_t *state, char* start); // Show returnd
+void  xpad_iprint(xpad_t *state, char* start); // Show internals
 
 
 #endif /* INC_KEYPAD_H_ */
