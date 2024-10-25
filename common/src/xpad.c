@@ -11,6 +11,7 @@ static char* x_state_c[]={
 	"ON ",
 	"NA ",
 };
+#define COL_ROW_2_INDEX(col, row) (uint8_t)(col*COL_CNT+row)
 
 xpad_t default_keymap ={
 	.row ={ //Inputs
@@ -25,14 +26,15 @@ xpad_t default_keymap ={
 		{.port = PORTA, .pin = PIN_4,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}} ,
 		{.port = PORTB, .pin = PIN_0,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}}
 	},
-	.key = { {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0},  {0,0,0},  {0,0,0},  {0,0,0}},
+	.key = { {0,0,0,false}, {0,0,0,false}, {0,0,0,false}, {0,0,0,false}, {0,0,0,false},  {0,0,0,false},  {0,0,0,false},  {0,0,0,false}},
 	.state = {OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
-	.labels = "0123456789ABCDEF",
+	.label = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF},
 	.dirty = false,
 };
 xpad_t my_xpad;
 
-static uint8_t xpad_read_row();
+
+static uint8_t xpad_read_row(uint8_t c);
 static void xpad_set_col(uint8_t col_nr);
 static void xpad_reset_col(uint8_t col_nr);
 static bool xpad_update();
@@ -54,7 +56,7 @@ void xpad_init(xpad_t *x_pad){
 	}
 }
 
-static uint8_t xpad_read_row(){
+static uint8_t xpad_read_row(uint8_t c){
 	uint8_t res=0;
 	for (uint8_t r=0;r<ROW_CNT; r++)	{
 		uint8_t pin=0;
@@ -62,6 +64,19 @@ static uint8_t xpad_read_row(){
 		pin =!pin;
 		if (pin) my_xpad.dirty=true;
 		res = res | (pin<<r);
+		my_xpad.key[index].current=pin;
+		if (pin) {
+			uint8_t index = COL_ROW_2_INDEX(c,r);
+			if (my_xpad.key[index].current==my_xpad.key[index].last){
+				my_xpad.key[index].cnt++;
+				if (my_xpad.key[index].cnt>STABLE_CNT){
+					my_xpad.key[index].valid = true;
+					my_xpad.dirty=true;
+				}
+			} else{
+				my_xpad.key[index].cnt = 0;
+			}
+		}
 	}
 	return res;
 }
@@ -101,7 +116,7 @@ xpad_r_t *xpad_state(xpad_t *state){
 	for (i=0; i<X_BUTTON_CNT; i++){
 		ret.state[i] = state->state[i];
 	}
-	ret.labels[i] = state->labels[i];
+	ret.label[i] = state->label[i];
 	return &ret;
 }
 
@@ -112,7 +127,7 @@ void  xpad_print(xpad_r_t *state, char* start){
 	}
 	printf("%sLabel", start);
 	for (uint8_t i=0;i<X_BUTTON_CNT;i++){
-		printf(" %c ", state->labels[i]);
+		printf(" %C ", state->label[i]);
 	}
 	printf("%sState", start);
 	for (uint8_t i=0;i<X_BUTTON_CNT;i++){
@@ -127,10 +142,10 @@ void  xpad_iprint(xpad_t *state, char* start){
 		printf("%s Nothing returned"NL, start);
 		return;
 	}
-	snprintf(text,maxcnt, "%s%s", start, "Labels  " );
+	snprintf(text,maxcnt, "%s%s", start, "Label  " );
 	printf(text);
 	for (uint8_t i=0;i<X_BUTTON_CNT;i++){
-		printf(" %c ", state->labels[i]);
+		printf(" %C ", state->label[i]);
 	}
 	printf(NL);
 	snprintf(text, maxcnt, "%s%s", start, "State   " );

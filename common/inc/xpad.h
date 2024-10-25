@@ -26,6 +26,7 @@ typedef struct key_s{
 	bool last;
 	bool current;
 	uint8_t cnt;
+	bool valid;
 } mkey_t;
 
 typedef struct xpad_s{
@@ -34,14 +35,13 @@ typedef struct xpad_s{
 	 mkey_t key[X_BUTTON_CNT];
 	 bool  second[X_BUTTON_CNT]; // True when whithin 10*STABLE_CNT a button was pressed;
 	 key_state_e state[X_BUTTON_CNT];
-	 uint8_t labels_n[X_BUTTON_CNT];
-	 char labels[X_BUTTON_CNT+1];
+	 uint8_t label[X_BUTTON_CNT];
 	 bool dirty;
 }xpad_t;
 
 typedef struct xpad_r_s{
 	 key_state_e state[X_BUTTON_CNT];
-	 char labels[X_BUTTON_CNT+1];
+	 char label[X_BUTTON_CNT+1];
 }xpad_r_t;
 
 void xpad_init(xpad_t *x_pad);
