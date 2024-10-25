@@ -187,7 +187,7 @@ elres_t rbuf_get_device(rbuf_hdl_t hdl, device_t *device, dev_func_t dev_type) {
     elres_t res = EMLIB_ERROR;
     if (NULL==device) {
         if (DEV_NONE == dev_type) {
-            res = EMLIB_OK;
+        		return res;
         }
     } else {
        res = EMLIB_OK;
@@ -196,7 +196,7 @@ elres_t rbuf_get_device(rbuf_hdl_t hdl, device_t *device, dev_func_t dev_type) {
            device->read = rbuf_read_bytes;
        }
        if (dev_type & DEV_WRITE){
-           device->read = rbuf_write_bytes;
+           device->write = rbuf_write_bytes;
        }
        device->user_data = (void*)&hdl;
     }
