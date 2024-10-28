@@ -12,7 +12,7 @@
 #define ROW_CNT 4
 #define X_BUTTON_CNT (ROW_CNT*COL_CNT)
 #define SCAN_MS	5
-#define STABLE_CNT 4
+#define STABLE_CNT 10
 typedef enum{
 	OFF,
 	BLINKING,
@@ -29,6 +29,11 @@ typedef struct key_s{
 	bool valid;
 } mkey_t;
 
+typedef struct xpad_r_s{
+	 key_state_e state[X_BUTTON_CNT];
+	 char label[X_BUTTON_CNT];
+}xpad_r_t;
+
 typedef struct xpad_s{
 	 GpioPin_t row[ROW_CNT];
 	 GpioPin_t col[COL_CNT];
@@ -39,13 +44,9 @@ typedef struct xpad_s{
 	 bool dirty;
 }xpad_t;
 
-typedef struct xpad_r_s{
-	 key_state_e state[X_BUTTON_CNT];
-	 char label[X_BUTTON_CNT+1];
-}xpad_r_t;
-
 void xpad_init(xpad_t *x_pad);
 bool xpad_scan();
+void xpad_reset();
 xpad_r_t* xpad_state();
 void  xpad_print(xpad_r_t *state, char* start); // Show returnd
 void  xpad_iprint(xpad_t *state, char* start); // Show internals

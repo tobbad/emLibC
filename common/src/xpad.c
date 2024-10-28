@@ -13,12 +13,14 @@ static char* x_state_c[]={
 };
 #define COL_ROW_2_INDEX(col, row) (uint8_t)(col*COL_CNT+row)
 
+static mkey_t reset_key ={0,0,0,false};
+
 xpad_t default_keymap ={
 	.row ={ //Inputs
 		{.port=PORTB, .pin=PIN_10, .conf= {.mode=INPUT, .pin =PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
 		{.port=PORTB, .pin=PIN_4, .conf= {.mode=INPUT,  .pin= PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
 		{.port=PORTB, .pin=PIN_5, .conf= {.mode=INPUT,  .pin= PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
-		{.port=PORTB, .pin=PIN_3, .conf= {.mode=INPUT,  .pin= PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}}
+		{.port=PORTB, .pin=PIN_3, .conf= {.mode=INPUT,  .pin= PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
 	},
 	.col = { // Outputs
 		{.port = PORTA, .pin = PIN_0,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}} ,
@@ -28,7 +30,7 @@ xpad_t default_keymap ={
 	},
 	.key = { {0,0,0,false}, {0,0,0,false}, {0,0,0,false}, {0,0,0,false}, {0,0,0,false},  {0,0,0,false},  {0,0,0,false},  {0,0,0,false}},
 	.state = {OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
-	.label = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF},
+	.label = {0xd, 0xe, 0xf, 0,  0xc, 9, 8, 7, 0xb, 6, 5, 4 ,0xA, 3, 2, 1 },
 	.dirty = false,
 };
 xpad_t my_xpad;
@@ -37,7 +39,6 @@ xpad_t my_xpad;
 static uint8_t xpad_read_row(uint8_t c);
 static void xpad_set_col(uint8_t col_nr);
 static void xpad_reset_col(uint8_t col_nr);
-static bool xpad_update();
 
 void xpad_init(xpad_t *x_pad){
 	if (x_pad != NULL){
@@ -62,15 +63,18 @@ static uint8_t xpad_read_row(uint8_t c){
 		uint8_t pin=0;
 		GpioPinRead(&my_xpad.row[r], &pin);
 		pin =!pin;
-		if (pin) my_xpad.dirty=true;
 		res = res | (pin<<r);
+		uint8_t index = COL_ROW_2_INDEX(r,c);
 		my_xpad.key[index].current=pin;
 		if (pin) {
-			uint8_t index = COL_ROW_2_INDEX(c,r);
-			if (my_xpad.key[index].current==my_xpad.key[index].last){
+			if (my_xpad.key[index].current!=my_xpad.key[index].last){
+				my_xpad.key[index].last = my_xpad.key[index].current;
+			}
+			if (my_xpad.key[index].last == my_xpad.key[index].current){
 				my_xpad.key[index].cnt++;
 				if (my_xpad.key[index].cnt>STABLE_CNT){
 					my_xpad.key[index].valid = true;
+					my_xpad.state[index] = ((my_xpad.state[index]+1)%KEY_STAT_CNT);
 					my_xpad.dirty=true;
 				}
 			} else{
@@ -95,29 +99,35 @@ bool xpad_scan(){
 		uint8_t ir=0;
 		xpad_reset_col(c);
 		HAL_Delay(SCAN_MS);
-		ir = xpad_read_row();
+		ir = xpad_read_row(c);
 		res =  res |( ir<<(4*c));
 		xpad_set_col(c);
 	}
-	return xpad_update();
-}
-
-bool xpad_update(){
-
 	return my_xpad.dirty;
 }
 
-xpad_r_t *xpad_state(xpad_t *state){
+xpad_r_t *xpad_state(){
 	static xpad_r_t ret;
 	uint8_t i=0;
-	if (!state->dirty) {
+	if (!(my_xpad.dirty)) {
 		return NULL;
 	}
 	for (i=0; i<X_BUTTON_CNT; i++){
-		ret.state[i] = state->state[i];
+		if (my_xpad.label[i]<10){
+			ret.label[i] = ('0'+my_xpad.label[i]);
+		} else {
+			ret.label[i] = ('A'-10+my_xpad.label[i]);
+		}
+		ret.state[i] = my_xpad.state[i];
 	}
-	ret.label[i] = state->label[i];
 	return &ret;
+}
+void xpad_reset(){
+	my_xpad.dirty=  false;
+	for (uint8_t idx=0; idx<X_BUTTON_CNT; idx++){
+		my_xpad.key[idx] = reset_key;
+	}
+	return;
 }
 
 void  xpad_print(xpad_r_t *state, char* start){
@@ -125,14 +135,17 @@ void  xpad_print(xpad_r_t *state, char* start){
 		printf("%s Nothing returned"NL, start);
 		return;
 	}
-	printf("%sLabel", start);
+	printf("%s: Label", start);
 	for (uint8_t i=0;i<X_BUTTON_CNT;i++){
-		printf(" %C ", state->label[i]);
+		printf(" %c ", state->label[i]);
 	}
-	printf("%sState", start);
+	printf(NL);
+	printf("%s: State", start);
 	for (uint8_t i=0;i<X_BUTTON_CNT;i++){
 		printf("%s", x_state_c[state->state[i]]);
 	}
+	printf(NL);
+
 }
 
 void  xpad_iprint(xpad_t *state, char* start){
