@@ -13,7 +13,7 @@ static char* x_state_c[]={
 };
 #define COL_ROW_2_INDEX(col, row) (uint8_t)(col*COL_CNT+row)
 
-static mkey_t reset_key ={0,0,0,false};
+static mkey_t reset_key ={0,0,0, true};
 
 xpad_t default_keymap ={
 	.row ={ //Inputs
@@ -28,7 +28,7 @@ xpad_t default_keymap ={
 		{.port = PORTA, .pin = PIN_4,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}} ,
 		{.port = PORTB, .pin = PIN_0,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}}
 	},
-	.key = { {0,0,0,false}, {0,0,0,false}, {0,0,0,false}, {0,0,0,false}, {0,0,0,false},  {0,0,0,false},  {0,0,0,false},  {0,0,0,false}},
+	.key = { {false,false ,0,false}, {false,false,0,false}, {false,false,0,false}, {false,false,0,false}, {false,false,0,false},  {false,false,0,false},  {false,false,0,false},  {false,false,0,false}},
 	.state = {OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
 	.label = {0xd, 0xe, 0xf, 0,  0xc, 9, 8, 7, 0xb, 6, 5, 4 ,0xA, 3, 2, 1 },
 	.dirty = false,
@@ -56,8 +56,16 @@ void xpad_init(xpad_t *x_pad){
 		  xpad_set_col(c);
 	}
 }
-
-static uint8_t xpad_read_row(uint8_t c){
+/*
+ * Bounce detection
+ * Every Key has a current and a last stat, ad the end of processing
+ * the last is overwritten by the current.
+ * If the current == last a counter is incremented.
+ * If the counter reaches a certain limit (STABLE_CNT)
+ * the state of the key is cycled through OFF->BLINKING->ON.
+ * If something changed the dirty bit on the structure is set
+ */
+static uint8_t  xpad_read_row(uint8_t c){
 	uint8_t res=0;
 	for (uint8_t r=0;r<ROW_CNT; r++)	{
 		uint8_t pin=0;
@@ -66,24 +74,25 @@ static uint8_t xpad_read_row(uint8_t c){
 		res = res | (pin<<r);
 		uint8_t index = COL_ROW_2_INDEX(r,c);
 		my_xpad.key[index].current=pin;
-		if (pin) {
-			if (my_xpad.key[index].current!=my_xpad.key[index].last){
-				my_xpad.key[index].last = my_xpad.key[index].current;
-			}
-			if (my_xpad.key[index].last == my_xpad.key[index].current){
-				my_xpad.key[index].cnt++;
-				if (my_xpad.key[index].cnt>STABLE_CNT){
-					my_xpad.key[index].valid = true;
-					my_xpad.state[index] = ((my_xpad.state[index]+1)%KEY_STAT_CNT);
-					my_xpad.dirty=true;
-				}
-			} else{
-				my_xpad.key[index].cnt = 0;
+		bool this = my_xpad.key[index].current^my_xpad.key[index].last;
+		if (this){
+			my_xpad.key[index].cnt=0;
+		}
+		my_xpad.key[index].unstable =pin || my_xpad.key[index].unstable;
+		if (my_xpad.key[index].unstable){
+			my_xpad.key[index].cnt++;
+		}
+		if (my_xpad.key[index].cnt>STABLE_CNT){
+			my_xpad.key[index].stable = pin;
+			my_xpad.dirty=true;
+			if (pin==false){
+				my_xpad.state[index] = ((my_xpad.state[index]+1)%KEY_STAT_CNT);
 			}
 		}
 	}
 	return res;
 }
+
 static void xpad_set_col(uint8_t col_nr){
 	GpioPinWrite(&my_xpad.col[col_nr], GPIO_PIN_SET);
 	return;

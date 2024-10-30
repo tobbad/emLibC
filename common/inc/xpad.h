@@ -25,8 +25,9 @@ typedef enum{
 typedef struct key_s{
 	bool last;
 	bool current;
+	bool unstable;
 	uint8_t cnt;
-	bool valid;
+	bool stable;
 } mkey_t;
 
 typedef struct xpad_r_s{
@@ -38,7 +39,6 @@ typedef struct xpad_s{
 	 GpioPin_t row[ROW_CNT];
 	 GpioPin_t col[COL_CNT];
 	 mkey_t key[X_BUTTON_CNT];
-	 bool  second[X_BUTTON_CNT]; // True when whithin 10*STABLE_CNT a button was pressed;
 	 key_state_e state[X_BUTTON_CNT];
 	 uint8_t label[X_BUTTON_CNT];
 	 bool dirty;
