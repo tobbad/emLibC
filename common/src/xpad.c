@@ -144,12 +144,12 @@ void  xpad_print(xpad_r_t *state, char* start){
 		printf("%s Nothing returned"NL, start);
 		return;
 	}
-	printf("%s: Label", start);
+	printf("%s: Label ", start);
 	for (uint8_t i=0;i<X_BUTTON_CNT;i++){
 		printf(" %c ", state->label[i]);
 	}
 	printf(NL);
-	printf("%s: State", start);
+	printf("%s: State ", start);
 	for (uint8_t i=0;i<X_BUTTON_CNT;i++){
 		printf("%s", x_state_c[state->state[i]]);
 	}
