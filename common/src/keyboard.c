@@ -65,12 +65,12 @@ void  keyboard_print(kybd_r_t *state, char* start){
 		return;
 	}
 	printf("%s: Label ", start);
-	for (uint8_t i=0;i<X_BUTTON_CNT;i++){
-		printf(" %c ", state->label[i]);
+	for (uint8_t i=0;i<BUTTON_CNT;i++){
+		printf(" %c ", '0'+state->label[i]);
 	}
 	printf(NL);
 	printf("%s: State ", start);
-	for (uint8_t i=0;i<X_BUTTON_CNT;i++){
+	for (uint8_t i=0;i<BUTTON_CNT;i++){
 		printf("%s", key_state_c[state->state[i]]);
 	}
 	printf(NL);
