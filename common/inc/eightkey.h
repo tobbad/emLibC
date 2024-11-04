@@ -4,15 +4,17 @@
  *  Created on: Oct 30, 2024
  *      Author: badi
  */
-
 #ifndef COMMON_INC_EIGHTKEY_H_
 #define COMMON_INC_EIGHTKEY_H_
 
+#define EIGHT_BUTTON_CNT 8
+
 typedef struct eight_s{
-	GpioPin_t bttn_pin[BUTTON_CNT];
-	mkey_t key[BUTTON_CNT];
-	key_state_e state[BUTTON_CNT];
-	uint8_t label[BUTTON_CNT];
+	GpioPin_t bttn_pin[EIGHT_BUTTON_CNT];
+	mkey_t key[EIGHT_BUTTON_CNT];
+	key_state_e state[EIGHT_BUTTON_CNT];
+	uint8_t label[EIGHT_BUTTON_CNT];
+	uint8_t key_cnt;
 	bool dirty;
 }eight_t;
 

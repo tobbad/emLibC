@@ -85,7 +85,7 @@ void eight_reset(kybd_h dev){
 kybd_r_t* eight_state(kybd_h dev){
 	static kybd_r_t res;
 	for (uint8_t i=0;i<BUTTON_CNT;i++){
-		res.label[i] = my_eight[dev]->label[i];
+		res.label[i] = my_eight[dev]->label[i]+1;
 		res.state[i] = my_eight[dev]->state[i];
 	}
 	return &res;
