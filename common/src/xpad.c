@@ -23,9 +23,24 @@ xpad_t default_keymap ={
 		{.port = PORTA, .pin = PIN_4,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}} ,
 		{.port = PORTB, .pin = PIN_0,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}}
 	},
-	.key = { {false,false ,0,false}, {false,false,0,false}, {false,false,0,false}, {false,false,0,false}, {false,false,0,false},  {false,false,0,false},  {false,false,0,false},  {false,false,0,false}},
-	.state = {OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
-	.label = {0xd, 0xe, 0xf, 0,  0xc, 9, 8, 7, 0xb, 6, 5, 4 ,0xA, 3, 2, 1 },
+	.key = { {false,false ,0,false}, {false,false,0,false},  {false,false,0,false}, {false,false,0,false},
+			 {false,false,0,false},  {false,false,0,false},  {false,false,0,false},  {false,false,0,false},
+			 {false,false,0,false},  {false,false,0,false},  {false,false,0,false},  {false,false,0,false},
+			 {false,false,0,false},  {false,false,0,false},  {false,false,0,false},  {false,false,0,false}
+	},
+	.state = {OFF, OFF, OFF, OFF,
+			  OFF, OFF, OFF, OFF,
+			  OFF, OFF, OFF, OFF,
+			  OFF, OFF, OFF, OFF},
+	.label = {0xd, 0xe, 0xf, 0,
+			  0xc, 9, 8, 7,
+			  0xb, 6, 5, 4,
+			  0xA, 3, 2, 1 },
+	.map = {-1, -1, -1, -1,
+			-1, -1, -1, -1,
+			-1, -1, -1, -1,
+			-1, -1, -1 , -1},
+	.key_cnt = X_BUTTON_CNT,
 	.dirty = false,
 
 };
@@ -52,7 +67,13 @@ void xpad_init(kybd_h dev, void *xpad){
 	for (uint8_t c=0;c<COL_CNT;c++){
 		  xpad_set_col(dev, c);
 	}
-
+	for (uint8_t i=0;i<BUTTON_CNT;i++){
+		my_xpad[dev]->map[my_xpad[dev]->label[i]] = i;
+	}
+	for (uint8_t i=0;i<BUTTON_CNT;i++){
+		printf("%d ->", i);
+		printf(" -> %d"NL, my_xpad[dev]->map[i]);
+	}
 }
 
 kybd_r_t* xpad_state(kybd_h dev){
@@ -69,7 +90,7 @@ kybd_r_t* xpad_state(kybd_h dev){
 		if (my_xpad[dev]->label[i]<10){
 			ret.label[i] = ('0'+my_xpad[dev]->label[i]);
 		} else {
-			ret.label[i] = ('A'-10+my_xpad[dev]->label[i]);
+			ret.label[i] = ('A'-'0'+my_xpad[dev]->label[i]);
 		}
 		ret.state[i] = my_xpad[dev]->state[i];
 	}
@@ -176,11 +197,13 @@ static uint8_t  xpad_read_row(kybd_h dev, uint8_t c){
 			my_xpad[dev]->key[index].cnt++;
 		}
 		if (my_xpad[dev]->key[index].cnt>STABLE_CNT){
-	    my_xpad[dev]->key[index].stable = pin;
-			my_xpad[dev]->dirty=true;
-			if (pin==false){
-				my_xpad[dev]->state[index] = ((my_xpad[dev]->state[index]+1)%KEY_STAT_CNT);
-			}
+			uint8_t value = my_xpad[dev]->map[index];
+	    	if (value<my_xpad[dev]->key_cnt){
+				my_xpad[dev]->dirty=true;
+				if (pin==false){
+					my_xpad[dev]->state[index] = ((my_xpad[dev]->state[index]+1)%KEY_STAT_CNT);
+				}
+	    	}
 		}
 	}
 	return res;

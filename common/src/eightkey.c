@@ -21,73 +21,81 @@ eight_t default_eight ={
 	.state = {OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF,},
 	.label = {0xd, 0xe, 0xf, 0,  0xc, 9, 8, 7 },
 	.dirty = false,
+	.key_cnt = 8,
 
 };
-eight_t* my_eight[KYBD_CNT];
+eight_t* _eight[KYBD_CNT];
 mkey_t reset_key ={0,0,0, true};
 
 void eight_init(kybd_h dev, void *data){
 	if (data != NULL){
-		my_eight[dev] = (eight_t *)data;
+		_eight[dev] = (eight_t *)data;
 	} else {
-		my_eight[dev] = &default_eight;
+		_eight[dev] = &default_eight;
 	}
 	for (uint8_t idx= 0; idx<BUTTON_CNT; idx++){
-		GpioPinInit(&my_eight[dev]->bttn_pin[idx]);
-		memcpy(my_eight[dev]->key, &reset_key, sizeof(key_state_e));
-		my_eight[dev]->label[idx] = idx;
-		my_eight[dev]->state[idx] = OFF;
+		GpioPinInit(&_eight[dev]->bttn_pin[idx]);
+		memcpy(_eight[dev]->key, &reset_key, sizeof(key_state_e));
+		if (idx<_eight[dev]->key_cnt){
+			_eight[dev]->label[idx] = idx;
+			_eight[dev]->state[idx] = OFF;
+		}else {
+			_eight[dev]->label[idx] = -1;
+			_eight[dev]->state[idx] = -1;
+		}
 
 	}
 
 }
 bool eight_scan(kybd_h dev){
-	if (my_eight[dev]==NULL){
+	if (_eight[dev]==NULL){
 		printf("%010ld: No valid handle on read_row"NL,HAL_GetTick());
 		return false;
 	}
 	uint8_t res=0;
 	for (uint8_t index=0;index<BUTTON_CNT; index++)	{
 		uint8_t pin=0;
-		GpioPinRead(&my_eight[dev]->bttn_pin[index], &pin);
+		GpioPinRead(&_eight[dev]->bttn_pin[index], &pin);
 		pin =!pin;
 		res = res | (pin<<index);
-		my_eight[dev]->key[index].current=pin;
-		bool this = my_eight[dev]->key[index].current^my_eight[dev]->key[index].last;
+		_eight[dev]->key[index].current=pin;
+		bool this = _eight[dev]->key[index].current^_eight[dev]->key[index].last;
 		if (this){
-			my_eight[dev]->key[index].cnt=0;
+			_eight[dev]->key[index].cnt=0;
 		}
-		my_eight[dev]->key[index].unstable =pin || my_eight[dev]->key[index].unstable;
-		if (my_eight[dev]->key[index].unstable){
-			my_eight[dev]->key[index].cnt++;
+		_eight[dev]->key[index].unstable =pin || _eight[dev]->key[index].unstable;
+		if (_eight[dev]->key[index].unstable){
+			_eight[dev]->key[index].cnt++;
 		}
-		if (my_eight[dev]->key[index].cnt>STABLE_CNT){
-	    my_eight[dev]->key[index].stable = pin;
-			my_eight[dev]->dirty=true;
-			if (pin==false){
-				my_eight[dev]->state[index] = ((my_eight[dev]->state[index]+1)%KEY_STAT_CNT);
+		if (_eight[dev]->key[index].cnt>STABLE_CNT){
+	    _eight[dev]->key[index].stable = pin;
+			_eight[dev]->dirty=true;
+			if ((pin==false) && (index<_eight[dev]->key_cnt)){
+				_eight[dev]->state[index] = ((_eight[dev]->state[index]+1)%KEY_STAT_CNT);
+				_eight[dev]->dirty |= true;
 			}
 		}
 	}
-	return my_eight[dev]->dirty;
+	return _eight[dev]->dirty;
 };
 void eight_reset(kybd_h dev){
-	if (my_eight[dev]==NULL){
+	if (_eight[dev]==NULL){
 		printf("%010ld: No valid handle on reset"NL,HAL_GetTick());
 		return;
 	}
-	my_eight[dev]->dirty=  false;
+	_eight[dev]->dirty=  false;
 	for (uint8_t idx=0; idx<BUTTON_CNT; idx++){
-		my_eight[dev]->key[idx] = reset_key;
+		_eight[dev]->key[idx] = reset_key;
 	}
 
 };
 kybd_r_t* eight_state(kybd_h dev){
 	static kybd_r_t res;
 	for (uint8_t i=0;i<BUTTON_CNT;i++){
-		res.label[i] = my_eight[dev]->label[i]+1;
-		res.state[i] = my_eight[dev]->state[i];
+		res.label[i] = _eight[dev]->label[i]+1;
+		res.state[i] = _eight[dev]->state[i];
 	}
+	res.key_cnt =  _eight[dev]->key_cnt;
 	return &res;
 };
 void  eight_iprint(xpad_t *state, char* start){
