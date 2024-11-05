@@ -87,13 +87,10 @@ kybd_r_t* xpad_state(kybd_h dev){
 		return NULL;
 	}
 	for (i=0; i<BUTTON_CNT; i++){
-		if (my_xpad[dev]->label[i]<10){
-			ret.label[i] = ('0'+my_xpad[dev]->label[i]);
-		} else {
-			ret.label[i] = ('A'-'0'+my_xpad[dev]->label[i]);
-		}
+		ret.label[i] = my_xpad[dev]->label[i];
 		ret.state[i] = my_xpad[dev]->state[i];
 	}
+	ret.key_cnt = my_xpad[dev]->key_cnt;
 	return &ret;
 }
 

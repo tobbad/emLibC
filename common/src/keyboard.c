@@ -65,7 +65,7 @@ void  keyboard_print(kybd_r_t *state, char* start){
 		return;
 	}
 	printf("%s: Label ", start);
-	for (uint8_t i=0;i<BUTTON_CNT;i++){
+	for (uint8_t i=0;i<state->key_cnt;i++){
 	    if (state->label[i]<10){
 	        printf(" %c ", '0'+state->label[i]);
 	    } else {

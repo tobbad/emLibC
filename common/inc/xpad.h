@@ -21,7 +21,6 @@ typedef struct xpad_s{
 	int8_t map[X_BUTTON_CNT];
 	uint8_t key_cnt;
 	bool dirty;
-	uint8_t key_cnt;
 }xpad_t;
 
 extern kybd_t xscan_dev;
