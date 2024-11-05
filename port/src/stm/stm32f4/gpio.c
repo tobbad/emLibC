@@ -63,12 +63,13 @@ static uint32_t MODE_MAP[PIN_MODE_CNT] =
     LL_GPIO_MODE_ANALOG    ,  /* Select analog mode */
 };
 
-static uint32_t OTYPE_MAP[PIN_CNT] ={
+static uint32_t PIN_TYPE[PIN_CNT] =
+{
 	LL_GPIO_OUTPUT_PUSHPULL , /* Select push-pull as output type */
 	LL_GPIO_OUTPUT_OPENDRAIN, /* Select open-drain as output type */
 };
 
-static uint32_t SPEED_MAP[PIN_SPEED_CNT] =
+static uint32_t SPEED_MAP[s_PIN_SPEED_CNT] =
 {
     LL_GPIO_SPEED_FREQ_LOW      , /* Select I/O low output speed    */
 	LL_GPIO_SPEED_FREQ_MEDIUM   , /* Select I/O medium output speed */
@@ -118,7 +119,7 @@ inline static em_msg CheckConf(GpioConf_t *conf)
 	em_msg res = EM_ERR;
 	if ((conf->mode < PIN_MODE_CNT) &&
 		(conf->pin<PIN_CNT) &&
-		(conf->speed < PIN_SPEED_CNT) &&
+		(conf->speed < s_PIN_SPEED_CNT) &&
 		(conf->pupd<PIN_PUPD_CNT) &&
 		(conf->af < PIN_AF_CNT))
 	{
@@ -222,9 +223,9 @@ em_msg GpioSetPortMode(GpioPort_t *port, gpio_mode_t mode)
  * Set output when needed: 158
  * Set output when needed low level: 149
  */
-em_msg GpioPinWrite(GpioPin_t *pin, uint8_t value)
+em_msg GpioPinWrite(GpioPin_t *pin, bool value)
 {
-	em_msg res = EM_ERR;//CheckGpio(pin);
+	em_msg res = CheckGpio(pin);
 	if (pin->ll.port != NULL)
 	{
 		/* Following check consumes 20ms on 384000 (5*240x320) calls */
@@ -247,7 +248,7 @@ em_msg GpioPinWrite(GpioPin_t *pin, uint8_t value)
 	return res;
 }
 
-em_msg GpioPinRead(GpioPin_t *pin, uint8_t *value)
+em_msg GpioPinRead(GpioPin_t *pin, bool *value)
 {
 	em_msg res = CheckGpio(pin);
 	if (EM_OK == res)
@@ -256,6 +257,26 @@ em_msg GpioPinRead(GpioPin_t *pin, uint8_t *value)
 		uint16_t hal_pin = PIN_MAP[pin->pin];
 		GPIO_PinState state = HAL_GPIO_ReadPin(hal_gpio, hal_pin);
 		*value = state==GPIO_PIN_SET?true:false;
+		res = EM_OK;
+	}
+	return res;
+}
+/*
+ * Calling inlined CheckGpio consumes 30 ms on 320x240 Pixels
+ * Avoid repeated lookup of GPIO_TypeDef and hal_pin reduces
+ * 30ms on 320x240 Pixels
+ * OUTPUT:
+ * Do nothing: 136ms
+ * Hard set output always: 163 ms
+ * Set output when needed: 158
+ * Set output when needed low level: 149
+ */
+em_msg GpioPinToggle(GpioPin_t *pin)
+{
+	em_msg res = CheckGpio(pin);
+	if (pin->ll.port != NULL)
+	{
+		HAL_GPIO_TogglePin(pin->ll.port, pin->ll.pin_mask);
 		res = EM_OK;
 	}
 	return res;
@@ -327,5 +348,6 @@ em_msg GpioPortWrite(GpioPort_t *port, uint32_t value)
 	return res;
 }
 #endif
+
 
 

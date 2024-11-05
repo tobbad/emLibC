@@ -161,7 +161,7 @@ static uint8_t  xpad_read_row(kybd_h dev, uint8_t c){
 	}
 	uint8_t res=0;
 	for (uint8_t r=0;r<ROW_CNT; r++)	{
-		uint8_t pin=0;
+		bool pin=0;
 		GpioPinRead(&my_xpad[dev]->row[r], &pin);
 		pin =!pin;
 		res = res | (pin<<r);

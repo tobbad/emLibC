@@ -131,6 +131,7 @@ inline static em_msg CheckConf(GpioConf_t *conf)
 {
 	em_msg res = EM_ERR;
 	if ((conf->mode < PIN_MODE_CNT) &&
+		(conf->pin<PIN_CNT) &&
 		(conf->speed < s_PIN_SPEED_CNT) &&
 		(conf->pupd<PIN_PUPD_CNT) &&
 		(conf->af < PIN_AF_CNT))
@@ -159,7 +160,7 @@ static void MapConf(GpioConf_t *conf, LL_GPIO_InitTypeDef  *ll_gpio)
 {
 	ll_gpio->Mode = MODE_MAP[conf->mode];
 	ll_gpio->Speed = SPEED_MAP[conf->speed];
-	ll_gpio->Pin = PIN_TYPE[conf->pin];
+	ll_gpio->Pin = PIN_MAP[conf->pin];
 	ll_gpio->Pull = PUPD_MAP[conf->pupd];
 	ll_gpio->Alternate = AF_MAP[conf->af];
 }
@@ -235,7 +236,7 @@ em_msg GpioSetPortMode(GpioPort_t *port, gpio_mode_t mode)
  * Set output when needed: 158
  * Set output when needed low level: 149
  */
-em_msg GpioPinWrite(GpioPin_t *pin, uint8_t value)
+em_msg GpioPinWrite(GpioPin_t *pin, bool value)
 {
 	em_msg res = EM_ERR;//CheckGpio(pin);
 	if (pin->ll.port != NULL)
@@ -260,13 +261,15 @@ em_msg GpioPinWrite(GpioPin_t *pin, uint8_t value)
 	return res;
 }
 
-em_msg GpioPinRead(GpioPin_t *pin, uint8_t *value)
+em_msg GpioPinRead(GpioPin_t *pin, bool *value)
 {
 	em_msg res = CheckGpio(pin);
 	if (EM_OK == res)
 	{
-		GPIO_PinState state = HAL_GPIO_ReadPin(pin->ll.port, pin->ll.pin_mask);
-		*value = state==GPIO_PIN_SET?1:0;
+		GPIO_TypeDef *hal_gpio = PORT_MAP[pin->port];
+		uint16_t hal_pin = PIN_MAP[pin->pin];
+		GPIO_PinState state = HAL_GPIO_ReadPin(hal_gpio, hal_pin);
+		*value = state==GPIO_PIN_SET?true:false;
 		res = EM_OK;
 	}
 	return res;
@@ -282,7 +285,7 @@ em_msg GpioPortRead(GpioPort_t *port, uint32_t *value)
 		*value = 0;
 		for (uint8_t bitNr=0;bitNr<PORTW_MAX;bitNr++)
 		{
-			uint8_t bitVal = 0;
+			bool bitVal = false;
 			pin.pin = port->gpio[bitNr].pin;
 			pin.port = port->gpio[bitNr].port;
 			res = GpioPinRead(&pin, &bitVal);
@@ -344,10 +347,10 @@ em_msg GpioPinToggle(GpioPin_t *pin) {
     em_msg res = CheckGpio(pin);
     if (EM_OK == res)
     {
-        uint8_t value;
+        bool value;
         res = GpioPinRead(pin, &value);
         if (EM_OK == res) {
-            value = value^0x01;
+            value = !value;
             res = GpioPinWrite(pin, value);
         }
     }

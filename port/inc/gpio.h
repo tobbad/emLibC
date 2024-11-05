@@ -101,8 +101,8 @@ em_msg GpioPortInit(GpioPort_t *port);
 
 em_msg GpioSetPortMode(GpioPort_t *port, gpio_mode_t mode);
 
-em_msg GpioPinRead(GpioPin_t *pin, uint8_t *value);
-em_msg GpioPinWrite(GpioPin_t *pin, uint8_t value);
+em_msg GpioPinRead(GpioPin_t *pin, bool *value);
+em_msg GpioPinWrite(GpioPin_t *pin, bool value);
 em_msg GpioPinToggle(GpioPin_t *pin);
 
 /*

@@ -48,7 +48,7 @@ bool eight_scan(kybd_h dev){
 	}
 	uint8_t res=0;
 	for (uint8_t index=0;index<BUTTON_CNT; index++)	{
-		uint8_t pin=0;
+		bool pin=0;
 		GpioPinRead(&my_eight[dev]->bttn_pin[index], &pin);
 		pin =!pin;
 		res = res | (pin<<index);

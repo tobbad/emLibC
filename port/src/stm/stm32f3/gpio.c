@@ -51,12 +51,13 @@ static uint32_t MODE_MAP[PIN_MODE_CNT] =
     LL_GPIO_MODE_ANALOG    ,  /* Select analog mode */
 };
 
-static uint32_t OTYPE_MAP[PIN_OTYPE_CNT] ={
+static uint32_t PIN_TYPE[PIN_CNT] =
+{
 	LL_GPIO_OUTPUT_PUSHPULL , /* Select push-pull as output type */
 	LL_GPIO_OUTPUT_OPENDRAIN, /* Select open-drain as output type */
 };
 
-static uint32_t SPEED_MAP[PIN_SPEED_CNT] =
+static uint32_t SPEED_MAP[s_PIN_SPEED_CNT] =
 {
     LL_GPIO_SPEED_FREQ_LOW      , /* Select I/O low output speed    */
 	LL_GPIO_SPEED_FREQ_MEDIUM   , /* Select I/O medium output speed */
@@ -105,8 +106,8 @@ inline static em_msg CheckConf(GpioConf_t *conf)
 {
 	em_msg res = EM_ERR;
 	if ((conf->mode < PIN_MODE_CNT) &&
-		(conf->otype < PIN_OTYPE_CNT) &&
-		(conf->speed < PIN_SPEED_CNT) &&
+		(conf->pin<PIN_CNT) &&
+		(conf->speed < s_PIN_SPEED_CNT) &&
 		(conf->pupd<PIN_PUPD_CNT) &&
 		(conf->af < PIN_AF_CNT))
 	{
@@ -134,7 +135,7 @@ static void MapConf(GpioConf_t *conf, LL_GPIO_InitTypeDef  *ll_gpio)
 {
 	ll_gpio->Mode = MODE_MAP[conf->mode];
 	ll_gpio->Speed = SPEED_MAP[conf->speed];
-	ll_gpio->OutputType = OTYPE_MAP[conf->otype];
+	ll_gpio->Pin = PIN_MAP[conf->pin];
 	ll_gpio->Pull = PUPD_MAP[conf->pupd];
 	ll_gpio->Alternate = AF_MAP[conf->af];
 }
@@ -210,7 +211,7 @@ em_msg GpioSetPortMode(GpioPort_t *port, gpio_mode_t mode)
  * Set output when needed: 158
  * Set output when needed low level: 149
  */
-em_msg GpioPinWrite(GpioPin_t *pin, uint8_t value)
+em_msg GpioPinWrite(GpioPin_t *pin, bool value)
 {
 	em_msg res = CheckGpio(pin);
 	if (pin->ll.port != NULL)
@@ -235,7 +236,7 @@ em_msg GpioPinWrite(GpioPin_t *pin, uint8_t value)
 	return res;
 }
 
-em_msg GpioPinRead(GpioPin_t *pin, uint8_t *value)
+em_msg GpioPinRead(GpioPin_t *pin, bool *value)
 {
 	em_msg res = CheckGpio(pin);
 	if (EM_OK == res)
@@ -335,5 +336,6 @@ em_msg GpioPortWrite(GpioPort_t *port, uint32_t value)
 	return res;
 }
 #endif
+
 
 
