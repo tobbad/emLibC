@@ -71,8 +71,8 @@ void xpad_init(kybd_h dev, void *xpad){
 		my_xpad[dev]->map[my_xpad[dev]->label[i]] = i;
 	}
 	for (uint8_t i=0;i<BUTTON_CNT;i++){
-		printf("%d ->", i);
-		printf(" -> %d"NL, my_xpad[dev]->map[i]);
+		printf("%01X ->", i);
+		printf(" -> %01X"NL, my_xpad[dev]->map[i]);
 	}
 }
 
