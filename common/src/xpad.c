@@ -71,7 +71,7 @@ void xpad_init(kybd_h dev, void *xpad){
 		my_xpad[dev]->map[my_xpad[dev]->label[i]] = i;
 	}
 	for (uint8_t i=0;i<BUTTON_CNT;i++){
-		printf("%01X ->", i);
+		printf("%01X ", i);
 		printf(" -> %01X"NL, my_xpad[dev]->map[i]);
 	}
 }
@@ -87,8 +87,9 @@ kybd_r_t* xpad_state(kybd_h dev){
 		return NULL;
 	}
 	for (i=0; i<BUTTON_CNT; i++){
-		ret.label[i] = my_xpad[dev]->label[i];
-		ret.state[i] = my_xpad[dev]->state[i];
+		ret.label[i] = i;
+		uint8_t to = my_xpad[dev]->map[i];
+		ret.state[i] = my_xpad[dev]->state[to];
 	}
 	ret.key_cnt = my_xpad[dev]->key_cnt;
 	return &ret;
