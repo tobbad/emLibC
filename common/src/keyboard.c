@@ -74,8 +74,9 @@ void  keyboard_print(kybd_r_t *state, char* start){
 	}
 	printf(NL);
 	printf("%s: State ", start);
-	for (uint8_t i=0;i<BUTTON_CNT;i++){
-		printf("%s", key_state_c[state->state[i]]);
+	for (uint8_t i=0;i<state->key_cnt;i++){
+		char * text = key_state_c[state->state[i]];
+		printf("%s", text);
 	}
 	printf(NL);
 

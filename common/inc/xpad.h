@@ -18,6 +18,8 @@ typedef struct xpad_s{
 	mkey_t key[X_BUTTON_CNT];
 	key_state_e state[X_BUTTON_CNT];
 	uint8_t label[X_BUTTON_CNT];
+	int8_t map[X_BUTTON_CNT];
+	uint8_t key_cnt;
 	bool dirty;
 	uint8_t key_cnt;
 }xpad_t;
