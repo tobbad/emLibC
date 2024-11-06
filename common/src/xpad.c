@@ -12,16 +12,16 @@ static mkey_t reset_key ={0,0,0, true};
 
 xpad_t default_keymap ={
 	.row ={ //Inputs
-		{.port=PORTB, .pin=PIN_10, .conf= {.mode=INPUT, .pin =PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
+		{.port=PORTA, .pin=PIN_8, .conf= {.mode=INPUT, .pin =PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
 		{.port=PORTB, .pin=PIN_4, .conf= {.mode=INPUT,  .pin= PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
 		{.port=PORTB, .pin=PIN_5, .conf= {.mode=INPUT,  .pin= PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
 		{.port=PORTB, .pin=PIN_3, .conf= {.mode=INPUT,  .pin= PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
 	},
 	.col = { // Outputs
 		{.port = PORTA, .pin = PIN_0,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}} ,
-		{.port = PORTA, .pin = PIN_1,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}} ,
 		{.port = PORTA, .pin = PIN_4,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}} ,
-		{.port = PORTB, .pin = PIN_0,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}}
+		{.port = PORTB, .pin = PIN_0,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}} ,
+		{.port = PORTC, .pin = PIN_0,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}}
 	},
 	.key = { {false,false ,0,false}, {false,false,0,false},  {false,false,0,false}, {false,false,0,false},
 			 {false,false,0,false},  {false,false,0,false},  {false,false,0,false},  {false,false,0,false},
@@ -40,6 +40,7 @@ xpad_t default_keymap ={
 			-1, -1, -1, -1,
 			-1, -1, -1, -1,
 			-1, -1, -1 , -1},
+	.key_cnt = X_BUTTON_CNT,
 	.range = {1, 8},
 	.dirty = false,
 
@@ -67,12 +68,13 @@ void xpad_init(kybd_h dev, void *xpad){
 	for (uint8_t c=0;c<COL_CNT;c++){
 		  xpad_set_col(dev, c);
 	}
-    for (uint8_t i=0;i<BUTTON_CNT;i++){
-        my_xpad[dev]->map[my_xpad[dev]->label[i]] = i;
-    }
-    for (uint8_t i=0;i<BUTTON_CNT;i++){
-        printf("%010ld: label: %02d, index: %02d"NL, HAL_GetTick(), i, my_xpad[dev]->label[i]);
-    }
+	for (uint8_t i=0;i<BUTTON_CNT;i++){
+		my_xpad[dev]->map[my_xpad[dev]->label[i]] = i;
+	}
+	for (uint8_t i=0;i<BUTTON_CNT;i++){
+		printf("%01X ", i);
+		printf(" -> %01X"NL, my_xpad[dev]->map[i]);
+	}
 }
 
 void  xpad_state(kybd_h dev, kybd_r_t *ret){
@@ -91,10 +93,13 @@ void  xpad_state(kybd_h dev, kybd_r_t *ret){
         if (value < my_xpad[dev]->range[0]) continue;
         if (value > my_xpad[dev]->range[1]) continue;
 		ret->state[idx++] = my_xpad[dev]->state[i];
+		ret->range[0]=my_xpad[dev]->range[0];
+		ret->range[1]=my_xpad[dev]->range[1];
+		ret->key_cnt=my_xpad[dev]->key_cnt;
+		ret->label[i] = i;
+		uint8_t to = my_xpad[dev]->map[i];
+		ret->state[i] = my_xpad[dev]->state[to];
 	}
-    ret->range[0]=my_xpad[dev]->range[0];
-    ret->range[1]=my_xpad[dev]->range[1];
-    ret->key_cnt=my_xpad[dev]->key_cnt;
     assert(ret->range[0]==my_xpad[dev]->range[0]);
     assert(ret->range[1]==my_xpad[dev]->range[1]);
 	return;
