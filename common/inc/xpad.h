@@ -20,7 +20,7 @@ typedef struct xpad_s{
 	uint8_t label[X_BUTTON_CNT];
 	int8_t map[X_BUTTON_CNT];
     uint8_t key_cnt;
-	uint8_t range[2];
+	uint8_t first;
 	bool dirty;
 }xpad_t;
 

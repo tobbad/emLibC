@@ -15,7 +15,7 @@ typedef struct eight_s{
 	key_state_e state[EIGHT_BUTTON_CNT];
 	int8_t label[EIGHT_BUTTON_CNT];
     uint8_t key_cnt;
-	uint8_t range[2];
+	uint8_t first;
 	bool dirty;
 }eight_t;
 
