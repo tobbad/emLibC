@@ -46,12 +46,11 @@ void keyboard_reset(kybd_h dev){
 	return;
 }
 
-kybd_r_t *keyboard_state(kybd_h dev){
-	kybd_r_t *res=NULL;
+void keyboard_state(kybd_h dev, kybd_r_t *ret){
 	if (my_kybd[dev]!=NULL){
-		res = my_kybd[dev]->state(dev);
+		my_kybd[dev]->state(dev, ret);
 	}
-	return res;
+	return;
 };
 static int8_t keyboard_find_dev(){
 	for (uint8_t i=0;i<KYBD_CNT;i++){

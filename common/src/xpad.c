@@ -40,7 +40,7 @@ xpad_t default_keymap ={
 			-1, -1, -1, -1,
 			-1, -1, -1, -1,
 			-1, -1, -1 , -1},
-	.key_cnt = X_BUTTON_CNT,
+	.range = {1, 8},
 	.dirty = false,
 
 };
@@ -67,34 +67,37 @@ void xpad_init(kybd_h dev, void *xpad){
 	for (uint8_t c=0;c<COL_CNT;c++){
 		  xpad_set_col(dev, c);
 	}
-	for (uint8_t i=0;i<BUTTON_CNT;i++){
-		my_xpad[dev]->map[my_xpad[dev]->label[i]] = i;
-	}
-	for (uint8_t i=0;i<BUTTON_CNT;i++){
-		printf("%d ->", i);
-		printf(" -> %d"NL, my_xpad[dev]->map[i]);
-	}
+    for (uint8_t i=0;i<BUTTON_CNT;i++){
+        my_xpad[dev]->map[my_xpad[dev]->label[i]] = i;
+    }
+    for (uint8_t i=0;i<BUTTON_CNT;i++){
+        printf("%010ld: label: %02d, index: %02d"NL, HAL_GetTick(), i, my_xpad[dev]->label[i]);
+    }
 }
 
-kybd_r_t* xpad_state(kybd_h dev){
-	static kybd_r_t ret;
+void  xpad_state(kybd_h dev, kybd_r_t *ret){
 	uint8_t i=0;
 	if (my_xpad[dev]==NULL){
 		printf("%010ld: No valid handle on state"NL,HAL_GetTick());
-		return false;
+		return;
 	}
 	if (!(my_xpad[dev]->dirty)) {
-		return NULL;
+		return;
 	}
+	uint8_t idx=0;
 	for (i=0; i<BUTTON_CNT; i++){
-		if (my_xpad[dev]->label[i]<10){
-			ret.label[i] = ('0'+my_xpad[dev]->label[i]);
-		} else {
-			ret.label[i] = ('A'-'0'+my_xpad[dev]->label[i]);
-		}
-		ret.state[i] = my_xpad[dev]->state[i];
+	    // Introduce limitcheck
+	    uint8_t value =my_xpad[dev]->map[1];
+        if (value < my_xpad[dev]->range[0]) continue;
+        if (value > my_xpad[dev]->range[1]) continue;
+		ret->state[idx++] = my_xpad[dev]->state[i];
 	}
-	return &ret;
+    ret->range[0]=my_xpad[dev]->range[0];
+    ret->range[1]=my_xpad[dev]->range[1];
+    ret->key_cnt=my_xpad[dev]->key_cnt;
+    assert(ret->range[0]==my_xpad[dev]->range[0]);
+    assert(ret->range[1]==my_xpad[dev]->range[1]);
+	return;
 }
 
 bool xpad_scan(kybd_h dev){
@@ -198,11 +201,17 @@ static uint8_t  xpad_read_row(kybd_h dev, uint8_t c){
 		}
 		if (my_xpad[dev]->key[index].cnt>STABLE_CNT){
 			uint8_t value = my_xpad[dev]->map[index];
-	    	if (value<my_xpad[dev]->key_cnt){
+            printf("%010ld: Detected value %d",HAL_GetTick(), value);
+	    	if ((value >= my_xpad[dev]->range[0])&&
+	    	    (value <= my_xpad[dev]->range[1]))   {
 				my_xpad[dev]->dirty=true;
 				if (pin==false){
 					my_xpad[dev]->state[index] = ((my_xpad[dev]->state[index]+1)%KEY_STAT_CNT);
 				}
+				printf(": OK"NL);
+	    	} else {
+                printf(": Ignored"NL);
+
 	    	}
 		}
 	}

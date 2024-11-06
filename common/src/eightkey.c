@@ -19,9 +19,9 @@ eight_t default_eight ={
 	},
 	.key = { {false,false ,0,false}, {false,false,0,false}, {false,false,0,false}, {false,false,0,false}, {false,false,0,false},  {false,false,0,false},  {false,false,0,false},  {false,false,0,false}},
 	.state = {OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF,},
-	.label = {0xd, 0xe, 0xf, 0,  0xc, 9, 8, 7 },
+	.label = {1, 2, 3, 4,  5, 6, 7, 8 },
 	.dirty = false,
-	.key_cnt = 8,
+	.range ={1,8},
 
 };
 eight_t* _eight[KYBD_CNT];
@@ -55,7 +55,7 @@ bool eight_scan(kybd_h dev){
 	uint8_t res=0;
 	for (uint8_t index=0;index<BUTTON_CNT; index++)	{
 		bool pin=0;
-		GpioPinRead(&my_eight[dev]->bttn_pin[index], &pin);
+		GpioPinRead(&_eight[dev]->bttn_pin[index], &pin);
 		pin =!pin;
 		res = res | (pin<<index);
 		_eight[dev]->key[index].current=pin;
@@ -68,9 +68,11 @@ bool eight_scan(kybd_h dev){
 			_eight[dev]->key[index].cnt++;
 		}
 		if (_eight[dev]->key[index].cnt>STABLE_CNT){
-	    _eight[dev]->key[index].stable = pin;
+            if (index<_eight[dev]->range[0]) continue;
+            if (index>_eight[dev]->range[1]) continue;
+		    _eight[dev]->key[index].stable = pin;
 			_eight[dev]->dirty=true;
-			if ((pin==false) && (index<_eight[dev]->key_cnt)){
+			if (pin==false){
 				_eight[dev]->state[index] = ((_eight[dev]->state[index]+1)%KEY_STAT_CNT);
 				_eight[dev]->dirty |= true;
 			}
@@ -89,15 +91,16 @@ void eight_reset(kybd_h dev){
 	}
 
 };
-kybd_r_t* eight_state(kybd_h dev){
-	static kybd_r_t res;
+void eight_state(kybd_h dev, kybd_r_t *ret){
 	for (uint8_t i=0;i<BUTTON_CNT;i++){
-		res.label[i] = _eight[dev]->label[i]+1;
-		res.state[i] = _eight[dev]->state[i];
+	    ret->label[i] = _eight[dev]->label[i]+1;
+	    ret->state[i] = _eight[dev]->state[i];
 	}
-	res.key_cnt =  _eight[dev]->key_cnt;
-	return &res;
+	assert(ret->key_cnt ==_eight[dev]->key_cnt);
+	ret->key_cnt = _eight[dev]->key_cnt;
+	return;
 };
+
 void  eight_iprint(xpad_t *state, char* start){
 
 };

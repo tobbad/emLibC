@@ -39,7 +39,8 @@ typedef struct key_s{
 typedef struct kybd_r_s{
 	 key_state_e state[BUTTON_CNT];
 	 uint8_t  label[BUTTON_CNT];
-	 uint8_t key_cnt;
+     uint8_t key_cnt;
+	 uint8_t range[2]; //First and last valid value
 }kybd_r_t;
 
 typedef int8_t kybd_h;
@@ -48,7 +49,7 @@ typedef struct kybd_s{
 	void (*init)(kybd_h handle, void* kybd);
 	bool (*scan)(kybd_h handle);
 	void (*reset)(kybd_h handle);
-	kybd_r_t* (*state)(kybd_h handle);
+	void  (*state)(kybd_h handle, kybd_r_t *ret);
 	void *user_data;
 	uint8_t button_cnt;
 	kybd_type_e dev_type;
@@ -57,7 +58,7 @@ typedef struct kybd_s{
 kybd_h keyboard_init(kybd_t *kybd, void *user_data);
 bool keyboard_scan(kybd_h handle);
 void keyboard_reset(kybd_h handle);
-kybd_r_t* keyboard_state(kybd_h handle);
+void keyboard_state(kybd_h handle, kybd_r_t *ret);
 void  keyboard_print(kybd_r_t *state, char* start); // Show returnd
 void  keyboard_iprint(kybd_r_t *state, char* start); // Show internals
 
