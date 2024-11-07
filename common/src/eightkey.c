@@ -21,7 +21,8 @@ eight_t default_eight ={
 	.state = {OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF,},
 	.label = {1, 2, 3, 4,  5, 6, 7, 8 },
 	.dirty = false,
-	.range ={1,8},
+	.key_cnt =EIGHT_BUTTON_CNT,
+	.first =0,
 
 };
 eight_t* _eight[KYBD_CNT];
@@ -68,8 +69,8 @@ bool eight_scan(kybd_h dev){
 			_eight[dev]->key[index].cnt++;
 		}
 		if (_eight[dev]->key[index].cnt>STABLE_CNT){
-            if (index<_eight[dev]->range[0]) continue;
-            if (index>_eight[dev]->range[1]) continue;
+            if (index<_eight[dev]->first) continue;
+            if (index>_eight[dev]->first+_eight[dev]->key_cnt) continue;
 			_eight[dev]->key[index].stable = pin;
 			_eight[dev]->dirty=true;
 			if ((pin==false) && (index<_eight[dev]->key_cnt)){
