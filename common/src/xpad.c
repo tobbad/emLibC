@@ -13,7 +13,7 @@ static mkey_t reset_key ={0,0,0, true};
 xpad_t default_keymap ={
 	.row ={ //Inputs
 		{.port=PORTA, .pin=PIN_8, .conf= {.mode=INPUT, .pin =PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
-		{.port=PORTB, .pin=PIN_4, .conf= {.mode=INPUT,  .pin= PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
+		{.port=PORTB, .pin=PIN_10, .conf= {.mode=INPUT,  .pin= PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
 		{.port=PORTB, .pin=PIN_5, .conf= {.mode=INPUT,  .pin= PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
 		{.port=PORTB, .pin=PIN_3, .conf= {.mode=INPUT,  .pin= PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
 	},
@@ -21,7 +21,7 @@ xpad_t default_keymap ={
 		{.port = PORTA, .pin = PIN_0,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}} ,
 		{.port = PORTA, .pin = PIN_4,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}} ,
 		{.port = PORTB, .pin = PIN_0,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}} ,
-		{.port = PORTC, .pin = PIN_0,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}}
+		{.port = PORTC, .pin = PIN_1,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}}
 	},
 	.key = { {false,false ,0,false}, {false,false,0,false},  {false,false,0,false}, {false,false,0,false},
 			 {false,false,0,false},  {false,false,0,false},  {false,false,0,false},  {false,false,0,false},
@@ -42,7 +42,7 @@ xpad_t default_keymap ={
 			-1, -1, -1 , -1},
 	.first = 1,
 	.key_cnt = X_BUTTON_CNT,
-	.first = 0,
+	.first = 1,
 	.dirty = false,
 
 };
@@ -87,13 +87,17 @@ void  xpad_state(kybd_h dev, kybd_r_t *ret){
 	if (!(my_xpad[dev]->dirty)) {
 		return;
 	}
-	uint8_t idx=0;
 	for (i=0; i<ret->key_cnt; i++){
 	    // Introduce limitcheck
-	    uint8_t value =my_xpad[dev]->map[1];
-        if (value < my_xpad[dev]->start) continue;
-        if (value > my_xpad[dev]->start+my_xpad[dev]->key_cnt) continue;
+	    uint8_t value =my_xpad[dev]->map[i];
+        if (value < my_xpad[dev]->first) continue;
+        if (value > my_xpad[dev]->first+my_xpad[dev]->key_cnt) continue;
 		ret->state[i] = my_xpad[dev]->state[i];
+		ret->label[i] = i;
+		uint8_t to = my_xpad[dev]->map[i];
+		ret->state[i] = my_xpad[dev]->state[to];
+	}
+	for ( ;i<X_BUTTON_CNT;i++){
 		ret->label[i] = i;
 		uint8_t to = my_xpad[dev]->map[i];
 		ret->state[i] = my_xpad[dev]->state[to];
@@ -203,8 +207,8 @@ static uint8_t  xpad_read_row(kybd_h dev, uint8_t col_nr){
 		if (my_xpad[dev]->key[index].cnt>STABLE_CNT){
 			uint8_t value = my_xpad[dev]->map[index];
             printf("%010ld: Detected value %d",HAL_GetTick(), value);
-	    	if ((value >= my_xpad[dev]->start)&&
-	    	    (value <= my_xpad[dev]->range+my_xpad[dev]->key_cnt))   {
+	    	if ((value >= my_xpad[dev]->first)&&
+	    	    (value <= my_xpad[dev]->first+my_xpad[dev]->key_cnt))   {
 				my_xpad[dev]->dirty=true;
 				if (pin==false){
 					my_xpad[dev]->state[index] = ((my_xpad[dev]->state[index]+1)%KEY_STAT_CNT);
