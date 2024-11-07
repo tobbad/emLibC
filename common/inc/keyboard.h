@@ -40,6 +40,7 @@ typedef struct kybd_r_s{
 	 key_state_e state[BUTTON_CNT];
 	 uint8_t  label[BUTTON_CNT];
 	 uint8_t key_cnt;
+	 uint8_t first;
 }kybd_r_t;
 
 typedef int8_t kybd_h;

@@ -40,6 +40,7 @@ xpad_t default_keymap ={
 			-1, -1, -1, -1,
 			-1, -1, -1, -1,
 			-1, -1, -1 , -1},
+	.first = 1,
 	.key_cnt = X_BUTTON_CNT,
 	.dirty = false,
 
@@ -67,16 +68,16 @@ void xpad_init(kybd_h dev, void *xpad){
 	for (uint8_t c=0;c<COL_CNT;c++){
 		  xpad_set_col(dev, c);
 	}
-	for (uint8_t i=0;i<BUTTON_CNT;i++){
+	for (uint8_t i=0;i<X_BUTTON_CNT;i++){
 		my_xpad[dev]->map[my_xpad[dev]->label[i]] = i;
 	}
-	for (uint8_t i=0;i<BUTTON_CNT;i++){
+	for (uint8_t i=0;i<X_BUTTON_CNT;i++){
 		printf("%01X ", i);
-		printf(" -> %01X"NL, my_xpad[dev]->map[i]);
+		printf(" -> %1X"NL, my_xpad[dev]->map[i]);
 	}
 }
 
-kybd_r_t* xpad_state(kybd_h dev){
+kybd_r_t* xpad_state(kybd_h dev ){
 	static kybd_r_t ret;
 	uint8_t i=0;
 	if (my_xpad[dev]==NULL){
@@ -86,12 +87,13 @@ kybd_r_t* xpad_state(kybd_h dev){
 	if (!(my_xpad[dev]->dirty)) {
 		return NULL;
 	}
-	for (i=0; i<BUTTON_CNT; i++){
+	for (i=0; i<X_BUTTON_CNT; i++){
 		ret.label[i] = i;
 		uint8_t to = my_xpad[dev]->map[i];
 		ret.state[i] = my_xpad[dev]->state[to];
 	}
 	ret.key_cnt = my_xpad[dev]->key_cnt;
+	ret.first = my_xpad[dev]->first;
 	return &ret;
 }
 
@@ -118,7 +120,7 @@ void xpad_reset(kybd_h dev){
 		return;
 	}
 	my_xpad[dev]->dirty=  false;
-	for (uint8_t idx=0; idx<BUTTON_CNT; idx++){
+	for (uint8_t idx=0; idx<X_BUTTON_CNT; idx++){
 		my_xpad[dev]->key[idx] = reset_key;
 	}
 	return;
@@ -142,25 +144,25 @@ void  xpad_iprint(xpad_t *state, char* start){
 	}
 	snprintf(text,maxcnt, "%s%s", start, "Label  " );
 	printf(text);
-	for (uint8_t i=0;i<BUTTON_CNT;i++){
+	for (uint8_t i=0;i<X_BUTTON_CNT;i++){
 		printf(" %C ", state->label[i]);
 	}
 	printf(NL);
 	snprintf(text, maxcnt, "%s%s", start, "State   " );
 	printf(text);
-	for (uint8_t i=0;i<BUTTON_CNT;i++){
+	for (uint8_t i=0;i<X_BUTTON_CNT;i++){
 		printf("%s", key_state_c[state->state[i]]);
 	}
 	printf(NL);
 	snprintf(text,maxcnt, "%s%s", start, "last    " );
 
-	for (uint8_t i=0;i<BUTTON_CNT;i++){
+	for (uint8_t i=0;i<X_BUTTON_CNT;i++){
 		printf("%03d", state->key[i].last);
 	}
 	printf(NL);
 	snprintf(text, maxcnt, "%s%s", start, "current  " );
 
-	for (uint8_t i=0;i<BUTTON_CNT;i++){
+	for (uint8_t i=0;i<X_BUTTON_CNT;i++){
 		printf("%03d", state->key[i].current);
 	}
 	printf(NL);
