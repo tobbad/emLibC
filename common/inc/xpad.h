@@ -19,8 +19,8 @@ typedef struct xpad_s{
 	key_state_e state[X_BUTTON_CNT];
 	uint8_t label[X_BUTTON_CNT];
 	int8_t map[X_BUTTON_CNT];
+    uint8_t key_cnt;
 	uint8_t first;
-	uint8_t key_cnt;
 	bool dirty;
 }xpad_t;
 
@@ -29,7 +29,7 @@ extern kybd_t xscan_dev;
 void xpad_init(kybd_h dev, void *x_pad);
 bool xpad_scan(kybd_h handle);
 void xpad_reset(kybd_h handle);
-kybd_r_t* xpad_state(kybd_h handle);
+void  xpad_state(kybd_h handle, kybd_r_t *ret);
 void  xpad_iprint(xpad_t *state, char* start);
 
 

@@ -42,13 +42,14 @@ xpad_t default_keymap ={
 			-1, -1, -1 , -1},
 	.first = 1,
 	.key_cnt = X_BUTTON_CNT,
+	.first = 0,
 	.dirty = false,
 
 };
 
 xpad_t* my_xpad[KYBD_CNT];
 
-static uint8_t xpad_read_row(kybd_h dev, uint8_t c);
+static uint8_t xpad_read_row(kybd_h dev, uint8_t col_nr);
 static void xpad_set_col(kybd_h dev, uint8_t col_nr);
 static void xpad_reset_col(kybd_h dev, uint8_t col_nr);
 
@@ -77,24 +78,27 @@ void xpad_init(kybd_h dev, void *xpad){
 	}
 }
 
-kybd_r_t* xpad_state(kybd_h dev ){
-	static kybd_r_t ret;
+void  xpad_state(kybd_h dev, kybd_r_t *ret){
 	uint8_t i=0;
 	if (my_xpad[dev]==NULL){
 		printf("%010ld: No valid handle on state"NL,HAL_GetTick());
-		return false;
+		return;
 	}
 	if (!(my_xpad[dev]->dirty)) {
-		return NULL;
+		return;
 	}
-	for (i=0; i<X_BUTTON_CNT; i++){
-		ret.label[i] = i;
+	uint8_t idx=0;
+	for (i=0; i<ret->key_cnt; i++){
+	    // Introduce limitcheck
+	    uint8_t value =my_xpad[dev]->map[1];
+        if (value < my_xpad[dev]->start) continue;
+        if (value > my_xpad[dev]->start+my_xpad[dev]->key_cnt) continue;
+		ret->state[i] = my_xpad[dev]->state[i];
+		ret->label[i] = i;
 		uint8_t to = my_xpad[dev]->map[i];
-		ret.state[i] = my_xpad[dev]->state[to];
+		ret->state[i] = my_xpad[dev]->state[to];
 	}
-	ret.key_cnt = my_xpad[dev]->key_cnt;
-	ret.first = my_xpad[dev]->first;
-	return &ret;
+	return;
 }
 
 bool xpad_scan(kybd_h dev){
@@ -175,7 +179,7 @@ void  xpad_iprint(xpad_t *state, char* start){
 
 }
 
-static uint8_t  xpad_read_row(kybd_h dev, uint8_t c){
+static uint8_t  xpad_read_row(kybd_h dev, uint8_t col_nr){
 	if (my_xpad[dev]==NULL){
 		printf("%010ld: No valid handle on read_row"NL,HAL_GetTick());
 		return false;
@@ -186,7 +190,7 @@ static uint8_t  xpad_read_row(kybd_h dev, uint8_t c){
 		GpioPinRead(&my_xpad[dev]->row[r], &pin);
 		pin =!pin;
 		res = res | (pin<<r);
-		uint8_t index = COL_ROW_2_INDEX(r,c);
+		uint8_t index = COL_ROW_2_INDEX(r,col_nr);
 		my_xpad[dev]->key[index].current=pin;
 		bool this = my_xpad[dev]->key[index].current^my_xpad[dev]->key[index].last;
 		if (this){
@@ -198,11 +202,16 @@ static uint8_t  xpad_read_row(kybd_h dev, uint8_t c){
 		}
 		if (my_xpad[dev]->key[index].cnt>STABLE_CNT){
 			uint8_t value = my_xpad[dev]->map[index];
-	    	if (value<my_xpad[dev]->key_cnt){
+            printf("%010ld: Detected value %d",HAL_GetTick(), value);
+	    	if ((value >= my_xpad[dev]->start)&&
+	    	    (value <= my_xpad[dev]->range+my_xpad[dev]->key_cnt))   {
 				my_xpad[dev]->dirty=true;
 				if (pin==false){
 					my_xpad[dev]->state[index] = ((my_xpad[dev]->state[index]+1)%KEY_STAT_CNT);
 				}
+				printf(": OK"NL);
+	    	} else {
+                printf(": Ignored"NL);
 	    	}
 		}
 	}

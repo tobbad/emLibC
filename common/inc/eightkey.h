@@ -14,7 +14,8 @@ typedef struct eight_s{
 	mkey_t key[EIGHT_BUTTON_CNT];
 	key_state_e state[EIGHT_BUTTON_CNT];
 	int8_t label[EIGHT_BUTTON_CNT];
-	uint8_t key_cnt;
+    uint8_t key_cnt;
+	uint8_t first;
 	bool dirty;
 }eight_t;
 
@@ -23,7 +24,7 @@ extern kybd_t eight_dev;
 void eight_init(kybd_h dev, void *data);
 bool xeight_scan(kybd_h handle);
 void xeight_reset(kybd_h handle);
-kybd_r_t* eight_state(kybd_h handle);
+void eight_state(kybd_h handle, kybd_r_t *ret);
 void  eight_iprint(xpad_t *state, char* start);
 
 
