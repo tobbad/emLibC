@@ -32,7 +32,7 @@ kybd_h keyboard_init(kybd_t *kybd, void * user_data){
 	return res;
 }
 
-bool keyboard_scan(kybd_h dev){
+uint8_t keyboard_scan(kybd_h dev){
 	bool res = false;
 	if (my_kybd[dev]!=NULL){
 		res = my_kybd[dev]->scan(dev);

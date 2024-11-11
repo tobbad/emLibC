@@ -48,7 +48,7 @@ void eight_init(kybd_h dev, void *data){
 	}
 }
 
-bool eight_scan(kybd_h dev){
+uint8_t eight_scan(kybd_h dev){
 	if (_eight[dev]==NULL){
 		printf("%010ld: No valid handle on read_row"NL,HAL_GetTick());
 		return false;
@@ -58,7 +58,6 @@ bool eight_scan(kybd_h dev){
 		bool pin=0;
 		GpioPinRead(&_eight[dev]->bttn_pin[index], &pin);
 		pin =!pin;
-		res = res | (pin<<index);
 		_eight[dev]->key[index].current=pin;
 		bool this = _eight[dev]->key[index].current^_eight[dev]->key[index].last;
 		if (this){
@@ -71,6 +70,7 @@ bool eight_scan(kybd_h dev){
 		if (_eight[dev]->key[index].cnt>STABLE_CNT){
             if (index<_eight[dev]->first) continue;
             if (index>_eight[dev]->first+_eight[dev]->key_cnt) continue;
+            res = res | (pin<<index);
 			_eight[dev]->key[index].stable = pin;
 			_eight[dev]->dirty=true;
 			if ((pin==false) && (index<_eight[dev]->key_cnt)){
@@ -79,7 +79,7 @@ bool eight_scan(kybd_h dev){
 			}
 		}
 	}
-	return _eight[dev]->dirty;
+	return res;
 };
 
 void eight_reset(kybd_h dev, kybd_r_t *ret){
