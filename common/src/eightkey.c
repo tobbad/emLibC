@@ -81,13 +81,15 @@ bool eight_scan(kybd_h dev){
 	}
 	return _eight[dev]->dirty;
 };
-void eight_reset(kybd_h dev){
+
+void eight_reset(kybd_h dev, kybd_r_t *ret){
 	if (_eight[dev]==NULL){
 		printf("%010ld: No valid handle on reset"NL,HAL_GetTick());
 		return;
 	}
 	for (uint8_t idx=0; idx<EIGHT_BUTTON_CNT; idx++){
 		_eight[dev]->key[idx] = reset_key;
+		ret->state[idx] = OFF;
 	}
 	_eight[dev]->dirty=  false;
 

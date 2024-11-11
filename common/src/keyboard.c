@@ -39,9 +39,9 @@ bool keyboard_scan(kybd_h dev){
 	}
 	return res;
 };
-void keyboard_reset(kybd_h dev){
+void keyboard_reset(kybd_h dev, kybd_r_t *ret){
 	if (my_kybd[dev]!=NULL){
-		my_kybd[dev]->reset(dev);
+		my_kybd[dev]->reset(dev, ret);
 	}
 	return;
 }
