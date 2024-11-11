@@ -41,6 +41,7 @@ typedef struct kybd_r_s{
 	 uint8_t  label[BUTTON_CNT];
      uint8_t key_cnt;
 	 uint8_t first; //First valid value
+	 bool dirty;
 }kybd_r_t;
 
 typedef int8_t kybd_h;
@@ -51,6 +52,7 @@ typedef struct kybd_s{
 	void (*reset)(kybd_h handle, kybd_r_t *ret);
 	void  (*state)(kybd_h handle, kybd_r_t *ret);
 	void *user_data;
+	uint8_t first;
 	uint8_t button_cnt;
 	kybd_type_e dev_type;
 }kybd_t;
