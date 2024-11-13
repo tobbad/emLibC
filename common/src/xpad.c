@@ -5,7 +5,7 @@
  *      Author: badi
  */
 #include "main.h"
-#define COL_ROW_2_INDEX(row, col ) (uint8_t)(col*ROW_CNT+row)
+#define COL_ROW_2_INDEX(row, col ) (uint8_t)(row*COL_CNT+col)
 #define MINIMAL_LINESTART 16
 
 static mkey_t reset_key ={0,0,0, true};
@@ -32,10 +32,10 @@ xpad_t default_keylbl2idx ={
 			  OFF, OFF, OFF, OFF,
 			  OFF, OFF, OFF, OFF,
 			  OFF, OFF, OFF, OFF},
-	.label =  {0xa, 3, 2, 1,
-	           0xb, 6, 5, 4,
+	.label =  {0xd, 0xe, 0xf, 0,
 	           0xc, 9, 8, 7,
-			   0xd, 0xe, 0xf, 0 },
+	           0xb, 6, 5, 4,
+			   0xa,3,2,1},
 	.lbl2idx = {-1, -1, -1, -1,
 			-1, -1, -1, -1,
 			-1, -1, -1, -1,
@@ -109,7 +109,7 @@ uint16_t xpad_scan(kybd_h dev){
 		xpad_set_col(dev, c);
 	}
 	if (res!=0){
-	    printf("%010ld: Key state is 0x%04X"NL,HAL_GetTick(), res );
+	    printf("%010ld: Key state is 0x%04X, Label 0x%X"NL,HAL_GetTick(), res );
 	}
 	return res;
 }
@@ -202,7 +202,7 @@ static uint8_t  xpad_read_row(kybd_h dev, uint8_t col_nr){
             uint8_t value = my_xpad[dev]->label[index];
             if (pin){
                 my_xpad[dev]->state[index] = ((my_xpad[dev]->state[index]+1)%KEY_STAT_CNT);
-                printf("%010ld: Detected value %d @(r= %d, c=%d)",HAL_GetTick(), value, r, col_nr );
+                printf("%010ld: Detected value %X @(r= %d, c=%d)",HAL_GetTick(), value, r, col_nr );
             }
             my_xpad[dev]->dirty=true;
             if (pin==false){
