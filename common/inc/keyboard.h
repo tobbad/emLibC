@@ -58,7 +58,7 @@ typedef struct kybd_s{
 }kybd_t;
 
 kybd_h keyboard_init(kybd_t *kybd, void *user_data);
-uint8_t keyboard_scan(kybd_h handle);
+uint16_t keyboard_scan(kybd_h handle);
 void keyboard_reset(kybd_h handle, kybd_r_t *state);
 void keyboard_state(kybd_h handle, kybd_r_t *ret);
 void  keyboard_print(kybd_r_t *state, char* start); // Show returnd

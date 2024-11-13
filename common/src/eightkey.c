@@ -48,12 +48,12 @@ void eight_init(kybd_h dev, void *data){
 	}
 }
 
-uint8_t eight_scan(kybd_h dev){
+uint16_t eight_scan(kybd_h dev){
 	if (_eight[dev]==NULL){
 		printf("%010ld: No valid handle on read_row"NL,HAL_GetTick());
 		return false;
 	}
-	uint8_t res=0;
+	uint16_t res=0;
 	for (uint8_t index=0;index<EIGHT_BUTTON_CNT; index++)	{
 		bool pin=0;
 		GpioPinRead(&_eight[dev]->bttn_pin[index], &pin);

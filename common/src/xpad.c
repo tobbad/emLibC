@@ -5,7 +5,7 @@
  *      Author: badi
  */
 #include "main.h"
-#define COL_ROW_2_INDEX(col, row) (uint8_t)(col*COL_CNT+row)
+#define COL_ROW_2_INDEX(row, col ) (uint8_t)(col*ROW_CNT+row)
 #define MINIMAL_LINESTART 16
 
 static mkey_t reset_key ={0,0,0, true};
@@ -32,10 +32,10 @@ xpad_t default_keylbl2idx ={
 			  OFF, OFF, OFF, OFF,
 			  OFF, OFF, OFF, OFF,
 			  OFF, OFF, OFF, OFF},
-	.label = {1, 2, 3, 0xa,
-			  4, 5, 6, 0xb,
-			  7, 8, 9, 0xc,
-			  0, 0xf, 0xe, 0xd },
+	.label =  {0xa, 3, 2, 1,
+	           0xb, 6, 5, 4,
+	           0xc, 9, 8, 7,
+			   0xd, 0xe, 0xf, 0 },
 	.lbl2idx = {-1, -1, -1, -1,
 			-1, -1, -1, -1,
 			-1, -1, -1, -1,
@@ -97,7 +97,7 @@ void  xpad_state(kybd_h dev, kybd_r_t *ret){
 	return;
 }
 
-uint8_t xpad_scan(kybd_h dev){
+uint16_t xpad_scan(kybd_h dev){
 	if (my_xpad[dev]==NULL){
 		printf("%010ld: No valid handle on scan"NL,HAL_GetTick());
 		return false;
@@ -112,7 +112,7 @@ uint8_t xpad_scan(kybd_h dev){
 		xpad_set_col(dev, c);
 	}
 	if (res!=0){
-	    printf("Key state is %02X"NL, res );
+	    printf("%010ld: Key state is 0x%04X"NL,HAL_GetTick(), res );
 	}
 	return res;
 }
@@ -206,15 +206,19 @@ static uint8_t  xpad_read_row(kybd_h dev, uint8_t col_nr){
 		if (my_xpad[dev]->key[index].cnt>STABLE_CNT){
             my_xpad[dev]->key[index].unstable = false;
             my_xpad[dev]->key[index].stable = true;
-		    my_xpad[dev]->state[index] = ((my_xpad[dev]->state[index]+1)%KEY_STAT_CNT);
-			uint8_t value = my_xpad[dev]->label[index];
-            printf("%010ld: Detected value %d @(r= %d, c=%d)",HAL_GetTick(), value, r, col_nr );
+            uint8_t value = my_xpad[dev]->label[index];
+            if (pin){
+                my_xpad[dev]->state[index] = ((my_xpad[dev]->state[index]+1)%KEY_STAT_CNT);
+                printf("%010ld: Detected value %d @(r= %d, c=%d)",HAL_GetTick(), value, r, col_nr );
+            }
             my_xpad[dev]->dirty=true;
             if (pin==false){
-                my_xpad[dev]->key[index].unstable = false;
-                my_xpad[dev]->key[index].stable = true;
+                my_xpad[dev]->state[index] = ((my_xpad[dev]->state[index]+1)%KEY_STAT_CNT);
+            } else {
             }
-            printf(": OK"NL);
+            if (pin){
+                printf(": OK"NL);
+            }
             res = res | (pin<<r);
 	    }
 

@@ -32,8 +32,8 @@ kybd_h keyboard_init(kybd_t *kybd, void * user_data){
 	return res;
 }
 
-uint8_t keyboard_scan(kybd_h dev){
-	bool res = false;
+uint16_t keyboard_scan(kybd_h dev){
+	uint16_t res = 0;
 	if (my_kybd[dev]!=NULL){
 		res = my_kybd[dev]->scan(dev);
 	}
