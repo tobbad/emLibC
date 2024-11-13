@@ -10,7 +10,7 @@
 
 static mkey_t reset_key ={0,0,0, true};
 
-xpad_t default_keylbl2idx ={
+xpad_t default_keyboard ={
 	.row ={ //Inputs
 		{.port=PORTA, .pin=PIN_8, .conf= {.mode=INPUT,  .pin =PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
 		{.port=PORTB, .pin=PIN_4, .conf= {.mode=INPUT,  .pin= PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
@@ -18,10 +18,10 @@ xpad_t default_keylbl2idx ={
 		{.port=PORTB, .pin=PIN_3, .conf= {.mode=INPUT,  .pin= PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
 	},
 	.col = { // Outputs
-		{.port = PORTA, .pin = PIN_0,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}} ,
-		{.port = PORTA, .pin = PIN_4,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}} ,
+		{.port = PORTC, .pin = PIN_1,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}},
 		{.port = PORTB, .pin = PIN_0,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}} ,
-		{.port = PORTC, .pin = PIN_1,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}}
+		{.port = PORTA, .pin = PIN_4,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}} ,
+		{.port = PORTA, .pin = PIN_0,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}} ,
 	},
 	.key = { {false,false ,0,false}, {false,false,0,false},  {false,false,0,false}, {false,false,0,false},
 			 {false,false,0,false},  {false,false,0,false},  {false,false,0,false},  {false,false,0,false},
@@ -32,17 +32,17 @@ xpad_t default_keylbl2idx ={
 			  OFF, OFF, OFF, OFF,
 			  OFF, OFF, OFF, OFF,
 			  OFF, OFF, OFF, OFF},
-	.label =  {0xd, 0xe, 0xf, 0,
-	           0xc, 9, 8, 7,
-	           0xb, 6, 5, 4,
-			   0xa,3,2,1},
+	.label =  {0 ,0xf, 0xe, 0xd,
+	           7, 8, 9, 0xc,
+	           4, 5, 6, 0xb,
+			   1, 2, 3, 0xa},
 	.lbl2idx = {-1, -1, -1, -1,
 			-1, -1, -1, -1,
 			-1, -1, -1, -1,
 			-1, -1, -1 , -1},
-	.first = 1,
+	.first = 0,
 	.key_cnt = X_BUTTON_CNT,
-	.first = 1,
+	.first = 0,
 	.dirty = false,
 
 };
@@ -58,7 +58,7 @@ void xpad_init(kybd_h dev, void *xpad){
 	if (xpad != NULL){
 		my_xpad[dev] = (xpad_t *)xpad;
 	} else {
-		my_xpad[dev] = &default_keylbl2idx;
+		my_xpad[dev] = &default_keyboard;
 	}
 	for (uint8_t col_idx= 0; col_idx<COL_CNT; col_idx++){
 		GpioPinInit(&my_xpad[dev]->col[col_idx]);
@@ -86,10 +86,11 @@ void  xpad_state(kybd_h dev, kybd_r_t *ret){
 		printf("%010ld: No valid handle on state"NL,HAL_GetTick());
 		return;
 	}
+	uint8_t i=0;
 	for (uint8_t lbl=ret->first; lbl<ret->first+ret->key_cnt; lbl++){
 	    uint8_t idx= my_xpad[dev]->lbl2idx[lbl];
-	    if (!my_xpad[dev]->key[idx].stable) continue;
-        ret->state[idx-ret->first] = my_xpad[dev]->state[idx];
+        ret->state[i] = my_xpad[dev]->state[idx];
+        ret->label[i++] = my_xpad[dev]->label[idx];
 	}
 	return;
 }
@@ -109,7 +110,7 @@ uint16_t xpad_scan(kybd_h dev){
 		xpad_set_col(dev, c);
 	}
 	if (res!=0){
-	    printf("%010ld: Key state is 0x%04X, Label 0x%X"NL,HAL_GetTick(), res );
+	    printf("%010ld: Key state is 0x%04X, Label 0x%X"NL,HAL_GetTick(), (unsigned int)res );
 	}
 	return res;
 }
