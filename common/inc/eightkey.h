@@ -23,7 +23,7 @@ extern kybd_t eight_dev;
 
 void eight_init(kybd_h dev, void *data);
 uint16_t xeight_scan(kybd_h handle);
-void xeight_reset(kybd_h handle, kybd_r_t *ret);
+void xeight_reset(kybd_h handle);
 void eight_state(kybd_h handle, kybd_r_t *ret);
 void  eight_iprint(xpad_t *state, char* start);
 

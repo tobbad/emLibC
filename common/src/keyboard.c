@@ -39,9 +39,9 @@ uint16_t keyboard_scan(kybd_h dev){
 	}
 	return res;
 };
-void keyboard_reset(kybd_h dev, kybd_r_t *ret){
+void keyboard_reset(kybd_h dev){
 	if (my_kybd[dev]!=NULL){
-		my_kybd[dev]->reset(dev, ret);
+		my_kybd[dev]->reset(dev);
 	}
 	return;
 }
