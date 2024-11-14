@@ -12,10 +12,10 @@ static mkey_t reset_key ={0,0,0, true};
 
 xpad_t default_keyboard ={
 	.row ={ //Inputs
-		{.port=PORTA, .pin=PIN_8, .conf= {.mode=INPUT,  .pin =PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
-		{.port=PORTB, .pin=PIN_4, .conf= {.mode=INPUT,  .pin= PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
+		{.port=PORTB, .pin=PIN_10, .conf= {.mode=INPUT,  .pin =PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
 		{.port=PORTB, .pin=PIN_5, .conf= {.mode=INPUT,  .pin= PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
 		{.port=PORTB, .pin=PIN_3, .conf= {.mode=INPUT,  .pin= PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
+		{.port=PORTA, .pin=PIN_10, .conf= {.mode=INPUT,  .pin= PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
 	},
 	.col = { // Outputs
 		{.port = PORTC, .pin = PIN_1,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}},
