@@ -5,23 +5,23 @@
  *      Author: badi
  */
 #include "main.h"
-#define COL_ROW_2_INDEX(row, col ) (uint8_t)(row*COL_CNT+col)
+#define ZEI_SPA_2_INDEX(zeile, spalte ) (uint8_t)(zeile*SPALTEN_CNT+spalte)
 #define MINIMAL_LINESTART 16
 
 static mkey_t reset_key ={0,0,0, true};
 
 xpad_t default_keyboard ={
-	.row ={ //Inputs
-		{.port=PORTA, .pin=PIN_10, .conf= {.mode=INPUT,  .pin= PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},// Row 1
-		{.port=PORTB, .pin=PIN_3, .conf= {.mode=INPUT,  .pin= PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}}, // Row 2
-		{.port=PORTB, .pin=PIN_5, .conf= {.mode=INPUT,  .pin= PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}}, // Row 3
-		{.port=PORTB, .pin=PIN_10, .conf= {.mode=INPUT,  .pin =PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},// Row 4
+	.zeile ={ //Output
+		{.port=PORTA, .pin=PIN_10, .conf= {.mode=INPUT,  .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}},// Row 1
+		{.port=PORTB, .pin=PIN_3,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}}, // Row 2
+		{.port=PORTB, .pin=PIN_5,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}}, // Row 3
+		{.port=PORTB, .pin=PIN_10, .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}},// Row 4
 	},
-	.col = { // Outputs
-		{.port = PORTC, .pin = PIN_1,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}}, //Col 1
-		{.port = PORTB, .pin = PIN_0,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}}, //Col 2
-		{.port = PORTA, .pin = PIN_4,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}}, //Col 3
-		{.port = PORTA, .pin = PIN_0,  .conf= {.mode=OUTPUT, .pin=PIN_PP,  .speed=s_HIGH, .pupd=PULL_NONE, .af=PIN_AF0}}, //Col 4
+	.spalte = { // Input
+		{.port = PORTC, .pin = PIN_1,  .conf= {.mode=INPUT, .pin= PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}}, //Col 1
+		{.port = PORTB, .pin = PIN_0,  .conf= {.mode=INPUT, .pin= PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}}, //Col 2
+		{.port = PORTA, .pin = PIN_4,  .conf= {.mode=INPUT, .pin= PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}}, //Col 3
+		{.port = PORTA, .pin = PIN_0,  .conf= {.mode=INPUT,.pin= PIN_OD,   .speed =s_HIGH, .pupd = PULL_UP}}, //Col 4
 	},
 	.key = { {false,false ,0,false}, {false,false,0,false},  {false,false,0,false}, {false,false,0,false},
 			 {false,false,0,false},  {false,false,0,false},  {false,false,0,false},  {false,false,0,false},
@@ -32,10 +32,10 @@ xpad_t default_keyboard ={
 			  OFF, OFF, OFF, OFF,
 			  OFF, OFF, OFF, OFF,
 			  OFF, OFF, OFF, OFF},
-	.label =  {0 ,0xf, 0xe, 0xd,
-	           7, 8, 9, 0xc,
-	           4, 5, 6, 0xb,
-			   1, 2, 3, 0xa},
+	.label =  {0 ,0xf, 0xe, 0xd, 	// Zeile 1
+	           7, 8, 9, 0xc,		// Reihe 2
+	           4, 5, 6, 0xb,		// Reihe 3
+			   1, 2, 3, 0xa},		// Reihe 3
 	.lbl2idx = {-1, -1, -1, -1,
 			-1, -1, -1, -1,
 			-1, -1, -1, -1,
@@ -49,9 +49,65 @@ xpad_t default_keyboard ={
 
 xpad_t* my_xpad[KYBD_CNT];
 
-static uint8_t xpad_read_row(kybd_h dev, uint8_t col_nr);
-static void xpad_set_col(kybd_h dev, uint8_t col_nr);
-static void xpad_reset_col(kybd_h dev, uint8_t col_nr);
+static void xpad_set_zeile(kybd_h dev, uint8_t zeilen_nr){
+	if (my_xpad[dev]==NULL){
+		printf("%010ld: No valid handle on set_zeile"NL,HAL_GetTick());
+		return;
+	}
+	GpioPinWrite(&my_xpad[dev]->zeile[zeilen_nr], GPIO_PIN_SET);
+	return;
+}
+static void xpad_reset_zeile(kybd_h dev, uint8_t zeilen_nr){
+	if (my_xpad[dev]==NULL){
+		printf("%010ld: No valid handle on reset_zeile"NL,HAL_GetTick());
+		return;
+	}
+	GpioPinWrite(&my_xpad[dev]->zeile[zeilen_nr], GPIO_PIN_RESET );
+	return;
+}
+static uint8_t  xpad_read_spalte(kybd_h dev, uint8_t zeilen_nr){
+	if (my_xpad[dev]==NULL){
+		printf("%010ld: No valid handle on read_row"NL,HAL_GetTick());
+		return 0;
+	}
+	uint8_t res=0;
+	for (uint8_t s=0;s<SPALTEN_CNT; s++){
+		bool pin=0;
+		GpioPinRead(&my_xpad[dev]->spalte[s], &pin);
+		pin =!pin;
+		uint8_t index = ZEI_SPA_2_INDEX(s, zeilen_nr);
+		my_xpad[dev]->key[index].current=pin;
+		bool changed = 	my_xpad[dev]->key[index].current^my_xpad[dev]->key[index].last;
+		if (changed){
+			my_xpad[dev]->key[index].cnt=0;
+		}
+		my_xpad[dev]->key[index].unstable = pin || my_xpad[dev]->key[index].unstable;
+		if (my_xpad[dev]->key[index].unstable){
+			my_xpad[dev]->key[index].cnt++;
+		}
+		if (my_xpad[dev]->key[index].cnt>STABLE_CNT){
+            my_xpad[dev]->key[index].unstable = false;
+            my_xpad[dev]->key[index].stable = pin;
+            uint8_t value = my_xpad[dev]->label[index];
+            if (pin){
+                my_xpad[dev]->state[index] = ((my_xpad[dev]->state[index]+1)%KEY_STAT_CNT);
+                if ((value>=my_xpad[dev]->first) &&(value<my_xpad[dev]->first+my_xpad[dev]->key_cnt)){
+					my_xpad[dev]->dirty=true;
+					printf("%010ld: Detected value %X @(r= %d, c=%d)",HAL_GetTick(), value, s, zeilen_nr );
+            	}
+            }
+            if (pin==false){
+                my_xpad[dev]->state[index] = ((my_xpad[dev]->state[index]+1)%KEY_STAT_CNT);
+            } else {
+            } if (pin){
+                printf(": OK"NL);
+            }
+            res = res | (pin<<s);
+	    }
+		my_xpad[dev]->key[index].last = my_xpad[dev]->key[index].current;
+	}
+	return res;
+}
 
 
 void xpad_init(kybd_h dev, void *xpad){
@@ -60,14 +116,14 @@ void xpad_init(kybd_h dev, void *xpad){
 	} else {
 		my_xpad[dev] = &default_keyboard;
 	}
-	for (uint8_t col_idx= 0; col_idx<COL_CNT; col_idx++){
-		GpioPinInit(&my_xpad[dev]->col[col_idx]);
+	for (uint8_t spa_idx= 0; spa_idx<SPALTEN_CNT; spa_idx++){
+		GpioPinInit(&my_xpad[dev]->spalte[spa_idx]);
 	}
-	for (uint8_t row_idx= 0; row_idx<ROW_CNT; row_idx++){
-		GpioPinInit(&my_xpad[dev]->row[row_idx]);
+	for (uint8_t zei_idx= 0; zei_idx<ZEILEN_CNT; zei_idx++){
+		GpioPinInit(&my_xpad[dev]->zeile[zei_idx]);
 	}
-	for (uint8_t c=0;c<COL_CNT;c++){
-		  xpad_set_col(dev, c);
+	for (uint8_t z=0;z<ZEILEN_CNT;z++){
+		  xpad_set_zeile(dev, z);
 	}
 	for (uint8_t i=0;i<X_BUTTON_CNT;i++){
 		for (uint8_t j=0;j<X_BUTTON_CNT;j++){
@@ -105,13 +161,13 @@ uint16_t xpad_scan(kybd_h dev){
 		return false;
 	}
 	uint16_t res=0;
-	for (uint8_t c=0;c<COL_CNT;c++){
+	for (uint8_t z=0;z<ZEILEN_CNT;z++){
 		uint8_t ir=0;
-		xpad_reset_col(dev, c);
+		xpad_reset_zeile(dev, z);
 		HAL_Delay(SCAN_MS);
-		ir = xpad_read_row(dev, c);
-		res =  res |( ir<<(4*c));
-		xpad_set_col(dev, c);
+		ir = xpad_read_spalte(dev, z);
+		res =  res |( ir<<(4*z));
+		xpad_set_zeile(dev, z);
 	}
 	if (res!=0){
 	    printf("%010ld: Key Label is  0x%lX"NL,HAL_GetTick(), (uint32_t)res );
@@ -180,67 +236,4 @@ void  xpad_iprint(xpad_t *state, char* start){
 	printf(NL);
 
 }
-
-static uint8_t  xpad_read_row(kybd_h dev, uint8_t col_nr){
-	if (my_xpad[dev]==NULL){
-		printf("%010ld: No valid handle on read_row"NL,HAL_GetTick());
-		return 0;
-	}
-	uint8_t res=0;
-	for (uint8_t r=0;r<ROW_CNT; r++){
-		bool pin=0;
-		GpioPinRead(&my_xpad[dev]->row[r], &pin);
-		pin =!pin;
-		uint8_t index = COL_ROW_2_INDEX(r,col_nr);
-		my_xpad[dev]->key[index].current=pin;
-		bool changed = my_xpad[dev]->key[index].current^my_xpad[dev]->key[index].last;
-		if (changed){
-			my_xpad[dev]->key[index].cnt=0;
-		}
-		my_xpad[dev]->key[index].unstable = pin || my_xpad[dev]->key[index].unstable;
-		if (my_xpad[dev]->key[index].unstable){
-			my_xpad[dev]->key[index].cnt++;
-		}
-		if (my_xpad[dev]->key[index].cnt>STABLE_CNT){
-            my_xpad[dev]->key[index].unstable = false;
-            my_xpad[dev]->key[index].stable = true;
-            uint8_t value = my_xpad[dev]->label[index];
-            if (pin){
-                my_xpad[dev]->state[index] = ((my_xpad[dev]->state[index]+1)%KEY_STAT_CNT);
-                printf("%010ld: Detected value %X @(r= %d, c=%d)",HAL_GetTick(), value, r, col_nr );
-            }
-            my_xpad[dev]->dirty=true;
-            if (pin==false){
-                my_xpad[dev]->state[index] = ((my_xpad[dev]->state[index]+1)%KEY_STAT_CNT);
-            } else {
-            }
-            if (pin){
-                printf(": OK"NL);
-            }
-            res = res | (pin<<r);
-	    }
-
-
-		my_xpad[dev]->key[index].last = my_xpad[dev]->key[index].current;
-	}
-	return res;
-}
-
-static void xpad_set_col(kybd_h dev, uint8_t col_nr){
-	if (my_xpad[dev]==NULL){
-		printf("%010ld: No valid handle on set_col"NL,HAL_GetTick());
-		return;
-	}
-	GpioPinWrite(&my_xpad[dev]->col[col_nr], GPIO_PIN_SET);
-	return;
-}
-static void xpad_reset_col(kybd_h dev, uint8_t col_nr){
-	if (my_xpad[dev]==NULL){
-		printf("%010ld: No valid handle on reset_col"NL,HAL_GetTick());
-		return;
-	}
-	GpioPinWrite(&my_xpad[dev]->col[col_nr], GPIO_PIN_RESET );
-	return;
-}
-
 

@@ -8,13 +8,13 @@
 #ifndef INC_KEYPAD_H_
 #define INC_KEYPAD_H_
 #include "keyboard.h"
-#define COL_CNT 4
-#define ROW_CNT 4
-#define X_BUTTON_CNT (ROW_CNT*COL_CNT)
+#define ZEILEN_CNT 4
+#define SPALTEN_CNT 4
+#define X_BUTTON_CNT (ZEILEN_CNT*SPALTEN_CNT)
 
 typedef struct xpad_s{
-	GpioPin_t row[ROW_CNT];
-	GpioPin_t col[COL_CNT];
+	GpioPin_t zeile[ZEILEN_CNT];
+	GpioPin_t spalte[SPALTEN_CNT];
 	mkey_t key[X_BUTTON_CNT];
 	key_state_e state[X_BUTTON_CNT];
 	uint8_t label[X_BUTTON_CNT];
