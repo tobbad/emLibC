@@ -70,8 +70,11 @@ void xpad_init(kybd_h dev, void *xpad){
 		  xpad_set_col(dev, c);
 	}
 	for (uint8_t i=0;i<X_BUTTON_CNT;i++){
-		uint8_t label= my_xpad[dev]->label[i];
-		my_xpad[dev]->lbl2idx[i] = label;
+		for (uint8_t j=0;j<X_BUTTON_CNT;j++){
+		if (my_xpad[dev]->label[j]==i){
+				my_xpad[dev]->lbl2idx[i] = j;
+			}
+		}
 	}
 	printf(NL);
 	printf("Label  Index"NL);
@@ -92,6 +95,7 @@ void  xpad_state(kybd_h dev, kybd_r_t *ret){
         ret->state[i] = my_xpad[dev]->state[idx];
         ret->label[i++] = my_xpad[dev]->label[idx];
 	}
+	ret->dirty = my_xpad[dev]->dirty;
 	return;
 }
 
@@ -110,7 +114,7 @@ uint16_t xpad_scan(kybd_h dev){
 		xpad_set_col(dev, c);
 	}
 	if (res!=0){
-	    printf("%010ld: Key state is 0x%04X, Label 0x%X"NL,HAL_GetTick(), (unsigned int)res );
+	    printf("%010ld: Key Label is  0x%lX"NL,HAL_GetTick(), (uint32_t)res );
 	}
 	return res;
 }
@@ -153,7 +157,7 @@ void  xpad_iprint(xpad_t *state, char* start){
 	snprintf(text, maxcnt, "%s%s", start, "State   " );
 	printf(text);
 	for (uint8_t i=0;i<X_BUTTON_CNT;i++){
-		printf("%s", key_state_c[state->state[i]]);
+		printf("%s", state2str[state->state[i]]);
 	}
 	printf(NL);
 	snprintf(text,maxcnt, "%s%s", start, "last    " );

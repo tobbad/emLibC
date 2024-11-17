@@ -18,7 +18,6 @@ typedef enum{
 	DEV_TYPE_CNT
 } kybd_type_e;
 
-extern char* key_state_c[];
 
 typedef enum{
 	OFF,
@@ -26,6 +25,7 @@ typedef enum{
 	ON,
 	KEY_STAT_CNT
 }key_state_e;
+
 
 typedef struct key_s{
 	bool last;

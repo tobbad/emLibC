@@ -9,10 +9,10 @@
 kybd_t * my_kybd[KYBD_CNT];
 
 char* key_state_c[]={
-	"   ",
-	"BL ",
-	"ON ",
-	"NA ",
+	"  ",
+	"BL",
+	"ON",
+	"NA",
 };
 
 
