@@ -145,7 +145,8 @@ em_msg GpioPinInit(GpioPin_t *pin)
 	em_msg res = CheckGpio(pin);
 	if (EM_OK == res)
 	{
-		LL_GPIO_InitTypeDef  ll_gpio = {0};
+	    LL_GPIO_InitTypeDef  ll_gpio;
+	    LL_GPIO_StructInit(&ll_gpio);
 		GPIO_TypeDef *port = PORT_MAP[pin->port];
 		MapConf(&pin->conf, &ll_gpio);
         ll_gpio.Pin = PIN_MAP[pin->pin];
@@ -214,26 +215,14 @@ em_msg GpioSetPortMode(GpioPort_t *port, gpio_mode_t mode)
 em_msg GpioPinWrite(GpioPin_t *pin, bool value)
 {
 	em_msg res = CheckGpio(pin);
-	if (pin->ll.port != NULL)
-	{
-		/* Following check consumes 20ms on 384000 (5*240x320) calls */
-#if 0
-		if (OUTPUT != pin->conf.mode)
-		{
-#if 0
-			pin->conf.mode = OUTPUT;
-			GpioPinInit(pin);
-#else
-			pin->conf.mode = OUTPUT;
-			pin->ll.port->OTYPER |= pin->ll.pin_mask;
-#endif
+	if (res==EM_OK) {
+		if (pin->ll.port != NULL){
+			/* Following check consumes 20ms on 384000 (5*240x320) calls */
+			GPIO_PinState state = value?GPIO_PIN_SET:GPIO_PIN_RESET;
+			HAL_GPIO_WritePin(pin->ll.port, pin->ll.pin_mask, state);
+			res = EM_OK;
 		}
-#endif
-		GPIO_PinState state = value?GPIO_PIN_SET:GPIO_PIN_RESET;
-		HAL_GPIO_WritePin(pin->ll.port, pin->ll.pin_mask, state);
-		res = EM_OK;
 	}
-	return res;
 }
 
 em_msg GpioPinRead(GpioPin_t *pin, bool *value)

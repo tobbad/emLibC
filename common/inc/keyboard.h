@@ -8,6 +8,7 @@
 #ifndef COMMON_INC_KEYBOARD_H_
 #define COMMON_INC_KEYBOARD_H_
 #define STABLE_CNT 10
+#define SETTLE_TIME_MS	1
 #define SCAN_MS	5
 #define KYBD_CNT 4
 

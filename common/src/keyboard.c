@@ -34,20 +34,20 @@ kybd_h keyboard_init(kybd_t *kybd, void * user_data){
 
 uint16_t keyboard_scan(kybd_h dev){
 	uint16_t res = 0;
-	if (my_kybd[dev]!=NULL){
+	if ((dev>0)&&my_kybd[dev]!=NULL){
 		res = my_kybd[dev]->scan(dev);
 	}
 	return res;
 };
 void keyboard_reset(kybd_h dev){
-	if (my_kybd[dev]!=NULL){
+	if ((dev>0)&&my_kybd[dev]!=NULL){
 		my_kybd[dev]->reset(dev);
 	}
 	return;
 }
 
 void keyboard_state(kybd_h dev, kybd_r_t *ret){
-	if (my_kybd[dev]!=NULL){
+	if ((dev>0)&&my_kybd[dev]!=NULL){
 		my_kybd[dev]->state(dev, ret);
 	}
 	return;
