@@ -39,7 +39,7 @@ typedef struct key_s{
 
 typedef struct kybd_r_s{
 	 key_state_e state[BUTTON_CNT];
-	 uint8_t  label[BUTTON_CNT];
+	 uint8_t  value[BUTTON_CNT];
      uint8_t key_cnt;
 	 uint8_t first; //First valid value
 	 bool dirty;

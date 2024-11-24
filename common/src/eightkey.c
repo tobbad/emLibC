@@ -19,7 +19,7 @@ eight_t default_eight ={
 	},
 	.key = { {false,false ,0,false}, {false,false,0,false}, {false,false,0,false}, {false,false,0,false}, {false,false,0,false},  {false,false,0,false},  {false,false,0,false},  {false,false,0,false}},
 	.state = {OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF,},
-	.label = {1, 2, 3, 4,  5, 6, 7, 8 },
+	.value = {1, 2, 3, 4,  5, 6, 7, 8 },
 	.dirty = false,
 	.key_cnt =EIGHT_BUTTON_CNT,
 	.first =0,
@@ -38,10 +38,10 @@ void eight_init(kybd_h dev, void *data){
 		GpioPinInit(&_eight[dev]->bttn_pin[idx]);
 		memcpy(_eight[dev]->key, &reset_key, sizeof(key_state_e));
 		if (idx<_eight[dev]->key_cnt){
-			_eight[dev]->label[idx] = idx;
+			_eight[dev]->value[idx] = idx;
 			_eight[dev]->state[idx] = OFF;
 		}else {
-			_eight[dev]->label[idx] = -1;
+			_eight[dev]->value[idx] = -1;
 			_eight[dev]->state[idx] = -1;
 		}
 
@@ -95,7 +95,7 @@ void eight_reset(kybd_h dev){
 };
 void eight_state(kybd_h dev, kybd_r_t *ret){
 	for (uint8_t i=0;i<EIGHT_BUTTON_CNT;i++){
-		ret->label[i] = _eight[dev]->label[i]+1;
+		ret->value[i] = _eight[dev]->value[i]+1;
 		ret->state[i] = _eight[dev]->state[i];
 	}
 	ret->key_cnt =  _eight[dev]->key_cnt;

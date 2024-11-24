@@ -13,7 +13,7 @@ typedef struct eight_s{
 	GpioPin_t bttn_pin[EIGHT_BUTTON_CNT];
 	mkey_t key[EIGHT_BUTTON_CNT];
 	key_state_e state[EIGHT_BUTTON_CNT];
-	int8_t label[EIGHT_BUTTON_CNT];
+	int8_t value[EIGHT_BUTTON_CNT];
     uint8_t key_cnt;
 	uint8_t first;
 	bool dirty;

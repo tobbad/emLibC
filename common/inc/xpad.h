@@ -17,7 +17,7 @@ typedef struct xpad_s{
 	GpioPin_t spalte[SPALTEN_CNT];
 	mkey_t key[X_BUTTON_CNT];
 	key_state_e state[X_BUTTON_CNT];
-	uint8_t label[X_BUTTON_CNT];
+	uint8_t value[X_BUTTON_CNT];
 	int8_t val2idx[X_BUTTON_CNT];
 	uint8_t key_cnt;
 	uint8_t first;

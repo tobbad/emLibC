@@ -5,23 +5,59 @@
  *      Author: badi
  */
 
-#ifndef LIB_PORT_GPIO_H_
-#define LIB_PORT_GPIO_H_
+#ifndef LIB_GPIO_H_
+#define LIB_GPIO_H_
 
 #include <stdint.h>
 #include <stdbool.h>
 #include "verr.h"
-#include "pin.h"
 #include "port.h"
 #include "hal_port.h"
 
 #define PORTW_MAX 16
 
+
+typedef enum {
+	PIN_NA=-1,
+	PIN_0,
+	PIN_1,
+	PIN_2,
+	PIN_3,
+	PIN_4,
+	PIN_5,
+	PIN_6,
+	PIN_7,
+	PIN_8,
+	PIN_9,
+	PIN_10,
+	PIN_11,
+	PIN_12,
+	PIN_13,
+	PIN_14,
+	PIN_15,
+	PIN_MAX
+} pin_t;
+
+typedef enum {
+	PORT_NA=0,
+	PORTA,
+	PORTB,
+	PORTC,
+	PORTD,
+	PORTE,
+	PORTF,
+	PORTG,
+	PORTH,
+	PORTI,
+	PORT_CNT,
+} port_t;
+
+
 typedef enum  {
-	INPUT     = 0,
-	OUTPUT = 1,
-	ANALOG,
-	ALT_FUNC,
+	INPUT     = LL_GPIO_MODE_INPUT     ,
+	OUTPUT    = LL_GPIO_MODE_OUTPUT    ,
+	ANALOG    = LL_GPIO_MODE_ANALOG    ,
+	ALT_FUNC  = LL_GPIO_MODE_ALTERNATE ,
 	PIN_MODE_CNT
 } gpio_mode_t;
 
@@ -95,11 +131,11 @@ typedef struct GpioPort_t_
 	GpioConf_t conf;
 	Gpio_t gpio[PORTW_MAX];
 } GpioPort_t;
-
+extern uint32_t LL_GPIO_Pin_Map[];
 em_msg GpioPinInit(GpioPin_t *pin);
 em_msg GpioPortInit(GpioPort_t *port);
 
-em_msg GpioSetPortMode(GpioPort_t *port, gpio_mode_t mode);
+//em_msg GpioSetPortMode(GpioPort_t *port, gpio_mode_t mode);
 
 em_msg GpioPinRead(GpioPin_t *pin, bool *value);
 em_msg GpioPinWrite(GpioPin_t *pin, bool value);
@@ -109,8 +145,8 @@ em_msg GpioPinToggle(GpioPin_t *pin);
  * It is the responsability of the caller, that the port is output
  * direction.
  */
-em_msg GpioPortRead(GpioPort_t *port, uint32_t *value);
-em_msg GpioPortWrite(GpioPort_t *port, uint32_t value);
+//em_msg GpioPortRead(GpioPort_t *port, uint32_t *value);
+//em_msg GpioPortWrite(GpioPort_t *port, uint32_t value);
 
 
-#endif /* LIB_PORT_GPIO_H_ */
+#endif /* LIB_GPIO_H_ */

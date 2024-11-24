@@ -35,10 +35,9 @@ extern "C" {
 #endif
 
 typedef enum {
-    EMLIB_NOT_READY = -2,
-    EMLIB_ERROR = -1,
-    EMLIB_OK = 0,
-} elres_t;
+	EM_ERR = -1,
+	EM_OK = 0,
+} em_msg;
 
 typedef union {
     const uint8_t *cptr;
