@@ -8,14 +8,14 @@
 
 eight_t default_eight ={
 	.bttn_pin={ //Inputs
-		{.port = PORTB, .pin = PIN_10, .conf = {.mode=INPUT, .pin =PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
-		{.port = PORTB, .pin = PIN_4,  .conf = {.mode=INPUT, .pin= PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
-		{.port = PORTB, .pin = PIN_5,  .conf = {.mode=INPUT, .pin= PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
-		{.port = PORTB, .pin = PIN_3,  .conf = {.mode=INPUT, .pin= PIN_OD,  .speed =s_HIGH, .pupd = PULL_UP}},
-		{.port = PORTA, .pin = PIN_0,  .conf = {.mode=INPUT, .pin=PIN_OD,   .speed=s_HIGH,  .pupd = PULL_UP}},
-		{.port = PORTA, .pin = PIN_1,  .conf = {.mode=INPUT, .pin=PIN_OD,   .speed=s_HIGH,  .pupd = PULL_UP}},
-		{.port = PORTA, .pin = PIN_4,  .conf = {.mode=INPUT, .pin=PIN_OD,   .speed=s_HIGH,  .pupd = PULL_UP}},
-		{.port = PORTB, .pin = PIN_0,  .conf = {.mode=INPUT, .pin=PIN_OD,   .speed=s_HIGH,  .pupd = PULL_UP}},
+		{.port = GPIOA,  .pin=GPIO_PIN_0 },
+		{.port = GPIOA,  .pin=GPIO_PIN_4 },
+		{.port = GPIOB,  .pin=GPIO_PIN_0 },
+		{.port = GPIOC,  .pin=GPIO_PIN_1 },
+		{.port = GPIOB,  .pin=GPIO_PIN_10},
+		{.port = GPIOB,  .pin=GPIO_PIN_5 },
+		{.port = GPIOB,  .pin=GPIO_PIN_3 },
+		{.port = GPIOA,  .pin=GPIO_PIN_10},
 	},
 	.key = { {false,false ,0,false}, {false,false,0,false}, {false,false,0,false}, {false,false,0,false}, {false,false,0,false},  {false,false,0,false},  {false,false,0,false},  {false,false,0,false}},
 	.state = {OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF,},
@@ -35,7 +35,6 @@ void eight_init(kybd_h dev, void *data){
 		_eight[dev] = &default_eight;
 	}
 	for (uint8_t idx= 0; idx<BUTTON_CNT; idx++){
-		GpioPinInit(&_eight[dev]->bttn_pin[idx]);
 		memcpy(_eight[dev]->key, &reset_key, sizeof(key_state_e));
 		if (idx<_eight[dev]->key_cnt){
 			_eight[dev]->value[idx] = idx;

@@ -4,7 +4,8 @@
  *  Created on: Jun 2, 2024
  *      Author: badi
  */
-#include "main.h"
+#include "gpio.h"
+#include "keyboard.h"
 #define ZEI_SPA_2_INDEX(zeile, spalte ) (uint8_t)(spalte*ZEILEN_CNT+zeile)
 #define MINIMAL_LINESTART 16
 
@@ -12,16 +13,16 @@ static mkey_t reset_key ={0,0,0, true};
 
 xpad_t default_keyboard ={
 	.spalte = { // Output columns each of type GpioPin_t
-		{.port = GPIOA,  .Pin=GPIO_PIN_0}, // Spalte 1
-		{.port = GPIOA,  .Pin=GPIO_PIN_4}, // Spalte 1
-		{.port = GPIOB,  .Pin=GPIO_PIN_0}, // Spalte 3
-		{.port = GPIOC,  .Pin=GPIO_PIN_1}, // Spalte 4
+		{.port = GPIOA,  .pin=GPIO_PIN_0}, // Spalte 1
+		{.port = GPIOA,  .pin=GPIO_PIN_4}, // Spalte 1
+		{.port = GPIOB,  .pin=GPIO_PIN_0}, // Spalte 3
+		{.port = GPIOC,  .pin=GPIO_PIN_1}, // Spalte 4
 	},
 	.zeile ={ // Input rows
-		{.port = GPIOB, .Pin=GPIO_PIN_10}, // Zeile 1
-		{.port = GPIOB, .Pin=GPIO_PIN_5},  // Zeile 1
-		{.port = GPIOB, .Pin=GPIO_PIN_5},  // Zeile 1
-		{.port = GPIOA, .Pin=GPIO_PIN_10}, // Zeile 4
+		{.port = GPIOB, .pin=GPIO_PIN_10}, // Zeile 1
+		{.port = GPIOB, .pin=GPIO_PIN_5 },  // Zeile 1
+		{.port = GPIOB, .pin=GPIO_PIN_3 },  // Zeile 1
+		{.port = GPIOA, .pin=GPIO_PIN_10}, // Zeile 4
 	},
 	.key = { {false,false ,0,false}, {false,false,0,false},  {false,false,0,false}, {false,false,0,false},
 			 {false,false,0,false},  {false,false,0,false},  {false,false,0,false},  {false,false,0,false},
