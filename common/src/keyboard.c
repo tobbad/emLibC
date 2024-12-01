@@ -9,10 +9,10 @@
 kybd_t * my_kybd[KYBD_CNT];
 
 char* key_state_c[]={
-	"  ",
-	"BL",
-	"ON",
-	"NA",
+	"   ",
+	"BLI",
+	"ON ",
+	"NA ",
 };
 
 
@@ -39,9 +39,9 @@ uint16_t keyboard_scan(kybd_h dev){
 	}
 	return res;
 };
-void keyboard_reset(kybd_h dev){
+void keyboard_reset(kybd_h dev, bool hard){
 	if ((dev>0)&&my_kybd[dev]!=NULL){
-		my_kybd[dev]->reset(dev);
+		my_kybd[dev]->reset(dev, hard);
 	}
 	return;
 }
@@ -66,9 +66,9 @@ void  keyboard_print(kybd_r_t *state, char* start){
 	printf("%s: Label ", start);
 	for (uint8_t i=0;i<state->key_cnt;i++){
 	    if (state->value[i]<10){
-	        printf(" %c ", '0'+state->value[i]);
+	        printf("%c  ", '0'+state->value[i]);
 	    } else {
-            printf(" %c ", 'A'+(state->value[i]-10));
+            printf("%c  ", 'A'+(state->value[i]-10));
 	    }
 	}
 	printf(NL);

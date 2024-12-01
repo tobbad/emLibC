@@ -28,7 +28,7 @@ extern kybd_t xscan_dev;
 
 void xpad_init(kybd_h dev, void *x_pad);
 uint16_t xpad_scan(kybd_h handle);
-void xpad_reset(kybd_h handle);
+void xpad_reset(kybd_h handle, bool hard);
 void  xpad_state(kybd_h handle, kybd_r_t *ret);
 void  xpad_iprint(xpad_t *state, char* start);
 

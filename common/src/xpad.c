@@ -11,33 +11,50 @@
 
 static mkey_t reset_key = { 0, 0, 0, true };
 
-xpad_t default_keyboard = { .spalte = { // Output columns each of type GpioPin_t
+xpad_t default_keyboard = {
+	.spalte = { // Output columns each of type GpioPin_t
 		{ .port = GPIOA, .pin = GPIO_PIN_0 }, // Spalte 1
-				{ .port = GPIOA, .pin = GPIO_PIN_4 }, // Spalte 1
-				{ .port = GPIOB, .pin = GPIO_PIN_0 }, // Spalte 3
-				{ .port = GPIOC, .pin = GPIO_PIN_1 }, // Spalte 4
-		}, .zeile = { // Input rows
-		{ .port = GPIOB, .pin = GPIO_PIN_10 }, // Zeile 1
-				{ .port = GPIOB, .pin = GPIO_PIN_5 },  // Zeile 1
-				{ .port = GPIOB, .pin = GPIO_PIN_3 },  // Zeile 1
-				{ .port = GPIOA, .pin = GPIO_PIN_10 }, // Zeile 4
-		}, .key = { { false, false, 0, false }, { false, false, 0, false }, {
-		false, false, 0, false }, { false, false, 0, false }, { false, false, 0,
-		false }, { false, false, 0, false }, { false, false, 0, false }, {
-		false, false, 0, false }, { false, false, 0, false }, { false, false, 0,
-		false }, { false, false, 0, false }, { false, false, 0, false }, {
-		false, false, 0, false }, { false, false, 0, false }, { false, false, 0,
-		false }, { false, false, 0, false } }, .state = { OFF, OFF, OFF, OFF,
-		OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF }, .value = {
+		{ .port = GPIOA, .pin = GPIO_PIN_4 }, // Spalte 1
+		{ .port = GPIOB, .pin = GPIO_PIN_0 }, // Spalte 3
+		{ .port = GPIOC, .pin = GPIO_PIN_1 }, // Spalte 4
+	},
+	.zeile = { // Input rows
+			{ .port = GPIOB, .pin = GPIO_PIN_10 }, // Zeile 1
+			{ .port = GPIOB, .pin = GPIO_PIN_5 },  // Zeile 1
+			{ .port = GPIOB, .pin = GPIO_PIN_3 },  // Zeile 1
+			{ .port = GPIOA, .pin = GPIO_PIN_10 }, // Zeile 4
+	},
+	.key = {
+		{ false, false, 0, true },
+		{ false, false, 0, true },
+		{ false, false, 0, true },
+		{ false, false, 0, true },
+		{ false, false, 0, true },
+		{ false, false, 0, true },
+		{ false, false, 0, true },
+		{ false, false, 0, true },
+		{ false, false, 0, true },
+		{ false, false, 0, true },
+		{ false, false, 0, true },
+		{ false, false, 0, true },
+		{ false, false, 0, true },
+		{ false, false, 0, true },
+		{ false, false, 0, true },
+		{ false, false, 0, true }
+	},
+	.state = { 	OFF, OFF, OFF, OFF,
+				OFF, OFF, OFF, OFF,
+				OFF, OFF, OFF, OFF,
+				OFF, OFF, OFF, OFF },
+	.value = {
 		1, 2, 3, 0xa, // Zeile 1
 		4, 5, 6, 0xb,  // Zeile 2
 		7, 8, 9, 0xc,  // Zeile 3
 		0, 0xf, 0xe, 0xd }, // Zeile 4
-
-		.val2idx = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-				-1 }, .first = 0, .key_cnt = X_BUTTON_CNT, .first = 0, .dirty =
-				false,
-
+	.val2idx = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+	.first = 0,
+	.key_cnt = X_BUTTON_CNT,
+	.dirty =false,
 };
 
 xpad_t *my_xpad[KYBD_CNT];
@@ -70,30 +87,32 @@ static uint8_t xpad_read_zeile(kybd_h dev, uint8_t spalten_nr) {
 	uint8_t res = 0;
 	for (uint8_t z = 0; z < ZEILEN_CNT; z++) {
 		bool pinVal = 0;
+		mkey_t *key0 =&my_xpad[dev]->key[0];
 		GpioPinRead(&my_xpad[dev]->zeile[z], &pinVal);
 		pinVal = !pinVal;
 		uint8_t index = ZEI_SPA_2_INDEX(z, spalten_nr);
 		my_xpad[dev]->key[index].current = pinVal;
-		//bool newUnstable = my_xpad[dev]->key[index].current^my_xpad[dev]->key[index].last;
-		my_xpad[dev]->key[index].unstable = my_xpad[dev]->key[index].current
-				^ my_xpad[dev]->key[index].last;
-		if (my_xpad[dev]->key[index].unstable) {
-			my_xpad[dev]->key[index].cnt = 0;
+		if (pinVal){
+			printf("%010ld: Pushed @ (z= %d, s=%d)"NL,HAL_GetTick(), z, spalten_nr);
 		}
+		if (my_xpad[dev]->key[index].current ^ my_xpad[dev]->key[index].last){
+			printf("%010ld: Detected Key @ (z= %d, s=%d)"NL,HAL_GetTick(), z, spalten_nr);
+		}
+		my_xpad[dev]->key[index].unstable = my_xpad[dev]->key[index].unstable||(my_xpad[dev]->key[index].current ^ my_xpad[dev]->key[index].last);
+
 		if (my_xpad[dev]->key[index].unstable) {
-			if (my_xpad[dev]->key[index].current
-					== my_xpad[dev]->key[index].last) {
+			if (my_xpad[dev]->key[index].current == my_xpad[dev]->key[index].last) {
 				my_xpad[dev]->key[index].cnt++;
 			}
 		}
 		if (my_xpad[dev]->key[index].cnt > STABLE_CNT) {
 			// We got a stable state
+			my_xpad[dev]->key[index].unstable = false;
 			uint8_t value = my_xpad[dev]->value[index];
 			my_xpad[dev]->key[index].last = pinVal;
-			my_xpad[dev]->key[index].current = pinVal;
+			my_xpad[dev]->key[index].stable = pinVal;
 			if (pinVal) {
-				my_xpad[dev]->state[index] = ((my_xpad[dev]->state[index] + 1)
-						% KEY_STAT_CNT);
+				my_xpad[dev]->state[index] = ((my_xpad[dev]->state[index] + 1) % KEY_STAT_CNT);
 				my_xpad[dev]->dirty = true;
 				printf("%010ld: Pushed   value %X @(z= %d, s=%d)",
 						HAL_GetTick(), value, z, spalten_nr);
@@ -101,9 +120,14 @@ static uint8_t xpad_read_zeile(kybd_h dev, uint8_t spalten_nr) {
 				printf("%010ld: Released value %X @(z= %d, s=%d)",
 						HAL_GetTick(), value, z, spalten_nr);
 			}
-			my_xpad[dev]->key[index].stable = pinVal;
+			res = res | (pinVal << z);
+			my_xpad[dev]->key[index].cnt=0;
 		}
 		res = res | (pinVal << z);
+
+		if (my_xpad[dev]->key[index].current ^ my_xpad[dev]->key[index].last){
+			my_xpad[dev]->key[index].cnt=0;
+		}
 		my_xpad[dev]->key[index].last = my_xpad[dev]->key[index].current;
 	}
 	return res;
@@ -170,14 +194,16 @@ void xpad_state(kybd_h dev, kybd_r_t *ret) {
 	return;
 }
 
-void xpad_reset(kybd_h dev) {
+void xpad_reset(kybd_h dev, bool hard) {
 	if (my_xpad[dev] == NULL) {
 		printf("%010ld: No valid handle on reset"NL, HAL_GetTick());
 		return;
 	}
 	my_xpad[dev]->dirty = false;
 	for (uint8_t i = 0; i < X_BUTTON_CNT; i++) {
-		my_xpad[dev]->state[i] = OFF;
+		if (hard){
+			my_xpad[dev]->state[i] = OFF;
+		}
 		my_xpad[dev]->key[i] = reset_key;
 	}
 	return;
