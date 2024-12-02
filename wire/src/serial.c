@@ -127,16 +127,15 @@ int _read(int32_t file, uint8_t *ptr, int32_t len)
 			sio.ready[SIO_RX] = false;
 			if (1==1)
 			{
-				status = HAL_UART_Receive(sio.uart, ptr, len, UART_TIMEOUT_MS);
-				if (status == HAL_OK)
-				{
+				status = HAL_UART_Receive(sio.uart, ptr, len, HAL_MAX_DELAY);
+				if (status == HAL_OK)	{
 					sio.bytes_in_buffer[SIO_RX] = len;
 				}
-				else if (status == HAL_ERROR)
+				else if ((status == HAL_ERROR) || (status == HAL_TIMEOUT))
 				{
 					sio.bytes_in_buffer[SIO_RX] = -1;
 				}
-				else /* Timeout or not ready */
+				else /* Not ready */
 				{
 					sio.bytes_in_buffer[SIO_RX] = 0;
 				}
@@ -163,9 +162,25 @@ int _read(int32_t file, uint8_t *ptr, int32_t len)
 			sio.bytes_in_buffer[SIO_RX]=-1;
 		}
 	}
-
 	return sio.bytes_in_buffer[SIO_RX];
 }
 
+int __io_getchar(void)
+{
+    uint8_t ch = 0;
+    // Clear the Overrun flag just before receiving the first character
+    __HAL_UART_CLEAR_OREFLAG(sio.uart);
 
+    HAL_UART_Receive(sio.uart, (uint8_t *)&ch, 1, 0xFFFF);
+    //HAL_UART_Transmit(sio.uart), (uint8_t *)&ch, 1, 0xFFFF);
+    return ch;
+}
+int __io_putchar(char ch)
+{
+    // Clear the Overrun flag just before receiving the first character
+    __HAL_UART_CLEAR_OREFLAG(sio.uart);
+
+    HAL_UART_Transmit(sio.uart, (uint8_t *)&ch, 1, 0xFFFF);
+    return ch;
+}
 

@@ -7,6 +7,7 @@
 #include "main.h"
 #ifndef COMMON_INC_KEYBOARD_H_
 #define COMMON_INC_KEYBOARD_H_
+
 #define STABLE_CNT 10
 #define SETTLE_TIME_MS	1
 #define SCAN_MS	5
@@ -18,7 +19,6 @@ typedef enum{
 	EIGHTKEY,
 	DEV_TYPE_CNT
 } kybd_type_e;
-
 
 typedef enum{
 	OFF,
@@ -38,8 +38,8 @@ typedef struct key_s{
 
 
 typedef struct kybd_r_s{
-	 key_state_e state[BUTTON_CNT];
-	 uint8_t  value[BUTTON_CNT];
+	 key_state_e state[STATE_CNT];
+	 uint8_t  value[STATE_CNT];
      uint8_t key_cnt;
 	 uint8_t first; //First valid value
 	 bool dirty;
