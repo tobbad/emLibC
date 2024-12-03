@@ -4,7 +4,9 @@
  *  Created on: Jun 2, 2024
  *      Author: badi
  */
+#include "common.h"
 #include "gpio.h"
+#include "xpad.h"
 #include "keyboard.h"
 #define ZEI_SPA_2_INDEX(zeile, spalte ) (uint8_t)(spalte*ZEILEN_CNT+zeile)
 #define MINIMAL_LINESTART 16
@@ -25,22 +27,22 @@ xpad_t default_keyboard = {
 			{ .port = GPIOA, .pin = GPIO_PIN_10 }, // Zeile 4
 	},
 	.key = {
-		{ false, false, 0, true },
-		{ false, false, 0, true },
-		{ false, false, 0, true },
-		{ false, false, 0, true },
-		{ false, false, 0, true },
-		{ false, false, 0, true },
-		{ false, false, 0, true },
-		{ false, false, 0, true },
-		{ false, false, 0, true },
-		{ false, false, 0, true },
-		{ false, false, 0, true },
-		{ false, false, 0, true },
-		{ false, false, 0, true },
-		{ false, false, 0, true },
-		{ false, false, 0, true },
-		{ false, false, 0, true }
+		{ false, false, false, 0, true },
+		{ false, false, false, 0, true },
+		{ false, false, false, 0, true },
+		{ false, false, false, 0, true },
+		{ false, false, false, 0, true },
+		{ false, false, false, 0, true },
+		{ false, false, false, 0, true },
+		{ false, false, false, 0, true },
+		{ false, false, false, 0, true },
+		{ false, false, false, 0, true },
+		{ false, false, false, 0, true },
+		{ false, false, false, 0, true },
+		{ false, false, false, 0, true },
+		{ false, false, false, 0, true },
+		{ false, false, false, 0, true },
+		{ false, false, false, 0, true }
 	},
 	.state = { 	OFF, OFF, OFF, OFF,
 				OFF, OFF, OFF, OFF,

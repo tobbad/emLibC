@@ -5,8 +5,8 @@
  *      Author: badi
  */
 
-#ifndef INC_KEYPAD_H_
-#define INC_KEYPAD_H_
+#ifndef INC_XPAD_H_
+#define INC_XPAD_H_
 #include "keyboard.h"
 #define ZEILEN_CNT 4
 #define SPALTEN_CNT 4
@@ -33,4 +33,4 @@ void  xpad_state(kybd_h handle, kybd_r_t *ret);
 void  xpad_iprint(xpad_t *state, char* start);
 
 
-#endif /* INC_KEYPAD_H_ */
+#endif /* INC_XPAD_H_ */

@@ -6,6 +6,7 @@
  */
 #ifndef COMMON_INC_EIGHTKEY_H_
 #define COMMON_INC_EIGHTKEY_H_
+#include "xpad.h"
 
 #define EIGHT_BUTTON_CNT 8
 

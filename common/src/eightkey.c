@@ -4,7 +4,10 @@
  *  Created on: Oct 30, 2024
  *      Author: badi
  */
-#include "main.h"
+#include "common.h"
+#include "keyboard.h"
+#include "eightkey.h"
+#include "xpad.h"
 
 eight_t default_eight ={
 	.bttn_pin={ //Inputs
@@ -17,8 +20,17 @@ eight_t default_eight ={
 		{.port = GPIOB,  .pin=GPIO_PIN_3 },
 		{.port = GPIOA,  .pin=GPIO_PIN_10},
 	},
-	.key = { {false,false ,0,false}, {false,false,0,false}, {false,false,0,false}, {false,false,0,false}, {false,false,0,false},  {false,false,0,false},  {false,false,0,false},  {false,false,0,false}},
-	.state = {OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF,},
+	.key = {
+	        { false, false, false, 0, true }, //1
+	        { false, false, false, 0, true }, //2
+	        { false, false, false, 0, true },//3
+	        { false, false, false, 0, true },//4
+	        { false, false, false, 0, true },//5
+	        { false, false, false, 0, true },//6
+	        { false, false, false, 0, true },//6
+	        { false, false, false, 0, true }//8
+	 },
+	.state = {OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
 	.value = {1, 2, 3, 4,  5, 6, 7, 8 },
 	.dirty = false,
 	.key_cnt =EIGHT_BUTTON_CNT,
@@ -81,7 +93,7 @@ uint16_t eight_scan(kybd_h dev){
 	return res;
 };
 
-void eight_reset(kybd_h dev){
+void eight_reset(kybd_h dev, bool hard){
 	if (_eight[dev]==NULL){
 		printf("%010ld: No valid handle on reset"NL,HAL_GetTick());
 		return;
