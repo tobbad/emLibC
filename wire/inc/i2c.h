@@ -34,7 +34,7 @@ typedef uint8_t i2c_handle ;
 
 
 i2c_handle li2c_init(void * i2c_dev, uint8_t i2cAdr);
-elres_t i2c_write(i2c_handle i2c_h, uint8_t cnt, uint8_t *txbuffer);
-elres_t i2c_read(i2c_handle i2c_h, uint8_t cnt, uint8_t *rxbuffer);
+em_msg i2c_write(i2c_handle i2c_h, uint8_t cnt, uint8_t *txbuffer);
+em_msg i2c_read(i2c_handle i2c_h, uint8_t cnt, uint8_t *rxbuffer);
 
 #endif /* __LI2C_H */

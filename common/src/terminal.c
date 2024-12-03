@@ -7,7 +7,7 @@
 #include <main.h>
 
 
-kybd_r_t my_kybd = {
+static kybd_r_t my_kybd = {
     .state=  {  OFF, OFF, OFF, OFF,
                 OFF, OFF, OFF, OFF},
     .value = {'R', 1, 2, 3, 4, 5, 6, 7, 8 },
@@ -17,12 +17,69 @@ kybd_r_t my_kybd = {
 };
 
 static bool check_key(char ch);
-void terminal_reset(kybd_h dev, bool hard);
+static void terminal_reset(kybd_h dev, bool hard);
+static void terminal_reset(kybd_h dev, bool hard);
 
-void terminal_init(kybd_h handle, void* kybd) {
+static  void terminal_init(kybd_h handle, void* kybd) {
     terminal_reset(handle, true);
 }
 
+
+static bool check_key(char ch){
+    bool ret = false;
+    if (((ch >= '0') && (ch < '9')) || (ch == 'R')) {
+        ret = true;
+    }
+    return ret;
+}
+
+static uint16_t terminal_scan(kybd_h dev) {
+    static bool asked = false;
+    uint8_t ch = UINT8_MAX;
+    uint16_t res = UINT16_MAX;
+    //char allowed_keys={'R'};
+
+    if (!asked) {
+        asked = true;
+        printf("%08ld: Please enter key"NL, HAL_GetTick());
+    }
+    HAL_StatusTypeDef status;
+    status = HAL_UART_Receive(&huart2, &ch, 1, HAL_MAX_DELAY);
+    if (status == HAL_OK) {
+        if (check_key(ch)) {
+            if (ch == 'R') {
+                res = 1;
+                my_kybd.state[res]= ON;
+            } else {
+                res = ch - '0';
+                assert(ch<9);
+                assert(ch>1);
+                my_kybd.state[ch]  =  (my_kybd.state[ch] + 1)%KEY_STAT_CNT;
+            }
+            asked = false;
+            return res;
+        }
+    }
+    return res;
+}
+
+static void terminal_state(kybd_h dev, kybd_r_t *ret){
+    *ret = my_kybd;
+}
+
+static void terminal_reset(kybd_h dev, bool hard){
+    for (uint8_t i= my_kybd.first; i<my_kybd.first+my_kybd.key_cnt;i++){
+        my_kybd.state[i] =OFF;
+    }
+    return ;
+}
+
+kybd_t terminal_dev = {
+        .init = &terminal_init,
+        .scan = &terminal_scan,
+        .reset = &terminal_reset,
+        .state = &terminal_state,
+        .dev_type = XSCAN, };
 int8_t terminal_waitForKey(char **key) {
     static char buffer[16];
     uint8_t ch = 0xFF;
@@ -53,59 +110,3 @@ int8_t terminal_waitForKey(char **key) {
     }
     return -1;
 }
-
-static bool check_key(char ch){
-    bool ret = false;
-    if (((ch >= '0') && (ch < '9')) || (ch == 'R')) {
-        ret = true;
-    }
-    return ret;
-}
-
-uint16_t terminal_scan(kybd_h dev) {
-    static bool asked = false;
-    uint8_t ch = UINT8_MAX;
-    uint16_t res = UINT16_MAX;
-    //char allowed_keys={'R'};
-
-    if (!asked) {
-        asked = true;
-        printf("%08ld: Please enter key"NL, HAL_GetTick());
-    }
-    HAL_StatusTypeDef status;
-    status = HAL_UART_Receive(&huart2, &ch, 1, HAL_MAX_DELAY);
-    if (status == HAL_OK) {
-        if (check_key(ch)) {
-            if (ch == 'R') {
-                res = 1;
-                my_kybd.state[res]= ON;
-            } else {
-                res = ch - '0';
-                assert(ch<9);
-                assert(ch>1);
-                my_kybd.state[ch]  =  (my_kybd.state[ch] + 1)%KEY_STAT_CNT;
-            }
-            asked = false;
-            return res;
-        }
-    }
-    return res;
-}
-
-void terminal_state(kybd_h dev, kybd_r_t *ret){
-    *ret = my_kybd;
-}
-
-void terminal_reset(kybd_h dev, bool hard){
-    for (uint8_t i= my_kybd.first; i<my_kybd.first+my_kybd.key_cnt;i++){
-        my_kybd.state[i] =OFF;
-    }
-    return ;
-}
-
-kybd_t terminal_dev = {
-        .init = &terminal_init,
-        .scan = &terminal_scan,
-        .reset = &terminal_reset,
-        .state = &terminal_state,
-        .dev_type = XSCAN, };

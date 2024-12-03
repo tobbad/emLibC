@@ -19,7 +19,6 @@
  *
  **************************************************************************/
 #include "common.h"
-#include "main.h"
 
 #include "i2c.h"
 static i2c_t my_dev[I2C_HANDLLE_CNT+1];
@@ -37,7 +36,7 @@ i2c_handle li2c_init(void * i2c_dev, uint8_t i2cAdr)
 
 
 
-elres_t i2c_write(i2c_handle i2c_h, uint8_t cnt, uint8_t *txbuffer)
+em_msg i2c_write(i2c_handle i2c_h, uint8_t cnt, uint8_t *txbuffer)
 {
 	if ((i2c_h > 0) && (my_dev[i2c_h].i2c != NULL) && (cnt <MAX_TRANSFER_SIZE))
 	{
@@ -47,12 +46,12 @@ elres_t i2c_write(i2c_handle i2c_h, uint8_t cnt, uint8_t *txbuffer)
 		memcpy(buffer, txbuffer, cnt);
 	} else {
 		printf("Invalid write"NL);
-		return EMLIB_ERROR;
+		return EM_ERR;
 	}
-	return EMLIB_OK;
+	return EM_OK;
 }
 
-elres_t i2c_read(i2c_handle i2c_h, uint8_t cnt, uint8_t *rxbuffer)
+em_msg i2c_read(i2c_handle i2c_h, uint8_t cnt, uint8_t *rxbuffer)
 {
 	if ((i2c_h > 0) && (my_dev[i2c_h].i2c = NULL) && (cnt <MAX_TRANSFER_SIZE))
 	{
@@ -60,8 +59,8 @@ elres_t i2c_read(i2c_handle i2c_h, uint8_t cnt, uint8_t *rxbuffer)
 		UNUSED(adr);
 	} else {
 		printf("Invalid read"NL);
-		return EMLIB_ERROR;
+		return EM_ERR;
 	}
 
-	return EMLIB_OK;
+	return EM_OK;
 }

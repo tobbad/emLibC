@@ -51,10 +51,10 @@ typedef enum {
 } dev_func_t;
 
 
-elres_t device_check(const device_t * dev, dev_func_t dev_type);
-elres_t device_read(device_t * dev, uint8_t *buffer, uint16_t *cnt);
-elres_t device_write(device_t * dev, const uint8_t *buffer, uint16_t cnt);
-elres_t device_reset(device_t * dev);
+em_msg device_check(const device_t * dev, dev_func_t dev_type);
+em_msg device_read(device_t * dev, uint8_t *buffer, uint16_t *cnt);
+em_msg device_write(device_t * dev, const uint8_t *buffer, uint16_t cnt);
+em_msg device_reset(device_t * dev);
 void device_print(const device_t * dev);
 
 
