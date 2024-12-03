@@ -13,6 +13,7 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>    
 #include <stdio.h>
+#include <string.h>
 
 #ifdef UNIT_TEST
 #define STATIC
@@ -20,7 +21,6 @@ extern "C" {
 #else
 #define STATIC static
 #endif
-
 #define ELCNT(array) (sizeof((array))/sizeof((array[0])))
 
 #define NEWLINE  "\r\n"

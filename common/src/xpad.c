@@ -55,7 +55,7 @@ xpad_t default_keyboard = {
 		0, 0xf, 0xe, 0xd }, // Zeile 4
 	.val2idx = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
 	.first = 0,
-	.key_cnt = X_BUTTON_CNT,
+	.key_cnt = BUTTON_CNT,
 	.dirty =false,
 };
 
@@ -89,7 +89,6 @@ static uint8_t xpad_read_zeile(kybd_h dev, uint8_t spalten_nr) {
 	uint8_t res = 0;
 	for (uint8_t z = 0; z < ZEILEN_CNT; z++) {
 		bool pinVal = 0;
-		mkey_t *key0 =&my_xpad[dev]->key[0];
 		GpioPinRead(&my_xpad[dev]->zeile[z], &pinVal);
 		pinVal = !pinVal;
 		uint8_t index = ZEI_SPA_2_INDEX(z, spalten_nr);
@@ -230,7 +229,7 @@ void xpad_iprint(xpad_t *state, char *start) {
 	snprintf(text, maxcnt, "%s%s", start, "State   ");
 	printf(text);
 	for (uint8_t i = 0; i < X_BUTTON_CNT; i++) {
-		printf("%s", state2str[state->state[i]]);
+		printf("%s", key_state_c[state->state[i]]);
 	}
 	printf(NL);
 	snprintf(text, maxcnt, "%s%s", start, "Last    ");

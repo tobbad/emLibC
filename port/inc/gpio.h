@@ -7,9 +7,6 @@
 
 #ifndef LIB_GPIO_H_
 #define LIB_GPIO_H_
-
-#include <stdint.h>
-#include <stdbool.h>
 #include "common.h"
 #include "hal_port.h"
 
@@ -23,4 +20,5 @@ typedef struct Gpio_t_
 em_msg GpioPinRead(GpioPin_t *pin, bool *value);
 em_msg GpioPinWrite(GpioPin_t *pin, bool value);
 em_msg GpioPinToggle(GpioPin_t *pin);
+
 #endif /* LIB_GPIO_H_ */

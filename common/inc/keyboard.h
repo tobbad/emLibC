@@ -4,14 +4,16 @@
  *  Created on: Oct 30, 2024
  *      Author: badi
  */
-#include "main.h"
 #ifndef COMMON_INC_KEYBOARD_H_
 #define COMMON_INC_KEYBOARD_H_
+#include "common.h"
+#include "gpio.h"
 
 #define STABLE_CNT 10
 #define SETTLE_TIME_MS	1
 #define SCAN_MS	5
 #define KYBD_CNT 4
+#define BUTTON_CNT 16
 
 typedef enum{
 	XSCAN,
@@ -27,6 +29,7 @@ typedef enum{
 	KEY_STAT_CNT
 }key_state_e;
 
+extern char* key_state_c[];
 
 typedef struct key_s{
 	bool last;
@@ -38,8 +41,8 @@ typedef struct key_s{
 
 
 typedef struct kybd_r_s{
-	 key_state_e state[STATE_CNT];
-	 uint8_t  value[STATE_CNT];
+	 key_state_e state[BUTTON_CNT];
+	 uint8_t  value[BUTTON_CNT];
      uint8_t key_cnt;
 	 uint8_t first; //First valid value
 	 bool dirty;
