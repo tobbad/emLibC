@@ -21,7 +21,7 @@ extern "C" {
 #else
 #define STATIC static
 #endif
-#define ELCNT(array) (sizeof((array))/sizeof((array[0])))
+#define ELCNT(array) (array==0)?0:(sizeof((array))/sizeof((array[0])))
 
 #define NEWLINE  "\r\n"
 #define NL  NEWLINE

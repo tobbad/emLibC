@@ -7,19 +7,18 @@
 #ifndef COMMON_INC_KEYBOARD_H_
 #define COMMON_INC_KEYBOARD_H_
 #include "common.h"
-#include "gpio.h"
-
+#include "xpad.h"
 #define STABLE_CNT 10
 #define SETTLE_TIME_MS	1
 #define SCAN_MS	5
 #define KYBD_CNT 4
-#define BUTTON_CNT 16
+#define MAX_BUTTON_CNT 16
 
 typedef enum{
 	XSCAN,
-	TERMINAL,
 	EIGHTKEY,
-	DEV_TYPE_CNT
+	TERMINAL,
+	DEV_TYPE_NA
 } kybd_type_e;
 
 typedef enum{
@@ -29,7 +28,8 @@ typedef enum{
 	KEY_STAT_CNT
 }key_state_e;
 
-extern char* key_state_c[];
+extern char* key_state_3c[];
+extern char* key_state_2c[];
 
 typedef struct key_s{
 	bool last;
@@ -41,32 +41,29 @@ typedef struct key_s{
 
 
 typedef struct kybd_r_s{
-	 key_state_e state[BUTTON_CNT];
-	 uint8_t  value[BUTTON_CNT];
+	 key_state_e state[MAX_BUTTON_CNT];
+	 uint8_t  value[MAX_BUTTON_CNT];
      uint8_t key_cnt;
 	 uint8_t first; //First valid value
 	 bool dirty;
 }kybd_r_t;
 
-typedef int8_t kybd_h;
+typedef uint8_t kybdh_t;
 
 typedef struct kybd_s{
-	void (*init)(kybd_h handle, void* kybd);
-	uint16_t (*scan)(kybd_h handle);
-	void (*reset)(kybd_h handle, bool hard);
-	void  (*state)(kybd_h handle, kybd_r_t *ret);
-	void *user_data;
-	uint8_t first;
-	uint8_t button_cnt;
+	void (*init)(kybdh_t dev, xpad_t *scan_dev);
+	uint16_t (*scan)(kybdh_t dev);
+	void (*reset)(kybdh_t dev, bool hard);
+	void (*state)(kybdh_t dev, kybd_r_t *ret);
 	kybd_type_e dev_type;
 }kybd_t;
 
-kybd_h keyboard_init(kybd_t *kybd, void *user_data);
-uint16_t keyboard_scan(kybd_h handle);
-void keyboard_reset(kybd_h handle, bool hard);
-void keyboard_state(kybd_h handle, kybd_r_t *ret);
-void  keyboard_print(kybd_r_t *state, char* start); // Show returnd
-void  keyboard_iprint(kybd_r_t *state, char* start); // Show internals
+kybdh_t keyboard_init(xpad_t *kybd, xpad_t *scan_dev);
+uint16_t keyboard_scan(kybdh_t dev);
+void keyboard_reset(kybdh_t dev, bool hard);
+void keyboard_state(kybdh_t dev, kybd_r_t *ret);
+void  keyboard_print(kybd_r_t *state, char* start); // Show returned
+kybd_type_e  keyboard_get_dev_type(kybdh_t dev);
 
 
 

@@ -9,17 +9,19 @@
 #include "eightkey.h"
 #include "xpad.h"
 
-eight_t default_eight ={
-	.bttn_pin={ //Inputs
-		{.port = GPIOA,  .pin=GPIO_PIN_0 },
-		{.port = GPIOA,  .pin=GPIO_PIN_4 },
-		{.port = GPIOB,  .pin=GPIO_PIN_0 },
-		{.port = GPIOC,  .pin=GPIO_PIN_1 },
-		{.port = GPIOB,  .pin=GPIO_PIN_10},
-		{.port = GPIOB,  .pin=GPIO_PIN_5 },
-		{.port = GPIOB,  .pin=GPIO_PIN_3 },
-		{.port = GPIOA,  .pin=GPIO_PIN_10},
-	},
+xpad_t default_eight ={
+		.spalte = 0,
+		.zeile = { // Input rows
+				{.port = GPIOA,  .pin=GPIO_PIN_0 },
+				{.port = GPIOA,  .pin=GPIO_PIN_4 },
+				{.port = GPIOB,  .pin=GPIO_PIN_0 },
+				{.port = GPIOC,  .pin=GPIO_PIN_1 },
+				{.port = GPIOB,  .pin=GPIO_PIN_10},
+				{.port = GPIOB,  .pin=GPIO_PIN_5 },
+				{.port = GPIOB,  .pin=GPIO_PIN_3 },
+				{.port = GPIOA,  .pin=GPIO_PIN_10},
+		},
+
 	.key = {
 	        { false, false, false, 0, true }, //1
 	        { false, false, false, 0, true }, //2
@@ -37,10 +39,10 @@ eight_t default_eight ={
 	.first =0,
 
 };
-eight_t* _eight[KYBD_CNT];
+xpad_t* _eight[KYBD_CNT];
 mkey_t reset_key ={0,0,0, true};
 
-void eight_init(kybd_h dev, void *data){
+void eight_init(kybdh_t dev, void *data){
 	if (data != NULL){
 		_eight[dev] = (eight_t *)data;
 	} else {
@@ -59,7 +61,7 @@ void eight_init(kybd_h dev, void *data){
 	}
 }
 
-uint16_t eight_scan(kybd_h dev){
+uint16_t eight_scan(kybdh_t dev){
 	if (_eight[dev]==NULL){
 		printf("%010ld: No valid handle on read_row"NL,HAL_GetTick());
 		return false;
@@ -67,7 +69,7 @@ uint16_t eight_scan(kybd_h dev){
 	uint16_t res=0;
 	for (uint8_t index=0;index<EIGHT_BUTTON_CNT; index++)	{
 		bool pin=0;
-		GpioPinRead(&_eight[dev]->bttn_pin[index], &pin);
+		GpioPinRead(&_eight[dev]->zeile[index], &pin);
 		pin =!pin;
 		_eight[dev]->key[index].current=pin;
 		bool this = _eight[dev]->key[index].current^_eight[dev]->key[index].last;
@@ -93,7 +95,7 @@ uint16_t eight_scan(kybd_h dev){
 	return res;
 };
 
-void eight_reset(kybd_h dev, bool hard){
+void eight_reset(kybdh_t dev, bool hard){
 	if (_eight[dev]==NULL){
 		printf("%010ld: No valid handle on reset"NL,HAL_GetTick());
 		return;
@@ -104,7 +106,7 @@ void eight_reset(kybd_h dev, bool hard){
 	_eight[dev]->dirty=  false;
 
 };
-void eight_state(kybd_h dev, kybd_r_t *ret){
+void eight_state(kybdh_t dev, kybd_r_t *ret){
 	for (uint8_t i=0;i<EIGHT_BUTTON_CNT;i++){
 		ret->value[i] = _eight[dev]->value[i]+1;
 		ret->state[i] = _eight[dev]->state[i];

@@ -18,7 +18,6 @@ static kybd_r_t my_kybd = {
 
 static bool check_key(char ch);
 static void terminal_reset(kybd_h dev, bool hard);
-static void terminal_reset(kybd_h dev, bool hard);
 
 static  void terminal_init(kybd_h handle, void* kybd) {
     terminal_reset(handle, true);
@@ -33,7 +32,7 @@ static bool check_key(char ch){
     return ret;
 }
 
-static uint16_t terminal_scan(kybd_h dev) {
+static uint16_t terminal_scan(kybdh_t dev) {
     static bool asked = false;
     uint8_t ch = UINT8_MAX;
     uint16_t res = UINT16_MAX;
@@ -63,11 +62,11 @@ static uint16_t terminal_scan(kybd_h dev) {
     return res;
 }
 
-static void terminal_state(kybd_h dev, kybd_r_t *ret){
+static void terminal_state(kybdh_t dev, kybd_r_t *ret){
     *ret = my_kybd;
 }
 
-static void terminal_reset(kybd_h dev, bool hard){
+static void terminal_reset(kybdh_t dev, bool hard){
     for (uint8_t i= my_kybd.first; i<my_kybd.first+my_kybd.key_cnt;i++){
         my_kybd.state[i] =OFF;
     }
@@ -79,7 +78,9 @@ kybd_t terminal_dev = {
         .scan = &terminal_scan,
         .reset = &terminal_reset,
         .state = &terminal_state,
-        .dev_type = XSCAN, };
+        .dev_type = TERMINAL,
+};
+
 int8_t terminal_waitForKey(char **key) {
     static char buffer[16];
     uint8_t ch = 0xFF;
