@@ -29,7 +29,6 @@
  *  Created on: 12.05.2018
  *      Author: badi
  */
-#include "main.h"
 #include <string.h>
 #include <stdbool.h>
 #include <stdint.h>

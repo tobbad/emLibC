@@ -10,15 +10,15 @@
 #include "common.h"
 #include "hal_port.h"
 
-
-typedef struct Gpio_t_
-{
+typedef struct gpio_pin_s{
 	GPIO_TypeDef* port;
 	uint16_t pin;
-} GpioPin_t;
+	GPIO_InitTypeDef conf;
+} gpio_pin_t;
 
-em_msg GpioPinRead(GpioPin_t *pin, bool *value);
-em_msg GpioPinWrite(GpioPin_t *pin, bool value);
-em_msg GpioPinToggle(GpioPin_t *pin);
+em_msg GpioPinInit(gpio_pin_t *pin);
+em_msg GpioPinRead(gpio_pin_t *pin, bool *value);
+em_msg GpioPinWrite(gpio_pin_t *pin, bool value);
+em_msg GpioPinToggle(gpio_pin_t *pin);
 
 #endif /* LIB_GPIO_H_ */

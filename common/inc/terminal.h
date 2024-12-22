@@ -7,7 +7,7 @@
 
 #ifndef TERMINAL_H
 #define TERMINAL_H
-#include "main.h"
+#include "keyboard.h"
 extern kybd_t terminal_dev;
 
 int8_t terminal_waitForKey(char **key);

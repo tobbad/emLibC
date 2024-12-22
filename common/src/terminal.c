@@ -17,9 +17,9 @@ static kybd_r_t my_kybd = {
 };
 
 static bool check_key(char ch);
-static void terminal_reset(kybd_h dev, bool hard);
+static void terminal_reset(kybdh_t dev, bool hard);
 
-static  void terminal_init(kybd_h handle, void* kybd) {
+static  void terminal_init(kybdh_t handle, xpad_t * kybd) {
     terminal_reset(handle, true);
 }
 
