@@ -29,17 +29,17 @@ static uint8_t keyboard_find_dev(kybd_t *kybd) {
 ;
 
 kybd_type_e keyboard_init(kybd_t *kybd, xpad_pins_t *pins) {
-	kybd_type_e res = 0;
+	int8_t dev_nr=0;
 	if (kybd != NULL) {
-		int8_t dev_nr = keyboard_find_dev(kybd);
+		dev_nr = keyboard_find_dev(kybd);
 		if (dev_nr > 0) {
-			my_kybd[res] = kybd;
+			my_kybd[dev_nr] = kybd;
 			kybd->init(dev_nr, pins);
 		}
 	} else {
 		printf("%010ld: Cannot find device"NL, HAL_GetTick());
 	}
-	return res;
+	return dev_nr;
 }
 
 uint16_t keyboard_scan(kybdh_t dev) {
