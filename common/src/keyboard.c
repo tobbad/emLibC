@@ -7,11 +7,13 @@
 #include "common.h"
 #include "xpad.h"
 #include "keyboard.h"
-
+#include "gpio_port.h"
 static kybd_t *my_kybd[KYBD_CNT];
 
 char *key_state_3c[] = { "   ", "BLI", "ON ", "NA ", };
 char *key_state_2c[] = { "  ", "BL", "ON ", "NA ", };
+
+mkey_t reset_key = { .last=0, .current=0, .unstable=0, .cnt=0, .stable=true };
 
 static uint8_t keyboard_find_dev(kybd_t *kybd) {
 	for (uint8_t i = 0; i < KYBD_CNT; i++) {
@@ -25,16 +27,15 @@ static uint8_t keyboard_find_dev(kybd_t *kybd) {
 		}
 	}
 	return 0;
-}
-;
+};
 
-kybd_type_e keyboard_init(kybd_t *kybd, xpad_pins_t *pins) {
+kybd_type_e keyboard_init(kybd_t *kybd, xpad_dev_t *device) {
 	int8_t dev_nr=0;
 	if (kybd != NULL) {
 		dev_nr = keyboard_find_dev(kybd);
 		if (dev_nr > 0) {
 			my_kybd[dev_nr] = kybd;
-			kybd->init(dev_nr, pins);
+			kybd->init(dev_nr, kybd->dev_type, device);
 		}
 	} else {
 		printf("%010ld: Cannot find device"NL, HAL_GetTick());

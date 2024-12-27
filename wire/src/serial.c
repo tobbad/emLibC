@@ -55,6 +55,7 @@
 
 
 static sio_t sio;
+uint8_t serial_mode=0;
 
 sio_res_e serial_init(sio_t* init)
 {
@@ -68,6 +69,15 @@ sio_res_e serial_init(sio_t* init)
 	}
 
 	return SIO_OK;
+}
+
+void serial_addMode(print_e mode){
+	serial_mode |=mode;
+}
+
+void serial_removeMode(print_e mode){
+	serial_mode =mode;
+
 }
 
 int _write(int32_t file, uint8_t *ptr, int32_t len)

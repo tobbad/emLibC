@@ -1,30 +1,32 @@
 /*
- * keypad.h
+ * xpad.h
  *
  *  Created on: Jun 2, 2024
  *      Author: badi
  */
+#ifndef XPAD_H_
+#define XPAD_H_
 
-#ifndef INC_XPAD_H_
-#define INC_XPAD_H_
-#include "gpio.h"
 #include "keyboard.h"
+#include "gpio.h"
+#include "gpio_port.h"
 #define ZEILEN_CNT 4
 #define SPALTEN_CNT 4
 #define EIGHT_BUTTON_CNT 8
 #define MAX_BUTTON_CNT 16
 
-typedef struct xpad_pins_s{
-	uint8_t spalten_cnt;
-	gpio_pin_t spalte[SPALTEN_CNT];
-	uint8_t zeilen_cnt;
-	gpio_pin_t zeile[EIGHT_BUTTON_CNT];
-	kybd_type_e dev;
-}xpad_pins_t;
+typedef struct xpad_dev_s{
+	gpio_port_t spalte;
+	gpio_port_t zeile;
+	kybd_type_e dev_type;
+	uint8_t value[MAX_BUTTON_CNT];
+} xpad_dev_t;
 
 
 typedef struct xpad_s{
-	xpad_pins_t* pins;
+	gpio_port_t* zeile;
+	gpio_port_t* spalte;
+	kybd_type_e dev_type;
 	mkey_t key[MAX_BUTTON_CNT];
 	key_state_e state[MAX_BUTTON_CNT];
 	uint8_t value[MAX_BUTTON_CNT];
@@ -39,4 +41,4 @@ extern kybd_t eight_dev;
 void  xpad_iprint(xpad_t *state, char* timestamp);
 
 
-#endif /* INC_XPAD_H_ */
+#endif /* XPAD_H_  */

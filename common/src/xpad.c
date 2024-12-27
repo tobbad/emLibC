@@ -6,40 +6,49 @@
  */
 #include "common.h"
 #include "gpio.h"
+#include "gpio_port.h"
 #include "keyboard.h"
 #include "xpad.h"
+
 #define ZEI_SPA_2_INDEX(zeile, spalte ) (uint8_t)(spalte*ZEILEN_CNT+zeile)
+#define INDEX_2_ZEI_SPA(index) (  ((uint8_t)(index%ZEILEN_CNT)), ((uint8_t)(index-(index%ZEILEN_CNT)*ZEILEN_CNT) ))
+#define INDEX_2_ZEI(index)  ((uint8_t)(index%ZEILEN_CNT))
+#define INDEX_2_SPA(index) ((uint8_t)(((index - INDEX_2_ZEI(index)))%ZEILEN_CNT))
 #define MINIMAL_LINESTART 16
 
 xpad_t my_xpad[KYBD_CNT];
 xpad_t *mpy_xpad[KYBD_CNT];
 
 
-static mkey_t reset_key = { 0, 0, 0, true };
 
-xpad_pins_t pins_xscan= {
-	.spalten_cnt = 4,
-	.spalte= { // Output
-		{	.port=GPIOA, .pin=GPIO_PIN_0, .conf= {.Mode=GPIO_MODE_OUTPUT_PP, .Pull=GPIO_PULLUP,}}, // spalte 1
-		{	.port=GPIOA, .pin=GPIO_PIN_4, .conf= {.Mode=GPIO_MODE_OUTPUT_PP, .Pull=GPIO_PULLUP,}}, // spalte 2
-		{	.port=GPIOB, .pin=GPIO_PIN_0, .conf= {.Mode=GPIO_MODE_OUTPUT_PP, .Pull=GPIO_PULLUP,}}, // spalte 3
-		{	.port=GPIOC, .pin=GPIO_PIN_1, .conf= {.Mode=GPIO_MODE_OUTPUT_PP, .Pull=GPIO_PULLUP,}}, // spalte 4
+static xpad_dev_t default_xscan_dev= {
+	.spalte= {// Output
+		.pin={
+			{	.port=GPIOA, .pin=GPIO_PIN_0, .conf= {.Mode=GPIO_MODE_OUTPUT_PP, .Pull=GPIO_PULLUP,}}, // spalte 1
+			{	.port=GPIOA, .pin=GPIO_PIN_4, .conf= {.Mode=GPIO_MODE_OUTPUT_PP, .Pull=GPIO_PULLUP,}}, // spalte 2
+			{	.port=GPIOB, .pin=GPIO_PIN_0, .conf= {.Mode=GPIO_MODE_OUTPUT_PP, .Pull=GPIO_PULLUP,}}, // spalte 3
+			{	.port=GPIOC, .pin=GPIO_PIN_1, .conf= {.Mode=GPIO_MODE_OUTPUT_PP, .Pull=GPIO_PULLUP,}}, // spalte 4
+		},
+		.cnt=4 ,
 	},
-	.zeilen_cnt = 4,
 	.zeile= { // Input
-		{	.port=GPIOB, .pin= GPIO_PIN_10,  .conf= {.Mode=GPIO_MODE_INPUT, .Pull=GPIO_PULLUP,}}, // zeilen 1
-		{	.port=GPIOB, .pin= GPIO_PIN_5 , .conf= {.Mode=GPIO_MODE_INPUT, .Pull=GPIO_PULLUP,}}, // zeilen 2
-		{	.port=GPIOB, .pin= GPIO_PIN_3 , .conf= {.Mode=GPIO_MODE_INPUT, .Pull=GPIO_PULLUP,}}, // zeilen 3
-		{	.port=GPIOA, .pin= GPIO_PIN_10,  .conf= {.Mode=GPIO_MODE_INPUT, .Pull=GPIO_PULLUP,}}, // zeilen 4
+		.cnt=4 ,
+		.pin={
+			{	.port=GPIOB, .pin= GPIO_PIN_10,  .conf= {.Mode=GPIO_MODE_INPUT, .Pull=GPIO_PULLUP,}}, // zeilen 1
+			{	.port=GPIOB, .pin= GPIO_PIN_5 ,  .conf= {.Mode=GPIO_MODE_INPUT, .Pull=GPIO_PULLUP,}}, // zeilen 2
+			{	.port=GPIOB, .pin= GPIO_PIN_3 ,  .conf= {.Mode=GPIO_MODE_INPUT, .Pull=GPIO_PULLUP,}}, // zeilen 3
+			{	.port=GPIOA, .pin= GPIO_PIN_10,  .conf= {.Mode=GPIO_MODE_INPUT, .Pull=GPIO_PULLUP,}}, // zeilen 4
+		},
 	},
-	.dev=XSCAN,
+	.dev_type=XSCAN,
+	.value = {1, 2, 3, 0xa, 4, 5, 6, 0xb, 7, 8, 9, 0xc, 0, 0xf, 0xe ,0xd },
 };
 
-static xpad_pins_t pins_eight = {
-		.spalten_cnt = 0,
-		.spalte = {{}},
-		.zeilen_cnt = 8,
-		.zeile = {
+static xpad_dev_t default_eight_dev = {
+	.spalte={{{0}}},
+	.zeile ={
+		.cnt = 8,
+		.pin = {
 			{ .port = GPIOA, .pin = GPIO_PIN_0,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
 			{ .port = GPIOA, .pin = GPIO_PIN_4,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
 			{ .port = GPIOB, .pin = GPIO_PIN_0,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
@@ -49,7 +58,10 @@ static xpad_pins_t pins_eight = {
 			{ .port = GPIOB, .pin = GPIO_PIN_3,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
 			{ .port = GPIOA, .pin = GPIO_PIN_10, .conf = { .Mode = GPIO_MODE_INPUT, .Pull =	GPIO_PULLUP } },
 		},
-		.dev = EIGHTKEY,
+	},
+	.dev_type=EIGHTKEY,
+	.value = {1, 2, 3, 4, 5, 6, 7, 8},
+
 };
 
 static void xpad_set_spalten_pin(kybdh_t dev, uint8_t spalten_nr) {
@@ -57,7 +69,7 @@ static void xpad_set_spalten_pin(kybdh_t dev, uint8_t spalten_nr) {
 		printf("%010ld: No valid handle on xpad_set_spalte"NL, HAL_GetTick());
 		return;
 	}
-	gpio_pin_t *pin = &my_xpad[dev].pins->spalte[spalten_nr];
+	gpio_pin_t *pin = &my_xpad[dev].spalte->pin[spalten_nr];
 	GpioPinWrite(pin, GPIO_PIN_SET);
 
 	return;
@@ -68,20 +80,23 @@ static void xpad_reset_spalten_pin(kybdh_t dev, uint8_t spalten_nr) {
 		printf("%010ld: No valid handle on xpad_set_spalte"NL, HAL_GetTick());
 		return;
 	}
-	gpio_pin_t *pin = &my_xpad[dev].pins->spalte[spalten_nr];
+	gpio_pin_t *pin = &my_xpad[dev].spalte->pin[spalten_nr];
 	GpioPinWrite(pin, GPIO_PIN_RESET);
 	return;
 }
 
 static uint8_t xpad_update_key(uint8_t dev, uint8_t index, uint8_t zeile, bool pinVal) {
 	my_xpad[dev].key[index].current = pinVal;
-	if (pinVal) {
-		printf("%010ld: Pushed @ (index= %d)"NL, HAL_GetTick(), index);
-	}
+//	if (pinVal) {
+//		printf("%010ld: Pushed @ (index= %d)"NL, HAL_GetTick(), index);
+//	}
+	//uint8_t z,s = INDEX_2_ZEI_SPA(index);
+	uint8_t z = INDEX_2_ZEI(index);
+	uint8_t s = INDEX_2_SPA(index);
 	uint8_t res=0;
-	if (my_xpad[dev].key[index].current ^ my_xpad[dev].key[index].last) {
-		printf("%010ld: Detected Key @ (index =%d)"NL, HAL_GetTick(), index);
-	}
+//	if (my_xpad[dev].key[index].current ^ my_xpad[dev].key[index].last) {
+//		printf("%010ld: Detected Key @ (index =%d)"NL, HAL_GetTick(), index);
+//	}
 	my_xpad[dev].key[index].unstable = my_xpad[dev].key[index].unstable
 			|| (my_xpad[dev].key[index].current ^ my_xpad[dev].key[index].last);
 
@@ -100,9 +115,9 @@ static uint8_t xpad_update_key(uint8_t dev, uint8_t index, uint8_t zeile, bool p
 			my_xpad[dev].state[index] = ((my_xpad[dev].state[index] + 1)
 					% KEY_STAT_CNT);
 			my_xpad[dev].dirty = true;
-			printf("%010ld: Pushed   Key @ (index =%d)"NL, HAL_GetTick(), index);
+			printf("%010ld: Pushed   Key @ (index =%d, z=%d/%d, s=%d, value = %d)"NL, HAL_GetTick(), index, z, zeile, s, value);
 		} else {
-			printf("%010ld: Released Key @ (index =%d)"NL, HAL_GetTick(), index);
+			printf("%010ld: Released Key @ (index =%d, z=%d/%d, s=%d, value = %d)"NL, HAL_GetTick(), index, z, zeile , s, value);
 		}
 		res = res | (pinVal << zeile);
 		my_xpad[dev].key[index].cnt = 0;
@@ -120,14 +135,14 @@ static uint16_t xpad_eight_scan(kybdh_t dev) {
 		printf("%010ld: No valid handle on read_row"NL,HAL_GetTick());
 		return false;
 	}
-	if (my_xpad[dev].pins->dev!=EIGHTKEY) {
+	if (my_xpad[dev].dev_type!=EIGHTKEY) {
 		printf("%010ld: Handle for this keyboard not valid"NL,HAL_GetTick());
 		return false;
 	}
 	uint16_t res=0;
-	for (uint8_t zeile=0;zeile<my_xpad[dev].pins->zeilen_cnt; zeile++) {
+	for (uint8_t zeile=0;zeile<my_xpad[dev].zeile->cnt; zeile++) {
 		bool pin=0;
-		GpioPinRead(&my_xpad[dev].pins->zeile[zeile], &pin);
+		GpioPinRead(&my_xpad[dev].zeile->pin[zeile], &pin);
 		pin =!pin;
 		res = res|(xpad_update_key(dev, zeile, zeile, pin));
 	}
@@ -141,7 +156,7 @@ static uint16_t xpad_read_zeile(kybdh_t dev, uint8_t spalten_nr) {
 	uint8_t res = 0;
 	for (int8_t z =0 ; z<ZEILEN_CNT; z++) {
 		bool pinVal = 0;
-		GpioPinRead(&my_xpad[dev].pins->zeile[z], &pinVal);
+		GpioPinRead(&my_xpad[dev].zeile->pin[z], &pinVal);
 		pinVal = !pinVal;
 		uint8_t index = ZEI_SPA_2_INDEX(z, spalten_nr);
 		res = res | xpad_update_key(dev, index, z, pinVal);
@@ -154,9 +169,9 @@ static uint16_t xpad_spalten_scan(kybdh_t dev) {
 		printf("%010ld: No valid handle on scan"NL, HAL_GetTick());
 		return false;
 	}
-	if (my_xpad[dev].pins->dev != XSCAN) {
+	if (my_xpad[dev].dev_type != XSCAN) {
 		printf("%010ld: Handle (%d) for this keyboard not valid"NL,
-				HAL_GetTick(), my_xpad[dev].pins->dev);
+				HAL_GetTick(), my_xpad[dev].dev_type);
 		return false;
 	}
 	uint16_t res = 0;
@@ -174,31 +189,33 @@ static uint16_t xpad_spalten_scan(kybdh_t dev) {
 	return res;
 }
 
-static void xpad_init(kybdh_t dev, xpad_pins_t *pin) {
-	kybd_type_e dev_type = keyboard_get_dev_type(dev);
+static void xpad_init(kybdh_t dev, kybd_type_e dev_type, xpad_dev_t *device) {
 	if (dev_type == DEV_TYPE_NA)
 		return;
+	my_xpad[dev].dev_type= dev_type;
 	mpy_xpad[dev] = &my_xpad[dev];
-	if (pin != NULL) {
-		my_xpad[dev].pins = pin;
+	if (device != NULL) {
+		my_xpad[dev].spalte = &device->spalte;
+		my_xpad[dev].zeile =  &device->zeile;
+		memcpy(my_xpad[dev].value, device->value, MAX_BUTTON_CNT);
 	} else {
-		if (dev_type==XSCAN) {
-			my_xpad[dev].pins =&pins_xscan;
+		if (dev_type ==XSCAN) {
+			my_xpad[dev].spalte = &default_xscan_dev.spalte;
+			my_xpad[dev].zeile  = &default_xscan_dev.zeile;
+			memcpy(my_xpad[dev].value, default_xscan_dev.value, MAX_BUTTON_CNT);
 		} else if(dev_type==EIGHTKEY) {
-			my_xpad[dev].pins = &pins_eight;
+			my_xpad[dev].spalte = &default_eight_dev.spalte;
+			my_xpad[dev].zeile  = &default_eight_dev.zeile;
+			memcpy(my_xpad[dev].value, default_eight_dev.value, MAX_BUTTON_CNT);
 		} else if (dev_type == TERMINAL) {
 			printf("%010ld: Setup terminal %d"NL, HAL_GetTick(), dev_type);
 		}
 	}
-	if (my_xpad[dev].pins->spalten_cnt > 0) {
-		for (uint8_t spa_idx = 0; spa_idx < my_xpad[dev].pins->spalten_cnt;
-				spa_idx++) {
-			GpioPinInit(&my_xpad[dev].pins->spalte[spa_idx]);
-		}
+	if (my_xpad[dev].spalte->cnt > 0) {
+		GpioPortInit(my_xpad[dev].spalte);
 	}
-	for (uint8_t zei_idx = 0; zei_idx < my_xpad[dev].pins->zeilen_cnt;
-			zei_idx++) {
-		GpioPinInit(&my_xpad[dev].pins->zeile[zei_idx]);
+	if (my_xpad[dev].zeile->cnt > 0) {
+		GpioPortInit(my_xpad[dev].zeile);
 	}
 	printf(NL);
 }

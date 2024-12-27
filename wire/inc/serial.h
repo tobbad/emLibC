@@ -33,6 +33,7 @@
 #define UART_TIMEOUT_MS 100
 typedef enum {SIO_ERROR=-1, SIO_OK=0, } sio_res_e;
 typedef enum {SIO_RX=0, SIO_TX, SIO_RXTX_CNT} sio_channel_e;
+typedef enum {log=1, direct=2} print_e;
 
 
 typedef struct _sio_t
@@ -46,5 +47,7 @@ typedef struct _sio_t
 
 
 sio_res_e serial_init(sio_t *init);
-
+void  serial_addMode(print_e mode);
+void serial_removeMode(print_e mode);
+int	logf_debug(const char *__restrict, ...) _ATTRIBUTE ((__format__ (__printf__, 1, 2)));
 #endif /* INC_SERIAL_IO_H_ */

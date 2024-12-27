@@ -5,8 +5,8 @@
  *      Author: badi
  */
 
-#ifndef LIB_GPIO_H_
-#define LIB_GPIO_H_
+#ifndef GPIO_H_
+#define GPIO_H_
 #include "common.h"
 #include "hal_port.h"
 
@@ -21,4 +21,4 @@ em_msg GpioPinRead(gpio_pin_t *pin, bool *value);
 em_msg GpioPinWrite(gpio_pin_t *pin, bool value);
 em_msg GpioPinToggle(gpio_pin_t *pin);
 
-#endif /* LIB_GPIO_H_ */
+#endif /* GPIO_H_ */

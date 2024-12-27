@@ -14,7 +14,6 @@ extern "C" {
 #include <stdbool.h>    
 #include <stdio.h>
 #include <string.h>
-
 #ifdef UNIT_TEST
 #define STATIC
 #include <stdio.h>
