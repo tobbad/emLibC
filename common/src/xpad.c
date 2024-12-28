@@ -90,7 +90,7 @@ static void xpad_reset_spalten_pin(kybdh_t dev, uint8_t spalten_nr) {
 	return;
 }
 
-static uint8_t xpad_update_key(uint8_t dev, uint8_t index, uint8_t zeile, bool pinVal) {
+static uint8_t xpad_update_key(uint8_t dev, uint8_t index, bool pinVal) {
 	my_xpad[dev].key[index].current = pinVal;
 //	if (pinVal) {
 //		printf("%010ld: Pushed @ (index= %d)"NL, HAL_GetTick(), index);
@@ -120,11 +120,11 @@ static uint8_t xpad_update_key(uint8_t dev, uint8_t index, uint8_t zeile, bool p
 			my_xpad[dev].state[index] = ((my_xpad[dev].state[index] + 1)
 					% KEY_STAT_CNT);
 			my_xpad[dev].dirty = true;
-			printf("%010ld: Pushed   Key @ (index =%d, z=%d/%d, s=%d, value = %d)"NL, HAL_GetTick(), index, z, zeile, s, value);
+			printf("%010ld: Pushed   Key @ (index =%d, z=%d, s=%d, value = %d)"NL, HAL_GetTick(), index, z, s, value);
 		} else {
-			printf("%010ld: Released Key @ (index =%d, z=%d/%d, s=%d, value = %d)"NL, HAL_GetTick(), index, z, zeile , s, value);
+			printf("%010ld: Released Key @ (index =%d, z=%d, s=%d, value = %d)"NL, HAL_GetTick(), index, z , s, value);
 		}
-		res = res | (pinVal << zeile);
+		res = res | (pinVal << z);
 		my_xpad[dev].key[index].cnt = 0;
 	}
 
@@ -149,7 +149,7 @@ static uint16_t xpad_eight_scan(kybdh_t dev) {
 		bool pin=0;
 		GpioPinRead(&my_xpad[dev].zeile->pin[zeile], &pin);
 		pin =!pin;
-		res = res|(xpad_update_key(dev, zeile, zeile, pin));
+		res = res|(xpad_update_key(dev, zeile, pin));
 	}
 	return res;
 }
@@ -164,7 +164,7 @@ static uint16_t xpad_read_zeile(kybdh_t dev, uint8_t spalten_nr) {
 		GpioPinRead(&my_xpad[dev].zeile->pin[z], &pinVal);
 		pinVal = !pinVal;
 		uint8_t index = ZEI_SPA_2_INDEX(z, spalten_nr);
-		res = res | xpad_update_key(dev, index, z, pinVal);
+		res = res | xpad_update_key(dev, index, pinVal);
 	}
 	return res;
 }
@@ -236,8 +236,8 @@ static void xpad_init(kybdh_t dev, kybd_type_e dev_type, xpad_dev_t *device) {
 			}
 		}
 	}
-	for (uint8_t val=my_xpad[dev].first;val<my_xpad[dev].key_cnt+1;val++){
-		printf("%010ld: val= %01x ->  %01x"NL, HAL_GetTick(),val,  my_xpad[dev].val2idx[val] );
+	for (uint8_t val=my_xpad[dev].first;val<my_xpad[dev].key_cnt;val++){
+		printf("%010ld: val= %01x ->  %01x"NL, HAL_GetTick(), val,  my_xpad[dev].val2idx[val] );
 	}
 	printf(NL);
 }
@@ -251,7 +251,7 @@ static void xpad_state(kybdh_t dev, kybd_r_t *ret) {
 	ret->first = my_xpad[dev].first;
 	for (uint8_t val = ret->first; val < ret->first + ret->key_cnt; val++) {
 		uint8_t idx = my_xpad[dev].val2idx[val];
-		ret->state[i] = my_xpad[dev].state[idx];
+		ret->state[i]   = my_xpad[dev].state[idx];
 		ret->value[i++] = my_xpad[dev].value[idx];
 	}
 	ret->dirty = my_xpad[dev].dirty;
