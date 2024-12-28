@@ -59,7 +59,10 @@ typedef struct kybd_s{
 	void (*reset)(kybdh_t dev, bool hard);
 	void (*state)(kybdh_t dev, kybd_r_t *ret);
 	kybd_type_e dev_type;
-}kybd_t;
+	uint8_t value[MAX_BUTTON_CNT];
+	uint8_t key_cnt;
+	uint8_t first;
+} kybd_t;
 
 extern mkey_t reset_key;
 

@@ -20,6 +20,8 @@ typedef struct xpad_dev_s{
 	gpio_port_t zeile;
 	kybd_type_e dev_type;
 	uint8_t value[MAX_BUTTON_CNT];
+	uint8_t key_cnt;
+	uint8_t first;
 } xpad_dev_t;
 
 

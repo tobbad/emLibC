@@ -42,6 +42,9 @@ static xpad_dev_t default_xscan_dev= {
 	},
 	.dev_type=XSCAN,
 	.value = {1, 2, 3, 0xa, 4, 5, 6, 0xb, 7, 8, 9, 0xc, 0, 0xf, 0xe ,0xd },
+	.key_cnt=16,
+	.first = 0,
+
 };
 
 static xpad_dev_t default_eight_dev = {
@@ -49,18 +52,20 @@ static xpad_dev_t default_eight_dev = {
 	.zeile ={
 		.cnt = 8,
 		.pin = {
-			{ .port = GPIOA, .pin = GPIO_PIN_0,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
-			{ .port = GPIOA, .pin = GPIO_PIN_4,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
-			{ .port = GPIOB, .pin = GPIO_PIN_0,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
-			{ .port = GPIOC, .pin = GPIO_PIN_1,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
 			{ .port = GPIOB, .pin = GPIO_PIN_10, .conf = { .Mode = GPIO_MODE_INPUT, .Pull =	GPIO_PULLUP } },
 			{ .port = GPIOB, .pin = GPIO_PIN_5,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
 			{ .port = GPIOB, .pin = GPIO_PIN_3,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
 			{ .port = GPIOA, .pin = GPIO_PIN_10, .conf = { .Mode = GPIO_MODE_INPUT, .Pull =	GPIO_PULLUP } },
+			{ .port = GPIOA, .pin = GPIO_PIN_0,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
+			{ .port = GPIOA, .pin = GPIO_PIN_4,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
+			{ .port = GPIOB, .pin = GPIO_PIN_0,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
+			{ .port = GPIOC, .pin = GPIO_PIN_1,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
 		},
 	},
 	.dev_type=EIGHTKEY,
 	.value = {1, 2, 3, 4, 5, 6, 7, 8},
+	.key_cnt=8,
+	.first = 1,
 
 };
 
@@ -202,20 +207,37 @@ static void xpad_init(kybdh_t dev, kybd_type_e dev_type, xpad_dev_t *device) {
 		if (dev_type ==XSCAN) {
 			my_xpad[dev].spalte = &default_xscan_dev.spalte;
 			my_xpad[dev].zeile  = &default_xscan_dev.zeile;
-			memcpy(my_xpad[dev].value, default_xscan_dev.value, MAX_BUTTON_CNT);
+			my_xpad[dev].key_cnt  = default_xscan_dev.key_cnt;
+			my_xpad[dev].first  = default_xscan_dev.first;
+			memcpy(my_xpad[dev].value, default_xscan_dev.value, my_xpad[dev].key_cnt+1);
 		} else if(dev_type==EIGHTKEY) {
 			my_xpad[dev].spalte = &default_eight_dev.spalte;
 			my_xpad[dev].zeile  = &default_eight_dev.zeile;
-			memcpy(my_xpad[dev].value, default_eight_dev.value, MAX_BUTTON_CNT);
+			my_xpad[dev].key_cnt    = default_eight_dev.key_cnt;
+			my_xpad[dev].first    = default_eight_dev.first;
+			memset(my_xpad[dev].value, 0xff, MAX_BUTTON_CNT);
+			memcpy(my_xpad[dev].value , default_eight_dev.value, my_xpad[dev].key_cnt);
 		} else if (dev_type == TERMINAL) {
 			printf("%010ld: Setup terminal %d"NL, HAL_GetTick(), dev_type);
 		}
 	}
-	if (my_xpad[dev].spalte->cnt > 0) {
+	if (my_xpad[dev].key_cnt > 0) {
 		GpioPortInit(my_xpad[dev].spalte);
 	}
-	if (my_xpad[dev].zeile->cnt > 0) {
+	if (my_xpad[dev].key_cnt > 0) {
 		GpioPortInit(my_xpad[dev].zeile);
+	}
+	memset(my_xpad[dev].val2idx, 0xff, MAX_BUTTON_CNT);
+	for (uint8_t val=my_xpad[dev].first;val<my_xpad[dev].key_cnt+1;val++){
+		for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
+			if (val==my_xpad[dev].value[i]){
+				my_xpad[dev].val2idx[val]= i;
+				break;
+			}
+		}
+	}
+	for (uint8_t val=my_xpad[dev].first;val<my_xpad[dev].key_cnt+1;val++){
+		printf("%010ld: val= %01x ->  %01x"NL, HAL_GetTick(),val,  my_xpad[dev].val2idx[val] );
 	}
 	printf(NL);
 }
@@ -226,6 +248,7 @@ static void xpad_state(kybdh_t dev, kybd_r_t *ret) {
 		return;
 	}
 	uint8_t i = 0;
+	ret->first = my_xpad[dev].first;
 	for (uint8_t val = ret->first; val < ret->first + ret->key_cnt; val++) {
 		uint8_t idx = my_xpad[dev].val2idx[val];
 		ret->state[i] = my_xpad[dev].state[idx];
@@ -244,8 +267,8 @@ static void xpad_reset(kybdh_t dev, bool hard) {
 	for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
 		if (hard) {
 			my_xpad[dev].state[i] = OFF;
+			my_xpad[dev].key[i] = reset_key;
 		}
-		my_xpad[dev].key[i] = reset_key;
 	}
 	return;
 }
@@ -255,7 +278,10 @@ kybd_t xscan_dev = {
 	.scan = &xpad_spalten_scan,
 	.reset= &xpad_reset,
 	.state = &xpad_state,
-	.dev_type = XSCAN
+	.dev_type = XSCAN,
+	.value ={1, 2, 3, 0xa, 4, 5, 6, 0xb, 7, 8, 9, 0xc, 0, 0xf, 0xe ,0xd },
+	.key_cnt = 16,
+	.first = 0,
 };
 
 kybd_t eight_dev = {
@@ -264,6 +290,9 @@ kybd_t eight_dev = {
 	.reset =&xpad_reset,
 	.state = &xpad_state,
 	.dev_type = EIGHTKEY,
+	.value = {1, 2, 3, 4, 5, 6, 7, 8},
+	.key_cnt = 8,
+	.first = 1,
 };
 
 void xpad_iprint(xpad_t *state, char *timestamp) {
