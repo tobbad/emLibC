@@ -236,7 +236,7 @@ static void xpad_init(kybdh_t dev, kybd_type_e dev_type, xpad_dev_t *device) {
 			}
 		}
 	}
-	for (uint8_t val=my_xpad[dev].first;val<my_xpad[dev].key_cnt;val++){
+	for (uint8_t val=my_xpad[dev].first;val<=my_xpad[dev].key_cnt;val++){
 		printf("%010ld: val= %01x ->  %01x"NL, HAL_GetTick(), val,  my_xpad[dev].val2idx[val] );
 	}
 	printf(NL);

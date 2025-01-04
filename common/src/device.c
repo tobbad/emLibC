@@ -7,23 +7,55 @@
 #include "common.h"
 #include "device.h"
 #include <string.h>
+
 const device_t DEVICE_RESET={
+    .user_data=NULL,
     .open=NULL,
     .read=NULL,
     .write=NULL,
     .ioctrl=NULL,
     .close=NULL,
     .ready_cb = NULL,
-    .user_data=NULL,
 };
+static device_t *my_devicesp[DEVICE_CNT];
+
+
+static uint8_t device_find_dev(const device_t *dev) {
+	for (uint8_t i = 0; i < DEVICE_CNT; i++) {
+		if (my_devicesp[i] == dev) {
+			return i + 1;
+		}
+	}
+	for (uint8_t i = 0; i < DEVICE_CNT; i++) {
+		if (my_devicesp[i] == NULL) {
+			return i + 1;
+		}
+	}
+	return 0;
+};
+
+em_msg device_init(device_t * dev, void * user_data) {
+	int8_t dev_nr=0;
+	if (dev != NULL) {
+		dev_nr = device_find_dev(dev);
+		if (dev_nr > 0) {
+			my_devicesp[dev_nr] = dev;
+			dev->open(dev_nr, user_data);
+		}
+	} else {
+		printf("%010ld: Cannot find device"NL, HAL_GetTick());
+	}
+	return dev_nr;
+}
 
 /*
  * \brief Check if at least the functions indicated by dev_type are set in the structure dev
  * \param dev Device structure holding the access functions
  * \param Bitmap indicating the function which must exist
  */
-elres_t device_check(const device_t * dev, dev_func_t dev_type) {
+em_msg device_check(dev_handle_t hdl, dev_func_t dev_type) {
     bool is_ok=false;
+    device_t *dev = my_devicesp[hdl];
     if (dev != NULL) {
         is_ok =          ((NULL != dev->open)  || ((dev_type&DEV_OPEN)==0));
         is_ok = is_ok && ((NULL != dev->read)  || ((dev_type&DEV_READ)==0));
@@ -32,14 +64,16 @@ elres_t device_check(const device_t * dev, dev_func_t dev_type) {
         is_ok = is_ok && ((NULL != dev->close) || ((dev_type&DEV_CLOSE)==0));
         is_ok = is_ok && ((NULL != dev->ready_cb) || ((dev_type&DEV_DRCB)==0));
     }
-    return is_ok?EMLIB_OK:EMLIB_ERROR;
+    return is_ok?EM_OK:EM_ERR;
 }
 
-elres_t device_reset(device_t * dev) {
-    elres_t res = EMLIB_ERROR;
+
+em_msg device_reset(dev_handle_t hdl) {
+    em_msg res = EM_ERR;
+    device_t *dev = my_devicesp[hdl];
     if (dev != NULL) {
         *dev = DEVICE_RESET;
-        res = EMLIB_OK;
+        res = EM_OK;
     }
     return res;
 }
@@ -48,34 +82,38 @@ elres_t device_reset(device_t * dev) {
  * @param dev device to write to
  * @param buffer data to write
  * @param cnt Count of bytes to write
- * @return EMLIB_ERROR ie NULL device given or write function is NULL
+ * @return EM_ERR ie NULL device given or write function is NULL
  */
-elres_t device_write(device_t * dev, const uint8_t *buffer, uint16_t cnt){
-    elres_t res = EMLIB_ERROR;
+em_msg device_write(dev_handle_t hdl, const uint8_t *buffer, uint16_t cnt){
+    device_t *dev = my_devicesp[hdl];
+    em_msg res = EM_ERR;
     if ((dev != NULL) && (NULL != dev->write)) {
-        res = dev->write(dev->user_data, buffer, cnt);
+        res = dev->write(hdl, buffer, cnt);
     }
     return res;
 }
 
-elres_t device_read(device_t * dev, uint8_t *buffer, uint16_t *cnt){
-    elres_t res = EMLIB_ERROR;
+em_msg device_read(dev_handle_t hdl, uint8_t *buffer, uint16_t *cnt){
+    em_msg res = EM_ERR;
+    device_t *dev = my_devicesp[hdl];
     if ((dev != NULL) && (NULL != dev->read)) {
-        res = dev->read(dev->user_data, buffer, cnt);
+        res = dev->read(hdl, buffer, cnt);
     }
     return res;
 }
 
 
 
-void device_print(const device_t * dev){
+void device_print(dev_handle_t hdl){
+    device_t *dev = my_devicesp[hdl];
     if (dev != NULL) {
-        printf("open  = %p\n",dev->open);
-        printf("read  = %p\n",dev->read);
-        printf("write = %p\n",dev->write);
-        printf("ioctrl= %p\n",dev->ioctrl);
-        printf("close = %p\n",dev->close);
-        printf("udata = %p\n",dev->user_data);
+        printf("open     =  %p"NL, dev->open);
+        printf("read     =  %p"NL, dev->read);
+        printf("write    =  %p"NL, dev->write);
+        printf("ioctrl   =  %p"NL, dev->ioctrl);
+        printf("close    =  %p"NL, dev->close);
+        printf("udata    =  %p"NL, dev->user_data);
+        printf("dev_type =  %d"NL, dev->dev_type);
     }
 }
 

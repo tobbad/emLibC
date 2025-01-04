@@ -13,6 +13,8 @@ extern "C" {
 #include "common.h"
 #include "device.h"
 #include "ringbuffer_config.h"
+typedef int8_t rbuf_hdl_t;
+
 /*
  * wrIdx Points to the location for the next write
  * rdIdx Points to the location for the next read
@@ -20,8 +22,7 @@ extern "C" {
  * if rdIdx == wrIdx: Ringbuffer is empty
  * if wrIdx
  */
-typedef struct rbuf_t_
-{
+typedef struct rbuf_t_{
 	bool empty;
 	uint16_t nxtWrIdx;
 	uint16_t nxtRdIdx;
@@ -29,9 +30,25 @@ typedef struct rbuf_t_
     uint16_t buffer_size;
 } rbuf_t;
 
+typedef struct rbufm_s{
+	bool empty;
+	uint16_t nxtWrIdx;
+	uint16_t nxtRdIdx;
+	uint8_t buffer[CHARS_PER_LINE];
+    uint16_t buffer_size;
+} rbufm_t;
+
+typedef struct rbufline_s {
+	rbuf_t rbuf_reg[RBUF_REGISTERS];
+	bool empty;
+	rbuf_hdl_t current;
+	uint16_t nxtLineWrIdx;
+	uint16_t nxtLineRdIdx;
+    int16_t line_cnt;
+} rbufline_t;
 
 
-typedef int8_t rbuf_hdl_t;
+
 
 /* 
  * Reset all fields 
@@ -40,23 +57,28 @@ typedef int8_t rbuf_hdl_t;
 extern const rbuf_t rbuf_clear;
 
 void rbuf_init(void);
-rbuf_hdl_t rbuf_register(rbuf_t *rbuf);
+em_msg rbuf_init_line(uint16_t count, rbufm_t  *rbuf);
+
+rbuf_hdl_t rbuf_register(rbufm_t *rbuf);
 rbuf_hdl_t rbuf_deregister(rbuf_hdl_t hdl);
 
 uint16_t rbuf_free(rbuf_hdl_t hdl);
-elres_t rbuf_write_byte(rbuf_hdl_t hdl, uint8_t byte);
+em_msg rbuf_write_byte(rbuf_hdl_t hdl, uint8_t byte);
 /*
  * Only succeeds if there are count bytes free in the buffer
  */
-elres_t rbuf_write_bytes(rbuf_hdl_t hdl, const uint8_t* bytes, uint16_t count);
+em_msg rbuf_write_bytes(rbuf_hdl_t hdl, const uint8_t* bytes, uint16_t count);
 
-elres_t rbuf_read_byte(rbuf_hdl_t hdl, uint8_t *byte);
+em_msg rbuf_read_byte(rbuf_hdl_t hdl, uint8_t *byte);
 /*
  * Read at most count (input) bytes, really count of bytes is in the returned count value
  */
-elres_t rbuf_read_bytes(rbuf_hdl_t hdl, uint8_t *bytes, uint16_t *count);
+em_msg rbuf_read_bytes(rbuf_hdl_t hdl, uint8_t *bytes, uint16_t *count);
 
-elres_t rbuf_get_device(rbuf_hdl_t hdl, device_t *device, dev_func_t dev_type);
+em_msg rbuf_get_device(rbuf_hdl_t hdl, device_t *device, dev_func_t dev_type);
+
+em_msg rbuf_pull_line(rbuf_hdl_t hdl, uint8_t* bytes, uint16_t *count);
+em_msg rbuf_push_line(rbuf_hdl_t hdl, const uint8_t* bytes, uint16_t count);
 
 #ifdef __cplusplus
 }

@@ -22,7 +22,8 @@ const rbuf_t rbuf_clear = {
     .buffer_size = 0,
 };
 
-static rbuf_t* rbuf_reg[RBUF_REGISTERS] = {0};
+rbufline_t line_buffer;
+
 
 static rbuf_t* get_rbuf(rbuf_hdl_t hdl)
 {
@@ -30,33 +31,33 @@ static rbuf_t* get_rbuf(rbuf_hdl_t hdl)
     {
         return NULL;
     }
-    return rbuf_reg[hdl];
+    return &line_buffer.rbuf_reg[hdl];
 }
 
 void rbuf_init(void)
 {
     for (uint8_t i = 0;i<RBUF_REGISTERS;i++)
     {
-        rbuf_reg[i] = NULL;
+        line_buffer.rbuf_reg[i] = rbuf_clear;
     }
 }
 
-rbuf_hdl_t rbuf_register(rbuf_t *rbuf)
+rbuf_hdl_t rbuf_register(rbufm_t *rbuf)
 {
     if (NULL == rbuf)
     {
         return -1;
     }
-    if ( (NULL == rbuf->buffer) || (0 == rbuf->buffer_size))
+    if (0 == rbuf->buffer_size)
     {
         return -1;
     }
     for (uint8_t i = 0;i<RBUF_REGISTERS;i++)
     {
-        if ((NULL == rbuf_reg[i]) || (rbuf_reg[i] == rbuf))
-        {
-            rbuf_reg[i] = rbuf;
-            return i;
+        if (NULL == line_buffer.rbuf_reg[i].buffer) {
+        	line_buffer.rbuf_reg[i].buffer =(uint8_t*)&rbuf->buffer;
+        	line_buffer.rbuf_reg[i].buffer_size =rbuf->buffer_size;
+            return (rbuf_hdl_t)i;
         } 
     }
     return -1;
@@ -69,10 +70,13 @@ rbuf_hdl_t rbuf_deregister(rbuf_hdl_t hdl)
     {
         return hdl;
     }
-    rbuf_reg[hdl] = NULL;
+    *rbuf = rbuf_clear;
     return -1;
 }
 
+/*
+ * Count of char in line with handle hdl
+ */
 uint16_t rbuf_free(rbuf_hdl_t hdl)
 {
 	uint16_t count=0;
@@ -101,9 +105,9 @@ uint16_t rbuf_free(rbuf_hdl_t hdl)
 }
 
 
-elres_t rbuf_write_byte(rbuf_hdl_t hdl, uint8_t byte)
+em_msg rbuf_write_byte(rbuf_hdl_t hdl, uint8_t byte)
 {
-    elres_t res = EMLIB_ERROR;
+    em_msg res = EM_ERR;
     rbuf_t *rbuf = get_rbuf(hdl);
     if (rbuf == NULL)
     {
@@ -115,12 +119,12 @@ elres_t rbuf_write_byte(rbuf_hdl_t hdl, uint8_t byte)
         rbuf->nxtWrIdx = (rbuf->nxtWrIdx+1) % rbuf->buffer_size;
         /* ToDo protect by semaphore */
         rbuf->empty = false;
-        res = EMLIB_OK;
+        res = EM_OK;
     }
     return res;
 }
-elres_t rbuf_write_bytes(rbuf_hdl_t hdl, const uint8_t* bytes, uint16_t count){
-    elres_t res = EMLIB_ERROR;
+em_msg rbuf_write_bytes(rbuf_hdl_t hdl, const uint8_t* bytes, uint16_t count){
+    em_msg res = EM_ERR;
     rbuf_t *rbuf = get_rbuf(hdl);
     uint16_t free;
     if (rbuf == NULL)
@@ -130,8 +134,8 @@ elres_t rbuf_write_bytes(rbuf_hdl_t hdl, const uint8_t* bytes, uint16_t count){
     free = rbuf_free(hdl);
     if (free>=count)
     {
-        res = EMLIB_OK;
-        for (uint16_t i = 0;i<count && (res == EMLIB_OK);i++)
+        res = EM_OK;
+        for (uint16_t i = 0;i<count && (res == EM_OK);i++)
         {
             res = rbuf_write_byte(hdl, bytes[i]);
         }
@@ -140,11 +144,11 @@ elres_t rbuf_write_bytes(rbuf_hdl_t hdl, const uint8_t* bytes, uint16_t count){
 }
 
 
-elres_t rbuf_read_byte(rbuf_hdl_t hdl, uint8_t *byte)
+em_msg rbuf_read_byte(rbuf_hdl_t hdl, uint8_t *byte)
 {
-    elres_t res = EMLIB_ERROR;
+    em_msg res = EM_ERR;
     rbuf_t *rbuf = get_rbuf(hdl);
-    if (rbuf == NULL)
+    if ((rbuf == NULL) || (rbuf->buffer==NULL))
     {
         return res;
     }
@@ -156,17 +160,17 @@ elres_t rbuf_read_byte(rbuf_hdl_t hdl, uint8_t *byte)
         {
             rbuf->empty = true;
         }
-        res = EMLIB_OK;
+        res = EM_OK;
     }
 
     return res;
 }
 
-elres_t rbuf_read_bytes(rbuf_hdl_t hdl, uint8_t *bytes, uint16_t *count){
-    elres_t res = EMLIB_ERROR;
+em_msg rbuf_read_bytes(rbuf_hdl_t hdl, uint8_t *bytes, uint16_t *count){
+    em_msg res = EM_ERR;
     rbuf_t *rbuf = get_rbuf(hdl);
     uint16_t available;
-    if (rbuf == NULL)
+    if ((rbuf == NULL)|| (rbuf->buffer==NULL))
     {
         return res;
     }
@@ -174,8 +178,8 @@ elres_t rbuf_read_bytes(rbuf_hdl_t hdl, uint8_t *bytes, uint16_t *count){
     if (!rbuf->empty)
     {
         *count = *count<available?*count:available;
-        res = EMLIB_OK;
-        for (uint16_t i = 0;i<*count && (res == EMLIB_OK);i++)
+        res = EM_OK;
+        for (uint16_t i = 0;i<*count && (res == EM_OK);i++)
         {
             res = rbuf_read_byte(hdl, &bytes[i]);
         }
@@ -183,22 +187,83 @@ elres_t rbuf_read_bytes(rbuf_hdl_t hdl, uint8_t *bytes, uint16_t *count){
     return res;
 }
 
-elres_t rbuf_get_device(rbuf_hdl_t hdl, device_t *device, dev_func_t dev_type) {
-    elres_t res = EMLIB_ERROR;
+em_msg rbuf_pull_line(rbuf_hdl_t hdl, uint8_t* bytes, uint16_t *count){
+    em_msg res = EM_ERR;
+    rbuf_t *rbuf = get_rbuf(hdl);
+    if ((rbuf == NULL)|| (rbuf->buffer==NULL))
+    {
+        return res;
+    }
+    if ((line_buffer.empty) || (line_buffer.nxtLineWrIdx != line_buffer.nxtLineRdIdx)){
+		uint8_t toWrite = MIN(*count, rbuf->buffer_size);
+		*count=toWrite;
+		line_buffer.nxtLineWrIdx =(line_buffer.nxtLineWrIdx+1)%line_buffer.line_cnt;
+		memcpy(bytes, rbuf->buffer, toWrite);
+		line_buffer.empty = false;
+		res = EM_OK;
+	}
+    return res;
+}
+
+em_msg rbuf_push_line(rbuf_hdl_t hdl, const uint8_t* bytes, uint16_t count){
+    em_msg res = EM_ERR;
+    rbuf_t *rbuf = get_rbuf(hdl);
+    if (rbuf == NULL)
+    {
+        return res;
+    }
+    if (!line_buffer.empty){
+		uint8_t toWrite = rbuf->buffer_size;;
+		if (count>=toWrite)
+		{
+			line_buffer.nxtLineRdIdx =(line_buffer.nxtLineRdIdx+1)%line_buffer.line_cnt;
+			memcpy(rbuf->buffer, bytes, toWrite);
+		    if (line_buffer.nxtLineRdIdx == line_buffer.nxtLineWrIdx){
+				line_buffer.empty = true;
+			}
+
+			res = EM_OK;
+		}
+	}
+    uint8_t toRead = rbuf->buffer_size;
+    if (toRead<count)
+    {
+        memcpy(rbuf->buffer, bytes, toRead);
+        res = EM_OK;
+    }
+    return res;
+}
+em_msg rbuf_init_line(uint16_t count, rbufm_t  *rbuf){
+	for (uint8_t i=0; i<count;i++){
+		rbuf_register(&rbuf[i]);
+	}
+	return EM_OK;
+}
+
+
+em_msg rbuf_get_device(rbuf_hdl_t hdl, device_t *device, dev_func_t dev_type) {
+	static rbuf_hdl_t my_hdl;
+    em_msg res = EM_ERR;
     if (NULL==device) {
         if (DEV_NONE == dev_type) {
         		return res;
         }
     } else {
-       res = EMLIB_OK;
+       res = EM_OK;
        memset(device, 0, sizeof(device_t));
        if (dev_type & DEV_READ){
            device->read = rbuf_read_bytes;
        }
+       if (dev_type & DEV_LREAD){
+           device->read = rbuf_pull_line;
+       }
        if (dev_type & DEV_WRITE){
            device->write = rbuf_write_bytes;
        }
-       device->user_data = (void*)&hdl;
+       if (dev_type & DEV_LWRITE){
+           device->write = rbuf_push_line;
+       }
+       device->user_data = (void*)&my_hdl;
     }
     return res;
 }

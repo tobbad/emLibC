@@ -13,7 +13,7 @@ extern "C"
 #endif
 #include "common.h"
 #define DEV_HANDLE_NOTDEFINED   -1
-
+#define DEVICE_CNT 5
 typedef int8_t dev_handle_t;  /**< A value >=0 is OK, otherwise this is invalid */
 
 typedef enum {
@@ -29,33 +29,38 @@ typedef enum {
 
 typedef struct device_s {
     void * user_data;
-    dev_handle_t (*open)(void * user_data);
-    elres_t (*read)(void * user_data, uint8_t *buffer, uint16_t *cnt);
-    elres_t (*write)(void * user_data, const uint8_t *buffer, uint16_t cnt);
-    elres_t (*ioctrl)(void * user_data, dev_command_t cmd, uint16_t value);
-    elres_t (*close)(void * user_data, dev_handle_t hdl);
-    elres_t (*ready_cb)(device_state_t state);
+    dev_handle_t (*open)(dev_handle_t hdl, void * user_data);
+    em_msg (*read)(dev_handle_t hdl, uint8_t *buffer, uint16_t *cnt);
+    em_msg (*write)(dev_handle_t hdl, const uint8_t *buffer, uint16_t cnt);
+    em_msg (*ioctrl)(dev_handle_t hdl, dev_command_t cmd, uint16_t value);
+    em_msg (*close)(dev_handle_t hdl);
+    em_msg (*ready_cb)(device_state_t state);
+    uint8_t dev_type;
 } device_t;
 
 extern const device_t DEVICE_RESET;
 
+
 typedef enum {
-    DEV_NONE = 0x00,
-    DEV_OPEN = 0x01,
-    DEV_READ = 0x02,
-    DEV_WRITE= 0x04,
-    DEV_IOCTRL=0x08,
-    DEV_CLOSE= 0x10,
-    DEV_DRCB = 0x20, /* Data ready callback */
-    DEV_ALL  = (DEV_DRCB<<1)-1,
+    DEV_NONE   = 0x00,
+    DEV_OPEN   = 0x01,
+    DEV_READ   = 0x02,
+    DEV_LREAD  = 0x04,
+    DEV_WRITE  = 0x04,
+    DEV_LWRITE = 0x08,
+    DEV_IOCTRL = 0x10,
+    DEV_CLOSE  = 0x20,
+    DEV_DRCB   = 0x40, /* Data ready callback */
+    DEV_ALL    = DEV_DRCB<<1,
 } dev_func_t;
 
 
-em_msg device_check(const device_t * dev, dev_func_t dev_type);
-em_msg device_read(device_t * dev, uint8_t *buffer, uint16_t *cnt);
-em_msg device_write(device_t * dev, const uint8_t *buffer, uint16_t cnt);
-em_msg device_reset(device_t * dev);
-void device_print(const device_t * dev);
+dev_handle_t device_init(device_t * dev, void *user_data);
+em_msg device_check(dev_handle_t hdl, dev_func_t dev_type);
+em_msg device_read(dev_handle_t hdl, uint8_t *buffer, uint16_t *cnt);
+em_msg device_write(dev_handle_t hdl, const uint8_t *buffer, uint16_t cnt);
+em_msg device_reset(dev_handle_t hdl);
+void device_print(dev_handle_t hdl);
 
 
 #ifdef __cplusplus
