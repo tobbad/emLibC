@@ -24,7 +24,7 @@
 #include "spi.h"
 static spi_t myDev[DEV_CNT];
 
-spi_t* spi_init(void * spi_dev, spi_t *spi, GpioPin_t *sel_pin, uint8_t cpol, uint8_t cpha){
+spi_t* spi_init(void * spi_dev, spi_t *spi, gpio_pin_t *sel_pin, uint8_t cpol, uint8_t cpha){
 	return &myDev[0];
 }
 

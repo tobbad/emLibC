@@ -32,7 +32,7 @@ typedef struct _spi_t
 	void *  spi;
 	uint8_t cpol;
 	uint8_t cpha;
-	GpioPin_t *sel_pin;
+	gpio_pin_t *sel_pin;
 } spi_t;
 
 typedef enum _spi_dir
