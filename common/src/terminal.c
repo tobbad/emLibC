@@ -109,5 +109,5 @@ int8_t terminal_waitForKey(char **key) {
     if ((res >= 0) && (res < 10)) {
         return res;
     }
-    return -1;
+    return EM_ERR;
 }
