@@ -79,8 +79,8 @@ slip_handle_e slip_start(device_t *dev, slip_function_t state)
     if ((NULL != dev) && (state<SLIP_STATE_CNT))
     {
         printf("Do it\n");
-        elres_t res = device_check(dev, DEV_WRITE);
-        if (EMLIB_OK == res)
+        em_msg res = device_check(dev, DEV_WRITE);
+        if (EM_OK == res)
         {
             for (uint8_t index=0;index<SLIP_HANDLE_CNT;index++)
             {
@@ -106,9 +106,9 @@ slip_handle_e slip_start(device_t *dev, slip_function_t state)
     return hdl;
 }
 
-elres_t slip_write(slip_handle_e hdl, const uint8_t * buffer, uint16_t length)
+em_msg slip_write(slip_handle_e hdl, const uint8_t * buffer, uint16_t length)
 {
-    elres_t res = EMLIB_ERROR;
+    em_msg res = EM_ERR;
     if ((hdl>=0) && (hdl<SLIP_HANDLE_CNT))
     {
         uint8_t value;
@@ -121,8 +121,8 @@ elres_t slip_write(slip_handle_e hdl, const uint8_t * buffer, uint16_t length)
             codec[hdl].state = SLIP_STATE_NORMAL;
             codec[hdl].size++;
         }
-        res = EMLIB_OK;
-        for (uint16_t idx = 0;idx < length && (res == EMLIB_OK); idx++)
+        res = EM_OK;
+        for (uint16_t idx = 0;idx < length && (res == EM_OK); idx++)
         {
             uint8_t value = buffer[idx];
             //printf("Process value[%d] = 0x%02x\n", idx, value);

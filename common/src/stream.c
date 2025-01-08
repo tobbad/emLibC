@@ -8,6 +8,6 @@
 
 
 
-elres_t stream_init(void) {
-    return EMLIB_OK;
+em_msg stream_init(void) {
+    return EM_OK;
 }

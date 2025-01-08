@@ -21,8 +21,8 @@ extern uint8_t rcv_buffer[];
 extern buffer_t memory_device_buffer;
 extern device_t memory_device;
 
-elres_t memory_device_reset(buffer_t *buf);
-elres_t memory_device_print(buffer_t *buf);
+em_msg memory_device_reset(buffer_t *buf);
+em_msg memory_device_print(buffer_t *buf);
 #ifdef __cplusplus
 }
 #endif

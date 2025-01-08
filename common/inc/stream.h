@@ -46,16 +46,16 @@ typedef struct stream_trstate_t_ {
 /**
  * Functions
  */
-elres_t stream_init(void );
+em_msg stream_init(void );
 /**
  * Open a stream transfer
  * \param outHdl Handle of the device for writting the stream to
  * \param trfType Type of transfer
  * \return OK on success
  */
-elres_t stream_open(dev_handle_t outHdl, stream_transfer_t trfType);
+em_msg stream_open(dev_handle_t outHdl, stream_transfer_t trfType);
 
-elres_t stream_ioctrl(dev_handle_t outHdl);
+em_msg stream_ioctrl(dev_handle_t outHdl);
 
 #ifdef __cplusplus
 }

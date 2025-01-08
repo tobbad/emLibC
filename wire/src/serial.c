@@ -80,21 +80,16 @@ void serial_removeMode(print_e mode){
 
 }
 
-int _write(int32_t file, uint8_t *ptr, int32_t len)
-{
+int _write(int32_t file, uint8_t *ptr, int32_t len){
 	HAL_StatusTypeDef status;
-	if ((sio.buffer_size[SIO_TX]==0) || (sio.buffer[SIO_TX]==NULL))
-	{
-		if (sio.uart != NULL)
-		{
+	if ((sio.buffer_size[SIO_TX]==0) || (sio.buffer[SIO_TX]==NULL))	{
+		if (sio.uart != NULL)		{
 			sio.ready[SIO_TX] = false;
 			sio.bytes_in_buffer[SIO_TX]=len;
 			status = HAL_UART_Transmit(sio.uart, ptr, len, UART_TIMEOUT_MS);
 			sio.bytes_in_buffer[SIO_TX]=0;
 			sio.ready[SIO_TX] = true;
-		}
-		else
-		{
+		}else{
 			errno = EWOULDBLOCK;
 			status = HAL_ERROR;
 		}
@@ -106,7 +101,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t len)
 			errno = EMSGSIZE;
 			status = HAL_ERROR;
 		}
-		else if (sio.ready[SIO_TX])
+		else if (!sio.ready[SIO_TX])
 		{
 			errno = EWOULDBLOCK;
 			status = HAL_ERROR;
@@ -192,4 +187,10 @@ int __io_putchar(char ch)
     HAL_UART_Transmit(sio.uart, (uint8_t *)&ch, 1, 0xFFFF);
     return ch;
 }
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *UartHandle){
+  /* Set transmission flag: transfer complete */
+  sio.ready[SIO_TX] = true;
+}
+
 

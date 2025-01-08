@@ -40,27 +40,33 @@ void rbuf_init(void)
     {
         line_buffer.rbuf_reg[i] = rbuf_clear;
     }
+    line_buffer.valid_cnt = RBUF_REGISTERS;
+    line_buffer.empty = false;
+    line_buffer.nxtLineRdIdx =0;
+	line_buffer.nxtLineWrIdx =0;
+	line_buffer.current =0;
 }
 
-rbuf_hdl_t rbuf_register(rbufm_t *rbuf)
+rbuf_hdl_t rbuf_register(uint8_t *buffer, uint16_t size)
 {
-    if (NULL == rbuf)
+    if (NULL == buffer)
     {
         return -1;
     }
-    if (0 == rbuf->buffer_size)
+    if (0 == size)
     {
         return -1;
     }
     for (uint8_t i = 0;i<RBUF_REGISTERS;i++)
     {
         if (NULL == line_buffer.rbuf_reg[i].buffer) {
-        	line_buffer.rbuf_reg[i].buffer =(uint8_t*)&rbuf->buffer;
-        	line_buffer.rbuf_reg[i].buffer_size =rbuf->buffer_size;
+        	line_buffer.rbuf_reg[i].buffer =buffer;
+        	line_buffer.rbuf_reg[i].buffer_size =size;
+        	line_buffer.valid_cnt++;
             return (rbuf_hdl_t)i;
         } 
     }
-    return -1;
+    return EM_ERR;
 }
 
 rbuf_hdl_t rbuf_deregister(rbuf_hdl_t hdl)
@@ -195,11 +201,11 @@ em_msg rbuf_pull_line(rbuf_hdl_t hdl, uint8_t* bytes, uint16_t *count){
         return res;
     }
     if ((line_buffer.empty) || (line_buffer.nxtLineWrIdx != line_buffer.nxtLineRdIdx)){
-		uint8_t toWrite = MIN(*count, rbuf->buffer_size);
-		*count=toWrite;
-		line_buffer.nxtLineWrIdx =(line_buffer.nxtLineWrIdx+1)%line_buffer.line_cnt;
-		memcpy(bytes, rbuf->buffer, toWrite);
-		line_buffer.empty = false;
+		uint8_t toRead = MIN(*count, rbuf->buffer_size);
+		*count=toRead;
+		line_buffer.nxtLineWrIdx =(line_buffer.nxtLineWrIdx+1)%line_buffer.valid_cnt;
+		memcpy(bytes, rbuf->buffer, toRead);
+		rbuf->dirty= false;
 		res = EM_OK;
 	}
     return res;
@@ -213,31 +219,17 @@ em_msg rbuf_push_line(rbuf_hdl_t hdl, const uint8_t* bytes, uint16_t count){
         return res;
     }
     if (!line_buffer.empty){
-		uint8_t toWrite = rbuf->buffer_size;;
-		if (count>=toWrite)
-		{
-			line_buffer.nxtLineRdIdx =(line_buffer.nxtLineRdIdx+1)%line_buffer.line_cnt;
-			memcpy(rbuf->buffer, bytes, toWrite);
-		    if (line_buffer.nxtLineRdIdx == line_buffer.nxtLineWrIdx){
-				line_buffer.empty = true;
-			}
-
-			res = EM_OK;
+		uint8_t toWrite = MIN(count,rbuf->buffer_size);
+		line_buffer.nxtLineRdIdx =(line_buffer.nxtLineRdIdx+1)%line_buffer.valid_cnt;
+		memcpy(rbuf->buffer, bytes, toWrite);
+		if (line_buffer.nxtLineRdIdx == line_buffer.nxtLineWrIdx){
+			line_buffer.empty = true;
 		}
+		rbuf->dirty= true;
+
+		res = EM_OK;
 	}
-    uint8_t toRead = rbuf->buffer_size;
-    if (toRead<count)
-    {
-        memcpy(rbuf->buffer, bytes, toRead);
-        res = EM_OK;
-    }
-    return res;
-}
-em_msg rbuf_init_line(uint16_t count, rbufm_t  *rbuf){
-	for (uint8_t i=0; i<count;i++){
-		rbuf_register(&rbuf[i]);
-	}
-	return EM_OK;
+     return res;
 }
 
 
@@ -271,3 +263,4 @@ em_msg rbuf_get_device(rbuf_hdl_t hdl, device_t *device, dev_func_t dev_type) {
 #ifdef __cplusplus
 }
 #endif
+
