@@ -25,6 +25,7 @@ extern "C" {
 
 #define NEWLINE  "\r\n"
 #define NL  NEWLINE
+#define LINE_LENGTH	96
 
 #if !defined(MIN)
 #define MIN(a, b) ((a)<(b)?(a):(b))

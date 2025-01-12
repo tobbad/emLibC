@@ -222,7 +222,7 @@ uint16_t slip_end(slip_handle_e hdl)
         }
         res = codec[hdl].size;
         codec[hdl] = reset_codec;
-        device_reset(&codec[hdl].dev);
+        device_reset(codec[hdl].dev);
     }
     return res;
 }
