@@ -28,12 +28,12 @@ static bool packet_hdl_check(dev_handle_t pktHdl) {
 }
 
 
-elres_t packet_init(void) {
+em_msg packet_init(void) {
     for (uint8_t dev=0;dev<PACKET_DEV_COUNT; dev++)
     {
         pkt_dev[dev].header.bf.type = PACKET_ACK;
     }
-    return EMLIB_OK;
+    return EM_OK;
 }
 
 
@@ -58,8 +58,8 @@ dev_handle_t packet_open(packet_t type, packet_reliable_t reliable, packet_integ
     return ret_dev;
 }
 
-elres_t packet_write(dev_handle_t pktHdl, buffer_t *data) {
-    elres_t res = EMLIB_ERROR;
+em_msg packet_write(dev_handle_t pktHdl, buffer_t *data) {
+    em_msg res = EM_ERR;
 
     if (packet_hdl_check(pktHdl)) {
         if ((NULL != data->mem) && (NULL != data->pl)) {
@@ -71,7 +71,7 @@ elres_t packet_write(dev_handle_t pktHdl, buffer_t *data) {
                     uint16_t trSize = data->used + PACKET_HEADER_SIZE;
                     uint8_t * pktHead = &data->pl[-PACKET_HEADER_SIZE];
                     pkt_dev[pktHdl].header.bf.length = data->used;
-                    res = EMLIB_OK;
+                    res = EM_OK;
                     /*
                      * Calculate header checksum
                      */
@@ -90,14 +90,14 @@ elres_t packet_write(dev_handle_t pktHdl, buffer_t *data) {
                             trSize += 2;
                             memcpy(&data->pl[data->used], &crc16, sizeof(crc16));
                         } else {
-                            res = EMLIB_ERROR;
+                            res = EM_ERR;
                             printf("No space for trailing CRC (used+head= %d, size = %d)\n", trSize, data->size);
                         }
                     }
                     /*
                      * Set Header
                      */
-                    if (EMLIB_OK == res) {
+                    if (EM_OK == res) {
                         memcpy(pktHead, &pkt_dev[pktHdl].header.u32, PACKET_HEADER_SIZE);
                         data->pl = pktHead;
                         data->used = trSize;
@@ -120,12 +120,12 @@ elres_t packet_write(dev_handle_t pktHdl, buffer_t *data) {
     return res;
 }
 
-elres_t packet_close(dev_handle_t pktHdl) {
-    elres_t res = EMLIB_ERROR;
+em_msg packet_close(dev_handle_t pktHdl) {
+    em_msg res = EM_ERR;
 
     if (packet_hdl_check(pktHdl)) {
         pkt_dev[pktHdl].header.bf.type = PACKET_ACK;
-        res = EMLIB_OK;
+        res = EM_OK;
     }
 
     return res;

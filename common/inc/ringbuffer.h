@@ -28,13 +28,14 @@ typedef struct rbuf_t_{
 	uint16_t nxtRdIdx;
 	uint8_t *buffer;
     uint16_t buffer_size;
+    bool dirty;
 } rbuf_t;
 
 typedef struct rbufm_s{
 	bool empty;
 	uint16_t nxtWrIdx;
 	uint16_t nxtRdIdx;
-	uint8_t buffer[CHARS_PER_LINE];
+	uint8_t *buffer;
     uint16_t buffer_size;
 } rbufm_t;
 
@@ -44,7 +45,7 @@ typedef struct rbufline_s {
 	rbuf_hdl_t current;
 	uint16_t nxtLineWrIdx;
 	uint16_t nxtLineRdIdx;
-    int16_t line_cnt;
+    int16_t valid_cnt;
 } rbufline_t;
 
 
@@ -57,9 +58,8 @@ typedef struct rbufline_s {
 extern const rbuf_t rbuf_clear;
 
 void rbuf_init(void);
-em_msg rbuf_init_line(uint16_t count, rbufm_t  *rbuf);
 
-rbuf_hdl_t rbuf_register(rbufm_t *rbuf);
+rbuf_hdl_t rbuf_register(uint8_t *buffer, uint16_t cnt);
 rbuf_hdl_t rbuf_deregister(rbuf_hdl_t hdl);
 
 uint16_t rbuf_free(rbuf_hdl_t hdl);

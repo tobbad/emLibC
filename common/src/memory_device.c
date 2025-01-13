@@ -12,15 +12,15 @@ uint8_t rcv_buffer[RCV_BUF_SIZE];
 
 buffer_t memory_device_buffer = {.size=RCV_BUF_SIZE, .used=0, .mem=rcv_buffer, .pl=rcv_buffer};
 
-elres_t memory_device_reset(buffer_t *buf)
+em_msg memory_device_reset(buffer_t *buf)
 {
     printf("buffer_t Reset\n");
     buf->used = 0;
     memset(buf->mem, 0, buf->size);
-    return EMLIB_OK;
+    return EM_OK;
 }
 
-elres_t memory_device_write(void *user_data, const uint8_t *data, uint16_t count)
+em_msg memory_device_write(void *user_data, const uint8_t *data, uint16_t count)
 {
     buffer_t *buf = (buffer_t *)user_data;
     if ((NULL != buf) && (buf->size-buf->used >= 1) && (NULL != data))
@@ -30,12 +30,12 @@ elres_t memory_device_write(void *user_data, const uint8_t *data, uint16_t count
             printf("buf[%d] = %d\n", buf->used, data[i]);
             buf->pl[buf->used++] = data[i];
         }
-        return EMLIB_OK;
+        return EM_OK;
     }
-    return EMLIB_ERROR;
+    return EM_ERR;
 }
 
-elres_t memory_device_print(buffer_t *buf)
+em_msg memory_device_print(buffer_t *buf)
 {
     static const uint32_t BUF_SIZE =310;
     char buffer[BUF_SIZE];
@@ -53,7 +53,7 @@ elres_t memory_device_print(buffer_t *buf)
                 printf("%s", buffer);
                 printf(".... .. (dropped used %d) \n", used_cnt);
             }
-            return EMLIB_OK;
+            return EM_OK;
         } else {
             printf("Transfer Size= %d(of = %d\n", buf->used, buf->size);
         }
@@ -64,7 +64,7 @@ elres_t memory_device_print(buffer_t *buf)
             printf("Given buffer memory is NULL\n");
         }
     }
-    return EMLIB_ERROR;
+    return EM_ERR;
 }
 
 device_t memory_device = {

@@ -30,6 +30,7 @@
 #ifndef INC_SERIAL_IO_H_
 #define INC_SERIAL_IO_H_
 #include "stdbool.h"
+#include "common.h"
 #define UART_TIMEOUT_MS 100
 typedef enum {SIO_ERROR=-1, SIO_OK=0, } sio_res_e;
 typedef enum {SIO_RX=0, SIO_TX, SIO_RXTX_CNT} sio_channel_e;
@@ -39,13 +40,16 @@ typedef enum {log=1, direct=2} print_e;
 typedef struct _sio_t
 {
 	UART_HandleTypeDef * uart;
-	DMA_HandleTypeDef * dma_tx;
 	bool	 ready[SIO_RXTX_CNT];	/* Internal use only */
 	uint16_t buffer_size[SIO_RXTX_CNT];
 	int16_t  bytes_in_buffer[SIO_RXTX_CNT];
 	uint8_t *buffer[SIO_RXTX_CNT];
 } sio_t;
 
+typedef struct buf_s{
+	uint8_t buffer[LINE_LENGTH];
+	bool isValid;
+} buf_t;
 
 sio_res_e serial_init(sio_t *init);
 void  serial_addMode(print_e mode);

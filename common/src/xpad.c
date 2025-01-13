@@ -189,7 +189,7 @@ static uint16_t xpad_spalten_scan(kybdh_t dev) {
 		xpad_set_spalten_pin(dev, s);
 	}
 	if (res != 0) {
-		printf("%010ld: Key Label is  0x%2X"NL, HAL_GetTick(), (uint32_t) res);
+		printf("%010ld: Key Label is  0x%2lX"NL, HAL_GetTick(), (uint32_t) res);
 	}
 	return res;
 }

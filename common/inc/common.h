@@ -14,6 +14,7 @@ extern "C" {
 #include <stdbool.h>    
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #ifdef UNIT_TEST
 #define STATIC
 #include <stdio.h>
@@ -24,6 +25,7 @@ extern "C" {
 
 #define NEWLINE  "\r\n"
 #define NL  NEWLINE
+#define LINE_LENGTH	96
 
 #if !defined(MIN)
 #define MIN(a, b) ((a)<(b)?(a):(b))

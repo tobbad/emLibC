@@ -34,7 +34,7 @@ typedef enum {
 } slip_function_t;
 
 typedef enum {
-    SLIP_HANDLE_ERROR = EMLIB_ERROR,
+    SLIP_HANDLE_ERROR = EM_ERR,
     SLIP_HANDLE_0,
     SLIP_HANDLE_1,
     SLIP_HANDLE_CNT,
@@ -57,7 +57,7 @@ extern const uint8_t slip_map[][2];
 //
 void slip_init(void);
 slip_handle_e slip_start(device_t *dev, slip_function_t state);
-elres_t slip_write(slip_handle_e hdl, const uint8_t * buffer, uint16_t length);
+em_msg slip_write(slip_handle_e hdl, const uint8_t * buffer, uint16_t length);
 uint16_t slip_end(slip_handle_e hdl);
 
 #ifdef __cplusplus

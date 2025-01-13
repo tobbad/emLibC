@@ -72,10 +72,10 @@ typedef uint16_t packet_tail_t;
 #define PACKET_TAIL_SIZE sizeof(packet_tail_t)
 #define PACKET_HEADER_SIZE sizeof(packet_header_t)
 
-elres_t packet_init(void);
+em_msg packet_init(void);
 dev_handle_t packet_open(packet_t type, packet_reliable_t reliable, packet_integrity_e checked);
-elres_t packet_write(dev_handle_t pktHdl, buffer_t *data);
-elres_t packet_close(dev_handle_t pktHdl);
+em_msg packet_write(dev_handle_t pktHdl, buffer_t *data);
+em_msg packet_close(dev_handle_t pktHdl);
 
 void packet_head_print(packet_header_t header);
 
