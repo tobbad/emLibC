@@ -29,7 +29,6 @@
 
 #ifndef INC_SERIAL_IO_H_
 #define INC_SERIAL_IO_H_
-#include "stdbool.h"
 #include "common.h"
 #define UART_TIMEOUT_MS 100
 typedef enum {SIO_ERROR=-1, SIO_OK=0, } sio_res_e;
