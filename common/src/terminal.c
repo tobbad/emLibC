@@ -9,9 +9,8 @@
 
 
 static kybd_r_t my_kybd = {
-    .state=  {  OFF, OFF, OFF, OFF,
-                OFF, OFF, OFF, OFF},
-    .value = {'R', 1, 2, 3, 4, 5, 6, 7, 8 },
+    .state =  { .state= { OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
+                .label = {'R', 1, 2, 3, 4, 5, 6, 7, 8 }},
     .key_cnt=8,
     .first = 1, //First valid value
     .dirty = false,
@@ -20,7 +19,7 @@ static kybd_r_t my_kybd = {
 static bool check_key(char ch);
 static void terminal_reset(kybdh_t dev, bool hard);
 
-static  void terminal_init(kybdh_t handle, kybd_type_e dev_type, xpad_dev_t *device) {
+static  void terminal_init(kybdh_t handle, kybd_type_e dev_type, xpad_t *device) {
     terminal_reset(handle, true);
 }
 
@@ -49,12 +48,14 @@ static uint16_t terminal_scan(kybdh_t dev) {
         if (check_key(ch)) {
             if (ch == 'R') {
                 res = 1;
-                my_kybd.state[res]= ON;
+                my_kybd.state.state[res]= ON;
             } else {
-                res = ch - '0';
-                assert(ch<9);
-                assert(ch>1);
-                my_kybd.state[ch]  =  (my_kybd.state[ch] + 1)%KEY_STAT_CNT;
+                ch = ch - '0';
+                if ((ch>0) &&(ch<9)){
+                    my_kybd.state.state[ch]  =  (my_kybd.state.state[ch] + 1)%KEY_STAT_CNT;
+                } else {
+                    printf("%08ld: Ignore imnvalid key %d"NL, HAL_GetTick(), ch);
+                }
             }
             asked = false;
             return res;
@@ -69,7 +70,7 @@ static void terminal_state(kybdh_t dev, kybd_r_t *ret){
 
 static void terminal_reset(kybdh_t dev, bool hard){
     for (uint8_t i= my_kybd.first; i<my_kybd.first+my_kybd.key_cnt;i++){
-        my_kybd.state[i] =OFF;
+        my_kybd.state.state[i] =OFF;
     }
     return ;
 }

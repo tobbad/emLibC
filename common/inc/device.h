@@ -11,6 +11,14 @@
 extern "C"
 {
 #endif
+
+typedef enum{
+    XSCAN,
+    EIGHTKEY,
+    TERMINAL,
+    DEV_TYPE_NA
+} dev_type_e;
+
 #include "common.h"
 #define DEV_HANDLE_NOTDEFINED   -1
 #define DEVICE_CNT 5

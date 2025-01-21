@@ -5,6 +5,7 @@
  *      Author: badi
  */
 #include "common.h"
+#include "device.h"
 #include "gpio.h"
 #include "gpio_port.h"
 #include "keyboard.h"
@@ -16,8 +17,8 @@
 #define INDEX_2_SPA(index) ((uint8_t)(((index - INDEX_2_ZEI(index)))%ZEILEN_CNT))
 #define MINIMAL_LINESTART 16
 
-xpad_t my_xpad[KYBD_CNT];
-xpad_t *mpy_xpad[KYBD_CNT];
+xpad_t my_xpad[DEVICE_CNT];
+xpad_t *mpy_xpad[DEVICE_CNT];
 
 
 
@@ -41,7 +42,8 @@ static xpad_dev_t default_xscan_dev= {
 		},
 	},
 	.dev_type=XSCAN,
-	.value = {1, 2, 3, 0xa, 4, 5, 6, 0xb, 7, 8, 9, 0xc, 0, 0xf, 0xe ,0xd },
+    .state = {.label = {1, 2, 3, 0xa, 4, 5, 6, 0xb, 7, 8, 9, 0xc, 0, 0xf, 0xe ,0xd},
+              .state={OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF}},
 	.key_cnt=16,
 	.first = 0,
 
@@ -63,7 +65,8 @@ static xpad_dev_t default_eight_dev = {
 		},
 	},
 	.dev_type=EIGHTKEY,
-	.value = {1, 2, 3, 4, 5, 6, 7, 8},
+	.state = {.label = {1, 2, 3, 4, 5, 6, 7, 8},
+	          .state={OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF}},
 	.key_cnt=8,
 	.first = 1,
 
@@ -113,16 +116,16 @@ static uint8_t xpad_update_key(uint8_t dev, uint8_t index, bool pinVal) {
 	if (my_xpad[dev].key[index].cnt > STABLE_CNT) {
 		// We got a stable state
 		my_xpad[dev].key[index].unstable = false;
-		uint8_t value = my_xpad[dev].value[index];
+		uint8_t label = my_xpad[dev].state.label[index];
 		my_xpad[dev].key[index].last = pinVal;
 		my_xpad[dev].key[index].stable = pinVal;
 		if (pinVal) {
-			my_xpad[dev].state[index] = ((my_xpad[dev].state[index] + 1)
+			my_xpad[dev].state.state[index] = ((my_xpad[dev].state.state[index] + 1)
 					% KEY_STAT_CNT);
 			my_xpad[dev].dirty = true;
-			printf("%010ld: Pushed   Key @ (index =%d, z=%d, s=%d, value = %d)"NL, HAL_GetTick(), index, z, s, value);
+			printf("%010ld: Pushed   Key @ (index =%d, z=%d, s=%d, value = %d)"NL, HAL_GetTick(), index, z, s, label);
 		} else {
-			printf("%010ld: Released Key @ (index =%d, z=%d, s=%d, value = %d)"NL, HAL_GetTick(), index, z , s, value);
+			printf("%010ld: Released Key @ (index =%d, z=%d, s=%d, value = %d)"NL, HAL_GetTick(), index, z , s, label);
 		}
 		res = res | (pinVal << z);
 		my_xpad[dev].key[index].cnt = 0;
@@ -194,7 +197,7 @@ static uint16_t xpad_spalten_scan(kybdh_t dev) {
 	return res;
 }
 
-static void xpad_init(kybdh_t dev, kybd_type_e dev_type, xpad_dev_t *device) {
+static void xpad_init(kybdh_t dev, kybd_type_e dev_type, xpad_t *device) {
 	if (dev_type == DEV_TYPE_NA)
 		return;
 	my_xpad[dev].dev_type= dev_type;
@@ -202,21 +205,21 @@ static void xpad_init(kybdh_t dev, kybd_type_e dev_type, xpad_dev_t *device) {
 	if (device != NULL) {
 		my_xpad[dev].spalte = &device->spalte;
 		my_xpad[dev].zeile =  &device->zeile;
-		memcpy(my_xpad[dev].value, device->value, MAX_BUTTON_CNT);
+		memcpy(&my_xpad[dev].state, &device->state, sizeof(state_t));
 	} else {
 		if (dev_type ==XSCAN) {
 			my_xpad[dev].spalte = &default_xscan_dev.spalte;
 			my_xpad[dev].zeile  = &default_xscan_dev.zeile;
 			my_xpad[dev].key_cnt  = default_xscan_dev.key_cnt;
 			my_xpad[dev].first  = default_xscan_dev.first;
-			memcpy(my_xpad[dev].value, default_xscan_dev.value, my_xpad[dev].key_cnt+1);
+	        memcpy(&my_xpad[dev].state, &device->state,  sizeof(state_t));
 		} else if(dev_type==EIGHTKEY) {
 			my_xpad[dev].spalte = &default_eight_dev.spalte;
 			my_xpad[dev].zeile  = &default_eight_dev.zeile;
 			my_xpad[dev].key_cnt    = default_eight_dev.key_cnt;
 			my_xpad[dev].first    = default_eight_dev.first;
-			memset(my_xpad[dev].value, 0xff, MAX_BUTTON_CNT);
-			memcpy(my_xpad[dev].value , default_eight_dev.value, my_xpad[dev].key_cnt);
+			memset(my_xpad[dev].state.label, 0xff, MAX_BUTTON_CNT);
+			memcpy(my_xpad[dev].state.label , default_eight_dev.state.label, my_xpad[dev].key_cnt);
 		} else if (dev_type == TERMINAL) {
 			printf("%010ld: Setup terminal %d"NL, HAL_GetTick(), dev_type);
 		}
@@ -230,7 +233,7 @@ static void xpad_init(kybdh_t dev, kybd_type_e dev_type, xpad_dev_t *device) {
 	memset(my_xpad[dev].val2idx, 0xff, MAX_BUTTON_CNT);
 	for (uint8_t val=my_xpad[dev].first;val<my_xpad[dev].key_cnt+1;val++){
 		for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
-			if (val==my_xpad[dev].value[i]){
+			if (val==my_xpad[dev].state.label[i]){
 				my_xpad[dev].val2idx[val]= i;
 				break;
 			}
@@ -251,8 +254,8 @@ static void xpad_state(kybdh_t dev, kybd_r_t *ret) {
 	ret->first = my_xpad[dev].first;
 	for (uint8_t val = ret->first; val < ret->first + ret->key_cnt; val++) {
 		uint8_t idx = my_xpad[dev].val2idx[val];
-		ret->state[i]   = my_xpad[dev].state[idx];
-		ret->value[i++] = my_xpad[dev].value[idx];
+		ret->state.state[i]   = my_xpad[dev].state.state[idx];
+		ret->state.label[i++] = my_xpad[dev].state.label[idx];
 	}
 	ret->dirty = my_xpad[dev].dirty;
 	return;
@@ -266,7 +269,7 @@ static void xpad_reset(kybdh_t dev, bool hard) {
 	my_xpad[dev].dirty = false;
 	for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
 		if (hard) {
-			my_xpad[dev].state[i] = OFF;
+			my_xpad[dev].state.state[i] = OFF;
 			my_xpad[dev].key[i] = reset_key;
 		}
 	}
@@ -279,7 +282,7 @@ kybd_t xscan_dev = {
 	.reset= &xpad_reset,
 	.state = &xpad_state,
 	.dev_type = XSCAN,
-	.value ={1, 2, 3, 0xa, 4, 5, 6, 0xb, 7, 8, 9, 0xc, 0, 0xf, 0xe ,0xd },
+	.label ={1, 2, 3, 0xa, 4, 5, 6, 0xb, 7, 8, 9, 0xc, 0, 0xf, 0xe ,0xd },
 	.key_cnt = 16,
 	.first = 0,
 };
@@ -290,7 +293,7 @@ kybd_t eight_dev = {
 	.reset =&xpad_reset,
 	.state = &xpad_state,
 	.dev_type = EIGHTKEY,
-	.value = {1, 2, 3, 4, 5, 6, 7, 8},
+	.label = {1, 2, 3, 4, 5, 6, 7, 8},
 	.key_cnt = 8,
 	.first = 1,
 };
@@ -305,13 +308,13 @@ void xpad_iprint(xpad_t *state, char *timestamp) {
 	snprintf(text, maxcnt, "%s%s", timestamp, "Value  ");
 	printf(text);
 	for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
-		printf(" %C ", state->value[i]);
+		printf(" %C ", state->state.label[i]);
 	}
 	printf(NL);
 	snprintf(text, maxcnt, "%s%s", timestamp, "State   ");
 	printf(text);
 	for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
-		printf("%s", key_state_3c[state->state[i]]);
+		printf("%s", key_state_3c[state->state.state[i]]);
 	}
 	printf(NL);
 	snprintf(text, maxcnt, "%s%s", timestamp, "Last    ");

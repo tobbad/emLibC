@@ -19,11 +19,10 @@
  *
  **************************************************************************/
 #include "common.h"
-
 #include "i2c.h"
 static i2c_t my_dev[I2C_HANDLLE_CNT+1];
 
-i2c_handle li2c_init(void * i2c_dev, uint8_t i2cAdr)
+i2c_handle li2c_init(I2C_HandleTypeDef * i2c_dev, uint8_t i2cAdr)
 {
 	i2c_handle handle  = 1;
 	while (my_dev[handle].i2c != NULL){

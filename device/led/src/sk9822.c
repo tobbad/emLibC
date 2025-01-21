@@ -8,6 +8,7 @@
 #include "assert.h"
 #include "common.h"
 #include "device.h"
+#include "keyboard.h"
 #include "sk9822.h"
 
 #define SK9822_RED_SHIFT 0
@@ -24,27 +25,31 @@ static buffer_t sk9822_buffer;
 static device_t sk9822_dev;
 static uint8_t sk9822_led_count;
 
-static void sk9822_write(uint32_t count);
+typedef sk9822_s{
+    uint8_t * buffer;
+    device_t dev;
+    uint8_t cnt;
+}sk9822_t;
+
+sk9822_t my_sk9822[DEVICE_CNT];
 
 
-sk9822_handle_t sk9822_init(device_t *device, buffer_t *buffer) {
-    sk9822_handle_t hdl = 0;
-    sk9822_dev = *device;
-    sk9822_buffer = *buffer;
-    sk9822_led_count = (sk9822_buffer.size>>2)-2;
+
+em_msg sk9822_init(dev_handle_t hdl, buffer_t *buffer) {
+    my_sk9822[hdl].buffer = buffer->mem;
+    my_sk9822[hdl].cnt = (sk9822_buffer.size>>2)-2;
     sk9822_reset(hdl);
     return hdl;
 }
 
 
-void sk9822_reset(sk9822_handle_t hdl) {
+void sk9822_reset(dev_handle_t hdl) {
     sk9822_clear(hdl);
     sk9822_set_brighness(hdl, SK9822_ALL_LEDS, 0x00);
-    return 0;
 }
 
 
-void sk9822_set_rgb(sk9822_handle_t hdl, led_nr_t led_nr, uint8_t rgb[3]){
+void sk9822_set_rgb(dev_handle_t hdl, led_nr_t led_nr, uint8_t rgb[3]){
     uint8_t low_lim = 0;
     uint8_t high_lim = sk9822_led_count;
     uint32_t value;
@@ -66,7 +71,7 @@ void sk9822_set_rgb(sk9822_handle_t hdl, led_nr_t led_nr, uint8_t rgb[3]){
     }
 }
 
-void sk9822_set_brighness(sk9822_handle_t hdl, led_nr_t led_nr, uint8_t brightness){
+void sk9822_set_brighness(dev_handle_t hdl, led_nr_t led_nr, uint8_t brightness){
 
     uint8_t low_lim = 0;
     uint8_t high_lim = sk9822_led_count;
@@ -88,17 +93,12 @@ void sk9822_set_brighness(sk9822_handle_t hdl, led_nr_t led_nr, uint8_t brightne
 }
 
 
-void sk9822_clear(sk9822_handle_t hdl){
+void sk9822_clear(dev_handle_t hdl){
     memset(sk9822_buffer.mem, 0, sk9822_buffer.size);
     uint32_t *ptr = (uint32_t*)sk9822_buffer.mem;
     ptr[sk9822_led_count+1] = 0xFFFFFFFF;
 }
 
-void sk9822_commit(sk9822_handle_t hdl) {
-    sk9822_write(4*SK9822_32BIT_BUFFERSIZE(sk9822_led_count));
-}
-
-
-static void sk9822_write(uint32_t count) {
-    device_write(&sk9822_dev, sk9822_buffer.mem, count);
+void sk9822_commit(dev_handle_t hdl) {
+    //sk9822_write(4*SK9822_32BIT_BUFFERSIZE(sk9822_led_count));
 }
