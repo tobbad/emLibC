@@ -125,16 +125,16 @@ static uint8_t xpad_update_key(uint8_t dev, uint8_t index, bool pinVal) {
 	if (my_xpad[dev].key[index].cnt > STABLE_CNT) {
 		// We got a stable state
 		my_xpad[dev].key[index].unstable = false;
-		uint8_t label = my_xpad[dev].state.label[index];
+		char label = my_xpad[dev].state.label[index];
 		my_xpad[dev].key[index].last = pinVal;
 		my_xpad[dev].key[index].stable = pinVal;
 		if (pinVal) {
 			my_xpad[dev].state.state[index] = ((my_xpad[dev].state.state[index] + 1)
 					% KEY_STAT_CNT);
 			my_xpad[dev].dirty = true;
-			printf("%010ld: Pushed   Key @ (index =%d, z=%d, s=%d, value = %d)"NL, HAL_GetTick(), index, z, s, label);
+			printf("%010ld: Pushed   Key @ (index =%d, z=%d, s=%d, value = %c)"NL, HAL_GetTick(), index, z, s, label);
 		} else {
-			printf("%010ld: Released Key @ (index =%d, z=%d, s=%d, value = %d)"NL, HAL_GetTick(), index, z , s, label);
+			printf("%010ld: Released Key @ (index =%d, z=%d, s=%d, value = %c)"NL, HAL_GetTick(), index, z , s, label);
 		}
 		res = res | (pinVal << z);
 		my_xpad[dev].key[index].cnt = 0;
@@ -201,7 +201,7 @@ static uint16_t xpad_spalten_scan(dev_handle_t dev) {
 		xpad_set_spalten_pin(dev, s);
 	}
 	if (res != 0) {
-		printf("%010ld: Key Label is  0x%4lX"NL, HAL_GetTick(), (uint32_t) res);
+		printf("%010ld: Key Label is  0x%04lX"NL, HAL_GetTick(), (uint32_t) res);
 	}
 	return res;
 }
@@ -240,10 +240,10 @@ static void xpad_init(dev_handle_t dev, dev_type_e dev_type, xpad_t *device) {
 	}
 	for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
 		uint8_t value = lable2uint8(my_xpad[dev].state.label[i]);
-		printf("%010ld: Label %c -> %d"NL, HAL_GetTick(), my_xpad[dev].state.label[i], value);
+		printf("%010ld: Label %c -> 0x%x"NL, HAL_GetTick(), my_xpad[dev].state.label[i], value);
 	}
 	memset(my_xpad[dev].val2idx, 0xff, MAX_BUTTON_CNT);
-	for (uint8_t val=my_xpad[dev].first;val<my_xpad[dev].key_cnt+1;val++){
+	for (uint8_t val=my_xpad[dev].first;val<my_xpad[dev].key_cnt;val++){
 		for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
 			uint8_t value=lable2uint8(my_xpad[dev].state.label[i]);
 			if (val==value){
@@ -252,8 +252,9 @@ static void xpad_init(dev_handle_t dev, dev_type_e dev_type, xpad_t *device) {
 			}
 		}
 	}
-	for (uint8_t val=my_xpad[dev].first;val<=my_xpad[dev].key_cnt;val++){
-		printf("%010ld: val= %01x ->  %01x"NL, HAL_GetTick(), val,  my_xpad[dev].val2idx[val] );
+	for (uint8_t val=my_xpad[dev].first;val<my_xpad[dev].key_cnt;val++){
+		uint8_t value = lable2uint8(my_xpad[dev].state.label[val]);
+		printf("%010ld: val= %01x ->  %01x"NL, HAL_GetTick(), val,  value );
 	}
 	printf(NL);
 }
