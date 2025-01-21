@@ -9,6 +9,8 @@
 #include "xpad.h"
 #include "keyboard.h"
 #include "gpio_port.h"
+#define key_reset_cnt 100
+
 static kybd_t *my_kybd[DEVICE_CNT];
 
 char *key_state_3c[] = { "   ", "BLI", "ON ", "NA ", };
@@ -45,10 +47,21 @@ dev_handle_t keyboard_init(kybd_t *kybd, xpad_t *device) {
 }
 
 uint16_t keyboard_scan(dev_handle_t dev) {
+	static int32_t cnt=0;
+	static int32_t lcnt=-1;
 	uint16_t res = 0;
 	if ((dev > 0) && my_kybd[dev] != NULL) {
 		res = my_kybd[dev]->scan(dev);
 	}
+	if (res>0){
+		lcnt=cnt;
+	}
+	if ((lcnt>0) &&(cnt-lcnt)%key_reset_cnt==0){
+		keyboard_reset(dev, false);
+		lcnt=-1;
+		printf("%010ld: Reset dirty"NL, HAL_GetTick());
+	}
+	cnt++;
 	return res;
 }
 ;
