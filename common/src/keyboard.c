@@ -88,7 +88,7 @@ void keyboard_print(kybd_r_t *state, char *timestamp) {
 	printf(NL);
 }
 
-kybd_type_e keyboard_get_dev_type(dev_handle_t dev) {
+dev_type_e keyboard_get_dev_type(dev_handle_t dev) {
 	if ((dev > 0) && (dev < TERMINAL)) {
 		return my_kybd[dev]->dev_type;
 	}

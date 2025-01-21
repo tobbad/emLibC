@@ -9,7 +9,6 @@
 #include "common.h"
 //#include "main.h"
 
-typedef uint8_t kybdh_t;
 typedef struct xpad_s xpad_t;
 
 #define STABLE_CNT 10
@@ -52,12 +51,12 @@ typedef struct kybd_r_s{
 
 
 typedef struct kybd_s{
-	void (*init)(kybdh_t dev, dev_type_e dev_type, xpad_t *device);
-	uint16_t (*scan)(kybdh_t dev);
-	void (*reset)(kybdh_t dev, bool hard);
-	void (*state)(kybdh_t dev, kybd_r_t *ret);
+	void (*init)(dev_handle_t dev, dev_type_e dev_type, xpad_t *device);
+	uint16_t (*scan)(dev_handle_t dev);
+	void (*reset)(dev_handle_t dev, bool hard);
+	void (*state)(dev_handle_t dev, kybd_r_t *ret);
+	state_t _state;
 	dev_type_e dev_type;
-	uint8_t label[MAX_BUTTON_CNT];
 	uint8_t key_cnt;
 	uint8_t first;
 } kybd_t;
@@ -65,12 +64,12 @@ typedef struct kybd_s{
 extern mkey_t reset_key;
 
 
-kybdh_t keyboard_init(kybd_t *kybd, xpad_t *device);
-uint16_t keyboard_scan(kybdh_t dev);
-void keyboard_reset(kybdh_t dev, bool hard);
-void keyboard_state(kybdh_t dev, kybd_r_t *ret);
+dev_handle_t keyboard_init(kybd_t *kybd, xpad_t *device);
+uint16_t keyboard_scan(dev_handle_t dev);
+void keyboard_reset(dev_handle_t dev, bool hard);
+void keyboard_state(dev_handle_t dev, kybd_r_t *ret);
 void  keyboard_print(kybd_r_t *state, char* start); // Show returned
-kybd_type_e  keyboard_get_dev_type(kybdh_t dev);
+dev_type_e  keyboard_get_dev_type(dev_handle_t dev);
 
 
 

@@ -9,17 +9,17 @@
 
 
 static kybd_r_t my_kybd = {
-    .state =  { .state= { OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
-                .label = {'R', 1, 2, 3, 4, 5, 6, 7, 8 }},
+    .state=  {.state=  {  OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
+   	      .label = {'R', 1, 2, 3, 4, 5, 6, 7, 8  }},
     .key_cnt=8,
     .first = 1, //First valid value
     .dirty = false,
 };
 
 static bool check_key(char ch);
-static void terminal_reset(kybdh_t dev, bool hard);
+static void terminal_reset(dev_handle_t dev, bool hard);
 
-static  void terminal_init(kybdh_t handle, kybd_type_e dev_type, xpad_t *device) {
+static  void terminal_init(dev_handle_t handle, dev_type_e dev_type, xpad_t *device) {
     terminal_reset(handle, true);
 }
 
@@ -32,7 +32,7 @@ static bool check_key(char ch){
     return ret;
 }
 
-static uint16_t terminal_scan(kybdh_t dev) {
+static uint16_t terminal_scan(dev_handle_t dev) {
     static bool asked = false;
     uint8_t ch = UINT8_MAX;
     uint16_t res = UINT16_MAX;
@@ -64,11 +64,11 @@ static uint16_t terminal_scan(kybdh_t dev) {
     return res;
 }
 
-static void terminal_state(kybdh_t dev, kybd_r_t *ret){
+static void terminal_state(dev_handle_t dev, kybd_r_t *ret){
     *ret = my_kybd;
 }
 
-static void terminal_reset(kybdh_t dev, bool hard){
+static void terminal_reset(dev_handle_t dev, bool hard){
     for (uint8_t i= my_kybd.first; i<my_kybd.first+my_kybd.key_cnt;i++){
         my_kybd.state.state[i] =OFF;
     }

@@ -72,7 +72,7 @@ static xpad_dev_t default_eight_dev = {
 
 };
 
-static void xpad_set_spalten_pin(kybdh_t dev, uint8_t spalten_nr) {
+static void xpad_set_spalten_pin(dev_handle_t dev, uint8_t spalten_nr) {
 	if (mpy_xpad[dev] == NULL) {
 		printf("%010ld: No valid handle on xpad_set_spalte"NL, HAL_GetTick());
 		return;
@@ -83,7 +83,7 @@ static void xpad_set_spalten_pin(kybdh_t dev, uint8_t spalten_nr) {
 	return;
 }
 
-static void xpad_reset_spalten_pin(kybdh_t dev, uint8_t spalten_nr) {
+static void xpad_reset_spalten_pin(dev_handle_t dev, uint8_t spalten_nr) {
 	if (mpy_xpad[dev] == NULL) {
 		printf("%010ld: No valid handle on xpad_set_spalte"NL, HAL_GetTick());
 		return;
@@ -138,7 +138,7 @@ static uint8_t xpad_update_key(uint8_t dev, uint8_t index, bool pinVal) {
 	return res;
 }
 
-static uint16_t xpad_eight_scan(kybdh_t dev) {
+static uint16_t xpad_eight_scan(dev_handle_t dev) {
 	if (mpy_xpad[dev]==NULL) {
 		printf("%010ld: No valid handle on read_row"NL,HAL_GetTick());
 		return false;
@@ -156,7 +156,7 @@ static uint16_t xpad_eight_scan(kybdh_t dev) {
 	}
 	return res;
 }
-static uint16_t xpad_read_zeile(kybdh_t dev, uint8_t spalten_nr) {
+static uint16_t xpad_read_zeile(dev_handle_t dev, uint8_t spalten_nr) {
 	if (mpy_xpad[dev] == NULL) {
 		printf("%010ld: No valid handle on read_zeile"NL, HAL_GetTick());
 		return 0;
@@ -172,7 +172,7 @@ static uint16_t xpad_read_zeile(kybdh_t dev, uint8_t spalten_nr) {
 	return res;
 }
 
-static uint16_t xpad_spalten_scan(kybdh_t dev) {
+static uint16_t xpad_spalten_scan(dev_handle_t dev) {
 	if (mpy_xpad[dev] == NULL) {
 		printf("%010ld: No valid handle on scan"NL, HAL_GetTick());
 		return false;
@@ -197,7 +197,7 @@ static uint16_t xpad_spalten_scan(kybdh_t dev) {
 	return res;
 }
 
-static void xpad_init(kybdh_t dev, kybd_type_e dev_type, xpad_t *device) {
+static void xpad_init(dev_handle_t dev, dev_type_e dev_type, xpad_t *device) {
 	if (dev_type == DEV_TYPE_NA)
 		return;
 	my_xpad[dev].dev_type= dev_type;
@@ -245,7 +245,7 @@ static void xpad_init(kybdh_t dev, kybd_type_e dev_type, xpad_t *device) {
 	printf(NL);
 }
 
-static void xpad_state(kybdh_t dev, kybd_r_t *ret) {
+static void xpad_state(dev_handle_t dev, kybd_r_t *ret) {
 	if (mpy_xpad[dev] == NULL) {
 		printf("%010ld: No valid handle on state"NL, HAL_GetTick());
 		return;
@@ -261,7 +261,7 @@ static void xpad_state(kybdh_t dev, kybd_r_t *ret) {
 	return;
 }
 
-static void xpad_reset(kybdh_t dev, bool hard) {
+static void xpad_reset(dev_handle_t dev, bool hard) {
 	if (mpy_xpad[dev] == NULL) {
 		printf("%010ld: No valid handle on reset"NL, HAL_GetTick());
 		return;
@@ -282,7 +282,8 @@ kybd_t xscan_dev = {
 	.reset= &xpad_reset,
 	.state = &xpad_state,
 	.dev_type = XSCAN,
-	.label ={1, 2, 3, 0xa, 4, 5, 6, 0xb, 7, 8, 9, 0xc, 0, 0xf, 0xe ,0xd },
+	._state= {.label = {'1', '2', '3', 'a', '4', '5', '6', 'b', '7', '8', '9', 'c', '0', 'f', 'e' ,'d'},
+	         .state = {OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF}}	,
 	.key_cnt = 16,
 	.first = 0,
 };
@@ -293,7 +294,8 @@ kybd_t eight_dev = {
 	.reset =&xpad_reset,
 	.state = &xpad_state,
 	.dev_type = EIGHTKEY,
-	.label = {1, 2, 3, 4, 5, 6, 7, 8},
+	._state = {.label={'R','1', '2', '3','4', '5', '6','7', '8'},
+			.state={OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF}},
 	.key_cnt = 8,
 	.first = 1,
 };
