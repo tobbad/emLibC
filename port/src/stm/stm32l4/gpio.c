@@ -18,7 +18,7 @@ em_msg GpioPinInit(gpio_pin_t *pin){
 		GPIO_InitStruct.Speed = pin->conf.Speed;
 		HAL_GPIO_Init(pin->port, &GPIO_InitStruct);
 		if (pin->conf.Mode==GPIO_MODE_OUTPUT_PP){
-			HAL_GPIO_WritePin(pin->port, pin->pin, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(pin->port, pin->pin, pin->def);
 		}
 		res = EM_OK;
 	}
@@ -50,12 +50,7 @@ em_msg GpioPinRead(gpio_pin_t *pin, bool *value){
 em_msg GpioPinToggle(gpio_pin_t *pin) {
 	uint8_t res = EM_OK;
     if (pin->port != NULL) {
-        bool value;
-        res = GpioPinRead(pin, &value);
-        if (EM_OK == res) {
-            value = !value;
-            res = GpioPinWrite(pin, value);
-        }
+        HAL_GPIO_TogglePin(pin->port, pin->pin);
     }
     return res;
 

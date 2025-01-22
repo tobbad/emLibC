@@ -13,6 +13,7 @@
 typedef struct gpio_pin_s{
 	GPIO_TypeDef* port;
 	uint16_t pin;
+	bool def;
 	GPIO_InitTypeDef conf;
 } gpio_pin_t;
 
