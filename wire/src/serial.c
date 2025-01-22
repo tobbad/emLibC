@@ -52,19 +52,13 @@
 #error Undefined platform
 #endif
 
+#include "main.h"
 #include "mutex.h"
 #include "serial.h"
-#define MEAS_CNT 10
-typedef struct time_meas_s{
-    uint32_t start;
-    uint32_t stop;
-    uint32_t duration_us;
-}time_meas__t;
+#include "_time.h"
 static sio_t sio;
-uint8_t serial_mode = 0;
 buf_t rx_buffer;
-static time_meas__t _time[MEAS_CNT];
-static uint16_t time_idx=0;
+static buf_t tx_buffer;
 
 sio_res_e serial_init(sio_t *init) {
     sio = *init;
@@ -73,33 +67,41 @@ sio_res_e serial_init(sio_t *init) {
     if (sio.buffer[SIO_RX] != NULL) {
         HAL_UART_Receive_IT(sio.uart, rx_buffer.buffer, 1);
     }
-    for (uint8_t i=0;i<MEAS_CNT;i++){
-        _time[i].start = -1;
-        _time[i].stop = -1;
-    }
-    CoreDebug->DEMCR |=  CoreDebug_DEMCR_TRCENA_Msk;
-    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+    time_init();
+    time_set_mode(sio.mode);
     return SIO_OK;
 }
 
-void serial_addMode(print_e mode) {
-    serial_mode |= mode;
+void serial_set_mode(print_e mode, bool doReset ) {
+    sio.mode = mode;
+    if (doReset){
+    	time_reset();
+    }
+    time_set_mode(sio.mode);
+
 }
 
-void serial_removeMode(print_e mode) {
-    serial_mode = mode;
-
-}
-
-int _write(int32_t file, uint8_t *ptr, int32_t len) {
+int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     HAL_StatusTypeDef status = HAL_OK;
+    uint16_t len=0;
+    uint8_t idx;
     if ((sio.buffer_size[SIO_TX] == 0) || (sio.buffer[SIO_TX] == NULL)) {
         if (sio.uart != NULL) {
             sio.ready[SIO_TX] = false;
             sio.bytes_in_buffer[SIO_TX] = len;
-            _time[time_idx].start = DWT->CYCCNT;
-            //GpioPinToggle(&uart_toggle);
-            status = HAL_UART_Transmit(sio.uart, ptr, len, UART_TIMEOUT_MS);
+            if (sio.mode&TIMESTAMP){
+             	len = sprintf(sio.buffer[SIO_TX], "%010ld: ", HAL_GetTick());
+             }
+            if (sio.mode&GAP_DETECT){
+             	len += sprintf(&sio.buffer[SIO_TX][len], " %x ", idx);
+            }
+            memcpy(&tx_buffer.buffer[len], ptr, txLen);
+            len+=txLen;
+            time_start(len);
+            GpioPinToggle(&uart_toggle);
+            status = HAL_UART_Transmit(sio.uart, tx_buffer.buffer, len, UART_TIMEOUT_MS);
+            GpioPinToggle(&uart_toggle);
+            time_end_tx();
             sio.bytes_in_buffer[SIO_TX] = 0;
             sio.ready[SIO_TX] = true;
         } else {
@@ -113,11 +115,18 @@ int _write(int32_t file, uint8_t *ptr, int32_t len) {
             return -1;
         } else if (sio.ready[SIO_TX]) {
             while (!ReadModify_write((bool *)&sio.ready[SIO_TX], -1)){}
-            _time[time_idx].start = DWT->CYCCNT;
-            memcpy(sio.buffer[SIO_TX], ptr, len);
-            sio.bytes_in_buffer[SIO_TX] = len;
+            if (sio.mode&TIMESTAMP){
+             	len = sprintf(tx_buffer.buffer, "%010ld: ", HAL_GetTick());
+             }
+            if (sio.mode&GAP_DETECT){
+             	len += sprintf(tx_buffer.buffer, " %x ", idx);
+            }
+            memcpy(&tx_buffer.buffer[len], ptr, txLen);
+            len+=txLen;
+            time_start(len);
             //GpioPinToggle(&uart_toggle);
-            status = HAL_UART_Transmit_DMA(sio.uart, sio.buffer[SIO_TX], len);
+            status = HAL_UART_Transmit_DMA(sio.uart, tx_buffer.buffer, len);
+            time_end_su();
         } else {
             errno = EWOULDBLOCK;
             status = HAL_ERROR;
@@ -145,7 +154,6 @@ int _read(int32_t file, uint8_t *ptr, int32_t len) {
             }
         } else {// Receive text by IT HAL_UART_Receive_IT
             // Buffer with size larger than 0 is provided
-
         }
     }
     return sio.bytes_in_buffer[SIO_RX];
@@ -173,13 +181,8 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
     if (huart == sio.uart) {
         /* Set transmission flag: transfer complete */
          while (!ReadModify_write((bool*)&sio.ready[SIO_TX], -1)){}
-        _time[time_idx].stop = DWT->CYCCNT;
-        _time[time_idx].duration_us =125*(_time[time_idx].stop-_time[time_idx].start)/10000;
+         time_end_tx();
         //GpioPinToggle(&uart_toggle);
-        time_idx = (time_idx+1)%MEAS_CNT;
-        if (time_idx==0){
-            sio.bytes_in_buffer[SIO_TX] = 0;
-        }
         sio.bytes_in_buffer[SIO_TX] = 0;
     }
 }
