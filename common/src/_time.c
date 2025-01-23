@@ -69,6 +69,7 @@ void time_end_tx(){
 }
 
 void time_print(char * titel){
+	if (titel!=NULL) printf("%s"NL, titel);
 	printf("data:["NL);
 	for (uint8_t i=0; i<MEAS_CNT; i++){
 		printf("[ %llu, %u, %ld ],"NL,_time.time[_time.idx].duration_tx_us, _time.time[_time.idx].count,_time.time[_time.idx].baud  );

@@ -7,7 +7,7 @@
 #ifndef XPAD_H_
 #define XPAD_H_
 
-#include "keyboard.h"
+//#include "keyboard.h"
 #include "gpio.h"
 #include "gpio_port.h"
 #define ZEILEN_CNT 4

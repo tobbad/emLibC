@@ -98,6 +98,6 @@ bool state_set(state_t * state, uint8_t nr){
 bool state_toggle(state_t * state, uint8_t nr){
     assert(nr<MAX_BUTTON_CNT+1);
     nr--;
-    state->state[nr] !=state->state[nr];
+    state->state[nr]= !state->state[nr];
     return true;
 }

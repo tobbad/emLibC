@@ -225,7 +225,7 @@ static void xpad_init(dev_handle_t dev, dev_type_e dev_type, xpad_t *device) {
 		} else if(dev_type==EIGHTKEY) {
 			my_xpad[dev].spalte  = &default_eight_dev.spalte;
 			my_xpad[dev].zeile   = &default_eight_dev.zeile;
-			my_xpad[dev].cnt = default_xscan_dev[dev].cnt;
+			my_xpad[dev].cnt = default_xscan_dev.cnt;
 			my_xpad[dev].first   = default_eight_dev.first;
 			memcpy(&my_xpad[dev].state , &default_eight_dev.state, sizeof(state_t));
 		} else if (dev_type == TERMINAL) {
@@ -314,43 +314,43 @@ kybd_t eight_dev = {
 	.first = 1,
 };
 
-void xpad_iprint(xpad_t *state, char *timestamp) {
-	const uint8_t maxcnt = MINIMAL_LINESTART + 7;
-	char text[maxcnt + 1];
-	if (!state) {
-		printf("%s Nothing returned"NL, timestamp);
-		return;
-	}
-	snprintf(text, maxcnt, "%s%s", timestamp, "Value  ");
-	printf(text);
-	for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
-		printf(" %C ", state->state.label[i]);
-	}
-	printf(NL);
-	snprintf(text, maxcnt, "%s%s", timestamp, "State   ");
-	printf(text);
-	for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
-		printf("%s", key_state_3c[state->state.state[i]]);
-	}
-	printf(NL);
-	snprintf(text, maxcnt, "%s%s", timestamp, "Last    ");
-
-	for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
-		printf("%03d", state->key[i].last);
-	}
-	printf(NL);
-	snprintf(text, maxcnt, "%s%s", timestamp, "Current  ");
-
-	for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
-		printf("%03d", state->key[i].current);
-	}
-	printf(NL);
-	snprintf(text, maxcnt, "%s%s", timestamp, "Cnt      ");
-
-	for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
-		printf("%03d", state->key[i].cnt);
-	}
-	printf(NL);
-
-}
+//void xpad_iprint(xpad_t *state, char *timestamp) {
+//	const uint8_t maxcnt = MINIMAL_LINESTART + 7;
+//	char text[maxcnt + 1];
+//	if (!state) {
+//		printf("%s Nothing returned"NL, timestamp);
+//		return;
+//	}
+//	snprintf(text, maxcnt, "%s%s", timestamp, "Value  ");
+//	printf(text);
+//	for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
+//		printf(" %C ", state->state.label[i]);
+//	}
+//	printf(NL);
+//	snprintf(text, maxcnt, "%s%s", timestamp, "State   ");
+//	printf(text);
+//	for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
+//		printf("%s", key_state_3c[state->state.state[i]]);
+//	}
+//	printf(NL);
+//	snprintf(text, maxcnt, "%s%s", timestamp, "Last    ");
+//
+//	for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
+//		printf("%03d", state->key[i].last);
+//	}
+//	printf(NL);
+//	snprintf(text, maxcnt, "%s%s", timestamp, "Current  ");
+//
+//	for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
+//		printf("%03d", state->key[i].current);
+//	}
+//	printf(NL);
+//	snprintf(text, maxcnt, "%s%s", timestamp, "Cnt      ");
+//
+//	for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
+//		printf("%03d", state->key[i].cnt);
+//	}
+//	printf(NL);
+//
+//}
 

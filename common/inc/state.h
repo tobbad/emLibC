@@ -8,7 +8,7 @@
 #ifndef INC_STATE_H_
 #define INC_STATE_H_
 
-#include "keyboard.h"
+#include "xpad.h"
 
 typedef enum{
     OFF,
@@ -25,7 +25,7 @@ typedef struct state_s{
     bool dirty;
 } state_t;
 
-bool state_init(state_t *state);
+void state_init(state_t *state);
 bool state_is_different(state_t *last, state_t *this);
 bool state_merge(state_t *inState, state_t *outState);
 void state_clear(state_t *state, uint8_t nr);
