@@ -21,23 +21,18 @@
 #define SK9822_BRIGHTNESS_MASK (SK9822_BRIGHTNESS_MASK_U8<<SK9822_BRIGTHNESS_SHIFT)
 #define SK9822_DEFAULT_BITS 0xE0000000
 
-static buffer_t sk9822_buffer;
-static device_t sk9822_dev;
-static uint8_t sk9822_led_count;
 
-typedef sk9822_s{
-    uint8_t * buffer;
-    device_t dev;
-    uint8_t cnt;
+typedef struct  sk9822_s{
+    buffer_t * buffer;
+    uint8_t led_cnt;
 }sk9822_t;
 
 sk9822_t my_sk9822[DEVICE_CNT];
 
 
-
-em_msg sk9822_init(dev_handle_t hdl, buffer_t *buffer) {
-    my_sk9822[hdl].buffer = buffer->mem;
-    my_sk9822[hdl].cnt = (sk9822_buffer.size>>2)-2;
+em_msg sk9822_init(dev_handle_t hdl, buffer_t *buffer, uint8_t led_cnt) {
+    my_sk9822[hdl].buffer = buffer;
+    my_sk9822[hdl].led_cnt = led_cnt;
     sk9822_reset(hdl);
     return hdl;
 }
@@ -51,11 +46,11 @@ void sk9822_reset(dev_handle_t hdl) {
 
 void sk9822_set_rgb(dev_handle_t hdl, led_nr_t led_nr, uint8_t rgb[3]){
     uint8_t low_lim = 0;
-    uint8_t high_lim = sk9822_led_count;
+    uint8_t high_lim = my_sk9822[hdl].led_cnt;
     uint32_t value;
-    uint32_t *ptr = (uint32_t*)sk9822_buffer.mem;
+    uint32_t *ptr = (uint32_t*)my_sk9822[hdl].buffer;
 
-    if (led_nr < sk9822_led_count) {
+    if (led_nr < my_sk9822[hdl].led_cnt) {
         low_lim = led_nr;
         high_lim = led_nr+1;
     }
@@ -74,12 +69,12 @@ void sk9822_set_rgb(dev_handle_t hdl, led_nr_t led_nr, uint8_t rgb[3]){
 void sk9822_set_brighness(dev_handle_t hdl, led_nr_t led_nr, uint8_t brightness){
 
     uint8_t low_lim = 0;
-    uint8_t high_lim = sk9822_led_count;
+    uint8_t high_lim = my_sk9822[hdl].led_cnt;
     uint32_t value;
-    uint32_t *ptr = (uint32_t*)sk9822_buffer.mem;
+    uint32_t *ptr = (uint32_t*)my_sk9822[hdl].buffer->mem;
 
     brightness &= SK9822_BRIGHTNESS_MASK_U8;
-    if (led_nr < sk9822_led_count) {
+    if (led_nr < my_sk9822[hdl].led_cnt) {
         low_lim = led_nr;
         high_lim = led_nr+1;
     }
@@ -94,9 +89,9 @@ void sk9822_set_brighness(dev_handle_t hdl, led_nr_t led_nr, uint8_t brightness)
 
 
 void sk9822_clear(dev_handle_t hdl){
-    memset(sk9822_buffer.mem, 0, sk9822_buffer.size);
-    uint32_t *ptr = (uint32_t*)sk9822_buffer.mem;
-    ptr[sk9822_led_count+1] = 0xFFFFFFFF;
+    memset(my_sk9822[hdl].buffer, 0, my_sk9822[hdl].buffer->size);
+    uint32_t *ptr = (uint32_t*) my_sk9822[hdl].buffer->mem;
+    ptr[my_sk9822[hdl].led_cnt+1] = 0xFFFFFFFF;
 }
 
 void sk9822_commit(dev_handle_t hdl) {

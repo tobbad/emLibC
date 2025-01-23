@@ -5,13 +5,14 @@
  *      Author: TBA
  */
 #include "main.h"
+#include "device.h"
 #include <keyboard.h>
 
 
-static kybd_r_t my_kybd = {
-    .state=  {.state=  {  OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
-   	      .label = {'R', 1, 2, 3, 4, 5, 6, 7, 8  }},
-    .key_cnt=8,
+static state_t my_kybd = {
+           .state=  {.state=  {  OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
+                     .label = {'R', 1, 2, 3, 4, 5, 6, 7, 8  }},
+    .cnt=9,
     .first = 1, //First valid value
     .dirty = false,
 };
@@ -64,7 +65,7 @@ static uint16_t terminal_scan(dev_handle_t dev) {
     return res;
 }
 
-static void terminal_state(dev_handle_t dev, kybd_r_t *ret){
+static void terminal_state(dev_handle_t dev, state_t *ret){
     *ret = my_kybd;
 }
 

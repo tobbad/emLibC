@@ -27,7 +27,7 @@ typedef enum {
 #define SK9822_32BIT_BUFFERSIZE(LED_COUNT) (1+LED_COUNT+1)
 
 
-em_msg sk9822_init(dev_handle_t hdl,  buffer_t * buffer);
+em_msg sk9822_init(dev_handle_t hdl,  buffer_t * buffer, uint8_t led_cnt);
 void sk9822_clear(dev_handle_t hdl);
 void sk9822_reset(dev_handle_t hdl);
 void sk9822_set_rgb(dev_handle_t hdl, led_nr_t led_nr, uint8_t rgb[SK9822_COL_CNT]);

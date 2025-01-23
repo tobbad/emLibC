@@ -7,6 +7,7 @@
 #include "common.h"
 #include "device.h"
 #include "xpad.h"
+#include "state.h"
 #include "keyboard.h"
 #include "gpio_port.h"
 #define key_reset_cnt 100
@@ -72,33 +73,23 @@ void keyboard_reset(dev_handle_t dev, bool hard) {
 	return;
 }
 
-void keyboard_state(dev_handle_t dev, kybd_r_t *ret) {
+void keyboard_state(dev_handle_t dev, state_t *ret) {
 	if ((dev > 0) && my_kybd[dev] != NULL) {
 		my_kybd[dev]->state(dev, ret);
 	}
 	return;
 }
 ;
-void keyboard_print(kybd_r_t *state, char *timestamp) {
+void keyboard_print(state_t *state, char *title) {
 	if (!state) {
-		printf("%s Nothing returned"NL, timestamp);
+		printf("%010ld: No input"NL, HAL_GetTick());
 		return;
 	}
-	printf("%s: Label  ", timestamp);
-	for (uint8_t i = 0; i < state->key_cnt; i++) {
-		if (state->state.label[i] < 10) {
-			printf(" %c ", '0' + state->state.label[i]);
-		} else {
-			printf(" %c ", 'A' + (state->state.label[i] - 10));
-		}
+	if (title!=NULL){
+	    state_print(state, title);
+	} else {
+        state_print(state, "Keyboard");
 	}
-	printf(NL);
-	printf("%s: State  ", timestamp);
-	for (uint8_t i = 0; i < state->key_cnt; i++) {
-		char *text = key_state_3c[state->state.state[i]];
-		printf("%s", text);
-	}
-	printf(NL);
 }
 
 dev_type_e keyboard_get_dev_type(dev_handle_t dev) {

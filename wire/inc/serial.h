@@ -37,16 +37,17 @@ typedef enum {
 	RAW = 0,
 	TIMESTAMP = 1,
 	GAP_DETECT = 2,
-	ONE_SHOT = 4
+    ONE_SHOT = 4,
+    USE_DMA = 8,
 } print_e;
 
 
 typedef struct _sio_t{
 	UART_HandleTypeDef * uart;
-	bool	 ready[SIO_RXTX_CNT];	/* Internal use only */
+	uint8_t	 ready[SIO_RXTX_CNT];	/* Internal use only */
 	uint16_t buffer_size[SIO_RXTX_CNT];
 	int16_t  bytes_in_buffer[SIO_RXTX_CNT];
-	uint8_t *buffer[SIO_RXTX_CNT];
+	char *buffer[SIO_RXTX_CNT];
 	uint8_t mode;
 } sio_t;
 

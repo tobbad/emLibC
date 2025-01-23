@@ -20,7 +20,7 @@ typedef struct xpad_dev_s{
 	gpio_port_t zeile;
 	dev_type_e dev_type;
 	state_t state;
-	uint8_t key_cnt;
+	uint8_t cnt;
 	uint8_t first;
 } xpad_dev_t;
 
@@ -32,7 +32,7 @@ typedef struct xpad_s{
 	mkey_t key[MAX_BUTTON_CNT];
 	state_t state;
 	int8_t val2idx[MAX_BUTTON_CNT];
-	uint8_t key_cnt;
+	uint8_t cnt;
 	uint8_t first;
 	bool dirty;
 }xpad_t;

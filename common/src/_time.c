@@ -6,6 +6,7 @@
  */
 #include "common.h"
 #include "serial.h"
+#include "_time.h"
 #include "main.h"
 #define MEAS_CNT 10
 
@@ -70,7 +71,7 @@ void time_end_tx(){
 void time_print(char * titel){
 	printf("data:["NL);
 	for (uint8_t i=0; i<MEAS_CNT; i++){
-		printf("[ %llu, %u, %d ],"NL,_time.time[_time.idx].duration_tx_us, _time.time[_time.idx].count,_time.time[_time.idx].baud  );
+		printf("[ %llu, %u, %ld ],"NL,_time.time[_time.idx].duration_tx_us, _time.time[_time.idx].count,_time.time[_time.idx].baud  );
 	}
 	printf("]"NL);
 

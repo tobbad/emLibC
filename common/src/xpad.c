@@ -43,8 +43,8 @@ static xpad_dev_t default_xscan_dev= {
 	},
 	.dev_type=XSCAN,
     .state = {.label = {'1', '2', '3', 'a', '4', '5', '6', 'b', '7', '8', '9', 'c', '0', 'f', 'e' ,'d'},
-              .state={OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF}},
-	.key_cnt=16,
+              .state={OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
+	          .cnt=16},
 	.first = 0,
 
 };
@@ -52,7 +52,6 @@ static xpad_dev_t default_xscan_dev= {
 static xpad_dev_t default_eight_dev = {
 	.spalte={{{0}}},
 	.zeile ={
-		.cnt = 8,
 		.pin = {
 			{ .port = GPIOB, .pin = GPIO_PIN_10, .conf = { .Mode = GPIO_MODE_INPUT, .Pull =	GPIO_PULLUP } },
 			{ .port = GPIOB, .pin = GPIO_PIN_5,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
@@ -64,10 +63,11 @@ static xpad_dev_t default_eight_dev = {
 			{ .port = GPIOC, .pin = GPIO_PIN_1,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
 		},
 	},
+	.cnt =8,
 	.dev_type=EIGHTKEY,
 	.state = {.label = {'1', '2', '3', '4', '5', '6', '7', '8'},
-	          .state={OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF}},
-	.key_cnt=8,
+	          .state={OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
+	          .cnt=8},
 	.first = 1,
 
 };
@@ -219,7 +219,7 @@ static void xpad_init(dev_handle_t dev, dev_type_e dev_type, xpad_t *device) {
 		if (dev_type ==XSCAN) {
 			my_xpad[dev].spalte = &default_xscan_dev.spalte;
 			my_xpad[dev].zeile  = &default_xscan_dev.zeile;
-			my_xpad[dev].key_cnt  = default_xscan_dev.key_cnt;
+			my_xpad[dev].cnt  = default_xscan_dev.cnt;
 			my_xpad[dev].first  = default_xscan_dev.first;
 	        memcpy(&my_xpad[dev].state, &default_xscan_dev.state,  sizeof(state_t));
 		} else if(dev_type==EIGHTKEY) {
@@ -259,17 +259,17 @@ static void xpad_init(dev_handle_t dev, dev_type_e dev_type, xpad_t *device) {
 	printf(NL);
 }
 
-static void xpad_state(dev_handle_t dev, kybd_r_t *ret) {
+static void xpad_state(dev_handle_t dev, state_t *ret) {
 	if (mpy_xpad[dev] == NULL) {
 		printf("%010ld: No valid handle on state"NL, HAL_GetTick());
 		return;
 	}
 	uint8_t i = 0;
 	ret->first = my_xpad[dev].first;
-	for (uint8_t val = ret->first; val < ret->first + ret->key_cnt; val++) {
+	for (uint8_t val = ret->first; val < ret->first + ret->cnt; val++) {
 		uint8_t idx = my_xpad[dev].val2idx[val];
-		ret->state.state[i]   = my_xpad[dev].state.state[idx];
-		ret->state.label[i++] = my_xpad[dev].state.label[idx];
+		ret->.state[i]   = my_xpad[dev].state.state[idx];
+		ret->.label[i++] = my_xpad[dev].state.label[idx];
 	}
 	ret->dirty = my_xpad[dev].dirty;
 	return;

@@ -84,53 +84,35 @@ void serial_set_mode(print_e mode, bool doReset ) {
 int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     HAL_StatusTypeDef status = HAL_OK;
     uint16_t len=0;
-    uint8_t idx;
-    if ((sio.buffer_size[SIO_TX] == 0) || (sio.buffer[SIO_TX] == NULL)) {
-        if (sio.uart != NULL) {
-            sio.ready[SIO_TX] = false;
-            sio.bytes_in_buffer[SIO_TX] = len;
-            if (sio.mode&TIMESTAMP){
-             	len = sprintf(sio.buffer[SIO_TX], "%010ld: ", HAL_GetTick());
+    uint8_t idx=0;
+    if ((sio.buffer_size[SIO_TX] != 0) && (sio.buffer[SIO_TX] != NULL)) {
+        sio.ready[SIO_TX] = false;
+         sio.bytes_in_buffer[SIO_TX] = len;
+         if (sio.mode&TIMESTAMP){
+             len = sprintf(sio.buffer[SIO_TX], "%010ld: ", HAL_GetTick());
+          }
+         if (sio.mode&GAP_DETECT){
+             len += sprintf(&sio.buffer[SIO_TX][len], " %x ", idx);
+             idx =(idx+1)%USE_DMA;
+         }
+         memcpy(&tx_buffer.buffer[len], ptr, txLen);
+         len+=txLen;
+         if (sio.uart != NULL) {
+             if (sio.mode&USE_DMA){
+                 while (!ReadModify_write(&sio.ready[SIO_TX], -1)){}
+                 time_start(len);
+                 status = HAL_UART_Transmit_DMA(sio.uart, tx_buffer.buffer, len);
+                 time_end_su();
+             } else{
+                time_start(len);
+                status = HAL_UART_Transmit(sio.uart, tx_buffer.buffer, len, UART_TIMEOUT_MS);
+                time_end_tx();
+                sio.bytes_in_buffer[SIO_TX] = 0;
+                sio.ready[SIO_TX] = true;
              }
-            if (sio.mode&GAP_DETECT){
-             	len += sprintf(&sio.buffer[SIO_TX][len], " %x ", idx);
-            }
-            memcpy(&tx_buffer.buffer[len], ptr, txLen);
-            len+=txLen;
-            time_start(len);
-            GpioPinToggle(&uart_toggle);
-            status = HAL_UART_Transmit(sio.uart, tx_buffer.buffer, len, UART_TIMEOUT_MS);
-            GpioPinToggle(&uart_toggle);
-            time_end_tx();
-            sio.bytes_in_buffer[SIO_TX] = 0;
-            sio.ready[SIO_TX] = true;
         } else {
             errno = EWOULDBLOCK;
             status = HAL_ERROR;
-        }
-    } else {
-        if ((len > sio.buffer_size[SIO_TX]) || (sio.buffer[SIO_TX] == NULL)) {
-            errno = EMSGSIZE;
-            status = HAL_ERROR;
-            return -1;
-        } else if (sio.ready[SIO_TX]) {
-            while (!ReadModify_write((bool *)&sio.ready[SIO_TX], -1)){}
-            if (sio.mode&TIMESTAMP){
-             	len = sprintf(tx_buffer.buffer, "%010ld: ", HAL_GetTick());
-             }
-            if (sio.mode&GAP_DETECT){
-             	len += sprintf(tx_buffer.buffer, " %x ", idx);
-            }
-            memcpy(&tx_buffer.buffer[len], ptr, txLen);
-            len+=txLen;
-            time_start(len);
-            //GpioPinToggle(&uart_toggle);
-            status = HAL_UART_Transmit_DMA(sio.uart, tx_buffer.buffer, len);
-            time_end_su();
-        } else {
-            errno = EWOULDBLOCK;
-            status = HAL_ERROR;
-            return -1;
         }
     }
     return len;
@@ -180,7 +162,7 @@ int __io_putchar(char ch) {
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
     if (huart == sio.uart) {
         /* Set transmission flag: transfer complete */
-         while (!ReadModify_write((bool*)&sio.ready[SIO_TX], -1)){}
+         while (!ReadModify_write(&sio.ready[SIO_TX], -1)){}
          time_end_tx();
         //GpioPinToggle(&uart_toggle);
         sio.bytes_in_buffer[SIO_TX] = 0;
