@@ -11,7 +11,7 @@
 
 static state_t my_kybd = {
      .state=  {.state=  {  OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
-              .label = {'R', 1, 2, 3, 4, 5, 6, 7, 8  }},
+               .label = {'R', 1, 2, 3, 4, 5, 6, 7, 8  }},
     .cnt=9,
     .first = 1, //First valid value
     .dirty = false,
