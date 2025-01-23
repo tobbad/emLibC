@@ -225,17 +225,17 @@ static void xpad_init(dev_handle_t dev, dev_type_e dev_type, xpad_t *device) {
 		} else if(dev_type==EIGHTKEY) {
 			my_xpad[dev].spalte  = &default_eight_dev.spalte;
 			my_xpad[dev].zeile   = &default_eight_dev.zeile;
-			my_xpad[dev].key_cnt = default_eight_dev.key_cnt;
+			my_xpad[dev].cnt = default_xscan_dev[dev].cnt;
 			my_xpad[dev].first   = default_eight_dev.first;
 			memcpy(&my_xpad[dev].state , &default_eight_dev.state, sizeof(state_t));
 		} else if (dev_type == TERMINAL) {
 			printf("%010ld: Setup terminal %d"NL, HAL_GetTick(), dev_type);
 		}
 	}
-	if (my_xpad[dev].key_cnt > 0) {
+	if (my_xpad[dev].cnt > 0) {
 		GpioPortInit(my_xpad[dev].spalte);
 	}
-	if (my_xpad[dev].key_cnt > 0) {
+	if (my_xpad[dev].cnt > 0) {
 		GpioPortInit(my_xpad[dev].zeile);
 	}
 	for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
@@ -243,7 +243,7 @@ static void xpad_init(dev_handle_t dev, dev_type_e dev_type, xpad_t *device) {
 		printf("%010ld: Label %c -> 0x%x"NL, HAL_GetTick(), my_xpad[dev].state.label[i], value);
 	}
 	memset(my_xpad[dev].val2idx, 0xff, MAX_BUTTON_CNT);
-	for (uint8_t val=my_xpad[dev].first;val<my_xpad[dev].key_cnt;val++){
+	for (uint8_t val=my_xpad[dev].first;val<my_xpad[dev].cnt;val++){
 		for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
 			uint8_t value=lable2uint8(my_xpad[dev].state.label[i]);
 			if (val==value){
@@ -252,7 +252,7 @@ static void xpad_init(dev_handle_t dev, dev_type_e dev_type, xpad_t *device) {
 			}
 		}
 	}
-	for (uint8_t val=my_xpad[dev].first;val<my_xpad[dev].key_cnt;val++){
+	for (uint8_t val=my_xpad[dev].first;val<my_xpad[dev].cnt;val++){
 		uint8_t value = lable2uint8(my_xpad[dev].state.label[val]);
 		printf("%010ld: val= %01x ->  %01x"NL, HAL_GetTick(), val,  value );
 	}
@@ -268,8 +268,8 @@ static void xpad_state(dev_handle_t dev, state_t *ret) {
 	ret->first = my_xpad[dev].first;
 	for (uint8_t val = ret->first; val < ret->first + ret->cnt; val++) {
 		uint8_t idx = my_xpad[dev].val2idx[val];
-		ret->.state[i]   = my_xpad[dev].state.state[idx];
-		ret->.label[i++] = my_xpad[dev].state.label[idx];
+		ret->state[i]   = my_xpad[dev].state.state[idx];
+		ret->label[i++] = my_xpad[dev].state.label[idx];
 	}
 	ret->dirty = my_xpad[dev].dirty;
 	return;
@@ -296,9 +296,9 @@ kybd_t xscan_dev = {
 	.reset= &xpad_reset,
 	.state = &xpad_state,
 	.dev_type = XSCAN,
-	._state= {.label = {'1', '2', '3', 'a', '4', '5', '6', 'b', '7', '8', '9', 'c', '0', 'f', 'e' ,'d'},
-	         .state = {OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF}}	,
-	.key_cnt = 16,
+	//.state= {.label = {'1', '2', '3', 'a', '4', '5', '6', 'b', '7', '8', '9', 'c', '0', 'f', 'e' ,'d'},
+	//         .state = {OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF}}	,
+	.cnt = 16,
 	.first = 0,
 };
 
@@ -308,9 +308,9 @@ kybd_t eight_dev = {
 	.reset =&xpad_reset,
 	.state = &xpad_state,
 	.dev_type = EIGHTKEY,
-	._state = {.label={'R','1', '2', '3','4', '5', '6','7', '8'},
-			.state={OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF}},
-	.key_cnt = 8,
+	//.state = {.label={'R','1', '2', '3','4', '5', '6','7', '8'},
+	//		.state={OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF}},
+	.cnt = 8,
 	.first = 1,
 };
 

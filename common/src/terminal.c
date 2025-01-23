@@ -10,8 +10,8 @@
 
 
 static state_t my_kybd = {
-           .state=  {.state=  {  OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
-                     .label = {'R', 1, 2, 3, 4, 5, 6, 7, 8  }},
+     .state=  {.state=  {  OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
+              .label = {'R', 1, 2, 3, 4, 5, 6, 7, 8  }},
     .cnt=9,
     .first = 1, //First valid value
     .dirty = false,
@@ -70,7 +70,7 @@ static void terminal_state(dev_handle_t dev, state_t *ret){
 }
 
 static void terminal_reset(dev_handle_t dev, bool hard){
-    for (uint8_t i= my_kybd.first; i<my_kybd.first+my_kybd.key_cnt;i++){
+    for (uint8_t i= my_kybd.first; i<my_kybd.first+my_kybd.cnt;i++){
         my_kybd.state.state[i] =OFF;
     }
     return ;
