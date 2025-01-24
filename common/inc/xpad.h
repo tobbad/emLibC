@@ -7,13 +7,11 @@
 #ifndef XPAD_H_
 #define XPAD_H_
 
-//#include "keyboard.h"
+#include "common.h"
+#include "keyboard.h"
 #include "gpio.h"
 #include "gpio_port.h"
 #define ZEILEN_CNT 4
-#define SPALTEN_CNT 4
-#define EIGHT_BUTTON_CNT 8
-#define MAX_BUTTON_CNT 16
 
 typedef struct xpad_dev_s{
 	gpio_port_t spalte;

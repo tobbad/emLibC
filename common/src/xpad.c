@@ -5,6 +5,7 @@
  *      Author: badi
  */
 #include "common.h"
+#include "state.h"
 #include "device.h"
 #include "gpio.h"
 #include "gpio_port.h"
@@ -16,6 +17,10 @@
 #define INDEX_2_ZEI(index)  ((uint8_t)(index%ZEILEN_CNT))
 #define INDEX_2_SPA(index) ((uint8_t)(((index - INDEX_2_ZEI(index)))%ZEILEN_CNT))
 #define MINIMAL_LINESTART 16
+
+#define ZEILEN_CNT 4
+#define SPALTEN_CNT 4
+#define EIGHT_BUTTON_CNT 8
 
 xpad_t my_xpad[DEVICE_CNT];
 xpad_t *mpy_xpad[DEVICE_CNT];
@@ -296,8 +301,6 @@ kybd_t xscan_dev = {
 	.reset= &xpad_reset,
 	.state = &xpad_state,
 	.dev_type = XSCAN,
-	//.state= {.label = {'1', '2', '3', 'a', '4', '5', '6', 'b', '7', '8', '9', 'c', '0', 'f', 'e' ,'d'},
-	//         .state = {OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF}}	,
 	.cnt = 16,
 	.first = 0,
 };
@@ -308,8 +311,6 @@ kybd_t eight_dev = {
 	.reset =&xpad_reset,
 	.state = &xpad_state,
 	.dev_type = EIGHTKEY,
-	//.state = {.label={'R','1', '2', '3','4', '5', '6','7', '8'},
-	//		.state={OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF}},
 	.cnt = 8,
 	.first = 1,
 };

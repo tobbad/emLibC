@@ -10,11 +10,10 @@
 #include <keyboard.h>
 
 static state_t my_kybd = {
-		.state = { .state  = { OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF },
-					.label = { 'R',  1,   2,   3,   4,   5,   6,   7,   8 } },
-		.cnt = 9,
-		.first = 1, //First valid value
-		.dirty = false,
+    .first = 1, //First valid value
+    .cnt = 9,
+    .state  = { OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF },
+    .label =  { 'R', '1', '2', '3', '4', '5', '6', '7', '8' }
 };
 
 static bool check_key(char ch);
@@ -49,11 +48,11 @@ static uint16_t terminal_scan(dev_handle_t dev) {
 		if (check_key(ch)) {
 			if (ch == 'R') {
 				res = 1;
-				my_kybd.state.state[res] = ON;
+				my_kybd.state[res] = ON;
 			} else {
 				ch = ch - '0';
 				if ((ch > 0) && (ch < 9)) {
-					my_kybd.state.state[ch] = (my_kybd.state.state[ch] + 1)
+					my_kybd.state[ch] = (my_kybd.state[ch] + 1)
 							% KEY_STAT_CNT;
 				} else {
 					printf("%08ld: Ignore imnvalid key %d"NL, HAL_GetTick(),
@@ -68,12 +67,12 @@ static uint16_t terminal_scan(dev_handle_t dev) {
 }
 
 static void terminal_state(dev_handle_t dev, state_t *ret) {
-	*ret = my_kybd;
+	ret = &my_kybd;
 }
 
 static void terminal_reset(dev_handle_t dev, bool hard) {
 	for (uint8_t i = my_kybd.first; i < my_kybd.first + my_kybd.cnt; i++) {
-		my_kybd.state.state[i] = OFF;
+		my_kybd.state[i] = OFF;
 	}
 	return;
 }
@@ -84,6 +83,9 @@ kybd_t terminal_dev = {
 		.reset =&terminal_reset,
 		.state = &terminal_state,
 		.dev_type = TERMINAL,
+		.cnt = 8,
+		.first= 1
+
 };
 
 int8_t terminal_waitForKey(char **key) {

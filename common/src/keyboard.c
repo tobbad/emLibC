@@ -6,8 +6,8 @@
  */
 #include "common.h"
 #include "device.h"
-#include "xpad.h"
 #include "state.h"
+#include "xpad.h"
 #include "keyboard.h"
 #include "gpio_port.h"
 #define key_reset_cnt 100

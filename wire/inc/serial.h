@@ -52,7 +52,7 @@ typedef struct _sio_t{
 } sio_t;
 
 typedef struct buf_s{
-	uint8_t buffer[LINE_LENGTH];
+	char buffer[LINE_LENGTH];
 	bool isValid;
 } buf_t;
 

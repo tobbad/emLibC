@@ -7,8 +7,7 @@
 
 #ifndef INC_STATE_H_
 #define INC_STATE_H_
-
-#include "xpad.h"
+#include "common.h"
 
 typedef enum{
     OFF,
