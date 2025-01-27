@@ -82,7 +82,6 @@ void serial_set_mode(print_e mode, bool doReset ) {
 }
 
 int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
-    HAL_StatusTypeDef status = HAL_OK;
     uint16_t len=0;
     uint8_t idx=0;
     if ((sio.buffer_size[SIO_TX] != 0) && (sio.buffer[SIO_TX] != NULL)) {
