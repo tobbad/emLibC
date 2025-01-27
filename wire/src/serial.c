@@ -113,11 +113,11 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
 		 if (sio.mode&USE_DMA){
 			 while (!ReadModify_write(&sio.ready[SIO_TX], -1)){}
 			 time_start(len);
-			 status = HAL_UART_Transmit_DMA(sio.uart, (uint8_t*)ptr, len);
+			 HAL_UART_Transmit_DMA(sio.uart, (uint8_t*)ptr, len);
 			 time_end_su();
 		 } else{
 			time_start(len);
-			status = HAL_UART_Transmit(sio.uart, (uint8_t*)ptr, len, UART_TIMEOUT_MS);
+			HAL_UART_Transmit(sio.uart, (uint8_t*)ptr, len, UART_TIMEOUT_MS);
 			time_end_tx();
 			sio.bytes_in_buffer[SIO_TX] = 0;
 			sio.ready[SIO_TX] = true;
