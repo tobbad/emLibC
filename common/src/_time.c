@@ -63,7 +63,7 @@ void time_end_tx(){
 		_time.idx  = (_time.idx+1)%MEAS_CNT;
         if (_time.idx==0&&_time.mode==ONE_SHOT){
         	_time.idx = -1;
-        	doLoop = false;
+        	//doLoop = false;
         }
  	}
 }

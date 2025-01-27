@@ -57,7 +57,7 @@
 #include "serial.h"
 #include "_time.h"
 static sio_t sio;
-buf_t rx_buffer;
+static buf_t rx_buffer;
 static buf_t tx_buffer;
 
 sio_res_e serial_init(sio_t *init) {
@@ -95,26 +95,38 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
              len += sprintf(&sio.buffer[SIO_TX][len], " %x ", idx);
              idx =(idx+1)%USE_DMA;
          }
+         memcpy(&sio.buffer[SIO_TX][len], ptr, txLen);
+         len+=txLen;
+         ptr =(uint8_t*) sio.buffer[SIO_TX];
+     }else{
+         if (sio.mode&TIMESTAMP){
+             len = sprintf(tx_buffer.buffer, "%010ld: ", HAL_GetTick());
+          }
+         if (sio.mode&GAP_DETECT){
+             len += sprintf(&tx_buffer.buffer[len], " %x ", idx);
+             idx =(idx+1)%USE_DMA;
+         }
          memcpy(&tx_buffer.buffer[len], ptr, txLen);
          len+=txLen;
-         if (sio.uart != NULL) {
-             if (sio.mode&USE_DMA){
-                 while (!ReadModify_write(&sio.ready[SIO_TX], -1)){}
-                 time_start(len);
-                 status = HAL_UART_Transmit_DMA(sio.uart, (uint8_t*)tx_buffer.buffer, len);
-                 time_end_su();
-             } else{
-                time_start(len);
-                status = HAL_UART_Transmit(sio.uart, (uint8_t*)tx_buffer.buffer, len, UART_TIMEOUT_MS);
-                time_end_tx();
-                sio.bytes_in_buffer[SIO_TX] = 0;
-                sio.ready[SIO_TX] = true;
-             }
-        } else {
-            errno = EWOULDBLOCK;
-            status = HAL_ERROR;
-        }
-    }
+         ptr =(uint8_t*)tx_buffer.buffer;
+     }
+	 if (sio.uart != NULL) {
+		 if (sio.mode&USE_DMA){
+			 while (!ReadModify_write(&sio.ready[SIO_TX], -1)){}
+			 time_start(len);
+			 status = HAL_UART_Transmit_DMA(sio.uart, (uint8_t*)ptr, len);
+			 time_end_su();
+		 } else{
+			time_start(len);
+			status = HAL_UART_Transmit(sio.uart, (uint8_t*)ptr, len, UART_TIMEOUT_MS);
+			time_end_tx();
+			sio.bytes_in_buffer[SIO_TX] = 0;
+			sio.ready[SIO_TX] = true;
+		 }
+	} else {
+		errno = EWOULDBLOCK;
+		status = HAL_ERROR;
+	}
     return len;
 }
 
