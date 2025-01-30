@@ -88,7 +88,8 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
         sio.ready[SIO_TX] = false;
          sio.bytes_in_buffer[SIO_TX] = len;
          if (sio.mode&TIMESTAMP){
-             len = sprintf(sio.buffer[SIO_TX], "%010ld: ", HAL_GetTick());
+        	 uint32_t t=HAL_GetTick();
+             len = sprintf(sio.buffer[SIO_TX], "%010ld: ", t);
           }
          if (sio.mode&GAP_DETECT){
              len += sprintf(&sio.buffer[SIO_TX][len], " %x ", idx);

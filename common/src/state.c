@@ -47,7 +47,7 @@ void state_clear(state_t *state, uint8_t nr){
 
 void state_print(state_t *state,  char *title ){
     if (title!=NULL){
-        printf("%08ld: State %s on"NL, HAL_GetTick(), title);
+        printf("State %s on"NL, title);
     }
     printf("Label: ");
     for (uint8_t i = state->first; i<state->first+state->cnt; i++){
@@ -58,7 +58,7 @@ void state_print(state_t *state,  char *title ){
         printf("%01x", state->state[i]);
     }
     printf(NL);
-    (state->dirty) ? printf("%08ld: Dirty"NL, HAL_GetTick()): printf("%08ld: Not Dirty"NL, HAL_GetTick());
+    (state->dirty) ? printf("Dirty"NL, HAL_GetTick()): printf("Not Dirty"NL, HAL_GetTick());
 }
 
 bool state_propagate(state_t *state, uint8_t nr){

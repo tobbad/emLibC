@@ -43,7 +43,7 @@ em_msg device_init(device_t * dev, void * user_data) {
 			dev->open(dev_nr, user_data);
 		}
 	} else {
-		printf("%010ld: Cannot find device"NL, HAL_GetTick());
+		printf("Cannot find device"NL);
 	}
 	return dev_nr;
 }

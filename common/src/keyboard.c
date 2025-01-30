@@ -42,7 +42,7 @@ dev_handle_t keyboard_init(kybd_t *kybd, xpad_t *device) {
 			kybd->init(dev_nr, kybd->dev_type, device);
 		}
 	} else {
-		printf("%010ld: Cannot find device"NL, HAL_GetTick());
+		printf("Cannot find device"NL);
 	}
 	return dev_nr;
 }
@@ -60,7 +60,7 @@ uint16_t keyboard_scan(dev_handle_t dev) {
 	if ((lcnt>0) &&(cnt-lcnt)%key_reset_cnt==0){
 		keyboard_reset(dev, false);
 		lcnt=-1;
-		printf("%010ld: Reset dirty"NL, HAL_GetTick());
+		printf("Reset dirty"NL);
 	}
 	cnt++;
 	return res;
@@ -82,7 +82,7 @@ void keyboard_state(dev_handle_t dev, state_t *ret) {
 ;
 void keyboard_print(state_t *state, char *title) {
 	if (!state) {
-		printf("%010ld: No input"NL, HAL_GetTick());
+		printf("No input"NL);
 		return;
 	}
 	if (title!=NULL){

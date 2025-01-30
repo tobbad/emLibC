@@ -40,7 +40,7 @@ static uint16_t terminal_scan(dev_handle_t dev) {
 
 	if (!asked) {
 		asked = true;
-		printf("%08ld: Please enter key"NL, HAL_GetTick());
+		printf("Please enter key"NL);
 	}
 	HAL_StatusTypeDef status;
 	status = HAL_UART_Receive(&huart2, &ch, 1, HAL_MAX_DELAY);
@@ -55,8 +55,7 @@ static uint16_t terminal_scan(dev_handle_t dev) {
 					my_kybd.state[ch] = (my_kybd.state[ch] + 1)
 							% KEY_STAT_CNT;
 				} else {
-					printf("%08ld: Ignore imnvalid key %d"NL, HAL_GetTick(),
-							ch);
+					printf("Ignore imnvalid key %d"NL,ch);
 				}
 			}
 			asked = false;
