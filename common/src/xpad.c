@@ -12,12 +12,8 @@
 #include "keyboard.h"
 #include "xpad.h"
 
-#define ZEI_SPA_2_INDEX(zeile, spalte ) (uint8_t)(spalte*ZEILEN_CNT+zeile)
-#define INDEX_2_ZEI_SPA(index) (  ((uint8_t)(index%ZEILEN_CNT)), ((uint8_t)(index-(index%ZEILEN_CNT)*ZEILEN_CNT) ))
-#define INDEX_2_ZEI(index)  ((uint8_t)(index%ZEILEN_CNT))
-#define INDEX_2_SPA(index) ((uint8_t)(((index - INDEX_2_ZEI(index)))%ZEILEN_CNT))
-#define MINIMAL_LINESTART 16
 
+#define MINIMAL_LINESTART 16
 #define ZEILEN_CNT 4
 #define SPALTEN_CNT 4
 #define EIGHT_BUTTON_CNT 8
@@ -35,10 +31,10 @@ static xpad_dev_t default_xscan_dev= {
 			{	.port=GPIOB, .pin=GPIO_PIN_0, .conf= {.Mode=GPIO_MODE_OUTPUT_PP, .Pull=GPIO_PULLUP,}}, // spalte 3
 			{	.port=GPIOC, .pin=GPIO_PIN_1, .conf= {.Mode=GPIO_MODE_OUTPUT_PP, .Pull=GPIO_PULLUP,}}, // spalte 4
 		},
-		.cnt=4 ,
+		.cnt=SPALTEN_CNT ,
 	},
 	.zeile= { // Input
-		.cnt=4 ,
+		.cnt=ZEILEN_CNT ,
 		.pin={
 			{	.port=GPIOB, .pin= GPIO_PIN_10,  .conf= {.Mode=GPIO_MODE_INPUT, .Pull=GPIO_PULLUP,}}, // zeilen 1
 			{	.port=GPIOB, .pin= GPIO_PIN_5 ,  .conf= {.Mode=GPIO_MODE_INPUT, .Pull=GPIO_PULLUP,}}, // zeilen 2
@@ -57,6 +53,7 @@ static xpad_dev_t default_xscan_dev= {
 static xpad_dev_t default_eight_dev = {
 	.spalte={{{0}}},
 	.zeile ={
+		.cnt =EIGHT_BUTTON_CNT,
 		.pin = {
 			{ .port = GPIOB, .pin = GPIO_PIN_10, .conf = { .Mode = GPIO_MODE_INPUT, .Pull =	GPIO_PULLUP } },
 			{ .port = GPIOB, .pin = GPIO_PIN_5,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
@@ -68,7 +65,7 @@ static xpad_dev_t default_eight_dev = {
 			{ .port = GPIOC, .pin = GPIO_PIN_1,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
 		},
 	},
-	.cnt =8,
+
 	.dev_type=EIGHTKEY,
 	.state = {.label = {'1', '2', '3', '4', '5', '6', '7', '8'},
 	          .state={OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
@@ -76,6 +73,22 @@ static xpad_dev_t default_eight_dev = {
 	.first = 1,
 
 };
+
+static uint8_t index_2_zei(xpad_t *kbd, uint8_t index){
+	uint8_t res = index%kbd->spalte->cnt;
+	return res;
+
+}
+static uint8_t index_2_spa(xpad_t *kbd, uint8_t  index){
+	uint8_t zei = index_2_zei(kbd, index);
+	uint8_t res = index - zei*kbd->spalte->cnt;
+	return res;
+}
+
+static uint8_t zei_spa_2_index(xpad_t *kbd, uint8_t zeile, uint8_t spalte){
+	return (uint8_t)(spalte+zeile*kbd->spalte->cnt);
+}
+
 
 static uint8_t lable2uint8(char label){
 	uint8_t value = label -'0';
@@ -113,8 +126,8 @@ static uint8_t xpad_update_key(uint8_t dev, uint8_t index, bool pinVal) {
 //		printf("%010ld: Pushed @ (index= %d)"NL, HAL_GetTick(), index);
 //	}
 	//uint8_t z,s = INDEX_2_ZEI_SPA(index);
-	uint8_t z = INDEX_2_ZEI(index);
-	uint8_t s = INDEX_2_SPA(index);
+	uint8_t z = index_2_zei(&my_xpad[dev], index);
+	uint8_t s = index_2_spa(&my_xpad[dev], index);
 	uint8_t res=0;
 //	if (my_xpad[dev].key[index].current ^ my_xpad[dev].key[index].last) {
 //		printf("%010ld: Detected Key @ (index =%d)"NL, HAL_GetTick(), index);
@@ -176,11 +189,11 @@ static uint16_t xpad_read_zeile(dev_handle_t dev, uint8_t spalten_nr) {
 		return 0;
 	}
 	uint8_t res = 0;
-	for (int8_t z =0 ; z<ZEILEN_CNT; z++) {
+	for (int8_t z =0 ; z<my_xpad[dev].zeile->cnt; z++) {
 		bool pinVal = 0;
 		GpioPinRead(&my_xpad[dev].zeile->pin[z], &pinVal);
 		pinVal = !pinVal;
-		uint8_t index = ZEI_SPA_2_INDEX(z, spalten_nr);
+		uint8_t index = zei_spa_2_index(&my_xpad[dev], z, spalten_nr);
 		res = res | xpad_update_key(dev, index, pinVal);
 	}
 	return res;
@@ -197,7 +210,7 @@ static uint16_t xpad_spalten_scan(dev_handle_t dev) {
 		return false;
 	}
 	uint16_t res = 0;
-	for (uint8_t s = 0; s < SPALTEN_CNT; s++) {
+	for (uint8_t s = 0; s < my_xpad[dev].spalte->cnt; s++) {
 		uint8_t ir = 0;
 		xpad_reset_spalten_pin(dev, s);
 		HAL_Delay(SETTLE_TIME_MS);
