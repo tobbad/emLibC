@@ -124,7 +124,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
 		 }
 	} else {
 		errno = EWOULDBLOCK;
-		status = HAL_ERROR;
+		len  = EM_ERR;
 	}
     return len;
 }

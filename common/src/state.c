@@ -9,7 +9,7 @@
 #include "state.h"
 
 void  state_init(state_t *state){
-    memcpy(state->label, "123456789ABCDEF", MAX_BUTTON_CNT);
+    memcpy(state->label, "123456789ABCDEFK", MAX_BUTTON_CNT);
     for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
         state->state[i] = OFF;
     }
