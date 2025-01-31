@@ -45,8 +45,9 @@ static xpad_dev_t default_xscan_dev= {
 	.dev_type=XSCAN,
     .state = {.label = {'1', '2', '3', 'a', '4', '5', '6', 'b', '7', '8', '9', 'c', '0', 'f', 'e' ,'d'},
               .state={OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
-	          .cnt=ZEILEN_CNT*SPALTEN_CNT},
-	.first = 0,
+	          .cnt=ZEILEN_CNT*SPALTEN_CNT,
+			  .first = 0,},
+
 
 };
 
@@ -67,10 +68,11 @@ static xpad_dev_t default_eight_dev = {
 	},
 
 	.dev_type=EIGHTKEY,
-	.state = {.label = {'1', '2', '3', '4', '5', '6', '7', '8'},
+	.state = {.label = {'1', '2', '3', '4', '5', '6', '7', '8', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
 	          .state={OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
-	          .cnt=EIGHT_BUTTON_CNT},
-	.first = 1,
+	          .cnt=EIGHT_BUTTON_CNT,
+			  .first = 1,
+},
 
 };
 
@@ -123,7 +125,7 @@ static void xpad_reset_spalten_pin(dev_handle_t dev, uint8_t spalten_nr) {
 static uint8_t xpad_update_key(uint8_t dev, uint8_t index, bool pinVal) {
 	my_xpad[dev].key[index].current = pinVal;
 //	if (pinVal) {
-//		printf("Pushed @ (index= %d)"NL, index);
+//		printf("Pushed @ (index= %d) to %d"NL, index, pinVal);
 //	}
 	//uint8_t z,s = INDEX_2_ZEI_SPA(index);
 	uint8_t z = index_2_zei(&my_xpad[dev], index);
@@ -138,9 +140,9 @@ static uint8_t xpad_update_key(uint8_t dev, uint8_t index, bool pinVal) {
 	if (my_xpad[dev].key[index].unstable) {
 		if (my_xpad[dev].key[index].current == my_xpad[dev].key[index].last) {
 			my_xpad[dev].key[index].cnt++;
-			if (index==7){
-				printf("index %d cnt is %d", index,my_xpad[dev].key[index].cnt);
-			}
+			//printf("Increased index %d to %d (pinVal=%d)"NL, index, my_xpad[dev].key[index].cnt, pinVal);
+		} else {
+			my_xpad[dev].key[index].cnt=0;
 		}
 	}
 	if (my_xpad[dev].key[index].cnt > STABLE_CNT) {
@@ -149,6 +151,7 @@ static uint8_t xpad_update_key(uint8_t dev, uint8_t index, bool pinVal) {
 		char label = my_xpad[dev].state.label[index];
 		my_xpad[dev].key[index].last = pinVal;
 		my_xpad[dev].key[index].stable = pinVal;
+		//printf("Reached index %d to %d (pinVal=%d)"NL, index,STABLE_CNT, pinVal);
 		if (pinVal) {
 			my_xpad[dev].state.state[index] = ((my_xpad[dev].state.state[index] + 1)
 					% KEY_STAT_CNT);
@@ -240,13 +243,11 @@ static void xpad_init(dev_handle_t dev, dev_type_e dev_type, xpad_t *device) {
 			my_xpad[dev].spalte = &default_xscan_dev.spalte;
 			my_xpad[dev].zeile  = &default_xscan_dev.zeile;
 			my_xpad[dev].state  = default_xscan_dev.state;
-			my_xpad[dev].first  = default_xscan_dev.first;
 	        memcpy(&my_xpad[dev].state, &default_xscan_dev.state,  sizeof(state_t));
 		} else if(dev_type==EIGHTKEY) {
 			my_xpad[dev].spalte  = &default_eight_dev.spalte;
 			my_xpad[dev].zeile   = &default_eight_dev.zeile;
 			my_xpad[dev].state = default_eight_dev.state;
-			my_xpad[dev].first   = default_eight_dev.first;
 			memset(&my_xpad[dev].state, 0 ,sizeof(state_t));
 			memcpy(&my_xpad[dev].state , &default_eight_dev.state, sizeof(state_t));
 		} else if (dev_type == TERMINAL) {
@@ -266,7 +267,7 @@ static void xpad_init(dev_handle_t dev, dev_type_e dev_type, xpad_t *device) {
 	}
 
 	memset(my_xpad[dev].val2idx, 0xff, MAX_BUTTON_CNT);
-	for (uint8_t val=my_xpad[dev].first;val<my_xpad[dev].first+my_xpad[dev].state.cnt;val++){
+	for (uint8_t val=my_xpad[dev].state.first;val<my_xpad[dev].state.first+my_xpad[dev].state.cnt;val++){
 		for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
 			uint8_t value=lable2uint8(my_xpad[dev].state.label[i]);
 			if (val==value){
@@ -275,7 +276,7 @@ static void xpad_init(dev_handle_t dev, dev_type_e dev_type, xpad_t *device) {
 			}
 		}
 	}
-	for (uint8_t val=my_xpad[dev].first;val<my_xpad[dev].state.cnt+my_xpad[dev].first+1;val++){
+	for (uint8_t val=my_xpad[dev].state.first;val<my_xpad[dev].state.cnt+my_xpad[dev].state.first;val++){
 		printf("val= %01x ->  %01x"NL, val, my_xpad[dev].val2idx[val] );
 	}
 	printf(NL);
@@ -287,7 +288,7 @@ static void xpad_state(dev_handle_t dev, state_t *ret) {
 		return;
 	}
 	uint8_t i = 0;
-	ret->first = my_xpad[dev].first;
+	ret->first = ret->first;
 	for (uint8_t val = ret->first; val < ret->first + ret->cnt; val++) {
 		uint8_t idx = my_xpad[dev].val2idx[val];
 		ret->state[i]   = my_xpad[dev].state.state[idx];
@@ -331,44 +332,4 @@ kybd_t eight_dev = {
 	.cnt = 8,
 	.first = 1,
 };
-
-//void xpad_iprint(xpad_t *state, char *timestamp) {
-//	const uint8_t maxcnt = MINIMAL_LINESTART + 7;
-//	char text[maxcnt + 1];
-//	if (!state) {
-//		printf("%s Nothing returned"NL, timestamp);
-//		return;
-//	}
-//	snprintf(text, maxcnt, "%s%s", timestamp, "Value  ");
-//	printf(text);
-//	for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
-//		printf(" %C ", state->state.label[i]);
-//	}
-//	printf(NL);
-//	snprintf(text, maxcnt, "%s%s", timestamp, "State   ");
-//	printf(text);
-//	for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
-//		printf("%s", key_state_3c[state->state.state[i]]);
-//	}
-//	printf(NL);
-//	snprintf(text, maxcnt, "%s%s", timestamp, "Last    ");
-//
-//	for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
-//		printf("%03d", state->key[i].last);
-//	}
-//	printf(NL);
-//	snprintf(text, maxcnt, "%s%s", timestamp, "Current  ");
-//
-//	for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
-//		printf("%03d", state->key[i].current);
-//	}
-//	printf(NL);
-//	snprintf(text, maxcnt, "%s%s", timestamp, "Cnt      ");
-//
-//	for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
-//		printf("%03d", state->key[i].cnt);
-//	}
-//	printf(NL);
-//
-//}
 

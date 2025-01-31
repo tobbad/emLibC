@@ -14,7 +14,6 @@
 
 typedef struct xpad_s xpad_t;
 
-#define STABLE_CNT 10
 #define SETTLE_TIME_MS	1
 #define SCAN_MS	5
 

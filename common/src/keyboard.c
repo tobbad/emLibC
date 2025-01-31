@@ -55,7 +55,7 @@ uint16_t keyboard_scan(dev_handle_t dev) {
 		res = my_kybd[dev]->scan(dev);
 	}
 	if (res>0){
-		lcnt=cnt;
+		lcnt=cnt-1;
 	}
 	if ((lcnt>0) &&(cnt-lcnt)%key_reset_cnt==0){
 		keyboard_reset(dev, false);

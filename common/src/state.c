@@ -40,7 +40,7 @@ void state_clear(state_t *state, uint8_t nr){
     nr--;
     if (state->state[nr] != OFF){
         state->state[nr] = OFF;
-        state->dirty=true;
+        state->dirty=false;
     }
     state_print(state, "Clear");
 }
@@ -50,15 +50,15 @@ void state_print(state_t *state,  char *title ){
         printf("State %s on"NL, title);
     }
     printf("Label: ");
-    for (uint8_t i = state->first; i<state->first+state->cnt; i++){
-        printf("%01x", i);
+    for (uint8_t i = 0; i<state->cnt; i++){
+        printf("%c", state->label[i]);
     }
-    printf(NL"Label: ");
-    for (uint8_t i = state->first; i<state->first+state->cnt;i++){
+    printf(NL"State: ");
+    for (uint8_t i = 0; i<state->cnt;i++){
         printf("%01x", state->state[i]);
     }
     printf(NL);
-    (state->dirty) ? printf("Dirty"NL, HAL_GetTick()): printf("Not Dirty"NL, HAL_GetTick());
+    (state->dirty) ? printf("Dirty"NL): printf("Not Dirty"NL);
 }
 
 bool state_propagate(state_t *state, uint8_t nr){
