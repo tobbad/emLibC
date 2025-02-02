@@ -16,11 +16,11 @@ void  state_init(state_t *state){
 }
 
 bool state_is_different(state_t *last, state_t *this){
-    bool dirty= true;
-    for (uint8_t i=last->first;i<last->first+last->cnt;i++){
-        dirty &= (last->state[i]==this->state[i]);
+    bool isTheSame= true;
+    for (uint8_t i=0;i<last->cnt;i++){
+    	isTheSame &= (last->state[i]==this->state[i]);
     }
-    return dirty;
+    return !isTheSame;
 }
 
 bool state_merge(state_t *inState, state_t *outState){
