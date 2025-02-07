@@ -33,5 +33,6 @@ bool state_propagate(state_t *state, uint8_t nr);
 void  state_reset(state_t * state, uint8_t nr);
 bool state_set(state_t * state, uint8_t nr);
 bool state_toggle(state_t * state, uint8_t nr);
+void  state_copy(state_t *from, state_t *to );
 
 #endif /* INC_STATE_H_ */

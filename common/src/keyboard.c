@@ -22,12 +22,12 @@ mkey_t reset_key = { .last=0, .current=0, .unstable=0, .cnt=0, .stable=true };
 static uint8_t keyboard_find_dev(kybd_t *kybd) {
 	for (uint8_t i = 0; i < DEVICE_CNT; i++) {
 		if (my_kybd[i] == kybd) {
-			return i + 1;
+			return i;
 		}
 	}
-	for (uint8_t i = 0; i < DEVICE_CNT; i++) {
+	for (uint8_t i = 1; i < DEVICE_CNT; i++) {
 		if (my_kybd[i] == NULL) {
-			return i + 1;
+			return i ;
 		}
 	}
 	return 0;

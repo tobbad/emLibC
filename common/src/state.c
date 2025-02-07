@@ -9,10 +9,11 @@
 #include "state.h"
 
 void  state_init(state_t *state){
-    memcpy(state->label, "123456789ABCDEFK", MAX_BUTTON_CNT);
+    memcpy(state->label, "0123456789ABCDEF", MAX_BUTTON_CNT);
     for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
         state->state[i] = OFF;
     }
+    state->dirty = false;
 }
 
 bool state_is_different(state_t *last, state_t *this){
@@ -25,13 +26,24 @@ bool state_is_different(state_t *last, state_t *this){
 
 bool state_merge(state_t *inState, state_t *outState){
     memset(outState->state, OFF, MAX_BUTTON_CNT);
-    for (uint8_t nr=inState->first; nr<inState->first+inState->cnt+1;nr++){
+    memcpy(outState->label, inState->label, MAX_BUTTON_CNT);
+    outState->dirty = false;
+    outState->first = inState->first;
+    outState->cnt = inState->cnt;
+    for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
+        outState->label[i] = inState->label[i];
+    }
+    for (uint8_t nr=outState->first; nr<outState->first+outState->cnt;nr++){
         if (inState->state[nr]!=outState->state[nr]) {
             outState->dirty=true;
             outState->state[nr] = inState->state[nr];
         }
     }
     return outState->dirty;
+
+}
+void  state_copy(state_t *from, state_t *to ){
+    memcpy(to, from, sizeof(state_t));
 
 }
 
@@ -47,7 +59,7 @@ void state_clear(state_t *state, uint8_t nr){
 
 void state_print(state_t *state,  char *title ){
     if (title!=NULL){
-        printf("State %s on"NL, title);
+        printf("%s"NL, title);
     }
     printf("Label: ");
     for (uint8_t i = 0; i<state->cnt; i++){

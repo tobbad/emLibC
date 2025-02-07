@@ -43,19 +43,19 @@ static uint16_t terminal_scan(dev_handle_t dev) {
 		printf("Please enter key"NL);
 	}
 	HAL_StatusTypeDef status;
-	status = HAL_UART_Receive(&huart2, &ch, 1, HAL_MAX_DELAY);
+	status = HAL_UART_Receive(&huart2, &ch, 1, 0);
 	if (status == HAL_OK) {
 		if (check_key(ch)) {
 			if (ch == 'R') {
-				res = 1;
+				res =0;
 				my_kybd.state[res] = ON;
 			} else {
-				ch = ch - '0';
-				if ((ch > 0) && (ch < 9)) {
-					my_kybd.state[ch] = (my_kybd.state[ch] + 1)
+			    res = ch - '0';
+				if ((res > 0) && (res < 9)) {
+					my_kybd.state[res] = (my_kybd.state[res] + 1)
 							% KEY_STAT_CNT;
 				} else {
-					printf("Ignore imnvalid key %d"NL,ch);
+					printf("Ignore invalid key %c"NL,ch);
 				}
 			}
 			asked = false;
@@ -66,7 +66,7 @@ static uint16_t terminal_scan(dev_handle_t dev) {
 }
 
 static void terminal_state(dev_handle_t dev, state_t *ret) {
-	ret = &my_kybd;
+	*ret = my_kybd;
 }
 
 static void terminal_reset(dev_handle_t dev, bool hard) {
@@ -96,7 +96,7 @@ int8_t terminal_waitForKey(char **key) {
 		if (((ch >= '0') && (ch < '9')) || (ch == 'R')) {
 			buffer[idx++] = ch;
 			ch = 0xFF;
-		} else {
+		} else{
 			buffer[idx] = '\0';
 			if (idx > 0) {
 				ch = 0;
