@@ -70,9 +70,12 @@ static void terminal_state(dev_handle_t dev, state_t *ret) {
 }
 
 static void terminal_reset(dev_handle_t dev, bool hard) {
-	for (uint8_t i = my_kybd.first; i < my_kybd.first + my_kybd.cnt; i++) {
-		my_kybd.state[i] = OFF;
-	}
+    my_kybd.dirty=false;
+    if (hard){
+        for (uint8_t i = my_kybd.first; i < my_kybd.first + my_kybd.cnt; i++) {
+            my_kybd.state[i] = OFF;
+        }
+    }
 	return;
 }
 
@@ -93,7 +96,7 @@ int8_t terminal_waitForKey(char **key) {
 	int16_t idx = 0;
 	while (ch == 0xff) {
 		HAL_UART_Receive(&huart2, &ch, 1, 0);
-		if (((ch >= '0') && (ch < '9')) || (ch == 'R')) {
+		if (((ch >= '0') && (ch < '9')) || (ch == 'R')|| (ch=='r')) {
 			buffer[idx++] = ch;
 			ch = 0xFF;
 		} else{

@@ -8,13 +8,25 @@
 #include "common.h"
 #include "state.h"
 
-void  state_init(state_t *state){
+void  state_reset(state_t *state){
     memcpy(state->label, "0123456789ABCDEF", MAX_BUTTON_CNT);
     for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
         state->state[i] = OFF;
     }
     state->dirty = false;
 }
+
+void state_reset_key(state_t * state, uint8_t nr){
+    assert(nr<MAX_BUTTON_CNT+1);
+    nr--;
+    if (state->state[nr]!=OFF){
+        state->state[nr] = OFF;
+        state->dirty=true;
+    }
+    return;
+
+};
+
 
 bool state_is_different(state_t *last, state_t *this){
     bool isTheSame= true;
@@ -86,16 +98,6 @@ bool state_propagate(state_t *state, uint8_t nr){
     return true;
 
 }
-void state_reset(state_t * state, uint8_t nr){
-    assert(nr<MAX_BUTTON_CNT+1);
-    nr--;
-    if (state->state[nr]!=OFF){
-        state->state[nr] = OFF;
-        state->dirty=true;
-    }
-    return;
-
-};
 bool state_set(state_t * state, uint8_t nr){
     bool dirty = false;
     assert(nr<MAX_BUTTON_CNT+1);

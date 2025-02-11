@@ -24,15 +24,15 @@ typedef struct state_s{
     bool dirty;
 } state_t;
 
-void state_init(state_t *state);
+void state_reset(state_t *state);
+void state_reset_key(state_t * state, uint8_t nr);
 bool state_is_different(state_t *last, state_t *this);
 bool state_merge(state_t *inState, state_t *outState);
 void state_clear(state_t *state, uint8_t nr);
 void state_print(state_t *state,  char *title );
 bool state_propagate(state_t *state, uint8_t nr);
-void  state_reset(state_t * state, uint8_t nr);
 bool state_set(state_t * state, uint8_t nr);
 bool state_toggle(state_t * state, uint8_t nr);
-void  state_copy(state_t *from, state_t *to );
+void state_copy(state_t *from, state_t *to );
 
 #endif /* INC_STATE_H_ */
