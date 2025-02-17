@@ -1,105 +1,79 @@
-# set minimum cmake version
-cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.10)
+project(MyLibraryTests)
 
-# project name and language
-project(unit_test
-    LANGUAGES C
-    VERSION 1.0.0
-    DESCRIPTION "Produce all tests"
-    )
+# Setze C++ Standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-set(CMAKE_CXX_STANDARD 11 CACHE STRING "The C++ standard to use")
-# example library
-set(cut "common/src/common.c;common/src/device.c;common/src/memmgr_flsf.c;common/src/memory_device.c;common/src/packet.c;common/src/ringbuffer.c;common/src/simple_test.c;common/src/slip.c;common/src/stream.c")
-add_library(cut STATIC "${cut}")
-include_directories("common/inc/")
-target_include_directories(cut PRIVATE "common/inc")
-message(STATUS "cut  = ${cut}")
+# Definiere eine optionaldebuge Compiler-Definition
+option(DEBUG "Aktiviere die benutzerdefinierte Funktion" ON)
 
-set(base "test/AllTests.cpp")
-message(STATUS  "base = ${base}")
+# Pfade zur Bibliothek
+set(COMMON_SRC_DIR "${CMAKE_SOURCE_DIR}/common/src")
+set(COMMON_INC_DIR "${CMAKE_SOURCE_DIR}/common/inc")
+set(COMMON_TEST_DIR "${CMAKE_SOURCE_DIR}/common/test")
+set(ALL_TESTS_FILE "${CMAKE_SOURCE_DIR}/test/AllTests.cpp")
+list(REMOVE_ITEM COMMON_HEADER_FILES "${COMMON_INC_DIR}/_time.h")
+list(REMOVE_ITEM COMMON_HEADER_FILES "${COMMON_INC_DIR}/mutex.h")
+list(REMOVE_ITEM COMMON_HEADER_FILES "${COMMON_INC_DIR}/xpad.h")
+list(REMOVE_ITEM COMMON_HEADER_FILES "${COMMON_INC_DIR}/keyboard.h")
+list(REMOVE_ITEM COMMON_HEADER_FILES "${COMMON_INC_DIR}/xpad.h")
+list(REMOVE_ITEM COMMON_HEADER_FILES "${COMMON_INC_DIR}/terminal.h")
+list(REMOVE_ITEM COMMON_HEADER_FILES "${COMMON_SRC_DIR}/slip.h")
+list(REMOVE_ITEM COMMON_HEADER_FILES "${COMMON_SRC_DIR}/state.h")
 
-set(tests "common/test/device_test.cpp;common/test/memmgr_test.cpp;common/test/packet_test.cpp;common/test/ringbuffer_test.cpp;common/test/simple_test.cpp;common/test/slip_test.cpp")
-message(STATUS  "tests = ${tests}")
+# GoogleTest Pfad
+set(GOOGLETEST_DIR "${CMAKE_SOURCE_DIR}/test/googletest/")
+# Füge GoogleTest hinzu
+message(STATUS "Füge GoogleTest hinzu...")
+add_subdirectory(${GOOGLETEST_DIR})
 
-foreach(test  ${tests})
-  get_filename_component(name ${test} NAME_WLE)
-  message(STATUS "ITEM is ${test}")
-  string(REPLACE "_" ";" my_list ${name}) 
-  list(LENGTH my_list len)
-  list(GET 0 my_list basic)
-  message(STATUS "my_list is ${my_list} has length ${len}")
-  message(STATUS "Build test ${test} as ${name} or ${basic}")
-  unset(name)
+# Zusätzlichen Include-Pfad definieren
+set(GTEST  "${CMAKE_SOURCE_DIR}/test/googletest/googletest")
+
+# Füge den zusätzlichen Include-Pfad zur Bibliothek hinzu
+#target_include_directories(my_library PUBLIC ${ADDITIONAL_INC_DIR})
+
+# Sammle alle Quell- und Testdateien
+message(STATUS "Sammle Quell- und Testdateien...")
+file(GLOB COMMON_SRC_FILES "${COMMON_SRC_DIR}/*.c")
+list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_SRC_DIR}/_time.c")
+list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_SRC_DIR}/mutex.c")
+list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_SRC_DIR}/xpad.c")
+list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_SRC_DIR}/keyboard.c")
+list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_SRC_DIR}/xpad.c")
+list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_SRC_DIR}/terminal.c")
+list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_SRC_DIR}/slip.c")
+list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_SRC_DIR}/state.c")
+file(GLOB TEST_SRC_FILES "${COMMON_TEST_DIR}/*.cpp")
+list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_TEST_DIR}/slip_test.c")
+list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_TEST_DIR}/state_test.c")
+
+
+# Erstelle die Bibliothek
+message(STATUS "Erstelle die Bibliothek...")
+add_library(cut ${COMMON_SRC_FILES})
+target_include_directories(cut PUBLIC ${COMMON_INC_DIR})
+
+# Füge die Compiler-Definition hinzu, wenn USE_CUSTOM_FEATURE aktiviert ist
+if(DEBUG)
+    target_compile_definitions(cut PUBLIC DEBUG)
+endif()
+
+add_compile_options(-H)
+
+# Erstelle eine ausführbare Datei für jeden Test
+foreach(TEST_FILE ${TEST_SRC_FILES})
+    get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
+    message(STATUS "Erstelle ausführbare Testdatei: ${TEST_NAME}")
+    add_executable(${TEST_NAME} ${TEST_FILE} ${ALL_TESTS_FILE})
+    target_include_directories(${TEST_NAME} PRIVATE ${COMMON_INC_DIR} ${GOOGLETEST_DIR} ${GTEST} )
+    target_link_libraries(${TEST_NAME} cut gtest gtest_main pthread)
+    add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
 endforeach()
-#target_link_libraries(ringbuffer cut)
-# we will use the network to fetch Google Test sources
-# make it possible to disable unit tests when not on network
-option(ENABLE_UNIT_TESTS "Enable unit tests" ON)
-message(STATUS "Enable testing: ${ENABLE_UNIT_TESTS}")
-message(STATUS "Build shared lib: ${BUILD_SHARED_LIBS}")
-if(ENABLE_UNIT_TESTS)
-  # the following code to fetch googletest
-  # is inspired by and adapted after:
-  #   - https://cmake.org/cmake/help/v3.11/module/FetchContent.html
-  include(FetchContent)
 
-  FetchContent_Declare(
-    googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG        release-1.8.0
-  )
+# Test mit CTest aktivieren
+message(STATUS "Aktiviere Tests mit CTest...")
+enable_testing()
 
-  FetchContent_GetProperties(googletest)
-
-  if(NOT googletest_POPULATED)
-    FetchContent_Populate(googletest)
-
-    # Prevent GoogleTest from overriding our compiler/linker options
-    # when building with Visual Studio
-    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-    # Prevent GoogleTest from using PThreads
-    set(gtest_disable_pthreads ON CACHE BOOL "" FORCE)
-
-    # adds the targers: gtest, gtest_main, gmock, gmock_main
-    add_subdirectory(
-      ${googletest_SOURCE_DIR}
-      ${googletest_BINARY_DIR}
-      )
-
-    # Silence std::tr1 warning on MSVC
-    if(MSVC)
-      foreach(_tgt gtest gtest_main gmock gmock_main)
-        target_compile_definitions(${_tgt}
-          PRIVATE
-            "_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING"
-          )
-      endforeach()
-    endif()
-  endif()
-
- foreach(test ${tests})
-    get_filename_component(my_name ${test} NAME_WLE)
-    message(STATUS "Test is ${test}")
-    string(REPLACE "_" ";" split ${my_name}) 
-    message(STATUS "Name is ${my_name}")
-    set(GET split 0 ${name} )
-    message(STATUS "Program name ${name}")
-    add_executable(${my_name} ${test})
-
- 
-    target_link_libraries(${my_name}
-      PRIVATE
-        ${cut}
-        gtest_main
-      )
-    add_test(
-      NAME ${my_name}
-      COMMAND "${name}"
-    )
-      
-    unset(my_name)
-  ENDFOREACH()
-  enable_testing()
-
- endif()
+message(STATUS "CMake Konfiguration abgeschlossen.")
