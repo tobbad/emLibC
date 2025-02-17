@@ -29,7 +29,6 @@ extern "C" {
 #define NL  NEWLINE
 #define LINE_LENGTH	96
 #define MAX_BUTTON_CNT 16
-
 #if !defined(MIN)
 #define MIN(a, b) ((a)<(b)?(a):(b))
 #endif
@@ -67,6 +66,7 @@ typedef struct buffer_t_ {
  */
 uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer, uint16_t buffer_size, bool write_asci);
 uint16_t common_crc16(uint8_t *data_p, uint16_t length);
+void PrintBuffer(uint8_t *buffer, uint8_t size, char *header);
 
 #ifdef __cplusplus
 }
