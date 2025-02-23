@@ -127,3 +127,12 @@ uint16_t common_crc16(uint8_t *data_p, uint16_t length)
     return (crc);
 }
 
+void PrintBuffer(uint8_t *buffer, uint8_t size, char *header) {
+    if (header!=NULL){
+        printf("Print %s msg size %d;"NL, header, size);
+    }
+    printf("Head"NL);
+    for (uint8_t i = 0; i < size; i++) {
+        printf(" %2d = 0x%02x"NL, i, buffer[i]);
+    }
+}
