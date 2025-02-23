@@ -8,34 +8,53 @@
 #include "common.h"
 #include "memory_device.h"
 
-uint8_t rcv_buffer[RCV_BUF_SIZE];
+typedef struct memory_device_t{
+	buffer_t *buffer;
+} memory_device_t;
 
-buffer_t memory_device_buffer = {.size=RCV_BUF_SIZE, .used=0, .mem=rcv_buffer, .pl=rcv_buffer};
+static memory_device_t mDev[DEVICE_CNT];
 
-em_msg memory_device_reset(buffer_t *buf)
+em_msg memory_device_open(dev_handle_t hdl, buffer_t *buf)
 {
-    printf("buffer_t Reset\n");
-    buf->used = 0;
-    memset(buf->mem, 0, buf->size);
-    return EM_OK;
+	if (mDev[hdl].buffer !=NULL){
+		mDev[hdl].buffer=buf;
+		memset(mDev[hdl].buffer->mem, 0, mDev[hdl].buffer->size);
+		return EM_OK;
+	}
+    return EM_ERR;
 }
 
-em_msg memory_device_write(void *user_data, const uint8_t *data, uint16_t count)
+em_msg memory_device_write(dev_handle_t hdl, const uint8_t *data, uint16_t count)
 {
-    buffer_t *buf = (buffer_t *)user_data;
-    if ((NULL != buf) && (buf->size-buf->used >= 1) && (NULL != data))
+    if ((NULL != mDev[hdl].buffer) && (mDev[hdl].buffer->used  >= 1) && (NULL != data))
     {
-        for (uint16_t i = 0;i<count; i++)
+    	uint16_t cnt = MIN(cnt,mDev[hdl].buffer->size- mDev[hdl].buffer->used );
+        for (uint16_t i = 0;i<cnt; i++)
         {
-            printf("buf[%d] = %d\n", buf->used, data[i]);
-            buf->pl[buf->used++] = data[i];
+            printf("set buf[%d] = %d\n", data[i]);
+            mDev[hdl].buffer->pl[mDev[hdl].buffer->used++] = data[i];
         }
         return EM_OK;
     }
     return EM_ERR;
 }
 
-em_msg memory_device_print(buffer_t *buf)
+em_msg memory_device_read(dev_handle_t hdl,  uint8_t *data, uint16_t count)
+{
+    if ((NULL != mDev[hdl].buffer) && (mDev[hdl].buffer->used >= 1) && (NULL != data))
+    {
+    	uint16_t cnt = MIN(cnt,mDev[hdl].buffer->size- mDev[hdl].buffer->used );
+        for (uint16_t i = 0;i<cnt; i++)
+        {
+            printf("buf[%d] = %d\n", data[i]);
+            data[i] = mDev[hdl].buffer->mem[i];
+        }
+        return EM_OK;
+    }
+    return EM_ERR;
+}
+
+em_msg memory_device_print(dev_handle_t hdl, buffer_t *buf)
 {
     static const uint32_t BUF_SIZE =310;
     char buffer[BUF_SIZE];
@@ -68,9 +87,9 @@ em_msg memory_device_print(buffer_t *buf)
 }
 
 device_t memory_device = {
-    .user_data=&memory_device_buffer,
-    .open=NULL,
-    .read=NULL,
+    .user_data=NULL,
+    .open=memory_device_open,
+    .read=memory_device_read,
     .write=memory_device_write,
     .ioctrl=NULL,
     .close=NULL,

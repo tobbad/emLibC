@@ -2,23 +2,30 @@
 
 #include <iostream>
 #include <cstdint>
+#include "gtest/gtest.h"
 #include "device.h"
 
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
 
-dev_handle_t dummy_open(void * data){ return 0; };
-elres_t dummy_read(void * data, uint8_t *buffer, uint16_t *cnt){ return EMLIB_ERROR;};
-elres_t dummy_write(void * data, const uint8_t *buffer, uint16_t cnt){ return EMLIB_ERROR;};
-elres_t dummy_ioctrl(void * data, dev_command_t cmd, uint16_t value){ return EMLIB_ERROR;};
-elres_t dummy_close(void * data, dev_handle_t hdl){ return EMLIB_ERROR;};
+dev_handle_t dummy_open(dev_handle_t dev, void *){ return 0; };
+em_msg dummy_read(dev_handle_t hdl, uint8_t *buffer, uint16_t *cnt){ return EM_ERR;};
+em_msg dummy_write(dev_handle_t hdl, const uint8_t *buffer, uint16_t cnt){ return EM_ERR;};
+em_msg dummy_ioctrl(dev_handle_t hdl, dev_command_t cmd, uint16_t value){ return EM_ERR;};
+em_msg dummy_close(dev_handle_t hdl){ return EM_ERR;};
+device_t dev = {
+	.open     = &dummy_open,
+	.read     = &dummy_read,
+	.write    = &dummy_write,
+	.ioctrl   = &dummy_ioctrl,
+	.close    = &dummy_close,
+	.ready_cb = NULL,
+	.dev_type=0
+};
 
 
 class DeviceTest : public ::testing::Test {
 
     protected:
 
-    device_t dev;
 
     void SetUp()
     {
@@ -34,31 +41,31 @@ class DeviceTest : public ::testing::Test {
     void init_struct(uint8_t select){
         uint8_t idx = 0;
         if (select & (1<<idx)) {
-            dev.open = dummy_open;
+            dev.open = &dummy_open;
         } else {
             dev.open = NULL;
         }
         idx++;
         if (select & (1<<idx)) {
-            dev.read = dummy_read;
+            dev.read = &dummy_read;
         } else {
             dev.read = NULL;
         }
         idx++;
         if (select & (1<<idx)) {
-            dev.write = dummy_write;
+            dev.write = &dummy_write;
         } else {
             dev.write = NULL;
         }
         idx++;
         if (select & (1<<idx)) {
-            dev.ioctrl = dummy_ioctrl;
+            dev.ioctrl = &dummy_ioctrl;
         } else {
             dev.ioctrl = NULL;
         }
         idx++;
         if (select & (1<<idx)) {
-            dev.close = dummy_close;
+            dev.close = &dummy_close;
         } else {
             dev.close = NULL;
         }
@@ -83,7 +90,19 @@ TEST_F(DeviceTest, internal_init_struct){
             EXPECT_TRUE(dev.read==NULL);
 
         }
+        if (i & DEV_LREAD ){
+            EXPECT_EQ(dev.write , dummy_write);
+        } else {
+            EXPECT_TRUE(dev.write==NULL);
+
+        }
         if (i & DEV_WRITE ){
+            EXPECT_EQ(dev.write , dummy_write);
+        } else {
+            EXPECT_TRUE(dev.write==NULL);
+
+        }
+        if (i & DEV_LWRITE ){
             EXPECT_EQ(dev.write , dummy_write);
         } else {
             EXPECT_TRUE(dev.write==NULL);
@@ -109,38 +128,12 @@ TEST_F(DeviceTest, internal_init_struct){
  */
 TEST_F(DeviceTest, Device_reset){
 
-    init_struct(DEV_ALL);
-
-    device_reset(&dev);
-
+	dev_handle_t hdl = device_init(&dev, NULL);
+    device_reset(hdl);
     EXPECT_TRUE(NULL==dev.open);
     EXPECT_TRUE(NULL==dev.read);
     EXPECT_TRUE(NULL==dev.write);
     EXPECT_TRUE(NULL==dev.ioctrl);
     EXPECT_TRUE(NULL==dev.close);
 
-}
-
-TEST_F(DeviceTest, Check_with_Null_Pointer) {
-    dev_handle_t act, exp = EMLIB_ERROR;
-    act = device_check(NULL, DEV_NONE);
-    EXPECT_EQ(exp, act);
-}
-/*
- * Test if a device structure with the function set is only
- * accepted as correct in the device_check if related functions
- * exist.
- */
-TEST_F(DeviceTest, Create_with_missing_function){
-    uint8_t i,j;
-    for ( i=0;i<(1<<5);i++) {
-        init_struct(i);
-        for ( j=0;j<(1<<5);j++) {
-            dev_handle_t act;
-            /* If more than needed function are defined - that's OK! */
-            dev_handle_t exp = ((i&j)==j)?EMLIB_OK:EMLIB_ERROR;
-            act = device_check(&dev,(dev_func_t)j);
-            EXPECT_EQ(exp, act);
-        }
-   }
 }

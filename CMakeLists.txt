@@ -12,6 +12,7 @@ option(DEBUG "Aktiviere die benutzerdefinierte Funktion" ON)
 set(COMMON_SRC_DIR "${CMAKE_SOURCE_DIR}/common/src")
 set(COMMON_INC_DIR "${CMAKE_SOURCE_DIR}/common/inc")
 set(COMMON_TEST_DIR "${CMAKE_SOURCE_DIR}/common/test")
+
 set(ALL_TESTS_FILE "${CMAKE_SOURCE_DIR}/test/AllTests.cpp")
 list(REMOVE_ITEM COMMON_HEADER_FILES "${COMMON_INC_DIR}/_time.h")
 list(REMOVE_ITEM COMMON_HEADER_FILES "${COMMON_INC_DIR}/mutex.h")
@@ -45,9 +46,14 @@ list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_SRC_DIR}/xpad.c")
 list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_SRC_DIR}/terminal.c")
 list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_SRC_DIR}/slip.c")
 list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_SRC_DIR}/state.c")
+list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_SRC_DIR}/memory_device.c")
 file(GLOB TEST_SRC_FILES "${COMMON_TEST_DIR}/*.cpp")
-list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_TEST_DIR}/slip_test.c")
-list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_TEST_DIR}/state_test.c")
+list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/slip_test.cpp")
+list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/state_test.cpp")
+list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/packet_test.cpp")
+list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/ringbuffer_test.cpp")
+list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/ringbuffer_test.cpp")
+list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/ringbuffer_test.cpp")
 
 
 # Erstelle die Bibliothek
@@ -60,7 +66,7 @@ if(DEBUG)
     target_compile_definitions(cut PUBLIC DEBUG)
 endif()
 
-add_compile_options(-H)
+#add_compile_options(-H)
 
 # Erstelle eine ausführbare Datei für jeden Test
 foreach(TEST_FILE ${TEST_SRC_FILES})

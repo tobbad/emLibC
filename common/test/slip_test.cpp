@@ -12,7 +12,6 @@
 #include "slip.h"
 
 #include "gtest/gtest.h"
-#include "gmock/gmock.h"
 
 using ::testing::Return;
 
@@ -73,9 +72,9 @@ TEST_F(SlipTest, GetStartValueInReceiveBuffer)
     uint8_t value = 42;
     slip_handle_e hdl = slip_start(&memory_device, SLIP_ENCODE_SIMPLE);
     EXPECT_EQ(SLIP_HANDLE_0, hdl);
-    elres_t res = slip_write(hdl, &value, 1);
+    em_msg res = slip_write(hdl, &value, 1);
     uint16_t size = slip_end(hdl);
-    EXPECT_EQ(EMLIB_OK, res);
+    EXPECT_EQ(EM_OK, res);
     EXPECT_EQ(3, size);
     EXPECT_EQ(SLIP_PKT_LIMIT, rcv_buffer[0]);
     EXPECT_EQ(value, rcv_buffer[1]);
@@ -86,7 +85,7 @@ TEST_F(SlipTest, CheckEncodeMapping)
 {
     uint8_t buf[] = {0xC0};
 
-    elres_t res;
+    em_msg res;
     uint16_t ser_size;
     for (uint16_t value = 0; value<256;value++)
     {
@@ -113,7 +112,7 @@ TEST_F(SlipTest, CheckEncodeMapping)
             res = slip_write(hdl, buf, 1);
             ser_size = slip_end(hdl);
 
-            EXPECT_EQ(EMLIB_OK, res);
+            EXPECT_EQ(EM_OK, res);
             if (is_esc)
             {
                 EXPECT_EQ(4, ser_size);
@@ -171,7 +170,7 @@ TEST_F(SlipTest, CheckDecodeMapping)
 TEST_F(SlipTest, AllUint8ValueCodec)
 {
     static const uint32_t PRSIZE = (6+8*3+2*8*3+3+16+1)*17+1;
-    elres_t res;
+    em_msg res;
     uint16_t size;
     uint8_t buffer[1024];
     //char prbuf[PRSIZE];
@@ -188,7 +187,7 @@ TEST_F(SlipTest, AllUint8ValueCodec)
     res = slip_write(hdl_dut, buffer, value);
     size = slip_end(hdl_dut);
     EXPECT_EQ(size, 256+/*Start/Stop 0x0c*/2+/*Count of ESC*/2);
-    EXPECT_EQ(EMLIB_OK, res);
+    EXPECT_EQ(EM_OK, res);
     EXPECT_EQ(SLIP_PKT_LIMIT, memory_device_buffer.mem[size-1]);
     memcpy(buffer, memory_device_buffer.mem, size);
 
@@ -202,7 +201,7 @@ TEST_F(SlipTest, AllUint8ValueCodec)
     hdl_dut = slip_start(&memory_device, SLIP_DECODE_SIMPLE);
     res = slip_write(hdl_dut, buffer, size);
     size = slip_end(hdl_dut);
-    EXPECT_EQ(EMLIB_OK, res);
+    EXPECT_EQ(EM_OK, res);
     EXPECT_EQ(value, size);
 
     //printf("Deserialized %d bytes\n", size);

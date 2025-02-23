@@ -13,32 +13,26 @@
 #include "packet.h"
 
 #include "gtest/gtest.h"
-#include "gmock/gmock.h"
-
-using ::testing::Return;
-
-#define BLK_SIZE 64
-#define BYTE_VAL(i) (i+10)
-
+#define BLK_SIZE 2000
 class PacketTest : public ::testing::Test {
     protected:
 
-    uint8_t memory[BLK_SIZE];
-    buffer_t buffer;
-    uint8_t wrbuf[BLK_SIZE<<1];
-
+    dev_handle_t hdl;
+    uint8_t buffer[BLK_SIZE];
+    mbuf buffer_t = {
+    	.size = BLK_SIZE,
+    	.used =0
+    	.mem = &buffer
+    	.pl = &buffer,
+    };
     void SetUp() override
     {
-        memset(memory, 0, BLK_SIZE);
-        buffer.mem = memory;
-        buffer.pl = &memory[PACKET_HEADER_SIZE];
-        buffer.size = BLK_SIZE;
+    	hdl = device_init(memory_device, mbuf)
+		decice_write(hdl);
         for (uint16_t idx=0;idx<BLK_SIZE - PACKET_HEADER_SIZE;idx++) {
             buffer.pl[idx] = BYTE_VAL(idx);
         }
-        buffer.used = BLK_SIZE - PACKET_HEADER_SIZE;
-        memory_device_reset(&memory_device_buffer);
-        memset(wrbuf,0, sizeof(wrbuf));
+		decice_write(hdl, buffer, BLK_SIZE);
     }
 
     void TearDown() override
@@ -49,9 +43,9 @@ class PacketTest : public ::testing::Test {
 
 TEST_F(PacketTest, initSucceed)
 {
-    elres_t res = packet_init();
+    em_msg res = packet_init();
 
-    EXPECT_EQ(EMLIB_OK, res);
+    EXPECT_EQ(EM_OK, res);
 }
 
 TEST_F(PacketTest, headerSize)
@@ -65,7 +59,7 @@ TEST_F(PacketTest, openInvalidParameterFail)
     dev_handle_t hdl;
 
     packet_init();
-    hdl = packet_open(NULL, PACKET_CH0, PACKET_NOT_RELIABLE, PACKET_NOT_CHECKED);
+    hdl = packet_open((packet_t)0, PACKET_NOT_RELIABLE, PACKET_NOT_CHECKED);
     EXPECT_EQ(DEV_HANDLE_NOTDEFINED, hdl);
 
     packet_init();
@@ -111,13 +105,13 @@ TEST_F(PacketTest, OpenMoreThanAllowedFails)
 
 TEST_F(PacketTest, WriteValidPacket)
 {
-    elres_t res;
+    em_msg res;
     dev_handle_t pktHdl = DEV_HANDLE_NOTDEFINED;
     packet_init();
     memory_device_print(&buffer);
     pktHdl = packet_open(&memory_device, PACKET_CH13, PACKET_NOT_RELIABLE, PACKET_NOT_CHECKED);
     res = packet_write(pktHdl, &buffer);
-    EXPECT_EQ(EMLIB_OK, res);
+    EXPECT_EQ(EM_OK, res);
     memory_device_print(&memory_device_buffer);
     for (uint8_t idx=0;idx<buffer.used;idx++) {
         uint8_t expVal = BYTE_VAL(idx);
@@ -125,7 +119,7 @@ TEST_F(PacketTest, WriteValidPacket)
         EXPECT_EQ(expVal, curVal);
     }
     res = packet_close(pktHdl);
-    EXPECT_EQ(EMLIB_OK, res);
+    EXPECT_EQ(EM_OK, res);
     packet_header_t head = *((packet_header_t*)&memory_device_buffer.mem[0]);
     packet_head_print(head);
     EXPECT_EQ(BLK_SIZE-PACKET_HEADER_SIZE, head.bf.length);
@@ -139,13 +133,13 @@ TEST_F(PacketTest, WriteValidPacket)
 
 TEST_F(PacketTest, WriteValidPacketWithCheckFailsOnShortInBuffer)
 {
-    elres_t res;
+    em_msg res;
     dev_handle_t pktHdl = DEV_HANDLE_NOTDEFINED;
     packet_init();
     memory_device_print(&buffer);
     pktHdl = packet_open(&memory_device, PACKET_CH13, PACKET_NOT_RELIABLE, PACKET_IS_CHECKED);
     res = packet_write(pktHdl, &buffer);
-    EXPECT_EQ(EMLIB_ERROR, res);
+    EXPECT_EQ(EM_ERR, res);
     memory_device_print(&memory_device_buffer);
     for (uint8_t idx=0;idx<buffer.used;idx++) {
         uint8_t expVal = 0;
@@ -153,7 +147,7 @@ TEST_F(PacketTest, WriteValidPacketWithCheckFailsOnShortInBuffer)
         ASSERT_EQ(expVal, curVal);
     }
     res = packet_close(pktHdl);
-    EXPECT_EQ(EMLIB_OK, res);
+    EXPECT_EQ(EM_OK, res);
     packet_header_t head = *((packet_header_t*)&memory_device_buffer.mem[0]);
     packet_head_print(head);
     EXPECT_EQ(0, head.bf.length);
@@ -162,17 +156,17 @@ TEST_F(PacketTest, WriteValidPacketWithCheckFailsOnShortInBuffer)
 
 TEST_F(PacketTest, WriteValidPacketWithCheckSucceed)
 {
-    elres_t res;
+    em_msg res;
     dev_handle_t pktHdl = DEV_HANDLE_NOTDEFINED;
     packet_init();
     memory_device_print(&buffer);
     pktHdl = packet_open(&memory_device, PACKET_CH13, PACKET_NOT_RELIABLE, PACKET_IS_CHECKED);
     res = packet_write(pktHdl, &buffer);
-    EXPECT_EQ(EMLIB_ERROR, res);
+    EXPECT_EQ(EM_ERR, res);
     buffer.used -= 2;
     printf("Used count of bytes in buffer = %d\n", buffer.used);
     res = packet_write(pktHdl, &buffer);
-    EXPECT_EQ(EMLIB_OK, res);
+    EXPECT_EQ(EM_OK, res);
     memory_device_print(&memory_device_buffer);
     for (uint8_t idx=0;idx<buffer.used;idx++) {
         uint8_t expVal = BYTE_VAL(idx);
@@ -180,7 +174,7 @@ TEST_F(PacketTest, WriteValidPacketWithCheckSucceed)
         ASSERT_EQ(expVal, curVal);
     }
     res = packet_close(pktHdl);
-    EXPECT_EQ(EMLIB_OK, res);
+    EXPECT_EQ(EM_OK, res);
     packet_header_t head = *((packet_header_t*)&memory_device_buffer.mem[0]);
     packet_head_print(head);
     EXPECT_EQ(BLK_SIZE-PACKET_HEADER_SIZE-PACKET_TAIL_SIZE, head.bf.length);

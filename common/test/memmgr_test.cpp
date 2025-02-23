@@ -4,9 +4,7 @@
 #include "memmgr.h"
 
 #include "gtest/gtest.h"
-#include "gmock/gmock.h"
 
-using ::testing::Return;
 
 
 static const uint32_t MEM_SIZE = 1024;
@@ -28,8 +26,8 @@ class MemmgrInitTest : public ::testing::Test {
  */
 TEST_F(MemmgrInitTest, CheckNoMemory)
 {
-    //elres_t res = memmgr_init(0,0);
+    //em_msg res = memmgr_init(0,0);
 
-    //EXPECT_GT(EMLIB_ERROR, res);
+    //EXPECT_GT(EM_ERR, res);
     FAIL();
 }

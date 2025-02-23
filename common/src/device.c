@@ -34,7 +34,7 @@ static uint8_t device_find_dev(const device_t *dev) {
 	return 0;
 };
 
-em_msg device_init(device_t * dev, void * user_data) {
+dev_handle_t device_init(device_t * dev, void * user_data) {
 	int8_t dev_nr=0;
 	if (dev != NULL) {
 		dev_nr = device_find_dev(dev);

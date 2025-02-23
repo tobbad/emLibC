@@ -10,9 +10,6 @@
 #include "simple_test.h"
 
 #include "gtest/gtest.h"
-#include "gmock/gmock.h"
-
-using ::testing::Return;
 
 
 class _Simple_Test : public ::testing::Test {
