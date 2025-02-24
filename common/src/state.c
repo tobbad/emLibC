@@ -21,7 +21,6 @@ void  state_reset(state_t *state){
 
 void state_reset_key(state_t * state, uint8_t nr){
     assert(nr<MAX_BUTTON_CNT+1);
-    nr--;
     if (state->state[nr]!=OFF){
         state->state[nr] = OFF;
         state->dirty=true;
@@ -29,7 +28,17 @@ void state_reset_key(state_t * state, uint8_t nr){
     return;
 
 };
+bool state_propagate(state_t *state, uint8_t nr){
+    if (nr>=MAX_BUTTON_CNT){
+        printf("%08ld: Cannot propagate key %02x"NL, HAL_GetTick(),nr);
+        return false;
+    };
+    state->state[nr] = (state->state[nr]+1)%KEY_STAT_CNT;
+    state->dirty=true;
+    state_print(state, "Propagate");
+    return true;
 
+}
 
 bool state_is_different(state_t *last, state_t *this){
     bool isTheSame= true;
@@ -62,16 +71,6 @@ void  state_copy(state_t *from, state_t *to ){
 
 }
 
-void state_clear(state_t *state, uint8_t nr){
-    assert(nr<MAX_BUTTON_CNT+1);
-    nr--;
-    if (state->state[nr] != OFF){
-        state->state[nr] = OFF;
-        state->dirty=false;
-    }
-    state_print(state, "Clear");
-}
-
 void state_print(state_t *state,  char *title ){
     if (title!=NULL){
         printf("%s"NL, title);
@@ -90,33 +89,3 @@ void state_print(state_t *state,  char *title ){
     (state->dirty) ? printf("Dirty"NL): printf("Not Dirty"NL);
 }
 
-bool state_propagate(state_t *state, uint8_t nr){
-    if (nr<1) {
-        (void)0; //NOP
-    } if ((nr<1)||(nr>=MAX_BUTTON_CNT+1)){
-        printf("%08ld: Cannot propagate key %02x"NL, HAL_GetTick(),nr);
-        return false;
-    };
-    state->state[nr] = (state->state[nr]+1)%KEY_STAT_CNT;
-    state->dirty=true;
-    state_print(state, "Propagate");
-    return true;
-
-}
-bool state_set(state_t * state, uint8_t nr){
-    bool dirty = false;
-    assert(nr<MAX_BUTTON_CNT+1);
-    nr--;
-    if (state->state[nr]!=ON){
-        state->state[nr] = ON;
-        state->dirty=true;
-        dirty=true;
-    }
-    return dirty;
-}
-bool state_toggle(state_t * state, uint8_t nr){
-    assert(nr<MAX_BUTTON_CNT+1);
-    nr--;
-    state->state[nr]= !state->state[nr];
-    return true;
-}
