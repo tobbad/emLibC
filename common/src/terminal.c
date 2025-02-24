@@ -26,7 +26,7 @@ static void terminal_init(dev_handle_t handle, dev_type_e dev_type,
 
 static bool check_key(char ch) {
 	bool ret = false;
-	if (((ch >= '0') && (ch < '9')) || (ch == 'R')) {
+	if (((ch >= '0') && (ch < '9')) || ((ch == 'R')||ch =='r' )) {
 		ret = true;
 	}
 	return ret;
@@ -46,9 +46,9 @@ static uint16_t terminal_scan(dev_handle_t dev) {
 	status = HAL_UART_Receive(&huart2, &ch, 1, 0);
 	if (status == HAL_OK) {
 		if (check_key(ch)) {
-			if (ch == 'R') {
-				res =0;
-				my_kybd.state[res] = ON;
+			if ((ch == 'R')||(ch=='r')) {
+				res = 0x42;
+				my_kybd.state[0] = ON;
 			} else {
 			    res = ch - '0';
 				if ((res > 0) && (res < 9)) {

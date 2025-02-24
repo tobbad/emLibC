@@ -9,11 +9,14 @@
 #include "state.h"
 
 void  state_reset(state_t *state){
-    memcpy(state->label, "0123456789ABCDEF", MAX_BUTTON_CNT);
+    state->first=0;
+    state->cnt=MAX_BUTTON_CNT;
+    state->dirty = false;
+    state->dummy = 0xFF;
+    memcpy(&state->label, &"0123456789ABCDEF", MAX_BUTTON_CNT);
     for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
         state->state[i] = OFF;
     }
-    state->dirty = false;
 }
 
 void state_reset_key(state_t * state, uint8_t nr){
@@ -73,6 +76,8 @@ void state_print(state_t *state,  char *title ){
     if (title!=NULL){
         printf("%s"NL, title);
     }
+    printf("first: %d"NL, state->first);
+    printf("cnt  : %d"NL, state->cnt);
     printf("Label: ");
     for (uint8_t i = 0; i<state->cnt; i++){
         printf("%c", state->label[i]);

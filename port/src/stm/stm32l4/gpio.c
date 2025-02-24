@@ -19,7 +19,7 @@ em_msg GpioPinInit(gpio_pin_t *pin){
 		} else if (pin->port ==GPIOC){
 			__HAL_RCC_GPIOC_CLK_ENABLE();
 		} else {
-			printf("unknwn port 0x%08x");
+			printf("unknwn port 0x%8p"NL, pin->port);
 		}
 
 		GPIO_InitStruct.Pin = pin->pin;
@@ -28,7 +28,7 @@ em_msg GpioPinInit(gpio_pin_t *pin){
 		GPIO_InitStruct.Speed = pin->conf.Speed;
 		HAL_GPIO_Init(pin->port, &GPIO_InitStruct);
 		if (pin->conf.Mode==GPIO_MODE_OUTPUT_PP){
-			HAL_GPIO_WritePin(pin->port, pin->pin, pin->def);
+			HAL_GPIO_WritePin(pin->port, pin->pin, pin->cState);
 		}
 		res = EM_OK;
 	}
