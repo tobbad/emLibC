@@ -127,12 +127,32 @@ uint16_t common_crc16(uint8_t *data_p, uint16_t length)
     return (crc);
 }
 
+char int2char(uint8_t nr){
+    if (isprint(nr)){
+        return nr;
+    } else{
+        return '.';
+    }
+}
+
 void PrintBuffer(uint8_t *buffer, uint8_t size, char *header) {
     if (header!=NULL){
         printf("Print %s msg size %d;"NL, header, size);
     }
-    printf("Head"NL);
+    static const uint8_t cnt=8;
+    char addOn[cnt+1];
+    addOn[cnt]=0;
+    printf("Head");
     for (uint8_t i = 0; i < size; i++) {
-        printf(" %2d = 0x%02x"NL, i, buffer[i]);
+        if (i%cnt==0){
+            printf(NL"0x%02x:  ", i);
+            memset(addOn, ' ', cnt);
+        }
+        printf("x%02x ", buffer[i]);
+        addOn[i%cnt]=int2char(buffer[i]);
+        if (i%cnt==cnt-1){
+            printf("%s", addOn);
+        }
     }
+    printf(NL);
 }
