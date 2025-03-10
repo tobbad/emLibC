@@ -90,33 +90,32 @@ kybd_t terminal_dev = {
 
 };
 
-int8_t terminal_waitForKey(char **key) {
-	static char buffer[16];
+int8_t terminal_waitForNumber(char **key) {
+	static char buffer[BUF_SIZ];
+	memset(buffer, 0, BUF_SIZ);
+	HAL_StatusTypeDef status;
 	uint8_t ch = 0xFF;
+	bool stay=true;
 	int16_t idx = 0;
-	while (ch == 0xff) {
-		HAL_UART_Receive(&huart2, &ch, 1, 0);
-		if (((ch >= '0') && (ch < '9')) || (ch == 'R')|| (ch=='r')) {
-			buffer[idx++] = ch;
-			ch = 0xFF;
-		} else{
-			buffer[idx] = '\0';
-			if (idx > 0) {
-				ch = 0;
-			}
+	while ((ch == 0xff)&&(stay)) {
+		status = HAL_UART_Receive(&huart2, &ch, 1, 0);
+		if (ch!=0xff){
+            if (((ch >= '0') && (ch < '9')) || (ch == 'R')|| (ch=='r') || (ch == '+') || (ch == '-')) {
+                buffer[idx++] = ch;
+                ch = 0xFF;
+            }
+		} else {
+            buffer[idx] = '\0';
+            if (idx > 0) {
+                stay = false;
+            }
 		}
 	}
 	char *stopstring = NULL;
 	long long int res = strtol((char*) &buffer, &stopstring, 10);
-	if (res == 0) {
-		if (buffer[0] == '0') {
-			return 0;
-		}
-		*key = &buffer[0];
-		return -1;
-	}
-	if ((res >= 0) && (res < 10)) {
+	if (strlen(stopstring)==0) {
+	    *key = &buffer[0];
 		return res;
 	}
-	return EM_ERR;
+	return -1;
 }
