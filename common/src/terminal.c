@@ -9,7 +9,7 @@
 #include "state.h"
 #include <keyboard.h>
 
-static state_t my_kybd = {
+static state_t my_term = {
     .first = 1, //First valid value
     .cnt = 9,
     .state  = { OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF },
@@ -33,8 +33,9 @@ static bool check_key(char ch) {
 }
 
 static uint16_t terminal_scan(dev_handle_t dev) {
+    char ch;
 	static bool asked = false;
-	uint8_t ch = UINT8_MAX;
+	uint8_t cnt  = UINT8_MAX;
 	uint16_t res = UINT16_MAX;
 	//char allowed_keys={'R'};
 
@@ -42,17 +43,17 @@ static uint16_t terminal_scan(dev_handle_t dev) {
 		asked = true;
 		printf("Please enter key"NL);
 	}
-	HAL_StatusTypeDef status;
-	status = HAL_UART_Receive(&huart2, &ch, 1, 0);
-	if (status == HAL_OK) {
+    HAL_StatusTypeDef status;
+    status = HAL_UART_Receive(&huart2, &ch, 1, 0);
+    if (status == HAL_OK) {
 		if (check_key(ch)) {
 			if ((ch == 'R')||(ch=='r')) {
 				res = 0x42;
-				my_kybd.state[0] = ON;
+				my_term.state[0] = ON;
 			} else {
 			    res = ch - '0';
 				if ((res > 0) && (res < 9)) {
-					my_kybd.state[res] = (my_kybd.state[res] + 1)
+				    my_term.state[res] = (my_term.state[res] + 1)
 							% KEY_STAT_CNT;
 				} else {
 					printf("Ignore invalid key %c"NL,ch);
@@ -66,14 +67,14 @@ static uint16_t terminal_scan(dev_handle_t dev) {
 }
 
 static void terminal_state(dev_handle_t dev, state_t *ret) {
-	*ret = my_kybd;
+	*ret = my_term;
 }
 
 static void terminal_reset(dev_handle_t dev, bool hard) {
-    my_kybd.dirty=false;
+    my_term.dirty=false;
     if (hard){
-        for (uint8_t i = my_kybd.first; i < my_kybd.first + my_kybd.cnt; i++) {
-            my_kybd.state[i] = OFF;
+        for (uint8_t i = my_term.first; i < my_term.first + my_term.cnt; i++) {
+            my_term.state[i] = OFF;
         }
     }
 	return;
