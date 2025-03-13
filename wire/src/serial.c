@@ -132,6 +132,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
 
 int _read(int32_t file, uint8_t *ptr, int32_t len) {
     HAL_StatusTypeDef status;
+    static bool start= false;
     sio.bytes_in_buffer[SIO_RX] = -1;
 
     if (sio.uart != NULL) {
@@ -150,7 +151,7 @@ int _read(int32_t file, uint8_t *ptr, int32_t len) {
             // Buffer with size larger than 0 is provided
         }
     }
-    return sio.bytes_in_buffer[SIO_RX];
+    return 0;
 }
 
 int __io_getchar(void) {
@@ -183,7 +184,13 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
     if (huart == sio.uart) {
         /* Set transmission flag: transfer complete */
-        sio.ready[SIO_RX] = true;
-        sio.bytes_in_buffer[SIO_RX] = 1;
+    	if (sio.buffer[SIO_RX][sio.bytes_in_buffer[SIO_RX]]==0xd){
+    		return;
+    	}
+        sio.bytes_in_buffer[SIO_RX]++;
+        if ((sio.bytes_in_buffer[SIO_TX]==sio.size[SIO_RX])||
+        	(sio.buffer[SIO_RX][sio.bytes_in_buffer[SIO_RX]]==0xa)){
+        	// receive is finished either by CRLF or count of bytes
+        }
     }
 }

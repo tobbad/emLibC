@@ -11,6 +11,7 @@
 #include "gpio_port.h"
 #include "keyboard.h"
 #include "xpad.h"
+#include "state.h"
 
 
 #define MINIMAL_LINESTART 16
@@ -56,14 +57,14 @@ static xpad_dev_t default_eight_dev = {
 	.zeile ={
 		.cnt =EIGHT_BUTTON_CNT,
 		.pin = {
-            { .port = GPIOA, .pin = GPIO_PIN_0,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
-            { .port = GPIOA, .pin = GPIO_PIN_4,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
-            { .port = GPIOB, .pin = GPIO_PIN_0,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
-            { .port = GPIOC, .pin = GPIO_PIN_1,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
-			{ .port = GPIOB, .pin = GPIO_PIN_10, .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
-			{ .port = GPIOB, .pin = GPIO_PIN_5,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
-			{ .port = GPIOB, .pin = GPIO_PIN_3,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
-			{ .port = GPIOA, .pin = GPIO_PIN_10, .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
+	            { .port = GPIOA, .pin = GPIO_PIN_8,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
+	            { .port = GPIOB, .pin = GPIO_PIN_4,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
+				{ .port = GPIOB, .pin = GPIO_PIN_5,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
+				{ .port = GPIOB, .pin = GPIO_PIN_3,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
+	            { .port = GPIOA, .pin = GPIO_PIN_0,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
+	            { .port = GPIOA, .pin = GPIO_PIN_4,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
+				{ .port = GPIOB, .pin = GPIO_PIN_0,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
+				{ .port = GPIOC, .pin = GPIO_PIN_1,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
 		},
 	},
 
@@ -71,7 +72,7 @@ static xpad_dev_t default_eight_dev = {
 	.state = {.label = {'1', '2', '3', '4', '5', '6', '7', '8', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
 	          .state={OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
 	          .cnt=EIGHT_BUTTON_CNT,
-			  .first = 1,
+			  .first = 0,
 },
 
 };
@@ -101,6 +102,61 @@ static uint8_t lable2uint8(char label){
 	return value;
 
 }
+
+
+
+static void xpad_init(dev_handle_t dev, dev_type_e dev_type, xpad_t *device) {
+	if (dev_type == DEV_TYPE_NA)
+		return;
+	my_xpad[dev].dev_type= dev_type;
+	mpy_xpad[dev] = &my_xpad[dev];
+	if (device != NULL) {
+		my_xpad[dev].spalte = device->spalte;
+		my_xpad[dev].zeile =  device->zeile;
+		memcpy(&my_xpad[dev].state, &device->state, sizeof(state_t));
+	} else {
+		if (dev_type ==XSCAN) {
+			my_xpad[dev].spalte = &default_xscan_dev.spalte;
+			my_xpad[dev].zeile  = &default_xscan_dev.zeile;
+			my_xpad[dev].state  = default_xscan_dev.state;
+	        memcpy(&my_xpad[dev].state, &default_xscan_dev.state,  sizeof(state_t));
+		} else if(dev_type==EIGHTKEY) {
+			my_xpad[dev].spalte  = &default_eight_dev.spalte;
+			my_xpad[dev].zeile   = &default_eight_dev.zeile;
+			my_xpad[dev].state = default_eight_dev.state;
+			memset(&my_xpad[dev].state, 0 ,sizeof(state_t));
+			memcpy(&my_xpad[dev].state , &default_eight_dev.state, sizeof(state_t));
+		} else if (dev_type == TERMINAL) {
+			printf("Setup terminal %d"NL, dev_type);
+		}
+	}
+	if (my_xpad[dev].spalte->cnt > 0) {
+		GpioPortInit(my_xpad[dev].spalte);
+	}else{
+		my_xpad[dev].spalte->cnt=1;
+	}
+
+	if (my_xpad[dev].zeile->cnt > 0) {
+		GpioPortInit(my_xpad[dev].zeile);
+	}else{
+		my_xpad[dev].zeile->cnt=1;
+	}
+
+	memset(my_xpad[dev].val2idx, 0xff, MAX_BUTTON_CNT);
+	for (uint8_t val=0;val<MAX_BUTTON_CNT;val++){
+		for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
+			uint8_t value=lable2uint8(my_xpad[dev].state.label[i]);
+			if (val==value){
+				my_xpad[dev].val2idx[val]= i;
+				break;
+			}
+		}
+	}
+	for (uint8_t val=my_xpad[dev].state.first;val<my_xpad[dev].state.cnt+my_xpad[dev].state.first;val++){
+		printf("val= 0x%01x ->  0x%01x"NL, val, my_xpad[dev].val2idx[val] );
+	}
+}
+
 static void xpad_set_spalten_pin(dev_handle_t dev, uint8_t spalten_nr) {
 	if (mpy_xpad[dev] == NULL) {
 		printf("No valid handle on xpad_set_spalte"NL);
@@ -229,71 +285,20 @@ static uint16_t xpad_spalten_scan(dev_handle_t dev) {
 	return res;
 }
 
-static void xpad_init(dev_handle_t dev, dev_type_e dev_type, xpad_t *device) {
-	if (dev_type == DEV_TYPE_NA)
-		return;
-	my_xpad[dev].dev_type= dev_type;
-	mpy_xpad[dev] = &my_xpad[dev];
-	if (device != NULL) {
-		my_xpad[dev].spalte = device->spalte;
-		my_xpad[dev].zeile =  device->zeile;
-		memcpy(&my_xpad[dev].state, &device->state, sizeof(state_t));
-	} else {
-		if (dev_type ==XSCAN) {
-			my_xpad[dev].spalte = &default_xscan_dev.spalte;
-			my_xpad[dev].zeile  = &default_xscan_dev.zeile;
-			my_xpad[dev].state  = default_xscan_dev.state;
-	        memcpy(&my_xpad[dev].state, &default_xscan_dev.state,  sizeof(state_t));
-		} else if(dev_type==EIGHTKEY) {
-			my_xpad[dev].spalte  = &default_eight_dev.spalte;
-			my_xpad[dev].zeile   = &default_eight_dev.zeile;
-			my_xpad[dev].state = default_eight_dev.state;
-			memset(&my_xpad[dev].state, 0 ,sizeof(state_t));
-			memcpy(&my_xpad[dev].state , &default_eight_dev.state, sizeof(state_t));
-		} else if (dev_type == TERMINAL) {
-			printf("Setup terminal %d"NL, dev_type);
-		}
-	}
-	if (my_xpad[dev].spalte->cnt > 0) {
-		GpioPortInit(my_xpad[dev].spalte);
-	}else{
-		my_xpad[dev].spalte->cnt=1;
-	}
 
-	if (my_xpad[dev].zeile->cnt > 0) {
-		GpioPortInit(my_xpad[dev].zeile);
-	}else{
-		my_xpad[dev].zeile->cnt=1;
-	}
-
-	memset(my_xpad[dev].val2idx, 0xff, MAX_BUTTON_CNT);
-	for (uint8_t val=my_xpad[dev].state.first;val<my_xpad[dev].state.first+my_xpad[dev].state.cnt;val++){
-		for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
-			uint8_t value=lable2uint8(my_xpad[dev].state.label[i]);
-			if (val==value){
-				my_xpad[dev].val2idx[val]= i;
-				break;
-			}
-		}
-	}
-	for (uint8_t val=my_xpad[dev].state.first;val<my_xpad[dev].state.cnt+my_xpad[dev].state.first;val++){
-		printf("val= %01x ->  %01x"NL, val, my_xpad[dev].val2idx[val] );
-	}
-}
-
-static void xpad_state(dev_handle_t dev, state_t *ret) {
+static void xpad_state(dev_handle_t dev, state_t *oState) {
 	if (mpy_xpad[dev] == NULL) {
 		printf("No valid handle on state"NL);
 		return;
 	}
-	uint8_t i = 0;
-	ret->first = ret->first;
-	for (uint8_t val = ret->first; val < ret->first + ret->cnt; val++) {
-		uint8_t idx = my_xpad[dev].val2idx[val];
-		ret->state[i]   = my_xpad[dev].state.state[idx];
-		ret->label[i++] = my_xpad[dev].state.label[idx];
+	uint8_t oIdx = oState->first;
+	uint8_t iIdx = my_xpad[dev].state.first;
+	state_print(&my_xpad[dev].state, NULL);
+	for (; iIdx<oState->first+oState->cnt; iIdx++, oIdx++) {
+		oState->state[oIdx]   = my_xpad[dev].state.state[iIdx];
+		oState->label[oIdx]   = my_xpad[dev].state.label[iIdx];
 	}
-	ret->dirty = my_xpad[dev].dirty;
+	oState->dirty = my_xpad[dev].dirty;
 	return;
 }
 
@@ -329,6 +334,6 @@ kybd_t eight_dev = {
 	.state = &xpad_state,
 	.dev_type = EIGHTKEY,
 	.cnt = 8,
-	.first = 1,
+	.first = 0,
 };
 

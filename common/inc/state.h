@@ -25,7 +25,7 @@ typedef struct state_s{
     char  label[MAX_BUTTON_CNT];
 } state_t; // Size is 2*MAX_BUTTON_CNT+4 =  36 
 
-void state_reset(state_t *state);
+void state_clear(state_t *state);
 void state_reset_key(state_t * state, uint8_t nr);
 bool state_propagate(state_t *state, uint8_t nr);
 bool state_is_different(state_t *last, state_t *this);

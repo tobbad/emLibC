@@ -8,7 +8,7 @@
 #include "common.h"
 #include "state.h"
 
-void  state_reset(state_t *state){
+void  state_clear(state_t *state){
     state->first=0;
     state->cnt=MAX_BUTTON_CNT;
     state->dirty = false;
