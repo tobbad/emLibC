@@ -5,6 +5,7 @@
  *      Author: TBA
  */
 #include "main.h"
+#include "common.h"
 #include "device.h"
 #include "state.h"
 #include <keyboard.h>
@@ -19,8 +20,7 @@ static state_t my_term = {
 static bool check_key(char ch);
 static void terminal_reset(dev_handle_t dev, bool hard);
 
-static void terminal_init(dev_handle_t handle, dev_type_e dev_type,
-		xpad_t *device) {
+static void terminal_init(dev_handle_t handle, dev_type_e dev_type,	xpad_t *device) {
 	terminal_reset(handle, true);
 }
 
@@ -92,8 +92,8 @@ kybd_t terminal_dev = {
 };
 
 int8_t terminal_waitForNumber(char **key) {
-	static char buffer[BUF_SIZ];
-	memset(buffer, 0, BUF_SIZ);
+	static char buffer[LINE_LENGTH];
+	memset(buffer, 0, LINE_LENGTH);
 	HAL_StatusTypeDef status;
 	uint8_t ch = 0xFF;
 	bool stay=true;
@@ -103,6 +103,12 @@ int8_t terminal_waitForNumber(char **key) {
 		if (ch!=0xff){
             if (((ch >= '0') && (ch < '9')) || (ch == 'R')|| (ch=='r') || (ch == '+') || (ch == '-')) {
                 buffer[idx++] = ch;
+                if ((ch == 'R')|| (ch=='r')){
+                	stay = false;
+                }
+                if (ch == '\n'){
+                	stay = false;
+                }
                 ch = 0xFF;
             }
 		} else {
@@ -113,6 +119,9 @@ int8_t terminal_waitForNumber(char **key) {
 		}
 	}
 	char *stopstring = NULL;
+	if (buffer[0]==((ch == 'R')|| (ch=='r'))){
+		return -1;
+	}
 	long long int res = strtol((char*) &buffer, &stopstring, 10);
 	if (strlen(stopstring)==0) {
 	    *key = &buffer[0];
