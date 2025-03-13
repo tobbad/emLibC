@@ -100,21 +100,17 @@ int8_t terminal_waitForNumber(char **key) {
 	int16_t idx = 0;
 	while ((ch == 0xff)&&(stay)) {
 		status = HAL_UART_Receive(&huart2, &ch, 1, 0);
-		if (ch!=0xff){
+		if (status == HAL_OK){
+	        if (ch == '\r'){
+	        	stay = false;
+	        	ch=0xff;
+	        }
             if (((ch >= '0') && (ch < '9')) || (ch == 'R')|| (ch=='r') || (ch == '+') || (ch == '-')) {
                 buffer[idx++] = ch;
                 if ((ch == 'R')|| (ch=='r')){
                 	stay = false;
                 }
-                if (ch == '\n'){
-                	stay = false;
-                }
                 ch = 0xFF;
-            }
-		} else {
-            buffer[idx] = '\0';
-            if (idx > 0) {
-                stay = false;
             }
 		}
 	}
