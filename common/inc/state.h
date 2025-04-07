@@ -28,7 +28,7 @@ typedef struct state_s{
 void state_clear(state_t *state);
 void state_reset_key(state_t * state, uint8_t nr);
 bool state_propagate(state_t *state, uint8_t nr);
-bool state_is_different(state_t *last, state_t *this);
+bool state_is_same(state_t *last, state_t *this);
 bool state_merge(state_t *inState, state_t *outState);
 void state_print(state_t *state,  char *title );
 void state_copy(state_t *from, state_t *to );

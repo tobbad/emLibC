@@ -40,12 +40,12 @@ bool state_propagate(state_t *state, uint8_t nr){
 
 }
 
-bool state_is_different(state_t *last, state_t *this){
+bool state_is_same(state_t *last, state_t *this){
     bool isTheSame= true;
-    for (uint8_t i=0;i<last->cnt;i++){
+    for (uint8_t i=this->first;i<+this->cnt;i++){
     	isTheSame &= (last->state[i]==this->state[i]);
     }
-    return !isTheSame;
+    return isTheSame;
 }
 
 bool state_merge(state_t *inState, state_t *outState){

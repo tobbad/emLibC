@@ -35,7 +35,6 @@ static bool check_key(char ch) {
 static uint16_t terminal_scan(dev_handle_t dev) {
     char ch;
 	static bool asked = false;
-	uint8_t cnt  = UINT8_MAX;
 	uint16_t res = UINT16_MAX;
 	//char allowed_keys={'R'};
 
@@ -55,6 +54,7 @@ static uint16_t terminal_scan(dev_handle_t dev) {
 				if ((res > 0) && (res < 9)) {
 				    my_term.state[res] = (my_term.state[res] + 1)
 							% KEY_STAT_CNT;
+				    my_term.dirty = true;
 				} else {
 					printf("Ignore invalid key %c"NL,ch);
 				}
@@ -110,12 +110,16 @@ int8_t terminal_waitForNumber(char **key) {
                 if ((ch == 'R')|| (ch=='r')){
                 	stay = false;
                 }
+                if (idx>=1){
+                	stay = false;
+                }
                 ch = 0xFF;
             }
 		}
 	}
 	char *stopstring = NULL;
-	if (buffer[0]==((ch == 'R')|| (ch=='r'))){
+	if ((buffer[0]=='R')|| (buffer[0]=='r')){
+	    *key = &buffer[0];
 		return -1;
 	}
 	long long int res = strtol((char*) &buffer, &stopstring, 10);

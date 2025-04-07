@@ -132,7 +132,6 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
 
 int _read(int32_t file, uint8_t *ptr, int32_t len) {
     HAL_StatusTypeDef status;
-    static bool start= false;
     sio.bytes_in_buffer[SIO_RX] = -1;
 
     if (sio.uart != NULL) {
