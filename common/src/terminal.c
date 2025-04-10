@@ -32,10 +32,10 @@ static bool check_key(char ch) {
 	return ret;
 }
 
-static uint16_t terminal_scan(dev_handle_t dev) {
+static int16_t terminal_scan(dev_handle_t dev) {
     char ch;
 	static bool asked = false;
-	uint16_t res = UINT16_MAX;
+	int16_t res = -1;
 	//char allowed_keys={'R'};
 
 	if (!asked) {

@@ -47,10 +47,10 @@ dev_handle_t keyboard_init(kybd_t *kybd, xpad_t *device) {
 	return dev_nr;
 }
 
-uint16_t keyboard_scan(dev_handle_t dev) {
+int16_t keyboard_scan(dev_handle_t dev) {
 	static int32_t cnt=0;
 	static int32_t lcnt=-1;
-	uint16_t res = 0;
+	int16_t res = 0;
 	if ((dev > 0) && my_kybd[dev] != NULL) {
 		res = my_kybd[dev]->scan(dev);
 	}
