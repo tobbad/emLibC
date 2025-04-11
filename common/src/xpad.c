@@ -123,7 +123,6 @@ static void xpad_init(dev_handle_t dev, dev_type_e dev_type, xpad_t *device) {
 		} else if(dev_type==EIGHTKEY) {
 			my_xpad[dev].spalte  = &default_eight_dev.spalte;
 			my_xpad[dev].zeile   = &default_eight_dev.zeile;
-			my_xpad[dev].state = default_eight_dev.state;
 			memset(&my_xpad[dev].state, 0 ,sizeof(state_t));
 			memcpy(&my_xpad[dev].state , &default_eight_dev.state, sizeof(state_t));
 		} else if (dev_type == TERMINAL) {

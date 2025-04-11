@@ -20,10 +20,11 @@ typedef struct state_s{
     uint8_t first;
     uint8_t cnt;
     bool dirty;
-	uint8_t dummy;
+	uint8_t cstate;// state of the label= true/false
     key_state_e state[MAX_BUTTON_CNT];
     char  label[MAX_BUTTON_CNT];
-} state_t; // Size is 2*MAX_BUTTON_CNT+4 =  36 
+    char  clabel[MAX_BUTTON_CNT/2]; // Control label
+} state_t; // Size is 2*MAX_BUTTON_CNT + MAX_BUTTON_CNT/2 + 4=  44 Byte
 
 void state_clear(state_t *state);
 void state_reset_key(state_t * state, uint8_t nr);

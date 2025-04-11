@@ -12,11 +12,13 @@ void  state_clear(state_t *state){
     state->first=0;
     state->cnt=MAX_BUTTON_CNT;
     state->dirty = false;
-    state->dummy = 0xFF;
+    state->cstate = 0x0;
     memcpy(&state->label, &"0123456789ABCDEF", MAX_BUTTON_CNT);
     for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
         state->state[i] = OFF;
     }
+    memcpy(&state->clabel, &"        ", MAX_BUTTON_CNT/2);
+
 }
 
 void state_reset_key(state_t * state, uint8_t nr){
@@ -78,14 +80,20 @@ void state_print(state_t *state,  char *title ){
     printf("first: %d"NL, state->first);
     printf("cnt  : %d"NL, state->cnt);
     printf("Label: ");
-    for (uint8_t i = 0; i<state->cnt; i++){
+    for (uint8_t i = 0; i<MAX_BUTTON_CNT; i++){
         printf("%c", state->label[i]);
     }
     printf(NL"State: ");
-    for (uint8_t i = 0; i<state->cnt;i++){
+    for (uint8_t i = 0; i<MAX_BUTTON_CNT;i++){
         printf("%01x", state->state[i]);
     }
     printf(NL);
+    printf(NL"clabel: ");
+    for (uint8_t i = 0; i<MAX_BUTTON_CNT/2;i++){
+        printf("%01x", state->clabel[i]);
+    }
+    printf("cstate: 0x%x", state->cstate);
+
     (state->dirty) ? printf("Dirty"NL): printf("Not Dirty"NL);
 }
 
