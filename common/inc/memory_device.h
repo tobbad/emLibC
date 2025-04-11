@@ -14,15 +14,7 @@ extern "C"
 
 #include "common.h"
 #include "device.h"
-
-#define RCV_BUF_SIZE 4096
-extern uint8_t rcv_buffer[];
-
-extern buffer_t memory_device_buffer;
-extern device_t memory_device;
-
-em_msg memory_device_reset(buffer_t *buf);
-em_msg memory_device_print(buffer_t *buf);
+device_t memory_device;
 #ifdef __cplusplus
 }
 #endif

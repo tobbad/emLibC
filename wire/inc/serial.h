@@ -47,6 +47,7 @@ typedef struct _sio_t{
 	uint8_t	 ready[SIO_RXTX_CNT];	/* Internal use only */
 	uint16_t buffer_size[SIO_RXTX_CNT];
 	int16_t  bytes_in_buffer[SIO_RXTX_CNT];
+	int16_t  size[SIO_RXTX_CNT];
 	char *buffer[SIO_RXTX_CNT];
 	uint8_t mode;
 } sio_t;

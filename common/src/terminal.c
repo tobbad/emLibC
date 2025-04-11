@@ -5,11 +5,12 @@
  *      Author: TBA
  */
 #include "main.h"
+#include "common.h"
 #include "device.h"
 #include "state.h"
 #include <keyboard.h>
 
-static state_t my_kybd = {
+static state_t my_term = {
     .first = 1, //First valid value
     .cnt = 9,
     .state  = { OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF },
@@ -19,41 +20,41 @@ static state_t my_kybd = {
 static bool check_key(char ch);
 static void terminal_reset(dev_handle_t dev, bool hard);
 
-static void terminal_init(dev_handle_t handle, dev_type_e dev_type,
-		xpad_t *device) {
+static void terminal_init(dev_handle_t handle, dev_type_e dev_type,	xpad_t *device) {
 	terminal_reset(handle, true);
 }
 
 static bool check_key(char ch) {
 	bool ret = false;
-	if (((ch >= '0') && (ch < '9')) || (ch == 'R')) {
+	if (((ch >= '0') && (ch < '9')) || ((ch == 'R')||ch =='r' )) {
 		ret = true;
 	}
 	return ret;
 }
 
-static uint16_t terminal_scan(dev_handle_t dev) {
+static int16_t terminal_scan(dev_handle_t dev) {
+    char ch;
 	static bool asked = false;
-	uint8_t ch = UINT8_MAX;
-	uint16_t res = UINT16_MAX;
+	int16_t res = -1;
 	//char allowed_keys={'R'};
 
 	if (!asked) {
 		asked = true;
 		printf("Please enter key"NL);
 	}
-	HAL_StatusTypeDef status;
-	status = HAL_UART_Receive(&huart2, &ch, 1, 0);
-	if (status == HAL_OK) {
+    HAL_StatusTypeDef status;
+    status = HAL_UART_Receive(&huart2, (uint8_t*)&ch, 1, 0);
+    if (status == HAL_OK) {
 		if (check_key(ch)) {
-			if (ch == 'R') {
-				res =0;
-				my_kybd.state[res] = ON;
+			if ((ch == 'R')||(ch=='r')) {
+				res = 0x42;
+				my_term.state[0] = ON;
 			} else {
 			    res = ch - '0';
 				if ((res > 0) && (res < 9)) {
-					my_kybd.state[res] = (my_kybd.state[res] + 1)
+				    my_term.state[res] = (my_term.state[res] + 1)
 							% KEY_STAT_CNT;
+				    my_term.dirty = true;
 				} else {
 					printf("Ignore invalid key %c"NL,ch);
 				}
@@ -66,13 +67,16 @@ static uint16_t terminal_scan(dev_handle_t dev) {
 }
 
 static void terminal_state(dev_handle_t dev, state_t *ret) {
-	*ret = my_kybd;
+	*ret = my_term;
 }
 
 static void terminal_reset(dev_handle_t dev, bool hard) {
-	for (uint8_t i = my_kybd.first; i < my_kybd.first + my_kybd.cnt; i++) {
-		my_kybd.state[i] = OFF;
-	}
+    my_term.dirty=false;
+    if (hard){
+        for (uint8_t i = my_term.first; i < my_term.first + my_term.cnt; i++) {
+            my_term.state[i] = OFF;
+        }
+    }
 	return;
 }
 
@@ -87,33 +91,41 @@ kybd_t terminal_dev = {
 
 };
 
-int8_t terminal_waitForKey(char **key) {
-	static char buffer[16];
+int8_t terminal_waitForNumber(char **key) {
+	static char buffer[LINE_LENGTH];
+	memset(buffer, 0, LINE_LENGTH);
+	HAL_StatusTypeDef status;
 	uint8_t ch = 0xFF;
+	bool stay=true;
 	int16_t idx = 0;
-	while (ch == 0xff) {
-		HAL_UART_Receive(&huart2, &ch, 1, 0);
-		if (((ch >= '0') && (ch < '9')) || (ch == 'R')) {
-			buffer[idx++] = ch;
-			ch = 0xFF;
-		} else{
-			buffer[idx] = '\0';
-			if (idx > 0) {
-				ch = 0;
-			}
+	while ((ch == 0xff)&&(stay)) {
+		status = HAL_UART_Receive(&huart2, &ch, 1, 0);
+		if (status == HAL_OK){
+	        if (ch == '\r'){
+	        	stay = false;
+	        	ch=0xff;
+	        }
+            if (((ch >= '0') && (ch < '9')) || (ch == 'R')|| (ch=='r') || (ch == '+') || (ch == '-')) {
+                buffer[idx++] = ch;
+                if ((ch == 'R')|| (ch=='r')){
+                	stay = false;
+                }
+                if (idx>=1){
+                	stay = false;
+                }
+                ch = 0xFF;
+            }
 		}
 	}
 	char *stopstring = NULL;
-	long long int res = strtol((char*) &buffer, &stopstring, 10);
-	if (res == 0) {
-		if (buffer[0] == '0') {
-			return 0;
-		}
-		*key = &buffer[0];
+	if ((buffer[0]=='R')|| (buffer[0]=='r')){
+	    *key = &buffer[0];
 		return -1;
 	}
-	if ((res >= 0) && (res < 10)) {
+	long long int res = strtol((char*) &buffer, &stopstring, 10);
+	if (strlen(stopstring)==0) {
+	    *key = &buffer[0];
 		return res;
 	}
-	return EM_ERR;
+	return -1;
 }

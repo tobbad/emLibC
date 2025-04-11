@@ -11,7 +11,7 @@
 extern "C"
 {
 #endif
-
+#include "common.h"
 typedef enum{
     XSCAN,
     EIGHTKEY,

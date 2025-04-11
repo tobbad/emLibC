@@ -10,6 +10,6 @@
 #include "keyboard.h"
 extern kybd_t terminal_dev;
 
-int8_t terminal_waitForKey(char **key);
+int8_t terminal_waitForNumber(char **key);
 
 #endif /* TERMINAL_H_ */

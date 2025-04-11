@@ -43,7 +43,7 @@ extern mkey_t reset_key;
 
 
 dev_handle_t keyboard_init(kybd_t *kybd, xpad_t *device);
-uint16_t keyboard_scan(dev_handle_t dev);
+int16_t keyboard_scan(dev_handle_t dev);
 void keyboard_reset(dev_handle_t dev, bool hard);
 void keyboard_state(dev_handle_t dev, state_t *ret);
 void  keyboard_print(state_t *state, char* start); // Show returned

@@ -135,7 +135,7 @@ int _read(int32_t file, uint8_t *ptr, int32_t len) {
     sio.bytes_in_buffer[SIO_RX] = -1;
 
     if (sio.uart != NULL) {
-        if ((sio.buffer_size[SIO_RX] != 0) || (sio.buffer[SIO_RX] != NULL)) {
+        if ((sio.buffer_size[SIO_RX] == 0) && (sio.buffer[SIO_RX] == NULL)) {
             sio.ready[SIO_RX] = false;
             status = HAL_UART_Receive(sio.uart, ptr, len, HAL_MAX_DELAY);
             if (status == HAL_OK) {
@@ -150,7 +150,7 @@ int _read(int32_t file, uint8_t *ptr, int32_t len) {
             // Buffer with size larger than 0 is provided
         }
     }
-    return sio.bytes_in_buffer[SIO_RX];
+    return 0;
 }
 
 int __io_getchar(void) {
@@ -158,8 +158,7 @@ int __io_getchar(void) {
     // Clear the Overrun flag just before receiving the first character
     __HAL_UART_CLEAR_OREFLAG(sio.uart);
 
-    HAL_UART_Receive(sio.uart, (uint8_t*) &ch, 1, 0xFFFF);
-    //HAL_UART_Transmit(sio.uart), (uint8_t *)&ch, 1, 0xFFFF);
+    HAL_UART_Receive(sio.uart, (uint8_t*) &ch, 1, 0);
     return ch;
 }
 
@@ -184,7 +183,13 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
     if (huart == sio.uart) {
         /* Set transmission flag: transfer complete */
-        sio.ready[SIO_RX] = true;
-        sio.bytes_in_buffer[SIO_RX] = 1;
+    	if (sio.buffer[SIO_RX][sio.bytes_in_buffer[SIO_RX]]==0xd){
+    		return;
+    	}
+        sio.bytes_in_buffer[SIO_RX]++;
+        if ((sio.bytes_in_buffer[SIO_TX]==sio.size[SIO_RX])||
+        	(sio.buffer[SIO_RX][sio.bytes_in_buffer[SIO_RX]]==0xa)){
+        	// receive is finished either by CRLF or count of bytes
+        }
     }
 }
