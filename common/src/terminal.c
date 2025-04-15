@@ -32,7 +32,7 @@ static bool check_key(char ch) {
 	return ret;
 }
 
-static int16_t terminal_scan(dev_handle_t dev) {
+static uint16_t terminal_scan(dev_handle_t dev) {
     char ch;
 	static bool asked = false;
 	int16_t res = -1;

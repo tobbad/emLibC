@@ -235,7 +235,7 @@ static uint16_t xpad_eight_scan(dev_handle_t dev) {
 		printf("Handle for this keyboard not valid"NL);
 		return false;
 	}
-	uint16_t res=0;
+	int16_t res=0;
 	for (uint8_t zeile=0;zeile<my_xpad[dev].zeile->cnt; zeile++) {
 		bool pin=0;
 		GpioPinRead(&my_xpad[dev].zeile->pin[zeile], &pin);
@@ -269,7 +269,7 @@ static uint16_t xpad_spalten_scan(dev_handle_t dev) {
 		printf("Handle (%d) for this keyboard not valid"NL, my_xpad[dev].dev_type);
 		return false;
 	}
-	uint16_t res = 0;
+	int16_t res = 0;
 	for (uint8_t s = 0; s < my_xpad[dev].spalte->cnt; s++) {
 		uint8_t ir = 0;
 		xpad_reset_spalten_pin(dev, s);
