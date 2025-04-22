@@ -12,9 +12,10 @@
 
 static state_t my_term = {
     .first = 1, //First valid value
-    .cnt = 9,
+    .cnt = 8,
     .state  = { OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF },
-    .label =  { 'R', '1', '2', '3', '4', '5', '6', '7', '8' }
+    .label =  { ' ', '1', '2', '3', '4', '5', '6', '7', '8' },
+    .clabel = { 'R', ' ', ' ', ' ', ' ', ' ', ' ', ' ' }
 };
 
 static bool check_key(char ch);
@@ -48,7 +49,7 @@ static uint16_t terminal_scan(dev_handle_t dev) {
 		if (check_key(ch)) {
 			if ((ch == 'R')||(ch=='r')) {
 				res = 0x42;
-				my_term.state[0] = ON;
+				my_term.cstate = 1;
 			} else {
 			    res = ch - '0';
 				if ((res > 0) && (res < 9)) {

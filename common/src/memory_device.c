@@ -39,17 +39,17 @@ em_msg memory_device_write(dev_handle_t hdl, const uint8_t *data, uint16_t count
     return EM_ERR;
 }
 
-em_msg memory_device_read(dev_handle_t hdl,  uint8_t *data, uint16_t count)
+em_msg memory_device_read(dev_handle_t hdl,  uint8_t *data, uint16_t* count)
 {
     if ((NULL != mDev[hdl].buffer) && (mDev[hdl].buffer->used >= 1) && (NULL != data))
     {
-    	uint16_t cnt = MIN(count, mDev[hdl].buffer->used );
+    	uint16_t cnt = MIN(*count, mDev[hdl].buffer->used );
         for (uint16_t i = 0;i<cnt; i++)
         {
             printf("buf[%u] = %u\n", i, data[i]);
             data[i] = mDev[hdl].buffer->mem[i];
         }
-        count = cnt;
+        *count = cnt;
         return EM_OK;
     }
     return EM_ERR;

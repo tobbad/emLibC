@@ -59,18 +59,18 @@ static xpad_dev_t default_eight_dev = {
 		.pin = {
 	            { .port = GPIOA, .pin = GPIO_PIN_0,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
 	            { .port = GPIOA, .pin = GPIO_PIN_4,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
-				{ .port = GPIOB, .pin = GPIO_PIN_3,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
+				{ .port = GPIOB, .pin = GPIO_PIN_0,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
 				{ .port = GPIOC, .pin = GPIO_PIN_1,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
-	            { .port = GPIOA, .pin = GPIO_PIN_10, .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
-	            { .port = GPIOB, .pin = GPIO_PIN_3,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
+	            { .port = GPIOA, .pin = GPIO_PIN_8,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
+	            { .port = GPIOB, .pin = GPIO_PIN_4,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
 				{ .port = GPIOB, .pin = GPIO_PIN_5,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
-				{ .port = GPIOB, .pin = GPIO_PIN_10, .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
+				{ .port = GPIOB, .pin = GPIO_PIN_3,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
 		},
 	},
 
 	.dev_type=EIGHTKEY,
 	.state = {.label = {'1', '2', '3', '4', '5', '6', '7', '8', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
-	          .state={OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
+	          .state={OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
 	          .cnt=EIGHT_BUTTON_CNT,
 			  .first = 0,
 },
@@ -102,8 +102,6 @@ static uint8_t lable2uint8(char label){
 	return value;
 
 }
-
-
 
 static void xpad_init(dev_handle_t dev, dev_type_e dev_type, xpad_t *device) {
 	if (dev_type == DEV_TYPE_NA)
@@ -141,7 +139,7 @@ static void xpad_init(dev_handle_t dev, dev_type_e dev_type, xpad_t *device) {
 		my_xpad[dev].zeile->cnt=1;
 	}
 
-	memset(my_xpad[dev].val2idx, 0xff, MAX_BUTTON_CNT);
+	memset(my_xpad[dev].val2idx, -1, MAX_BUTTON_CNT);
 	for (uint8_t val=0;val<MAX_BUTTON_CNT;val++){
 		for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
 			uint8_t value=lable2uint8(my_xpad[dev].state.label[i]);
@@ -151,7 +149,7 @@ static void xpad_init(dev_handle_t dev, dev_type_e dev_type, xpad_t *device) {
 			}
 		}
 	}
-	for (uint8_t val=my_xpad[dev].state.first;val<my_xpad[dev].state.cnt+my_xpad[dev].state.first;val++){
+	for (uint8_t val=0;val<MAX_BUTTON_CNT;val++){
 		printf("val= 0x%01x ->  0x%01x"NL, val, my_xpad[dev].val2idx[val] );
 	}
 }
@@ -235,11 +233,11 @@ static uint16_t xpad_eight_scan(dev_handle_t dev) {
 		printf("Handle for this keyboard not valid"NL);
 		return false;
 	}
-	uint16_t res=0;
+	int16_t res=0;
 	for (uint8_t zeile=0;zeile<my_xpad[dev].zeile->cnt; zeile++) {
 		bool pin=0;
 		GpioPinRead(&my_xpad[dev].zeile->pin[zeile], &pin);
-		pin =!pin;
+		//pin =!pin;
 		res = res|(xpad_update_key(dev, zeile, pin));
 	}
 	return res;
@@ -269,7 +267,7 @@ static uint16_t xpad_spalten_scan(dev_handle_t dev) {
 		printf("Handle (%d) for this keyboard not valid"NL, my_xpad[dev].dev_type);
 		return false;
 	}
-	uint16_t res = 0;
+	int16_t res = 0;
 	for (uint8_t s = 0; s < my_xpad[dev].spalte->cnt; s++) {
 		uint8_t ir = 0;
 		xpad_reset_spalten_pin(dev, s);
