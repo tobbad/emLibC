@@ -32,10 +32,10 @@ static bool check_key(char ch) {
 	return ret;
 }
 
-static int16_t terminal_scan(dev_handle_t dev) {
+static uint16_t terminal_scan(dev_handle_t dev) {
     char ch;
 	static bool asked = false;
-	int16_t res = -1;
+	uint16_t res = -1;
 	//char allowed_keys={'R'};
 
 	if (!asked) {
@@ -67,7 +67,7 @@ static int16_t terminal_scan(dev_handle_t dev) {
 }
 
 static void terminal_state(dev_handle_t dev, state_t *ret) {
-	*ret = my_term;
+    state_merge(&my_term, ret);
 }
 
 static void terminal_reset(dev_handle_t dev, bool hard) {

@@ -52,7 +52,7 @@ bool state_is_same(state_t *last, state_t *this){
 
 bool state_merge(state_t *inState, state_t *outState){
     memset(outState->state, OFF, MAX_BUTTON_CNT);
-    memcpy(outState->label, inState->label, MAX_BUTTON_CNT);
+    memcpy(inState->label, outState->label, MAX_BUTTON_CNT);
     outState->dirty = false;
     outState->first = inState->first;
     outState->cnt = inState->cnt;
@@ -87,12 +87,11 @@ void state_print(state_t *state,  char *title ){
     for (uint8_t i = 0; i<MAX_BUTTON_CNT;i++){
         printf("%01x", state->state[i]);
     }
-    printf(NL);
     printf(NL"clabel: ");
     for (uint8_t i = 0; i<MAX_BUTTON_CNT/2;i++){
-        printf("%01x", state->clabel[i]);
+        printf("%c", state->clabel[i]);
     }
-    printf("cstate: 0x%x", state->cstate);
+    printf(NL"cstate: 0x%x"NL, state->cstate);
 
     (state->dirty) ? printf("Dirty"NL): printf("Not Dirty"NL);
 }
