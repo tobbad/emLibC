@@ -10,8 +10,8 @@
 #include "state.h"
 #include "gpio_port.h"
 
-void d_ledline_init(state_t *state, gpio_port_t *port, uint8_t cycle_size);
-void d_ledline_update();
+void stateled_init(state_t *state, gpio_port_t *port, uint8_t cycle_size);
+void stateled_update();
 
 
 #endif /* INC_D_LEDLINE_H_ */

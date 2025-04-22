@@ -33,7 +33,7 @@ static  gpio_port_t def_port ={
 	},
 };
 
-void d_ledline_init(state_t *state, gpio_port_t *port, uint8_t cycle_size){
+void stateled_init(state_t *state, gpio_port_t *port, uint8_t cycle_size){
 	my_led_line.cycle_size = cycle_size;
 	my_led_line.state = state;
     my_led_line.lstate = *state;
@@ -49,7 +49,7 @@ void d_ledline_init(state_t *state, gpio_port_t *port, uint8_t cycle_size){
     my_led_line.init=true;
 }
 
-void d_ledline_update(){
+void stateled_update(){
     if (my_led_line.init) {
         static uint8_t cnt=0;
         cnt++;
