@@ -44,7 +44,7 @@ bool state_propagate(state_t *state, uint8_t nr){
 
 bool state_is_same(state_t *last, state_t *this){
     bool isTheSame= true;
-    for (uint8_t i=this->first;i<+this->cnt;i++){
+    for (uint8_t i=this->first;i<this->first+this->cnt;i++){
     	isTheSame &= (last->state[i]==this->state[i]);
     }
     return isTheSame;

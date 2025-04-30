@@ -43,14 +43,15 @@ void stateled_init(state_t *state, gpio_port_t *port, uint8_t cycle_size){
     	my_led_line.port =  &def_port;
     }
     GpioPortInit(my_led_line.port);
-    for (uint8_t i=0;i<my_led_line.port->cnt;i++){
-     	GpioPinWrite(&my_led_line.port->pin[i],my_led_line.port->pin[i].cState);
-    }
     my_led_line.init=true;
 }
 
 void stateled_update(){
     if (my_led_line.init) {
+        static uint32_t d;
+    	static uint32_t ltick=0;
+    	uint32_t ctick = HAL_GetTick();
+    	d = ctick-ltick;
         static uint8_t cnt=0;
         cnt++;
         cnt = ((cnt)%my_led_line.cycle_size);
@@ -58,18 +59,21 @@ void stateled_update(){
         if (my_led_line.init) {
             if (!state_is_same(my_led_line.state, &my_led_line.lstate)){
                 my_led_line.lstate = *my_led_line.state;
-                printf("Ledline Update"NL);
+                //printf("Ledline Update"NL);
             }
             for (uint8_t i=0;i<my_led_line.port->cnt;i++){
-                if (my_led_line.lstate.state[i]==OFF){
+            	int8_t stateNr = i+my_led_line.lstate.first;
+            	key_state_e tState=my_led_line.lstate.state[stateNr];
+                if (tState==OFF){
                     GpioPinWrite(&my_led_line.port->pin[i], false);
-                } else if (my_led_line.lstate.state[i]==BLINKING){
+                } else if (tState==BLINKING){
                     GpioPinWrite(&my_led_line.port->pin[i], bstate);
-                } else if (my_led_line.lstate.state[i]==ON){
+                } else if (tState==ON){
                     GpioPinWrite(&my_led_line.port->pin[i], true);
                 }
             }
         }
+     	ltick=ctick;
     }
 }
 
