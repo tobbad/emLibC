@@ -85,7 +85,7 @@ key_state_e state_get_state(state_t * state, char ch){
 
 bool state_is_same(state_t *last, state_t *this){
     bool isTheSame= true;
-    for (uint8_t i=this->first;i<+this->cnt;i++){
+    for (uint8_t i=this->first;i<this->first+this->cnt;i++){
     	isTheSame &= (last->state[i]==this->state[i]);
     }
     return isTheSame;
