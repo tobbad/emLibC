@@ -11,11 +11,10 @@
 #include <keyboard.h>
 
 static state_t my_term = {
-    .first = 1, //First valid value
-    .cnt = 8,
+    .first = 0, //First valid value
+    .cnt =9,
     .state  = { OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF },
-    .label =  { ' ', '1', '2', '3', '4', '5', '6', '7', '8' },
-    .clabel = { 'R', ' ', ' ', ' ', ' ', ' ', ' ', ' ' }
+    .label =  { 'R', '1', '2', '3', '4', '5', '6', '7', '8' },
 };
 
 static bool check_key(char ch);
@@ -26,17 +25,14 @@ static void terminal_init(dev_handle_t handle, dev_type_e dev_type,	xpad_t *devi
 }
 
 static bool check_key(char ch) {
-	bool ret = false;
-	if (((ch >= '0') && (ch < '9')) || ((ch == 'R')||ch =='r' )) {
-		ret = true;
-	}
-	return ret;
+    bool ret = false;
+    return state_ch2idx(&my_term, ch)>=0;
 }
 
 static uint16_t terminal_scan(dev_handle_t dev) {
     char ch;
 	static bool asked = false;
-	uint16_t res = -1;
+	uint16_t res = 0;
 	//char allowed_keys={'R'};
 
 	if (!asked) {
@@ -46,29 +42,25 @@ static uint16_t terminal_scan(dev_handle_t dev) {
     HAL_StatusTypeDef status;
     status = HAL_UART_Receive(&huart2, (uint8_t*)&ch, 1, 0);
     if (status == HAL_OK) {
-		if (check_key(ch)) {
-			if ((ch == 'R')||(ch=='r')) {
-				res = 0x42;
-				my_term.cstate = 1;
-			} else {
-			    res = ch - '0';
-				if ((res > 0) && (res < 9)) {
-				    my_term.state[res] = (my_term.state[res] + 1)
-							% KEY_STAT_CNT;
-				    my_term.dirty = true;
-				} else {
-					printf("Ignore invalid key %c"NL,ch);
-				}
-			}
-			asked = false;
-			return res;
-		}
+        ch = toupper(ch);
+        int8_t idx=state_ch2idx(&my_term, ch);
+        if (idx>=0){
+            res = ch - '0';
+            if (res<9){
+                state_propagate(&my_term, ch);
+                my_term.clabel = 0;
+            } else {
+                my_term.clabel = ch;
+            }
+        }
+        asked = false;
+        return res;
 	}
 	return res;
 }
 
 static void terminal_state(dev_handle_t dev, state_t *ret) {
-    state_merge(&my_term, ret);
+    state_merge(&my_term, ret);// problem here
 }
 
 static void terminal_reset(dev_handle_t dev, bool hard) {
