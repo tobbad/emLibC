@@ -11,8 +11,8 @@
 #include <keyboard.h>
 
 static state_t my_term = {
-    .first = 0, //First valid value
-    .cnt =9,
+    .first = 1, //First valid value
+    .cnt =8,
     .state  = { OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF },
     .label =  { 'R', '1', '2', '3', '4', '5', '6', '7', '8' },
 };
