@@ -57,14 +57,15 @@ static xpad_dev_t default_eight_dev = {
 	.zeile ={
 		.cnt =EIGHT_BUTTON_CNT,
 		.pin = {
-			{ .port = GPIOC, .pin = GPIO_PIN_1,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
-			{ .port = GPIOC, .pin = GPIO_PIN_2,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
-			{ .port = GPIOC, .pin = GPIO_PIN_3,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
 			{ .port = GPIOA, .pin = GPIO_PIN_0,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
-			{ .port = GPIOC, .pin = GPIO_PIN_4,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
-			{ .port = GPIOC, .pin = GPIO_PIN_5,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
+			{ .port = GPIOA, .pin = GPIO_PIN_4,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
 			{ .port = GPIOB, .pin = GPIO_PIN_0,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
-			{ .port = GPIOB, .pin = GPIO_PIN_1,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
+			{ .port = GPIOC, .pin = GPIO_PIN_1,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
+
+			{ .port = GPIOA, .pin = GPIO_PIN_8,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
+			{ .port = GPIOB, .pin = GPIO_PIN_4,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
+			{ .port = GPIOB, .pin = GPIO_PIN_5,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
+			{ .port = GPIOB, .pin = GPIO_PIN_3,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
 		},
 	},
 
@@ -206,7 +207,7 @@ static uint8_t xpad_update_key(uint8_t dev, uint8_t index, bool pinVal) {
 		my_xpad[dev].key[index].last = pinVal;
 		my_xpad[dev].key[index].stable = pinVal;
 		//printf("Reached index %d to %d (pinVal=%d)"NL, index,STABLE_CNT, pinVal);
-		if (pinVal) {
+		if (my_xpad[dev].key[index].stable) {
 			my_xpad[dev].state.state[index] = ((my_xpad[dev].state.state[index] + 1)
 					% KEY_STAT_CNT);
 			my_xpad[dev].dirty = true;
