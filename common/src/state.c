@@ -20,7 +20,6 @@ int8_t state_ch2idx(state_t *state, char ch){
 
 
 void  state_clear(state_t *state){
-    state->cnt=MAX_BUTTON_CNT;
     state->dirty = false;
     memcpy(&state->label, &"0123456789ABCDEF", MAX_BUTTON_CNT);
     for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
@@ -92,14 +91,20 @@ bool state_is_same(state_t *last, state_t *this){
 }
 
 bool state_merge(state_t *inState, state_t *outState){
-    assert(outState->cnt== inState->cnt);
+    assert(outState->cnt == inState->cnt);
+    printf("inState.cnt: %d, outState.cnt: %d"NL, inState->cnt,outState->cnt);
+    outState->dirty=false;
+    if (inState->state[0]!=OFF) {
+        outState->clabel=inState->label[0];
+        inState->first=0;
+    }
     for (uint8_t inr=inState->first,onr=outState->first;
-         inr<inState->first+inState->cnt;inr++, onr++){
+            inr<inState->first+inState->cnt;inr++, onr++){
         if (inState->state[inr]!=outState->state[onr]) {
             outState->dirty=true;
-            outState->state[inr] = inState->state[onr];
+            outState->state[onr] = inState->state[inr];
         }
-      }
+    }
     return outState->dirty;
 
 }
@@ -118,7 +123,7 @@ void state_print(state_t *state,  char *title ){
     }
     printf("first : %d"NL, state->first);
     printf("cnt   : %d"NL, state->cnt);
-    printf("clabel: %c"NL, state->clabel);
+    printf("clabel: 0x%1x"NL, state->clabel);
     printf("Label : ");
     for (uint8_t i = 0; i<MAX_BUTTON_CNT; i++){
         char c = state->label[i];

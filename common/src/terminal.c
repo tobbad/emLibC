@@ -11,8 +11,8 @@
 #include <keyboard.h>
 
 static state_t my_term = {
-    .first = 0, //First valid value
-    .cnt =9,
+    .first = 1, //First valid value
+    .cnt =8,
     .state  = { OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF },
     .label =  { 'R', '1', '2', '3', '4', '5', '6', '7', '8' },
 };
@@ -51,6 +51,7 @@ static uint16_t terminal_scan(dev_handle_t dev) {
                 my_term.clabel = 0;
             } else {
                 my_term.clabel = ch;
+                my_term.state[0] = ON;
             }
         }
         asked = false;
