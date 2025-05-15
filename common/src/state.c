@@ -91,7 +91,10 @@ bool state_is_same(state_t *last, state_t *this){
 }
 
 bool state_merge(state_t *inState, state_t *outState){
-    assert(outState->cnt == inState->cnt);
+    if (inState->cnt != outState->cnt){
+        printf("Payload cnt=(%d, %d) can not be merged"NL,inState->cnt,inState->cnt);
+        return false;
+    }
     printf("inState.cnt: %d, outState.cnt: %d"NL, inState->cnt,outState->cnt);
     outState->dirty=false;
     if (inState->state[0]!=OFF) {

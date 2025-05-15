@@ -7,7 +7,6 @@
 #ifndef KEYBOARD_H_
 #define KEYBOARD_H_
 
-#define MAX_BUTTON_CNT 16
 #include "common.h"
 #include "state.h"
 #include "device.h"
