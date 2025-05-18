@@ -21,6 +21,9 @@ int8_t state_ch2idx(state_t *state, char ch){
 
 void  state_clear(state_t *state){
     state->dirty = false;
+    state->first = 0;
+    state->cnt = MAX_BUTTON_CNT;
+    state->clabel = 0;
     memcpy(&state->label, &"0123456789ABCDEF", MAX_BUTTON_CNT);
     for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
         state->state[i] = OFF;
