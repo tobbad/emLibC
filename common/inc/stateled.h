@@ -11,6 +11,7 @@
 #include "gpio_port.h"
 
 void stateled_init(state_t *state, gpio_port_t *port, uint8_t cycle_size);
+void stateled_toggle();
 void stateled_update();
 
 
