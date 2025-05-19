@@ -34,16 +34,10 @@ static  gpio_port_t def_port ={
 };
 
 void stateled_init(state_t *state, gpio_port_t *port, uint8_t cycle_size){
-    static state_t mstate;
 	my_led_line.cycle_size = cycle_size;
 	if (state!=NULL){
         my_led_line.state = state;
         my_led_line.lstate = *state;
-	} else {
-	    my_led_line.state = mState;
-        my_led_line.lstate = &mstate;
-
-
 	}
     if (port!=NULL){
     	my_led_line.port = port;
@@ -53,8 +47,9 @@ void stateled_init(state_t *state, gpio_port_t *port, uint8_t cycle_size){
     GpioPortInit(my_led_line.port);
     my_led_line.init=true;
 }
-void stateled_toggle(){
 
+void stateled_toggle(){
+	GpioPortToggle(my_led_line.port);
 };
 
 void stateled_update(){

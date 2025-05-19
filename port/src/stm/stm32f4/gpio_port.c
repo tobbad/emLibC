@@ -13,3 +13,7 @@ em_msg GpioPortInit(gpio_port_t *port){
 	}
 	return EM_OK;
 }
+
+void stateled_toggle(){
+	GpioPortToggle(my_led_line.port);
+};

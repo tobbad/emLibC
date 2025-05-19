@@ -16,6 +16,7 @@ typedef struct gpio_port_s{
 } gpio_port_t;
 
 em_msg GpioPortInit(gpio_port_t *port);
+em_msg GpioPortToggle(gpio_port_t *port);
 //em_msg GpioPortUpdate(gpio_port_t *port){ return EM_OK;};
 
 //em_msg GpioSetPortMode(gpio_port_t *port, gpio_mode_t mode);
