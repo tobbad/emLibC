@@ -24,7 +24,7 @@ static state_t dev_state = {
     .label =  { 'R', '1', '2', '3', '4', '5', '6', '7', '8' },
 };
 static uint8_t ch=0xff;
-rxData = false;
+static bool rxData = false;
 static bool check_key(char ch);
 static void terminal_reset(dev_handle_t dev, bool hard);
 
