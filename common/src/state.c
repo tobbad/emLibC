@@ -31,7 +31,7 @@ void  state_init(state_t *state){
 
 }
 
-void state_reset_label(state_t * state, char ch){
+void state_clear_state(state_t * state, char ch){
     if (isalpha(ch)){
         state->clabel = 0;
         return;
