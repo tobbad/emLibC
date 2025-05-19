@@ -26,7 +26,7 @@ typedef struct state_s{
 } state_t; // Size is 2*MAX_BUTTON_CNT + 4=  36 Byte (MAX_BUTTON_CNT = 16)
 
 int8_t state_ch2idx(state_t *state, char ch);
-void state_clear(state_t *state);
+void state_init(state_t *state);
 void state_reset_label(state_t * state, char ch);
 key_state_e state_get_state(state_t * state, char ch);
 void state_set_label(state_t * state, char ch);

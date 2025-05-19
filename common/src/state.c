@@ -19,7 +19,7 @@ int8_t state_ch2idx(state_t *state, char ch){
 }
 
 
-void  state_clear(state_t *state){
+void  state_init(state_t *state){
     state->dirty = false;
     state->first = 0;
     state->cnt = MAX_BUTTON_CNT;
