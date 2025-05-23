@@ -61,6 +61,21 @@ void state_set_label(state_t * state, char ch){
     return;
 };
 
+void state_set_u16(state_t * state, uint16_t u16){
+    for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
+        uint8_t in;
+        state->state[i]=(u16&0x3<<2*i)>>2*i;
+    }
+}
+
+uint16_t state_get_u16(state_t * state){
+    uint16_t res =0;
+    for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
+        res |= (state->state[i]&0x3)<<(2*i);
+    }
+    return res;
+}
+
 bool state_propagate(state_t *state, char ch){
     if (isalpha(ch)){
         return false;

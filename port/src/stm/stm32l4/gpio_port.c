@@ -14,9 +14,9 @@ em_msg GpioPortInit(gpio_port_t *port){
 	return EM_OK;
 }
 
-em_msg GpioPortToggle(gpio_port_t *port){
+void GpioPortToggle(gpio_port_t *port){
 	for (uint8_t i=0;i<port->cnt;i++){
-		GpioPortToggle(&port->pin[i]);
+		GpioPinToggle(&port->pin[i]);
 	}
-	return EM_OK;
+	return;
 }
