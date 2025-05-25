@@ -7,7 +7,6 @@
 #include "common.h"
 #include "serial.h"
 #include "_time.h"
-#include "main.h"
 #define MEAS_CNT 10
 
 typedef struct time_meas_s{

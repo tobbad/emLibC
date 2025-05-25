@@ -7,6 +7,8 @@
 
 #ifndef COMMON_INC__TIME_H_
 #define COMMON_INC__TIME_H_
+#include "serial.h"
+
 void time_init();
 void time_set_mode(print_e mode);
 void time_reset();

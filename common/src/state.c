@@ -8,7 +8,6 @@
 #include "common.h"
 #include "state.h"
 
-
 int8_t state_ch2idx(state_t *state, char ch){
     for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
         if (state->label[i]==ch){
@@ -44,7 +43,7 @@ void state_clear_state(state_t * state, char ch){
         }
     }
     return;
-};
+}
 
 void state_set_label(state_t * state, char ch){
     if (isalpha(ch)){
@@ -61,15 +60,19 @@ void state_set_label(state_t * state, char ch){
     return;
 };
 
-void state_set_u16(state_t * state, uint16_t u16){
+void state_set_u32(state_t * state, uint32_t u32){
+	uint32_t mask;
     for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
-        uint8_t in;
-        state->state[i]=(u16&0x3<<2*i)>>2*i;
+    	uint8_t shift=2*i ;
+    	mask = (0x3<<shift);
+    	uint32_t x = (u32&mask);
+    	x >>= shift;
+        state->state[i] = x;
     }
 }
 
-uint16_t state_get_u16(state_t * state){
-    uint16_t res =0;
+uint32_t state_get_u32(state_t * state){
+    uint32_t res =0;
     for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
         res |= (state->state[i]&0x3)<<(2*i);
     }
@@ -99,6 +102,17 @@ key_state_e state_get_state(state_t * state, char ch){
     return state->state[nr];
 }
 
+void state_set_state(state_t * state,uint8_t nr, key_state_e ks){
+	assert(ks<KEY_STAT_CNT);
+	assert(nr<MAX_BUTTON_CNT);
+	if ((nr<state->first)||(nr>=state->first+state->cnt)){
+		printf("Try to modify unused state %d"NL, nr);
+		return;
+	}
+	state->state[nr] = ks;
+
+}
+
 
 bool state_is_same(state_t *last, state_t *this){
     bool isTheSame= true;
@@ -119,8 +133,10 @@ bool state_merge(state_t *inState, state_t *outState){
         outState->clabel=inState->label[0];
         inState->first=0;
     }
+    // FIXME
     for (uint8_t inr=inState->first,onr=outState->first;
             inr<inState->first+inState->cnt;inr++, onr++){
+        // FIXME
         if (inState->state[inr]!=outState->state[onr]) {
             outState->dirty=true;
             outState->state[onr] = inState->state[inr];
@@ -160,5 +176,24 @@ void state_print(state_t *state,  char *title ){
     }
     printf(NL);
     (state->dirty) ? printf("Dirty"NL): printf("Not Dirty"NL);
+}
+
+uint8_t state_cnt(state_t *state){
+	return state->cnt;
+}
+
+uint8_t state_first(state_t *state){
+	return state->first;
+}
+
+uint8_t state_last(state_t *state){
+	return state->first+state->cnt-1;
+}
+
+uint8_t state_get_dirty(state_t *state, uint8_t nr ){
+	return state->state[nr];
+}
+void    state_set_dirty(state_t *state, uint8_t nr ){
+	state->dirty=true;
 }
 

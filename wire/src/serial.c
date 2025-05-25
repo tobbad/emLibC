@@ -52,9 +52,8 @@
 #error Undefined platform
 #endif
 
-//#include "main.h"
-#include "mutex.h"
 #include "serial.h"
+#include "mutex.h"
 #include "_time.h"
 static sio_t sio;
 static buf_t rx_buffer;

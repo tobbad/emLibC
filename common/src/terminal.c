@@ -4,7 +4,6 @@
  *  Created on: Jun 10, 2024
  *      Author: TBA
  */
-#include "main.h"
 #include "common.h"
 #include "device.h"
 #include "state.h"
