@@ -29,6 +29,7 @@
  *  Created on: 12.05.2018
  *      Author: badi
  */
+#undef USE_USB
 #include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -117,7 +118,11 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
 			 time_end_su();
 		 } else{
 			time_start(len);
-			HAL_UART_Transmit(sio.uart, (uint8_t*)ptr, len, UART_TIMEOUT_MS);
+#ifdef USE_USB
+			 CDC_Transmit_FS((uint8_t*)ptr, len);
+#else
+			 HAL_UART_Transmit(sio.uart, (uint8_t*)ptr, len, UART_TIMEOUT_MS);
+#endif
 			time_end_tx();
 			sio.bytes_in_buffer[SIO_TX] = 0;
 			sio.ready[SIO_TX] = true;
