@@ -57,10 +57,10 @@ void stateled_toggle(){
 
 void stateled_update(){
     if (my_stateled.init) {
-        static uint32_t d;
-    	static uint32_t ltick=0;
-    	uint32_t ctick = HAL_GetTick();
-    	d = ctick-ltick;
+        //static uint32_t d;
+    	//static uint32_t ltick=0;
+    	//uint32_t ctick = HAL_GetTick();
+    	//d = ctick-ltick;
         static uint8_t cnt=0;
         cnt++;
         cnt = ((cnt)%my_stateled.cycle_size);
@@ -82,7 +82,7 @@ void stateled_update(){
                 }
             }
         }
-     	ltick=ctick;
+     	//ltick=ctick;
     }
 }
 

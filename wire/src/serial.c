@@ -29,7 +29,7 @@
  *  Created on: 12.05.2018
  *      Author: badi
  */
-#undef USE_USB
+#undef  USE_USB
 #include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -67,9 +67,8 @@ sio_res_e serial_init(sio_t *init) {
     if (sio.buffer[SIO_RX] != NULL) {
         HAL_UART_Receive_IT(sio.uart, (uint8_t*)rx_buffer.buffer, 1);
     }
-    time_init();
-    time_set_mode(sio.mode);
-    return SIO_OK;
+    serial_set_mode(sio.mode, true);
+	return SIO_OK;
 }
 
 void serial_set_mode(print_e mode, bool doReset ) {
