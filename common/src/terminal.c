@@ -7,6 +7,7 @@
 #include "common.h"
 #include "device.h"
 #include "state.h"
+#include "serial.h"
 #include <keyboard.h>
 
 typedef struct termnal_dev_s{
@@ -48,7 +49,8 @@ static uint16_t terminal_scan(dev_handle_t dev) {
 		printf("Please enter key"NL);
 	}
     HAL_StatusTypeDef status;
-    HAL_UARTEx_ReceiveToIdle_IT(my_term.sio->uart,(uint8_t*)ch, LINE_LENGTH);
+    rxData = false;
+    HAL_UARTEx_ReceiveToIdle_IT(my_term.sio->uart,&ch, LINE_LENGTH);
 	while (rxData == false){}
 	rxData = false;
 	ch = toupper(ch);

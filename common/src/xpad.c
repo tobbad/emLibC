@@ -239,7 +239,6 @@ static uint16_t xpad_eight_scan(dev_handle_t dev) {
 	for (uint8_t zeile=0;zeile<my_xpad[dev].zeile->cnt; zeile++) {
 		bool pin=0;
 		GpioPinRead(&my_xpad[dev].zeile->pin[zeile], &pin);
-		pin = !pin;
 		res = res|(xpad_update_key(dev, zeile, pin));
 	}
 	return res;
@@ -253,7 +252,6 @@ static uint16_t xpad_read_zeile(dev_handle_t dev, uint8_t spalten_nr) {
 	for (int8_t z =0 ; z<my_xpad[dev].zeile->cnt; z++) {
 		bool pinVal = 0;
 		GpioPinRead(&my_xpad[dev].zeile->pin[z], &pinVal);
-		pinVal = !pinVal;
 		uint8_t index = zei_spa_2_index(&my_xpad[dev], z, spalten_nr);
 		res = res | xpad_update_key(dev, index, pinVal);
 	}
