@@ -30,19 +30,11 @@ void  state_init(state_t *state){
 
 }
 
-void state_clear_state(state_t * state, char ch){
-    if (isalpha(ch)){
-        state->clabel = 0;
-        return;
+void state_clear_all_state(state_t * state){
+    for (uint8_t nr=0;nr<state->cnt;nr++){
+        state_set_label(state, nr, OFF);
     }
-    uint8_t nr = state_ch2idx(state, ch);
-    if((nr>=state->first)&&(nr<=state->cnt)){
-        if (state->state[nr]!=OFF){
-            state->state[nr] = OFF;
-            state->dirty=false;
-        }
-    }
-    return;
+    state->dirty=false;
 }
 
 void state_set_value(state_t * state, uint8_t nr, key_state_e new_state ){
