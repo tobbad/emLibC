@@ -36,24 +36,34 @@ void state_clear_state(state_t * state, char ch){
         return;
     }
     uint8_t nr = state_ch2idx(state, ch);
-    if (nr>=0){
+    if((nr>=state->first)&&(nr<=state->cnt)){
         if (state->state[nr]!=OFF){
             state->state[nr] = OFF;
-            state->dirty=true;
+            state->dirty=false;
         }
     }
     return;
 }
 
-void state_set_label(state_t * state, char ch){
+void state_set_value(state_t * state, uint8_t nr, key_state_e new_state ){
+    if ((nr>=state->first)&&(nr<=state->cnt)){
+        if (state->state[nr]!=new_state){
+            state->state[nr] = new_state;
+            state->dirty=true;
+        }
+    }
+};
+
+
+void state_set_label(state_t * state, char ch, key_state_e new_state){
     if (isalpha(ch)){
         state->clabel = toupper(ch);
         return;
     }
     uint8_t nr = state_ch2idx(state, ch);
-    if (nr>=0){
-        if (state->state[nr]==OFF){
-            state->state[nr] = ON;
+    if ((nr>=state->first)&&(nr<=state->cnt)){
+        if (state->state[nr]!=new_state){
+            state->state[nr] = new_state;
             state->dirty=true;
         }
     }

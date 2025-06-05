@@ -9,7 +9,6 @@
 #include "stateled.h"
 #include "gpio.h"
 #include "gpio_port.h"
-#define CYCLE_SIZE 10
 #define INIT_LED_TIME 100
 typedef struct led_line_s{
     bool init;
@@ -71,28 +70,29 @@ void stateled_off(uint8_t led_nr){
 
 void stateled_update(){
     if (my_stateled.init) {
-        //static uint32_t d;
-    	//static uint32_t ltick=0;
-    	//uint32_t ctick = HAL_GetTick();
-    	//d = ctick-ltick;
+//      static uint32_t d;
+//    	static uint32_t ltick=0;
+//    	uint32_t ctick = HAL_GetTick();
+//    	d = ctick-ltick;
         static uint8_t cnt=0;
         cnt++;
         cnt = ((cnt)%my_stateled.cycle_size);
-        bool bstate = (cnt < my_stateled.cycle_size >> 1);
+        bool bstate = (cnt < (my_stateled.cycle_size >> 1));
         if (my_stateled.init) {
             if (!state_is_same(my_stateled.state, &my_stateled.lstate)){
                 my_stateled.lstate = *my_stateled.state;
                 //printf("Ledline Update"NL);
-            }
-            for (uint8_t i=0;i<my_stateled.port->cnt;i++){
-            	int8_t stateNr = i+my_stateled.lstate.first;
-            	key_state_e tState=my_stateled.lstate.state[stateNr];
-                if (tState==OFF){
-                    GpioPinWrite(&my_stateled.port->pin[i], false);
-                } else if (tState==BLINKING){
-                    GpioPinWrite(&my_stateled.port->pin[i], bstate);
-                } else if (tState==ON){
-                    GpioPinWrite(&my_stateled.port->pin[i], true);
+            }else{
+                for (uint8_t i=0;i<my_stateled.port->cnt;i++){
+                    int8_t stateNr = i+my_stateled.lstate.first;
+                    key_state_e tState=my_stateled.lstate.state[stateNr];
+                    if (tState==OFF){
+                        stateled_off(i);
+                    } else if (tState==BLINKING){
+                        GpioPinWrite(&my_stateled.port->pin[i], bstate);
+                    } else if (tState==ON){
+                        stateled_off(i);
+                    }
                 }
             }
         }
