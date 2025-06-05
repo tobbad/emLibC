@@ -10,6 +10,7 @@
 #include "gpio.h"
 #include "gpio_port.h"
 #define CYCLE_SIZE 10
+#define INIT_LED_TIME 100
 typedef struct led_line_s{
     bool init;
     state_t lstate;
@@ -22,16 +23,16 @@ static led_line_t my_stateled;
 static  gpio_port_t def_port ={
 	.cnt =10,
 	.pin = {
-		{ .port = GPIOC, .pin = GPIO_PIN_8,  .cState= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
-		{ .port = GPIOC, .pin = GPIO_PIN_6,  .cState= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
-		{ .port = GPIOB, .pin = GPIO_PIN_15, .cState= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
-		{ .port = GPIOB, .pin = GPIO_PIN_14, .cState= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
-		{ .port = GPIOB, .pin = GPIO_PIN_13, .cState= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
-		{ .port = GPIOB, .pin = GPIO_PIN_12, .cState= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
-        { .port = GPIOB, .pin = GPIO_PIN_2,  .cState= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
-        { .port = GPIOC, .pin = GPIO_PIN_14, .cState= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
-        { .port = GPIOB, .pin = GPIO_PIN_5,  .cState= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
-        { .port = GPIOB, .pin = GPIO_PIN_6,  .cState= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
+		{ .port = GPIOC, .pin = GPIO_PIN_8,  .cState= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
+		{ .port = GPIOC, .pin = GPIO_PIN_6,  .cState= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
+		{ .port = GPIOB, .pin = GPIO_PIN_15, .cState= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
+		{ .port = GPIOB, .pin = GPIO_PIN_14, .cState= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
+		{ .port = GPIOB, .pin = GPIO_PIN_13, .cState= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
+		{ .port = GPIOB, .pin = GPIO_PIN_12, .cState= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
+        { .port = GPIOB, .pin = GPIO_PIN_2,  .cState= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
+        { .port = GPIOC, .pin = GPIO_PIN_14, .cState= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
+        { .port = GPIOB, .pin = GPIO_PIN_5,  .cState= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
+        { .port = GPIOB, .pin = GPIO_PIN_6,  .cState= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
 	},
 };
 
@@ -48,11 +49,24 @@ void stateled_init(state_t *state, gpio_port_t *port, uint8_t cycle_size){
     }
     GpioPortInit(my_stateled.port);
     my_stateled.init=true;
+    for (uint8_t i=0;i<my_stateled.port->cnt;i++){
+        stateled_on(i);
+        HAL_Delay(INIT_LED_TIME);
+        stateled_off(i);
+    }
 }
 
 void stateled_toggle(){
     if (!my_stateled.init) return;
-	GpioPortToggle(my_stateled.port);
+    GpioPortToggle(my_stateled.port);
+};
+void stateled_on(uint8_t led_nr){
+    if (!my_stateled.init) return;
+    GpioPinWrite(&my_stateled.port->pin[led_nr], false);
+};
+void stateled_off(uint8_t led_nr){
+    if (!my_stateled.init) return;
+    GpioPinWrite(&my_stateled.port->pin[led_nr], true);
 };
 
 void stateled_update(){
