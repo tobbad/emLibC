@@ -13,6 +13,7 @@
 #include "gpio_port.h"
 
 #define STABLE_CNT 5
+#define EIGHT_BUTTON_CNT 8
 
 typedef struct xpad_dev_s{
 	gpio_port_t spalte;

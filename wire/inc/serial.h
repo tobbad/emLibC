@@ -49,7 +49,7 @@ typedef struct _sio_t{
 	int16_t  bytes_in_buffer[SIO_RXTX_CNT];
 	int16_t  size[SIO_RXTX_CNT];
 	char *buffer[SIO_RXTX_CNT];
-	uint8_t mode;
+	print_e mode;
 } sio_t;
 
 typedef struct buf_s{

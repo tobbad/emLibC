@@ -17,7 +17,7 @@
 #define MINIMAL_LINESTART 16
 #define ZEILEN_CNT 4
 #define SPALTEN_CNT 4
-#define EIGHT_BUTTON_CNT 8
+
 
 xpad_t my_xpad[DEVICE_CNT];
 xpad_t *mpy_xpad[DEVICE_CNT];
@@ -110,8 +110,8 @@ static void xpad_init(dev_handle_t dev, dev_type_e dev_type, xpad_t *device) {
 	my_xpad[dev].dev_type= dev_type;
 	mpy_xpad[dev] = &my_xpad[dev];
 	if (device != NULL) {
-		my_xpad[dev].spalte = device->spalte;
-		my_xpad[dev].zeile =  device->zeile;
+		*my_xpad[dev].spalte = *device->spalte;
+		*my_xpad[dev].zeile =  *device->zeile;
 		memcpy(&my_xpad[dev].state, &device->state, sizeof(state_t));
 	} else {
 		if (dev_type ==XSCAN) {
@@ -189,14 +189,20 @@ static uint8_t xpad_update_key(uint8_t dev, uint8_t index, bool pinVal) {
 //	if (my_xpad[dev].key[index].current ^ my_xpad[dev].key[index].last) {
 //		printf("Detected Key @ (index =%d) with label %c"NL, index, my_xpad[dev].state.label[index]);
 //	}
+	bool lunstable = my_xpad[dev].key[index].unstable;
 	my_xpad[dev].key[index].unstable = my_xpad[dev].key[index].unstable
 			|| (my_xpad[dev].key[index].current ^ my_xpad[dev].key[index].last);
-
+	if (my_xpad[dev].key[index].current ^ my_xpad[dev].key[index].last){
+		printf("Set unstable to %d"NL,my_xpad[dev].key[index].unstable);
+	}
 	if (my_xpad[dev].key[index].unstable) {
 		if (my_xpad[dev].key[index].current == my_xpad[dev].key[index].last) {
 			my_xpad[dev].key[index].cnt++;
-			//printf("Increased index %d to %d (pinVal=%d)"NL, index, my_xpad[dev].key[index].cnt, pinVal);
+			if (pinVal!=false){
+				printf("Increased index %d to %d (pinVal=%d)"NL, index, my_xpad[dev].key[index].cnt, pinVal);
+			}
 		} else {
+			printf("Reset index %d from %d (pinVal=%d)"NL, index, my_xpad[dev].key[index].cnt, pinVal);
 			my_xpad[dev].key[index].cnt=0;
 		}
 	}
@@ -206,7 +212,7 @@ static uint8_t xpad_update_key(uint8_t dev, uint8_t index, bool pinVal) {
 		char label = my_xpad[dev].state.label[index];
 		my_xpad[dev].key[index].last = pinVal;
 		my_xpad[dev].key[index].stable = pinVal;
-		//printf("Reached index %d to %d (pinVal=%d)"NL, index,STABLE_CNT, pinVal);
+		printf("Reached index %d to %d (pinVal=%d)"NL, index,STABLE_CNT, pinVal);
 		if (my_xpad[dev].key[index].stable) {
 			my_xpad[dev].state.state[index] = ((my_xpad[dev].state.state[index] + 1)
 					% KEY_STAT_CNT);
@@ -215,6 +221,7 @@ static uint8_t xpad_update_key(uint8_t dev, uint8_t index, bool pinVal) {
 			printf("Pushed   Key @ (index =%d, z=%d, s=%d, value = %c)"NL, index, z, s, label);
 		} else {
 			printf("Released Key @ (index =%d, z=%d, s=%d, value = %c)"NL, index, z , s, label);
+			my_xpad[dev].key[index].cnt=0;
 		}
 		res = res | (pinVal << z);
 		my_xpad[dev].key[index].cnt = 0;
@@ -236,7 +243,7 @@ static uint16_t xpad_eight_scan(dev_handle_t dev) {
 		printf("Handle for this keyboard not valid"NL);
 		return false;
 	}
-	int16_t res=0;
+	uint16_t res=0;
 	for (uint8_t zeile=0;zeile<my_xpad[dev].zeile->cnt; zeile++) {
 		bool pin=0;
 		GpioPinRead(&my_xpad[dev].zeile->pin[zeile], &pin);

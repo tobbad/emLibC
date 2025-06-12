@@ -12,7 +12,7 @@
 void time_init();
 void time_set_mode(print_e mode);
 void time_reset();
-void time_start(uint8_t count);
+void time_start(uint8_t count, uint8_t *ptr);
 void time_end_su();
 void time_end_tx();
 void time_print(char * titel);

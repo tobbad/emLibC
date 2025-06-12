@@ -41,6 +41,8 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/times.h>
+#include "main.h"
+
 #if defined(STM32F303xC)
 #include "stm32f3xx.h"
 #elif defined(STM32F407xx) ||defined(STM32F401xE)
@@ -83,6 +85,8 @@ void serial_set_mode(print_e mode, bool doReset ) {
 int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     uint16_t len=0;
     uint8_t idx=0;
+    static uint32_t ltick=0;
+    uint32_t tick=0;
     if ((sio.buffer_size[SIO_TX] != 0) && (sio.buffer[SIO_TX] != NULL)) {
         sio.ready[SIO_TX] = false;
          sio.bytes_in_buffer[SIO_TX] = len;
@@ -99,7 +103,9 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
          ptr =(uint8_t*) sio.buffer[SIO_TX];
      }else{
          if (sio.mode&TIMESTAMP){
-             len = sprintf(tx_buffer.buffer, "%010ld: ", HAL_GetTick());
+        	 tick = HAL_GetTick();
+             len = sprintf(tx_buffer.buffer, "%010ld: ", tick);
+        	 ltick = tick;
           }
          if (sio.mode&GAP_DETECT){
              len += sprintf(&tx_buffer.buffer[len], " %x ", idx);
@@ -112,16 +118,14 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
 	 if (sio.uart != NULL) {
 		 if (sio.mode&USE_DMA){
 			 while (!ReadModify_write(&sio.ready[SIO_TX], -1)){}
-			 time_start(len);
+			 time_start(len, ptr);
 			 HAL_UART_Transmit_DMA(sio.uart, (uint8_t*)ptr, len);
 			 time_end_su();
 		 } else{
-			time_start(len);
-#ifdef USE_USB
-			 CDC_Transmit_FS((uint8_t*)ptr, len);
-#else
-			 HAL_UART_Transmit(sio.uart, (uint8_t*)ptr, len, UART_TIMEOUT_MS);
-#endif
+			time_start(len, ptr);
+			GpioPinToggle(&my_port.pin[0]);
+			HAL_UART_Transmit(sio.uart, (uint8_t*)ptr, len, UART_TIMEOUT_MS);
+		    GpioPinToggle(&my_port.pin[0]);
 			time_end_tx();
 			sio.bytes_in_buffer[SIO_TX] = 0;
 			sio.ready[SIO_TX] = true;
