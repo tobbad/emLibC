@@ -30,7 +30,7 @@ void  state_init(state_t *state){
 
 }
 
-void state_clear_all_state(state_t * state){
+void state_clear(state_t * state){
     for (uint8_t nr=0;nr<state->cnt;nr++){
         state_set_label(state, nr, OFF);
     }
@@ -199,10 +199,10 @@ uint8_t state_last(state_t *state){
 	return state->first+state->cnt-1;
 }
 
-uint8_t state_get_dirty(state_t *state, uint8_t nr ){
-	return state->state[nr];
+uint8_t state_get_dirty(state_t *state ){
+	return state->dirty;
 }
-void    state_set_dirty(state_t *state, uint8_t nr ){
+void    state_set_dirty(state_t *state ){
 	state->dirty=true;
 }
 

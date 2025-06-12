@@ -21,7 +21,7 @@ static state_t my_term = {
 sio_t _serial;
 static void terminal_reset(dev_handle_t dev, bool hard);
 
-static void terminal_init(dev_handle_t handle, dev_type_e dev_type,	xpad_t * serial) {
+static void terminal_init(dev_handle_t handle, dev_type_e dev_type,	xpad_dev_t * serial) {
 	terminal_reset(handle, true);
 	_serial = *(sio_t*)serial;
 

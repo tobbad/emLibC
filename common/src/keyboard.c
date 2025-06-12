@@ -17,7 +17,6 @@ static kybd_t *my_kkybd[DEVICE_CNT];
 char *key_state_3c[] = { "   ", "BLI", "ON ", "NA ", };
 char *key_state_2c[] = { "  ", "BL", "ON ", "NA ", };
 
-mkey_t reset_key = { .last=0, .current=0, .unstable=0, .cnt=0, .stable=true };
 
 static uint8_t keyboard_find_dev(kybd_t *kybd) {
 	for (uint8_t i = 0; i < DEVICE_CNT; i++) {
@@ -33,7 +32,7 @@ static uint8_t keyboard_find_dev(kybd_t *kybd) {
 	return 0;
 };
 
-dev_handle_t keyboard_init(kybd_t *kybd, xpad_t *device) {
+dev_handle_t keyboard_init(kybd_t *kybd, xpad_dev_t *device) {
 	int8_t dev_nr=0;
 	if (kybd != NULL) {
 		dev_nr = keyboard_find_dev(kybd);
