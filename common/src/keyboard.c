@@ -12,7 +12,7 @@
 #include "gpio_port.h"
 #define key_reset_cnt 100
 
-static kybd_t *my_kybd[DEVICE_CNT];
+static kybd_t *my_kkybd[DEVICE_CNT];
 
 char *key_state_3c[] = { "   ", "BLI", "ON ", "NA ", };
 char *key_state_2c[] = { "  ", "BL", "ON ", "NA ", };
@@ -21,12 +21,12 @@ mkey_t reset_key = { .last=0, .current=0, .unstable=0, .cnt=0, .stable=true };
 
 static uint8_t keyboard_find_dev(kybd_t *kybd) {
 	for (uint8_t i = 0; i < DEVICE_CNT; i++) {
-		if (my_kybd[i] == kybd) {
+		if (my_kkybd[i] == kybd) {
 			return i;
 		}
 	}
 	for (uint8_t i = 1; i < DEVICE_CNT; i++) {
-		if (my_kybd[i] == NULL) {
+		if (my_kkybd[i] == NULL) {
 			return i ;
 		}
 	}
@@ -38,8 +38,9 @@ dev_handle_t keyboard_init(kybd_t *kybd, xpad_t *device) {
 	if (kybd != NULL) {
 		dev_nr = keyboard_find_dev(kybd);
 		if (dev_nr > 0) {
-			my_kybd[dev_nr] = kybd;
+			my_kkybd[dev_nr] = kybd;
 			kybd->init(dev_nr, kybd->dev_type, device);
+            kybd->pcnt = -1;
 		}
 	} else {
 		printf("Cannot find device"NL);
@@ -48,38 +49,49 @@ dev_handle_t keyboard_init(kybd_t *kybd, xpad_t *device) {
 }
 
 uint16_t keyboard_scan(dev_handle_t dev) {
-	static int32_t cnt=0;
-	static int32_t lcnt=-1;
 	int16_t res = 0;
-	if ((dev > 0) && my_kybd[dev] != NULL) {
-		res = my_kybd[dev]->scan(dev);
+	if ((dev > 0) && my_kkybd[dev] != NULL) {
+		res = my_kkybd[dev]->scan(dev);
 	}
 	if (res>0){
-		lcnt=cnt-1;
+	    my_kkybd[dev]->plcnt=my_kkybd[dev]->pcnt-1;
 	}
-	if ((lcnt>0) &&(cnt-lcnt)%key_reset_cnt==0){
+	if ((my_kkybd[dev]->plcnt>0) &&(my_kkybd[dev]->cnt-my_kkybd[dev]->plcnt)%key_reset_cnt==0){
 		keyboard_reset(dev, false);
-		lcnt=-1;
+		my_kkybd[dev]->pcnt=-1;
 		printf("Reset dirty"NL);
 	}
-	cnt++;
+	my_kkybd[dev]->pcnt++;
 	return res;
 }
 ;
 void keyboard_reset(dev_handle_t dev, bool hard) {
-	if ((dev > 0) && my_kybd[dev] != NULL) {
-		my_kybd[dev]->reset(dev, hard);
+	if ((dev > 0) && my_kkybd[dev] != NULL) {
+		my_kkybd[dev]->reset(dev, hard);
 	}
 	return;
 }
 
 void keyboard_state(dev_handle_t dev, state_t *ret) {
-	if ((dev > 0) && my_kybd[dev] != NULL) {
-		my_kybd[dev]->state(dev, ret);
-	}
-	return;
+    if ((dev > 0) && my_kkybd[dev] != NULL) {
+        my_kkybd[dev]->state(dev, ret);
+    }
+    return;
 }
-;
+void keyboard_undirty(dev_handle_t dev) {
+    if ((dev > 0) && my_kkybd[dev] != NULL) {
+        my_kkybd[dev]->undirty(dev);
+    }
+    return;
+}
+
+bool keyboard_isdirty(dev_handle_t dev) {
+    if ((dev > 0) && my_kkybd[dev] != NULL) {
+        return my_kkybd[dev]->isdirty(dev);
+    }
+    return false;
+}
+
 void keyboard_print(state_t *state, char *title) {
 	if (!state) {
 		printf("No input"NL);
@@ -94,7 +106,7 @@ void keyboard_print(state_t *state, char *title) {
 
 dev_type_e keyboard_get_dev_type(dev_handle_t dev) {
 	if ((dev > 0) && (dev < TERMINAL)) {
-		return my_kybd[dev]->dev_type;
+		return my_kkybd[dev]->dev_type;
 	}
 	return DEV_TYPE_NA;
 }

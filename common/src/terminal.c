@@ -11,10 +11,11 @@
 #include <keyboard.h>
 
 static state_t my_term = {
-    .first = 0, //First valid value
-    .cnt =9,
+    .first = 1, //First valid value
+    .cnt =8,
     .state  = { OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF },
     .label =  { 'R', '1', '2', '3', '4', '5', '6', '7', '8' },
+    .dirty = false,
 
 };
 sio_t _serial;
@@ -33,7 +34,7 @@ static bool check_key(char ch) {
 static uint16_t terminal_scan(dev_handle_t dev) {
     char ch;
 	static bool asked = false;
-	uint16_t res = 0;
+	int16_t res = 0;
 	//char allowed_keys={'R'};
 
 	if (!asked) {
@@ -47,9 +48,11 @@ static uint16_t terminal_scan(dev_handle_t dev) {
         int8_t idx=state_ch2idx(&my_term, ch);
         if (idx>=0){
             res = ch - '0';
+            my_term.dirty= true;
             if (res<9){
                 state_propagate(&my_term, ch);
                 my_term.clabel = 0;
+                my_term.dirty= true;
             } else {
                 my_term.clabel = ch;
             }
@@ -62,6 +65,14 @@ static uint16_t terminal_scan(dev_handle_t dev) {
 
 static void terminal_state(dev_handle_t dev, state_t *ret) {
     state_merge(&my_term, ret);// problem here
+}
+
+static bool terminal_isdirty(dev_handle_t dev){
+    return my_term.dirty;
+}
+static void terminal_undirty(dev_handle_t dev){
+    my_term.dirty = false;
+    return;
 }
 
 static void terminal_reset(dev_handle_t dev, bool hard) {
@@ -79,6 +90,8 @@ kybd_t terminal_dev = {
 		.scan = &terminal_scan,
 		.reset =&terminal_reset,
 		.state = &terminal_state,
+        .isdirty = &terminal_isdirty,
+        .undirty = &terminal_undirty,
 		.dev_type = TERMINAL,
 		.cnt = 8,
 		.first= 1

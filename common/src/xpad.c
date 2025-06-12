@@ -210,7 +210,8 @@ static uint8_t xpad_update_key(uint8_t dev, uint8_t index, bool pinVal) {
 		if (my_xpad[dev].key[index].stable) {
 			my_xpad[dev].state.state[index] = ((my_xpad[dev].state.state[index] + 1)
 					% KEY_STAT_CNT);
-			my_xpad[dev].dirty = true;
+			my_xpad[dev].state.dirty = true;
+            my_xpad[dev].dirty = true;
 			printf("Pushed   Key @ (index =%d, z=%d, s=%d, value = %c)"NL, index, z, s, label);
 		} else {
 			printf("Released Key @ (index =%d, z=%d, s=%d, value = %c)"NL, index, z , s, label);
@@ -297,6 +298,21 @@ static void xpad_state(dev_handle_t dev, state_t *oState) {
 	oState->dirty = my_xpad[dev].dirty;
 	return;
 }
+static bool xpad_isdirty(dev_handle_t dev) {
+    if (mpy_xpad[dev] == NULL) {
+        printf("No valid handle on state"NL);
+        return false;
+    }
+    return my_xpad[dev].state.dirty;
+}
+static void xpad_undirty(dev_handle_t dev) {
+    if (mpy_xpad[dev] == NULL) {
+        printf("No valid handle on state"NL);
+        return;
+    }
+    my_xpad[dev].state.dirty = false;
+    return;
+}
 
 static void xpad_reset(dev_handle_t dev, bool hard) {
 	if (mpy_xpad[dev] == NULL) {
@@ -318,6 +334,8 @@ kybd_t xscan_dev = {
 	.scan = &xpad_spalten_scan,
 	.reset= &xpad_reset,
 	.state = &xpad_state,
+    .isdirty = &xpad_isdirty,
+    .undirty = &xpad_undirty,
 	.dev_type = XSCAN,
 	.cnt = 16,
 	.first = 0,
@@ -328,6 +346,8 @@ kybd_t eight_dev = {
 	.scan = &xpad_eight_scan,
 	.reset =&xpad_reset,
 	.state = &xpad_state,
+    .isdirty = &xpad_isdirty,
+    .undirty = &xpad_undirty,
 	.dev_type = EIGHTKEY,
 	.cnt = 8,
 	.first = 0,

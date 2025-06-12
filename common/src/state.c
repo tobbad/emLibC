@@ -37,6 +37,13 @@ void state_clear_all_state(state_t * state){
     state->dirty=false;
 }
 
+
+void state_undirty(state_t * state){
+    if (state!=NULL){
+        state->dirty=false;
+    }
+}
+
 void state_set_value(state_t * state, uint8_t nr, key_state_e new_state ){
     if ((nr>=state->first)&&(nr<=state->cnt)){
         if (state->state[nr]!=new_state){
@@ -126,7 +133,7 @@ bool state_is_same(state_t *last, state_t *this){
 
 bool state_merge(state_t *inState, state_t *outState){
     if (inState->cnt != outState->cnt){
-        printf("Payload cnt=(%d, %d) can not be merged"NL,inState->cnt,inState->cnt);
+        printf("Payload cnt=(%d, %d) can not be merged"NL,inState->cnt,outState->cnt);
         return false;
     }
     printf("inState.cnt: %d, outState.cnt: %d"NL, inState->cnt,outState->cnt);

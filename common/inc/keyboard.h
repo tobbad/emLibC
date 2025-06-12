@@ -32,10 +32,14 @@ typedef struct kybd_s{
 	void (*init)(dev_handle_t dev, dev_type_e dev_type, xpad_t *device);
 	uint16_t (*scan)(dev_handle_t dev);
 	void (*reset)(dev_handle_t dev, bool hard);
-	void (*state)(dev_handle_t dev, state_t *ret);
+    void (*state)(dev_handle_t dev, state_t *ret);
+    bool (*isdirty)(dev_handle_t dev);
+    void (*undirty)(dev_handle_t dev);
 	dev_type_e dev_type;
 	uint8_t cnt;
 	uint8_t first;
+    int32_t pcnt;
+    int32_t plcnt;
 } kybd_t;
 
 extern mkey_t reset_key;
@@ -45,6 +49,8 @@ dev_handle_t keyboard_init(kybd_t *kybd, xpad_t *device);
 uint16_t keyboard_scan(dev_handle_t dev);
 void keyboard_reset(dev_handle_t dev, bool hard);
 void keyboard_state(dev_handle_t dev, state_t *ret);
+bool keyboard_isdirty(dev_handle_t dev);
+void keyboard_undirty(dev_handle_t dev);
 void  keyboard_print(state_t *state, char* start); // Show returned
 dev_type_e  keyboard_get_dev_type(dev_handle_t dev);
 
