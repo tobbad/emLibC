@@ -11,6 +11,7 @@
 #include "state.h"
 
 #define CMD_LEN 4
+
 typedef enum{
     OFF,
     BLINKING,
@@ -18,11 +19,15 @@ typedef enum{
     KEY_STAT_CNT
 }key_state_e;
 
+typedef union {
+     uint32_t cmd;  // Kann ein pointer zu einem Pointer enthalten, das den anderen Geräten mitgeteilt wird oder NULL
+     char str[CMD_LEN]; //CMD_LEN ist 4 ist leer (0) oder ein command
+ }clabel_u;
 typedef struct state_s{
     uint8_t first;
     uint8_t cnt;
     bool dirty;
-    char clabel; // Control label or 0
+    clabel_u clabel;
     key_state_e state[MAX_BUTTON_CNT];
     char  label[MAX_BUTTON_CNT];
 } state_t; // Size is 2*MAX_BUTTON_CNT + 4=  36 Byte (MAX_BUTTON_CNT = 16)
@@ -32,10 +37,7 @@ typedef struct statea_s{
                     // und daher hat ein Label nur 2 Bit in den 16 Bit state Variable
     bool dirty;     // Das zwei Topbit indizieren die Art der Payload (01: *cmd, 11; cmdStr[CMD_LEN])
     uint32_t state; // Jedes label hat eine  state: 00=OFF, 01: BLINKING, 11 ON 16*2 =32 Bit
-    union cmd_u{
-        char *cmd;  // Kann ein pointer zu einem Pointer enthalten, das den anderen Geräten mitgeteilt wird oder NULL
-        char cmdStr[CMD_LEN]; //CMD_LEN ist 4 ist leer (nur Spaces) oder ein command
-    } cmd;
+    clabel_u clabel;
 } statea_t; // Size is 10 Bytes, Label gibt es nicht da sowiso MAX_BUTTON_CNT (0..MAX_BUTTON_CNT-1) Labels gibt
 
 int8_t state_ch2idx(state_t *state, char ch);
@@ -45,6 +47,7 @@ void state_undirty(state_t * state);
 key_state_e state_get_state(state_t * state, char ch);
 void state_set_value(state_t * state, uint8_t nr, key_state_e new_state);
 void state_set_label(state_t * state, char ch, key_state_e new_state);
+void state_set_index(state_t * state, uint8_t  nr, key_state_e new_state);
 void state_set_u32(state_t * state, uint32_t u32);
 uint32_t state_get_u32(state_t * state);
 bool state_propagate(state_t *state, char ch);

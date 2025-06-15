@@ -9,6 +9,7 @@
 #include "state.h"
 
 int8_t state_ch2idx(state_t *state, char ch){
+	if ((ch==' ')||(ch==0))  return -1;
     for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
         if (state->label[i]==ch){
             return i;
@@ -22,17 +23,17 @@ void  state_init(state_t *state){
     state->dirty = false;
     state->first = 0;
     state->cnt = MAX_BUTTON_CNT;
-    state->clabel = 0;
+    state->clabel.cmd =0;
     memcpy(&state->label, &"0123456789ABCDEF", MAX_BUTTON_CNT);
     for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
-        state->state[i] = OFF;
+    	state_set_index(&state, i, OFF);
     }
 
 }
 
 void state_clear(state_t * state){
-    for (uint8_t nr=0;nr<state->cnt;nr++){
-        state_set_label(state, nr, OFF);
+    for (uint8_t nr=state->first;nr<=state->first+state->cnt;nr++){
+    	state_set_index(state, nr, OFF);
     }
     state->dirty=false;
 }
@@ -56,10 +57,21 @@ void state_set_value(state_t * state, uint8_t nr, key_state_e new_state ){
 
 void state_set_label(state_t * state, char ch, key_state_e new_state){
     if (isalpha(ch)){
-        state->clabel = toupper(ch);
+        state->clabel.str[0] = toupper(ch);
         return;
     }
     uint8_t nr = state_ch2idx(state, ch);
+    if ((nr>=state->first)&&(nr<=state->cnt)){
+        if (state->state[nr]!=new_state){
+            state->state[nr] = new_state;
+            state->dirty=true;
+        }
+    }
+    return;
+};
+
+void state_set_index(state_t * state, uint8_t  nr, key_state_e new_state){
+	if (nr<MAX_BUTTON_CNT);
     if ((nr>=state->first)&&(nr<=state->cnt)){
         if (state->state[nr]!=new_state){
             state->state[nr] = new_state;
@@ -138,10 +150,7 @@ bool state_merge(state_t *inState, state_t *outState){
     }
     printf("inState.cnt: %d, outState.cnt: %d"NL, inState->cnt,outState->cnt);
     outState->dirty=false;
-    if (inState->state[0]!=OFF) {
-        outState->clabel=inState->label[0];
-        inState->first=0;
-    }
+    outState->clabel.cmd= inState->clabel.cmd;
     // FIXME
     for (uint8_t inr=inState->first,onr=outState->first;
             inr<inState->first+inState->cnt;inr++, onr++){
@@ -169,8 +178,12 @@ void state_print(state_t *state,  char *title ){
     }
     printf("first : %d"NL, state->first);
     printf("cnt   : %d"NL, state->cnt);
-    printf("clabel: 0x%1x"NL, state->clabel);
-    printf("Label : ");
+    if (strlen(state->clabel.str)<CMD_LEN){
+    	printf("clabel: %s"NL, state->clabel.str );
+    } else{
+    	printf("clabel: 0x%08lx"NL, state->clabel.cmd);
+    }
+    	printf("Label : ");
     for (uint8_t i = 0; i<MAX_BUTTON_CNT; i++){
         char c = state->label[i];
         if (isprint(c)){
