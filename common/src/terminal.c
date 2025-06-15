@@ -22,9 +22,9 @@ static state_t my_term = {
 static sio_t sio;
 static void terminal_reset(dev_handle_t dev, bool hard);
 
-static void terminal_init(dev_handle_t handle, dev_type_e dev_type,	sio_t * serial) {
+static void terminal_init(dev_handle_t handle, dev_type_e dev_type,	void * serial) {
 	terminal_reset(handle, true);
-	sio =(sio_t)*serial;
+	sio =*(sio_t*)serial;
 
 }
 

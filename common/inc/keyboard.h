@@ -21,7 +21,7 @@ extern char* key_state_3c[];
 extern char* key_state_2c[];
 
 typedef struct kybd_s{
-	void (*init)(dev_handle_t dev, dev_type_e dev_type, xpad_dev_t *device);
+	void (*init)(dev_handle_t dev, dev_type_e dev_type, void *device);
 	uint16_t (*scan)(dev_handle_t dev);
 	void (*reset)(dev_handle_t dev, bool hard);
     void (*state)(dev_handle_t dev, state_t *ret);
