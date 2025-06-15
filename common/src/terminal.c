@@ -7,6 +7,7 @@
 #include "main.h"
 #include "common.h"
 #include "device.h"
+#include "serial.h"
 #include "state.h"
 #include <keyboard.h>
 
@@ -18,12 +19,12 @@ static state_t my_term = {
     .dirty = false,
 
 };
-sio_t _serial;
+static sio_t sio;
 static void terminal_reset(dev_handle_t dev, bool hard);
 
-static void terminal_init(dev_handle_t handle, dev_type_e dev_type,	xpad_dev_t * serial) {
+static void terminal_init(dev_handle_t handle, dev_type_e dev_type,	sio_t * serial) {
 	terminal_reset(handle, true);
-	_serial = *(sio_t*)serial;
+	sio =(sio_t)*serial;
 
 }
 
@@ -42,7 +43,7 @@ static uint16_t terminal_scan(dev_handle_t dev) {
 		printf("Please enter key"NL);
 	}
     HAL_StatusTypeDef status;
-    status = HAL_UART_Receive(_serial.uart, (uint8_t*)&ch, 1, 0);
+    status = HAL_UART_Receive(sio.uart, (uint8_t*)&ch, 1, 0);
     if (status == HAL_OK) {
         ch = toupper(ch);
         int8_t idx=state_ch2idx(&my_term, ch);
@@ -106,7 +107,7 @@ int8_t terminal_waitForNumber(char **key) {
 	bool stay=true;
 	int16_t idx = 0;
 	while ((ch == 0xff)&&(stay)) {
-		status = HAL_UART_Receive(_serial.uart, &ch, 1, 0);
+		status = HAL_UART_Receive(sio.uart, &ch, 1, 0);
 		if (status == HAL_OK){
 	        if (ch == '\r'){
 	        	stay = false;
