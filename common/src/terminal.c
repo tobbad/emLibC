@@ -129,7 +129,7 @@ void UART_IdleCallback(void)
 {
 	data_in=true;
 
-    uint16_t receivedLength = CMD_LEN-__HAL_DMA_GET_COUNTER(sio.uart.hdmarx);
+    uint16_t receivedLength = CMD_LEN-__HAL_DMA_GET_COUNTER(sio.uart->hdmarx);
 
     if (receivedLength > 0 && receivedLength <= 3)    {
         memcpy(&my_term.clabel.cmd, (uint8_t*)&clabel.cmd, receivedLength);
