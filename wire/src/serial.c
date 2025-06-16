@@ -123,7 +123,6 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
 			 time_end_su();
 		 } else{
 			time_start(len, ptr);
-			GpioPinToggle(&my_port.pin[0]);
 			HAL_UART_Transmit(sio.uart, (uint8_t*)ptr, len, UART_TIMEOUT_MS);
 		    GpioPinToggle(&my_port.pin[0]);
 			time_end_tx();
