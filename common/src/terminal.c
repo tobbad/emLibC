@@ -136,6 +136,6 @@ void UART_IdleCallback(void)
         clabel.cmd=ZERO4;
     }
 
-    HAL_UART_Receive_DMA(&sio.uart, (uint8_t*)&clabel.cmd, CMD_LEN);
+    HAL_UART_Receive_DMA(sio.uart, (uint8_t*)&clabel.cmd, CMD_LEN);
 }
 
