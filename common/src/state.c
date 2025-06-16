@@ -197,19 +197,12 @@ void state_print(state_t *state,  char *title ){
         printf("%01x", state->state[i]);
     }
     printf(NL);
-    (state->dirty) ? printf("Dirty"NL): printf("Not Dirty"NL);
-}
-
-uint8_t state_cnt(state_t *state){
-	return state->cnt;
-}
-
-uint8_t state_first(state_t *state){
-	return state->first;
-}
-
-uint8_t state_last(state_t *state){
-	return state->first+state->cnt-1;
+    (state->dirty&&0x01) ? printf("Dirty"NL): printf("Not Dirty"NL);
+    if ((state->dirty>>6)==1){
+        printf("clable is cmd"NL);
+    } else if ((state->dirty>>6)==2) {
+        printf("clable is str"NL);
+    }
 }
 
 uint8_t state_get_dirty(state_t *state ){
@@ -218,4 +211,17 @@ uint8_t state_get_dirty(state_t *state ){
 void    state_set_dirty(state_t *state ){
 	state->dirty=true;
 }
+
+uint8_t state_get_cnt(state_t *state) {
+    return state->cnt;
+};
+uint8_t state_get_first(state_t *state){
+    return state->first;
+};
+uint8_t state_set_cnt(state_t *state, uint8_t nr){
+    state->cnt=nr;
+};
+uint8_t state_set_first(state_t *state, uint8_t nr){
+    state->first=nr;
+};
 
