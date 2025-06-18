@@ -16,7 +16,7 @@ typedef enum{
     OFF,
     BLINKING,
     ON,
-    KEY_STAT_CNT
+    STATE_CNT
 }key_state_e;
 
 typedef union {
@@ -35,11 +35,6 @@ typedef struct state_s{
     char  label[MAX_BUTTON_CNT];
 } state_t; // Size is 2*MAX_BUTTON_CNT + 4=  36 Byte (MAX_BUTTON_CNT = 16)
 
-typedef union {
-     uint32_t cmd;  // Kann ein pointer zu einem Pointer enthalten, das
-                    // den anderen Geräten mitgeteilt wird oder NULL
-     char str[CMD_LEN]; //CMD_LEN ist 4 ist leer (0) oder ein command
- }clabel_u;
 
 typedef struct statea_s{
     uint8_t range;  // Unteres Nibble: tiefstes gültiges Labele (0-15):
@@ -66,7 +61,7 @@ bool state_merge(state_t *inState, state_t *outState);
 void state_print(state_t *state,  char *title );
 uint8_t state_get_cnt(state_t *state);
 uint8_t state_get_first(state_t *state);
-uint8_t state_set_cnt(state_t *state, uint8_t nr);
-uint8_t state_set_first(state_t *state, uint8_t nr);
+void state_set_cnt(state_t *state, uint8_t nr);
+void state_set_first(state_t *state, uint8_t nr);
 
 #endif /* INC_STATE_H_ */

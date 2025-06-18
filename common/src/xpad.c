@@ -217,7 +217,7 @@ static uint8_t xpad_update_key(uint8_t devh, uint8_t index, bool pinVal) {
 		printf("Reached index %d to %d (pinVal=%d)"NL, index,STABLE_CNT, pinVal);
 		if (my_xpad[devh].key[index].stable) {
 			my_xpad[devh].state.state[index] = ((my_xpad[devh].state.state[index] + 1)
-					% KEY_STAT_CNT);
+					% STATE_CNT);
 			//my_xpad[devh].state.dirty = true;
             my_xpad[devh].state.dirty = true;
 			printf("Pushed   Key @ (index =%d, z=%d, s=%d, value = %c)"NL, index, z, s, label);

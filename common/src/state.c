@@ -26,7 +26,7 @@ void  state_init(state_t *state){
     state->clabel.cmd =0;
     memcpy(&state->label, &"0123456789ABCDEF", MAX_BUTTON_CNT);
     for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
-    	state_set_index(&state, i, OFF);
+    	state_set_index(state, i, OFF);
     }
 
 }
@@ -106,25 +106,36 @@ bool state_propagate(state_t *state, char ch){
     }
     uint8_t nr = state_ch2idx(state, ch);
     if (nr<0){
-        printf("%08ld: Cannot propagate key %c"NL, HAL_GetTick(),ch);
+        printf("Cannot propagate key %c"NL, ch);
         return false;
     };
-    state->state[nr] = (state->state[nr]+1)%KEY_STAT_CNT;
+    state->state[nr] = (state->state[nr]+1)%STATE_CNT;
     state->dirty=true;
     return true;
 
 }
+bool state_propagate_index(state_t *state, uint8_t idx){
+  if ((idx<state->first)||(idx>state->first+state->cnt)){
+        printf("Cannot propagate key %c"NL, idx);
+        return false;
+    };
+    state->state[idx] = (state->state[idx]+1)%STATE_CNT;
+    state->dirty=true;
+    return true;
+
+}
+
 key_state_e state_get_state(state_t * state, char ch){
     uint8_t nr = state_ch2idx(state, ch);
     if (nr<0){
         printf("%08ld: Cannot get key %c"NL, HAL_GetTick(),ch);
-        return KEY_STAT_CNT;
+        return STATE_CNT;
     };
     return state->state[nr];
 }
 
 void state_set_state(state_t * state,uint8_t nr, key_state_e ks){
-	assert(ks<KEY_STAT_CNT);
+	assert(ks<STATE_CNT);
 	assert(nr<MAX_BUTTON_CNT);
 	if ((nr<state->first)||(nr>=state->first+state->cnt)){
 		printf("Try to modify unused state %d"NL, nr);
@@ -218,10 +229,11 @@ uint8_t state_get_cnt(state_t *state) {
 uint8_t state_get_first(state_t *state){
     return state->first;
 };
-uint8_t state_set_cnt(state_t *state, uint8_t nr){
+void state_set_cnt(state_t *state, uint8_t nr){
     state->cnt=nr;
 };
-uint8_t state_set_first(state_t *state, uint8_t nr){
+
+void state_set_first(state_t *state, uint8_t nr){
     state->first=nr;
 };
 
