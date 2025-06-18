@@ -22,16 +22,16 @@ static led_line_t my_stateled;
 static  gpio_port_t def_port ={
 	.cnt =10,
 	.pin = {
-		{ .port = GPIOC, .pin = GPIO_PIN_8,  .cState= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
-		{ .port = GPIOC, .pin = GPIO_PIN_6,  .cState= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
-		{ .port = GPIOB, .pin = GPIO_PIN_15, .cState= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
-		{ .port = GPIOB, .pin = GPIO_PIN_14, .cState= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
-		{ .port = GPIOB, .pin = GPIO_PIN_13, .cState= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
-		{ .port = GPIOB, .pin = GPIO_PIN_12, .cState= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
-        { .port = GPIOB, .pin = GPIO_PIN_2,  .cState= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
-        { .port = GPIOC, .pin = GPIO_PIN_14, .cState= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
-        { .port = GPIOB, .pin = GPIO_PIN_5,  .cState= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
-        { .port = GPIOB, .pin = GPIO_PIN_6,  .cState= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
+		{ .port = GPIOC, .pin = GPIO_PIN_8,  .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
+		{ .port = GPIOC, .pin = GPIO_PIN_6,  .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
+		{ .port = GPIOB, .pin = GPIO_PIN_15, .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
+		{ .port = GPIOB, .pin = GPIO_PIN_14, .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
+		{ .port = GPIOB, .pin = GPIO_PIN_13, .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
+		{ .port = GPIOB, .pin = GPIO_PIN_12, .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
+        { .port = GPIOB, .pin = GPIO_PIN_2,  .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
+        { .port = GPIOC, .pin = GPIO_PIN_14, .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
+        { .port = GPIOB, .pin = GPIO_PIN_5,  .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
+        { .port = GPIOB, .pin = GPIO_PIN_6,  .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } },
 	},
 };
 

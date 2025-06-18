@@ -39,6 +39,7 @@ em_msg GpioPinWrite(gpio_pin_t *pin, bool value){
 	uint8_t res = EM_ERR;
 	if (pin->port != NULL){
 		/* Following check consumes 20ms on 384000 (5*240x320) calls BSSR*/
+		state = pin->inv^state;
 		GPIO_PinState state = value?GPIO_PIN_SET:GPIO_PIN_RESET;
 		HAL_GPIO_WritePin(pin->port, pin->pin, state);
 		res = EM_OK;
@@ -51,6 +52,7 @@ em_msg GpioPinRead(gpio_pin_t *pin, bool *value){
 	if (pin->port != NULL)
 	{
 		GPIO_PinState state = HAL_GPIO_ReadPin(pin->port, pin->pin);
+		state = pin->inv^state;
 		*value = state==GPIO_PIN_SET?true:false;
 		res = EM_OK;
 	}
