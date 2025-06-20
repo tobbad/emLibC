@@ -61,11 +61,11 @@ void stateled_toggle(){
 };
 void stateled_on(uint8_t led_nr){
     if (!my_stateled.init) return;
-    GpioPinWrite(&my_stateled.port->pin[led_nr], false);
+    GpioPinWrite(&my_stateled.port->pin[led_nr], true);
 };
 void stateled_off(uint8_t led_nr){
     if (!my_stateled.init) return;
-    GpioPinWrite(&my_stateled.port->pin[led_nr], true);
+    GpioPinWrite(&my_stateled.port->pin[led_nr], false);
 };
 
 void stateled_update(){
