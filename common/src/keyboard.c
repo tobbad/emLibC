@@ -32,7 +32,7 @@ static uint8_t keyboard_find_dev(kybd_t *kybd) {
 	return 0;
 };
 
-dev_handle_t keyboard_init(kybd_t *kybd, xpad_dev_t *device) {
+dev_handle_t keyboard_init(kybd_t *kybd, void *device) {
 	int8_t dev_nr=0;
 	if (kybd != NULL) {
 		dev_nr = keyboard_find_dev(kybd);
