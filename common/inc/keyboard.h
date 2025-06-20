@@ -36,7 +36,7 @@ typedef struct kybd_s{
 
 
 
-dev_handle_t keyboard_init(kybd_t *kybd, xpad_dev_t *device);
+dev_handle_t keyboard_init(kybd_t *kybd, void *device);
 uint16_t keyboard_scan(dev_handle_t dev);
 void keyboard_reset(dev_handle_t dev, bool hard);
 void keyboard_state(dev_handle_t dev, state_t *ret);
