@@ -113,11 +113,11 @@ int8_t terminal_waitForNumber(char **key) {
 		HAL_UART_Receive_DMA(sio.uart, (uint8_t*)&clabel.str[0], CMD_LEN);
 	}
 	char *stopstring = NULL;
-	if ((clabel.str[0]=='R')|| (clabel.str[0]=='r')){
-	    *key = &clabel.str[0];
+	if ((my_term.clabel.str[0]=='R')|| (my_term.clabel.str[0]=='r')){
+	    *key = &my_term.clabel.str[0];
 		return -1;
 	}
-	long long int res = strtol((char*) &clabel.str, &stopstring, 10);
+	long long int res = strtol((char*) &my_term.clabel.str, &stopstring, 10);
 	if (strlen(stopstring)==0) {
 	    *key = &clabel.str[0];
 		return res;
