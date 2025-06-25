@@ -143,6 +143,27 @@ int8_t terminal_waitForNumber(char **key) {
 	}
 	return -1;
 }
+
+//int8_t terminal_waitForNumber(char **key) {
+//	static char buffer[LINE_LENGTH];
+//	memset(buffer, 0, LINE_LENGTH);
+//	data_in = false;
+//	while (!data_in) {
+//		HAL_UART_Receive_DMA(sio.uart, (uint8_t*)&clabel.str[0], CMD_LEN);
+//	}
+//	char *stopstring = NULL;
+//	if ((clabel.str[0]=='R')|| (clabel.str[0]=='r')){
+//	    *key = &clabel.str[0];
+//		return -1;
+//	}
+//	long long int res = strtol((char*) &clabel.str, &stopstring, 10);
+//	if (strlen(stopstring)==0) {
+//	    *key = &clabel.str[0];
+//		return res;
+//	}
+//	return -1;
+}
+
 void UART_IdleCallback(void)
 {
 	data_in=true;
