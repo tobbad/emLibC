@@ -18,6 +18,17 @@ int8_t state_ch2idx(state_t *state, char ch){
     return -1;
 }
 
+int8_t state_nr2idx(state_t *state, uint8_t nr){
+    for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
+    	char x[3];
+    	snprintf(&x, 3, "%x", nr);
+        if (state->label[i]==x[0]){
+            return i;
+        }
+    }
+    return -1;
+}
+
 
 void  state_init(state_t *state){
     state->dirty = false;
