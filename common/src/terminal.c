@@ -162,7 +162,7 @@ int8_t terminal_waitForNumber(char **key) {
 //		return res;
 //	}
 //	return -1;
-}
+//}
 
 void UART_IdleCallback(void)
 {
