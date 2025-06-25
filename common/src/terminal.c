@@ -108,23 +108,41 @@ kybd_t terminal_dev = {
 int8_t terminal_waitForNumber(char **key) {
 	static char buffer[LINE_LENGTH];
 	memset(buffer, 0, LINE_LENGTH);
-	data_in = false;
-	while (!data_in) {
-		HAL_UART_Receive_DMA(sio.uart, (uint8_t*)&clabel.str[0], CMD_LEN);
+	HAL_StatusTypeDef status;
+	uint8_t ch = 0xFF;
+	bool stay=true;
+	int16_t idx = 0;
+	while ((ch == 0xff)&&(stay)) {
+		status = HAL_UART_Receive(serial.uart, &ch, 1, 0);
+		if (status == HAL_OK){
+	        if (ch == '\r'){
+	        	stay = false;
+	        	ch=0xff;
+	        }
+            if (((ch >= '0') && (ch < '9')) || (ch == 'R')|| (ch=='r') || (ch == '+') || (ch == '-')) {
+                buffer[idx++] = ch;
+                if ((ch == 'R')|| (ch=='r')){
+                	stay = false;
+                }
+                if (idx>=1){
+                	stay = false;
+                }
+                ch = 0xFF;
+            }
+		}
 	}
 	char *stopstring = NULL;
-	if ((clabel.str[0]=='R')|| (clabel.str[0]=='r')){
-	    *key = &clabel.str[0];
+	if ((buffer[0]=='R')|| (buffer[0]=='r')){
+	    *key = &buffer[0];
 		return -1;
 	}
-	long long int res = strtol((char*) &clabel.str, &stopstring, 10);
+	long long int res = strtol((char*) &buffer, &stopstring, 10);
 	if (strlen(stopstring)==0) {
-	    *key = &clabel.str[0];
+	    *key = &buffer[0];
 		return res;
 	}
 	return -1;
 }
-
 void UART_IdleCallback(void)
 {
 	data_in=true;
