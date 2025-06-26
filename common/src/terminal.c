@@ -103,8 +103,9 @@ static uint16_t terminal_scan(dev_handle_t dev) {
     if (*stopstring!=0) {
         return res;
     }
-    snprintf(&ch, 3, "%x", res);
-    int8_t idx=state_nr2idx(&my_term, res);
+    char x[CMD_LEN];
+    snprintf(&x, 3, "%x", x);
+    int8_t idx=state_ch2idx(&my_term, &x[0]);
     if ((idx>=my_term.first)&&(res<=my_term.first+my_term.cnt)){
         my_term.dirty= true;
         state_propagate(&my_term, idx);

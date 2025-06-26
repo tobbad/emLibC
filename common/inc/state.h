@@ -19,6 +19,8 @@ typedef enum{
     STATE_CNT
 }key_state_e;
 
+#define ISNUM       0x80
+#define ISASCISTR   0x40
 typedef union {
      uint32_t cmd;  // Kann ein pointer zu einem Pointer enthalten, das
                     // den anderen Geräten mitgeteilt wird oder NULL
