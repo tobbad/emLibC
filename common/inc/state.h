@@ -47,6 +47,7 @@ typedef struct statea_s{
 
 int8_t clable2type(clabel_u *lbl);
 int8_t state_ch2idx(state_t *state, char ch);
+int8_t state_nr2idx(state_t *state, uint8_t nr);
 void state_init(state_t *state);
 void state_clear(state_t * state);
 void state_undirty(state_t * state);

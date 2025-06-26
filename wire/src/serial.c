@@ -157,23 +157,23 @@ int _read(int32_t file, uint8_t *ptr, int32_t len) {
     }
     return 0;
 }
-
-int __io_getchar(void) {
-    uint8_t ch = 0;
-    // Clear the Overrun flag just before receiving the first character
-    __HAL_UART_CLEAR_OREFLAG(sio.uart);
-
-    HAL_UART_Receive(sio.uart, (uint8_t*) &ch, 1, 0);
-    return ch;
-}
-
-int __io_putchar(char ch) {
-    // Clear the Overrun flag just before receiving the first character
-    __HAL_UART_CLEAR_OREFLAG(sio.uart);
-
-    HAL_UART_Transmit(sio.uart, (uint8_t*) &ch, 1, 0xFFFF);
-    return ch;
-}
+//
+//int __io_getchar(void) {
+//    uint8_t ch = 0;
+//    // Clear the Overrun flag just before receiving the first character
+//    __HAL_UART_CLEAR_OREFLAG(sio.uart);
+//
+//    HAL_UART_Receive(sio.uart, (uint8_t*) &ch, 1, 0);
+//    return ch;
+//}
+//
+//int __io_putchar(char ch) {
+//    // Clear the Overrun flag just before receiving the first character
+//    __HAL_UART_CLEAR_OREFLAG(sio.uart);
+//
+//    HAL_UART_Transmit(sio.uart, (uint8_t*) &ch, 1, 0xFFFF);
+//    return ch;
+//}
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
     if (huart == sio.uart) {
