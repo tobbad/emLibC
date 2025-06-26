@@ -32,10 +32,6 @@ static void terminal_init(dev_handle_t handle, dev_type_e dev_type,	void * seria
 	state_clear(&my_term);
 
 }
-
-static bool check_key_str(char ch) {
-    return state_ch2idx(&my_term, ch)<ISNUM;
-}
 //
 //static uint16_t terminal_scan(dev_handle_t dev) {
 //    char ch;
