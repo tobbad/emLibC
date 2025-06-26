@@ -45,6 +45,7 @@ typedef struct statea_s{
     clabel_u clabel;// 4 Bytes
 } statea_t; // Size is 10 Bytes, Label gibt es nicht da es owiso MAX_BUTTON_CNT (0..MAX_BUTTON_CNT-1) Labels gibt
 
+int8_t clable2type(clabel_u *lbl);
 int8_t state_ch2idx(state_t *state, char ch);
 void state_init(state_t *state);
 void state_clear(state_t * state);

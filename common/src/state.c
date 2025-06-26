@@ -8,8 +8,31 @@
 #include "common.h"
 #include "state.h"
 
+int8_t clable2type(clabel_u *lbl){
+    int8_t res=-1;
+    char *stopstring = NULL;
+    lbl->str[CMD_LEN-1]=0;
+    res = strtol(lbl->str, &stopstring, 10);
+    if (strlen(stopstring)==0) {
+        lbl->cmd = res;
+        res= ISNUM;
+    }
+    bool itIs=false;
+    for (uint8_t i;i<CMD_LEN;i++){
+        itIs &= isascii(lbl->str[i]);
+    }
+    if (itIs){
+        res = ISASCISTR;
+    }
+    return res;
+}
+
+/*
+ * if ch[0] is a number, return it
+ * Otherwise return 0x7f if string contains only ascii
+ */
 int8_t state_ch2idx(state_t *state, char ch){
-	if ((ch==' ')||(ch==0))  return -1;
+    if ((ch==' ')||(ch==0))  return -1;
     for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
         if (state->label[i]==ch){
             return i;
@@ -61,6 +84,7 @@ void state_set_label(state_t * state, char ch, key_state_e new_state){
         return;
     }
     uint8_t nr = state_ch2idx(state, ch);
+    if (nr<0) return;
     if ((nr>=state->first)&&(nr<=state->cnt)){
         if (state->state[nr]!=new_state){
             state->state[nr] = new_state;
@@ -71,7 +95,8 @@ void state_set_label(state_t * state, char ch, key_state_e new_state){
 };
 
 void state_set_index(state_t * state, uint8_t  nr, key_state_e new_state){
-	if (nr<MAX_BUTTON_CNT);
+    if (nr<0) return;
+    if (nr>=MAX_BUTTON_CNT) return;
     if ((nr>=state->first)&&(nr<=state->cnt)){
         if (state->state[nr]!=new_state){
             state->state[nr] = new_state;
@@ -126,7 +151,7 @@ bool state_propagate_index(state_t *state, uint8_t idx){
 }
 
 key_state_e state_get_state(state_t * state, char ch){
-    uint8_t nr = state_ch2idx(state, ch);
+    uint8_t nr = state_ch2idx(state, ch );
     if (nr<0){
         printf("%08ld: Cannot get key %c"NL, HAL_GetTick(),ch);
         return STATE_CNT;
