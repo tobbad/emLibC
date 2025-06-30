@@ -107,7 +107,8 @@ static uint16_t terminal_scan(dev_handle_t dev) {
 	if (*stopstring!=0) {
 		return res;
 	}
-	snprintf(&ch, 3, "%x", res);
+	snprintf(buffer, 3, "%lld", res);
+	printf("Got key %s"NL,buffer);
 	int8_t idx=state_ch2idx(&my_term, res);
 	if ((idx>=my_term.first)&&(res<=my_term.first+my_term.cnt)){
 		my_term.dirty= true;
