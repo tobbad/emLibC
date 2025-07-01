@@ -62,7 +62,6 @@ static xpad_dev_t default_eight_dev = {
 			{ .port = GPIOC, .pin = GPIO_PIN_2,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
 			{ .port = GPIOC, .pin = GPIO_PIN_3,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
 			{ .port = GPIOA, .pin = GPIO_PIN_0,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
-
 			{ .port = GPIOA, .pin = GPIO_PIN_4,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
 			{ .port = GPIOA, .pin = GPIO_PIN_5,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
 			{ .port = GPIOC, .pin = GPIO_PIN_15,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP } },
@@ -71,10 +70,10 @@ static xpad_dev_t default_eight_dev = {
 	},
 
 	.dev_type=EIGHTKEY,
-	.state = {.label = {'0','1', '2', '3', '4', '5', '6', '7', '8', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
-	          .state={OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
+	.state = {.label = {'1', '2', '3', '4', '5', '6', '7', '8'},
+	          .state= { OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF },
 	          .cnt=EIGHT_BUTTON_CNT,
-			  .first = 1,
+			  .first = 0,
 	},
 };
 
