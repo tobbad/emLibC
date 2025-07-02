@@ -116,7 +116,6 @@ static uint16_t terminal_scan(dev_handle_t dev) {
         printf("Command %s"NL, my_term.clabel.str);
     }
 	return my_term.dirty;
-
 }
 static void terminal_state(dev_handle_t dev, state_t *ret) {
     state_merge(&my_term, ret);// problem here
