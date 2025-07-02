@@ -69,23 +69,23 @@ static uint16_t terminal_scan(dev_handle_t dev) {
     char ch=0xFF;
     static bool asked = false;
     HAL_StatusTypeDef status;
-    static char buffer[LINE_LENGTH];
+    char in[CMD_LEN];
     bool stay=true;
     if (!asked) {
         asked = true;
         printf("Please enter key"NL);
     }
-    memset(buffer, 0, LINE_LENGTH);
+    memset(in, 0, CMD_LEN);
     while ((ch == 0xff)&&(stay)) {
         uint8_t idx=0;
-        status = HAL_UART_Receive(_serial.uart,(uint8_t*) &ch, 1, 0);
+        //status = HAL_UART_Receive(_serial.uart,(uint8_t*) in, CMD_LEN, 0);
         if (status == HAL_OK){
-            if (ch == '\r'){
+            if (ch == 0x0a){ // linefeed lf
                 stay = false;
                 ch=0xff;
             }
             if (((ch >= '0') && (ch < '9')) || (ch == 'R')|| (ch=='r') || (ch == '+') || (ch == '-')) {
-                buffer[idx++] = ch;
+                in[idx++] = ch;
                 if ((ch == 'R')|| (ch=='r')){
                     my_term.clabel.cmd=0;
                     my_term.clabel.str[0]='R';
@@ -97,23 +97,25 @@ static uint16_t terminal_scan(dev_handle_t dev) {
                 ch = 0xFF;
             }
         }
+        stay=false;
     }
     char *stopstring = NULL;
-    long long int res = strtol((char*) &buffer, &stopstring, 10);
+    long long int res = strtol((char*) &in, &stopstring, 10);
     if (*stopstring!=0) {
         return res;
     }
-    char x[CMD_LEN];
-    snprintf(&x, 3, "%x", x);
-    int8_t idx=state_ch2idx(&my_term, x[0]);
+    uint8_t resi = res;
+    printf("Got key %d"NL, resi);
+    snprintf(in, CMD_LEN, "%3d", resi);
+    int8_t idx=state_ch2idx(&my_term, in[0]);
     if ((idx>=my_term.first)&&(res<=my_term.first+my_term.cnt)){
         my_term.dirty= true;
         state_propagate(&my_term, idx);
     } else {
-        my_term.clabel.str[CMD_LEN-1]=0;
+        memcpy(my_term.clabel.str, in, CMD_LEN-1);
         printf("Command %s"NL, my_term.clabel.str);
     }
-	return -1;
+	return my_term.dirty;
 
 }
 static void terminal_state(dev_handle_t dev, state_t *ret) {
