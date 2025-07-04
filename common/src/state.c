@@ -185,11 +185,12 @@ bool state_merge(state_t *inState, state_t *outState){
     }
     printf("inState.cnt: %d, outState.cnt: %d"NL, inState->cnt,outState->cnt);
     outState->dirty=false;
-    outState->clabel.cmd= inState->clabel.cmd;
-    // FIXME
+    if (outState->clabel.cmd!= inState->clabel.cmd){
+    	outState->clabel.cmd= inState->clabel.cmd;
+    	outState->dirty=true;
+    }
     for (uint8_t inr=inState->first,onr=outState->first;
             inr<inState->first+inState->cnt;inr++, onr++){
-        // FIXME
         if (inState->state[inr]!=outState->state[onr]) {
             outState->dirty=true;
             outState->state[onr] = inState->state[inr];

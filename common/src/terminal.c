@@ -70,26 +70,29 @@ static uint16_t terminal_scan(dev_handle_t dev) {
     static bool asked = false;
     HAL_StatusTypeDef status;
     char in[CMD_LEN];
+    memset(in, 0, CMD_LEN);
     bool stay=true;
     if (!asked) {
         asked = true;
         printf("Please enter key"NL);
     }
-    memset(in, 0, CMD_LEN);
     while ((ch == 0xff)&&(stay)) {
-        uint8_t idx=0;
-        //status = HAL_UART_Receive(_serial.uart,(uint8_t*) in, CMD_LEN, 0);
+        int8_t idx=0;
+        status = HAL_UART_Receive(_serial.uart,(uint8_t*) &ch, 1, 0);
         if (status == HAL_OK){
             if (ch == 0x0a){ // linefeed lf
                 stay = false;
                 ch=0xff;
             }
             if (((ch >= '0') && (ch < '9')) || (ch == 'R')|| (ch=='r') || (ch == '+') || (ch == '-')) {
-                in[idx++] = ch;
                 if ((ch == 'R')|| (ch=='r')){
                     my_term.clabel.cmd=0;
                     my_term.clabel.str[0]='R';
                     printf("Set string to %s"NL, my_term.clabel.str);
+                    idx++;
+                    return 1;
+                } else {
+                    in[idx++] = ch;
                 }
                 if (idx>=1){
                     stay = false;
@@ -101,16 +104,16 @@ static uint16_t terminal_scan(dev_handle_t dev) {
     }
     char *stopstring = NULL;
     long long int res = strtol((char*) &in, &stopstring, 10);
-    if (*stopstring!=0) {
-        return res;
+    if (stopstring == &in[0]) {
+        return 0;
     }
     uint8_t resi = res;
     printf("Got key %d"NL, resi);
-    snprintf(in, CMD_LEN, "%3d", resi);
+    //snprintf(in, 2, "%1d", resi);
     int8_t idx=state_ch2idx(&my_term, in[0]);
     if ((idx>=my_term.first)&&(res<=my_term.first+my_term.cnt)){
         my_term.dirty= true;
-        state_propagate(&my_term, idx);
+        state_propagate_index(&my_term, idx);
     } else {
         memcpy(my_term.clabel.str, in, CMD_LEN-1);
         printf("Command %s"NL, my_term.clabel.str);
