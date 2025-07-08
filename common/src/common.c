@@ -137,7 +137,7 @@ char int2char(uint8_t nr){
 
 void PrintBuffer(uint8_t *buffer, uint8_t size, char *header) {
     if (header!=NULL){
-        printf("Print %s msg size %d;"NL, header, size);
+        printf("%s"NL , header);
     }
     static const uint8_t cnt=8;
     char addOn[cnt+1];

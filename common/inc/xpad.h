@@ -9,6 +9,7 @@
 
 #include "common.h"
 #include "keyboard.h"
+#include "device.h"
 #include "gpio.h"
 #include "gpio_port.h"
 
