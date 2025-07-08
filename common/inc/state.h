@@ -19,6 +19,8 @@ typedef enum{
     STATE_CNT
 }key_state_e;
 
+#define ISNUM       0x80
+#define ISASCISTR   0x40
 typedef union {
      uint32_t cmd;  // Kann ein pointer zu einem Pointer enthalten, das
                     // den anderen Geräten mitgeteilt wird oder NULL
@@ -45,7 +47,9 @@ typedef struct statea_s{
     clabel_u clabel;// 4 Bytes
 } statea_t; // Size is 10 Bytes, Label gibt es nicht da es owiso MAX_BUTTON_CNT (0..MAX_BUTTON_CNT-1) Labels gibt
 
+int8_t clable2type(clabel_u *lbl);
 int8_t state_ch2idx(state_t *state, char ch);
+int8_t state_nr2idx(state_t *state, uint8_t nr);
 void state_init(state_t *state);
 void state_clear(state_t * state);
 void state_undirty(state_t * state);
