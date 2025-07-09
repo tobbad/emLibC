@@ -27,19 +27,6 @@ int8_t clable2type(clabel_u *lbl){
     return res;
 }
 
-/*
- * if ch[0] is a number, return it
- * Otherwise return 0x7f if string contains only ascii
- */
-int8_t state_ch2idx(state_t *state, char ch){
-    if ((ch==' ')||(ch==0))  return -1;
-    for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
-        if (state->label[i]==ch){
-            return i;
-        }
-    }
-    return -1;
-}
 
 void  state_init(state_t *state){
     state->dirty = false;

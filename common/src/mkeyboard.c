@@ -47,12 +47,12 @@ dev_handle_t keyboard_init(kybd_t *kybd, void *device) {
 	return dev_nr;
 }
 
-uint16_t keyboard_scan(dev_handle_t dev) {
+int16_t keyboard_scan(dev_handle_t dev) {
 	int16_t res = 0;
 	if ((dev > 0) && my_kkybd[dev] != NULL) {
 		res = my_kkybd[dev]->scan(dev);
 	}
-	if (res>0){
+	if (res<0){ // A number was enter
 	    my_kkybd[dev]->plcnt=my_kkybd[dev]->pcnt-1;
 	}
 	if ((my_kkybd[dev]->plcnt>0) &&(my_kkybd[dev]->cnt-my_kkybd[dev]->plcnt)%key_reset_cnt==0){
@@ -101,12 +101,5 @@ void keyboard_print(state_t *state, char *title) {
 	} else {
         state_print(state, "Keyboard");
 	}
-}
-
-dev_type_e keyboard_get_dev_type(dev_handle_t dev) {
-	if ((dev > 0) && (dev < TERMINAL)) {
-		return my_kkybd[dev]->dev_type;
-	}
-	return DEV_TYPE_NA;
 }
 

@@ -12,11 +12,11 @@
 #include "mkeyboard.h"
 
 static state_t my_term = {
-    .first = 1, //First valid value
-    .cnt =8,
-    .state  = { OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF,  OFF, OFF, OFF, OFF, OFF, OFF, OFF},
-    .label =  { ' ', '1', '2', '3', '4', '5', '6', '7', '8',  ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
-    .dirty = false,
+		.first = 1, //First valid value
+		.cnt = 8, .state = { OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF,
+				OFF, OFF, OFF, OFF, OFF, OFF }, .label = { ' ', '1', '2', '3',
+				'4', '5', '6', '7', '8', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+		.dirty = false,
 
 };
 static sio_t _serial;
@@ -25,10 +25,11 @@ clabel_u clabel;
 bool data_in = false;
 static void terminal_reset(dev_handle_t dev, bool hard);
 
-static void terminal_init(dev_handle_t handle, dev_type_e dev_type,	void * serial) {
+static void terminal_init(dev_handle_t handle, dev_type_e dev_type,
+		void *serial) {
 	terminal_reset(handle, true);
-	_serial =*(sio_t*)serial;
-	my_term.clabel.cmd=ZERO4;
+	_serial = *(sio_t*) serial;
+	my_term.clabel.cmd = ZERO4;
 	state_clear(&my_term);
 
 }
@@ -65,93 +66,85 @@ static void terminal_init(dev_handle_t handle, dev_type_e dev_type,	void * seria
 //	}
 //	return res;
 //}
-static uint16_t terminal_scan(dev_handle_t dev) {
-    char ch=0xFF;
-    static bool asked = false;
-    HAL_StatusTypeDef status;
-    char in[CMD_LEN];
-    memset(in, 0, CMD_LEN);
-    bool stay=true;
-    if (!asked) {
-        asked = true;
-        printf("Please enter key"NL);
-    }
-    while ((ch == 0xff)&&(stay)) {
-        int8_t idx=0;
-        status = HAL_UART_Receive(_serial.uart,(uint8_t*) &ch, 1, 0);
-        if (status == HAL_OK){
-            if (ch == 0x0a){ // linefeed lf
-                stay = false;
-                ch=0xff;
-            }
-            if (((ch >= '0') && (ch < '9')) || (ch == 'R')|| (ch=='r') || (ch == '+') || (ch == '-')) {
-                if ((ch == 'R')|| (ch=='r')){
-                    my_term.clabel.cmd=0;
-                    my_term.clabel.str[0]='R';
-                    printf("Set string to %s"NL, my_term.clabel.str);
-                    idx++;
-                    return 1;
-                } else {
-                    in[idx++] = ch;
-                }
-                if (idx>=1){
-                    stay = false;
-                }
-                ch = 0xFF;
-            }
-        }
-        stay=false;
-    }
-    char *stopstring = NULL;
-    long long int res = strtol((char*) &in, &stopstring, 10);
-    if (stopstring == &in[0]) {
-        return 0;
-    }
-    uint8_t resi = res;
-    printf("Got key %d"NL, resi);
-    //snprintf(in, 2, "%1d", resi);
-    int8_t idx=state_ch2idx(&my_term, in[0]);
-    if ((idx>=my_term.first)&&(res<=my_term.first+my_term.cnt)){
-        my_term.dirty= true;
-        state_propagate_index(&my_term, idx);
-    } else {
-        memcpy(my_term.clabel.str, in, CMD_LEN-1);
-        printf("Command %s"NL, my_term.clabel.str);
-    }
+static int16_t terminal_scan(dev_handle_t dev) {
+	char ch = 0xFF;
+	static bool asked = false;
+	HAL_StatusTypeDef status;
+	bool stay = true;
+	if (!asked) {
+		asked = true;
+		printf("Please enter key"NL);
+	}
+	while ((ch == 0xff) && (stay)) {
+		int8_t idx = 0;
+		//status = HAL_UART_Receive(_serial.uart, (uint8_t*)&clabel.cmd, CMD_LEN);
+		status = HAL_UART_Receive(_serial.uart, (uint8_t*) &ch, 1, 0);
+		if (status == HAL_OK) {
+			if (ch == 0x0a) { // linefeed lf
+				stay = false;
+				ch = 0xff;
+			}
+			ch &= 0x02;
+			if (isalpha(ch)) {
+				clabel.str[idx++] = ch;
+			}
+			if ((ch >= '0') && (ch < '9')) {
+				if (idx > 0) {
+					stay = false;
+				}
+				clabel.str[idx++] = ch;
+				ch = 0xFF;
+			}
+		}
+		stay = false;
+	}
+	char *stopstring = NULL;
+	long long int res = strtol((char*) &clabel.str, &stopstring, 10);
+	if (stopstring == &clabel.str[0]) {
+		return 0;
+	}
+	uint8_t resi = res;
+	printf("Got key %d"NL, resi);
+	//snprintf(in, 2, "%1d", resi);
+	int8_t idx = state_ch2idx(&my_term, clabel.str[0]);
+	if ((idx >= my_term.first) && (res <= my_term.first + my_term.cnt)) {
+		my_term.dirty = true;
+		state_propagate_index(&my_term, idx);
+	} else {
+		printf("Command %s"NL, my_term.clabel.str);
+	}
 	return my_term.dirty;
 }
 static void terminal_state(dev_handle_t dev, state_t *ret) {
-    state_merge(&my_term, ret);// problem here
+	state_merge(&my_term, ret); // problem here
 }
 
-static bool terminal_isdirty(dev_handle_t dev){
-    return my_term.dirty;
+static bool terminal_isdirty(dev_handle_t dev) {
+	return my_term.dirty;
 }
-static void terminal_undirty(dev_handle_t dev){
-    my_term.dirty = false;
-    return;
+static void terminal_undirty(dev_handle_t dev) {
+	my_term.dirty = false;
+	return;
 }
 
 static void terminal_reset(dev_handle_t dev, bool hard) {
-    my_term.dirty=false;
-    if (hard){
-        for (uint8_t i = my_term.first; i < my_term.first + my_term.cnt; i++) {
-            my_term.state[i] = OFF;
-        }
-    }
+	my_term.dirty = false;
+	if (hard) {
+		for (uint8_t i = my_term.first; i < my_term.first + my_term.cnt; i++) {
+			my_term.state[i] = OFF;
+		}
+	}
 	return;
 }
 
 kybd_t terminal_dev = {
 		.init = &terminal_init,
 		.scan = &terminal_scan,
-		.reset =&terminal_reset,
+		.reset = &terminal_reset,
 		.state = &terminal_state,
-        .isdirty = &terminal_isdirty,
-        .undirty = &terminal_undirty,
-		.dev_type = TERMINAL,
-		.cnt = 8,
-		.first= 1
+		.isdirty = &terminal_isdirty,
+		.undirty = &terminal_undirty,
+		.dev_type = TERMINAL, .cnt = 8, .first = 1
 
 };
 
@@ -159,7 +152,7 @@ int8_t terminal_waitForNumber(char **key) {
     static char buffer[LINE_LENGTH];
     memset(buffer, 0, LINE_LENGTH);
     HAL_StatusTypeDef status;
-    char ch[3] = {0xFF, 0 ,0};
+    char ch[3] = {0xFF, 0 ,0}; //only one is needed
     bool stay=true;
     int16_t idx = 0;
     while ((ch[0] == 0xff)&&(stay)) {
@@ -215,17 +208,16 @@ int8_t terminal_waitForNumber(char **key) {
 //	return -1;
 //}
 
-void UART_IdleCallback(void)
-{
-	data_in=true;
+void UART_IdleCallback(void) {
+	data_in = true;
 
-    uint16_t receivedLength = CMD_LEN-__HAL_DMA_GET_COUNTER(_serial.uart->hdmarx);
+	uint16_t receivedLength = CMD_LEN
+			- __HAL_DMA_GET_COUNTER(_serial.uart->hdmarx);
 
-    if (receivedLength > 0 && receivedLength <= 3)    {
-        memcpy(&my_term.clabel.cmd, (uint8_t*)&clabel.cmd, receivedLength);
-        clabel.cmd=ZERO4;
-    }
-
-    HAL_UART_Receive_DMA(_serial.uart, (uint8_t*)&clabel.cmd, CMD_LEN);
+	if (receivedLength > 0 && receivedLength <= 3) {
+		memcpy(&my_term.clabel.cmd, (uint8_t*) &clabel.cmd, receivedLength);
+		clabel.cmd = ZERO4;
+	}
+	HAL_UART_Receive_DMA(_serial.uart, (uint8_t*) &clabel.cmd, CMD_LEN);
 }
 

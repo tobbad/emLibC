@@ -11,12 +11,13 @@
 extern "C" {
 #endif
 #include <stdint.h>
-#include <stdbool.h>    
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include "hal_port.h"
+#include "buffer.h"
 #ifdef UNIT_TEST
 #define STATIC
 #include <stdio.h>
@@ -27,7 +28,7 @@ extern "C" {
 
 #define NEWLINE  "\r\n"
 #define NL  NEWLINE
-#define LINE_LENGTH	96
+#define LINE_LENGTH	96 // FIXME -> CHAR_PER_LINE
 #define MAX_BUTTON_CNT 16
 #define CSTATE_CNT 8 // Control label count
 #if !defined(MIN)
@@ -48,15 +49,18 @@ typedef union {
     uint8_t *ptr;
 } cPtrAway_u;
 
-
-typedef struct buffer_t_ {
-    uint16_t size;
-    uint16_t used; /* used count of bytes pl[used] is  the to next usable byte */
-    uint8_t* pl;   /* pointer to first byte used in buffer */
-    uint8_t* mem;  /* Start of memory */
-} buffer_t;
+#define ISNUM       0x80
+#define ISASCISTR   0x40
+#define NAN         0x20
+#define CMD_LEN 4
 
 #define DEV_CNT 1
+typedef union {
+     uint32_t cmd;  // Kann ein pointer zu einem Pointer enthalten, das
+                    // den anderen Geräten mitgeteilt wird oder NULL
+     char str[CMD_LEN]; //CMD_LEN ist 4 ist leer (0) oder ein command
+ }clabel_u;
+
 /*
  * Function to serialize the content of buffer as neaty formated
  * string in out. Format is:
@@ -68,6 +72,7 @@ typedef struct buffer_t_ {
 uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer, uint16_t buffer_size, bool write_asci);
 uint16_t common_crc16(uint8_t *data_p, uint16_t length);
 void PrintBuffer(uint8_t *buffer, uint8_t size, char *header);
+uint8_t clable2type(clabel_u *lbl);
 
 #ifdef __cplusplus
 }

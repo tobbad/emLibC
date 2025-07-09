@@ -54,7 +54,6 @@ void time_start(uint8_t count, uint8_t * ptr){
 		_time.time[_time.idx].tick_start = HAL_GetTick();
 		memcpy((uint8_t*)_time.time[_time.idx].line, ptr, LINE_CHAR);
 		_time.time[_time.idx].start = DWT->CYCCNT;
-
 	}
 }
 void time_end_su(){

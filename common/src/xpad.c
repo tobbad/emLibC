@@ -45,7 +45,7 @@ static xpad_dev_t default_xscan_dev= {
 		},
 	},
 	.dev_type=XSCAN,
-    .state = {.label = {'1', '2', '3', 'a', '4', '5', '6', 'b', '7', '8', '9', 'c', '0', 'f', 'e' ,'d'},
+    .state = {.label = {'1', '2', '3', 'A', '4', '5', '6', 'B', '7', '8', '9', 'C', '0', 'F', 'E' ,'D'},
               .state={OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
 	          .cnt=ZEILEN_CNT*SPALTEN_CNT,
 			  .first = 0,},
@@ -93,13 +93,16 @@ static uint8_t zei_spa_2_index(xpad_dev_t *kbd, uint8_t zeile, uint8_t spalte){
 }
 
 
-static uint8_t lable2uint8(char label){
-	uint8_t value = label -'0';
+static int8_t label2int8(char label){
+	int8_t value = label -'0';
+	if (label ==' ') return -1;
 	if (value>9){
 		label &= 0xEF;
 		value = label-'a'+10;
+	} else {
+		return 1;
 	}
-	return value;
+	return -value;
 
 }
 static void xpad_reset(dev_handle_t devh, bool hard);
@@ -235,7 +238,7 @@ static uint8_t xpad_update_key(uint8_t devh, uint8_t zeile, bool pinVal) {
 	return res;
 }
 
-static uint16_t xpad_eight_scan(dev_handle_t devh) {
+static int16_t xpad_eight_scan(dev_handle_t devh) {
 	if (mpy_xpad[devh]==NULL) {
 		printf("No valid handle on read_row"NL);
 		return false;
@@ -244,13 +247,14 @@ static uint16_t xpad_eight_scan(dev_handle_t devh) {
 		printf("Handle for this keyboard not valid"NL);
 		return false;
 	}
-	uint16_t res=0;
+	int16_t res=0;
 	for (uint8_t zeile=0;zeile<my_xpad[devh].zeile.cnt; zeile++) {
 		bool pin=0;
 		GpioPinRead(&my_xpad[devh].zeile.pin[zeile], &pin);
 		res = res|(xpad_update_key(devh, zeile, pin));
 	}
-	return res;
+	char ch = my_xpad[devh].state.label[res];
+	return label2int8(ch);
 }
 static uint16_t xpad_read_zeile(dev_handle_t devh, uint8_t spalten_nr) {
 	if (mpy_xpad[devh] == NULL) {
@@ -267,7 +271,7 @@ static uint16_t xpad_read_zeile(dev_handle_t devh, uint8_t spalten_nr) {
 	return res;
 }
 
-static uint16_t xpad_spalten_scan(dev_handle_t devh) {
+static int16_t xpad_spalten_scan(dev_handle_t devh) {
 	if (mpy_xpad[devh] == NULL) {
 		printf("No valid handle on scan"NL);
 		return false;
@@ -285,10 +289,8 @@ static uint16_t xpad_spalten_scan(dev_handle_t devh) {
 		res = res | (ir << (4 * s));
 		xpad_set_spalten_pin(devh, s);
 	}
-	if (res != 0) {
-		printf("Key Label is  0x%04lX"NL, (uint32_t) res);
-	}
-	return res;
+	//char ch = my_xpad[devh].state.label[res];
+	return 0;
 }
 
 

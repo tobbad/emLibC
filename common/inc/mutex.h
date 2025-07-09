@@ -9,7 +9,7 @@
 #define COMMON_INC_MUTEX_H_
 #include "common.h"
 
-bool ReadModify_write(uint8_t *mem, int8_t add);
+bool ReadModify_write(int8_t *mem, int8_t add);
 
 
 #endif /* COMMON_INC_MUTEX_H_ */

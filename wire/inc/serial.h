@@ -30,6 +30,8 @@
 #ifndef INC_SERIAL_IO_H_
 #define INC_SERIAL_IO_H_
 #include "common.h"
+#include "device.h"
+#include "keyboard.h"
 #define UART_TIMEOUT_MS 100
 typedef enum {SIO_ERROR=-1, SIO_OK=0, } sio_res_e;
 typedef enum {SIO_RX=0, SIO_TX, SIO_RXTX_CNT} sio_channel_e;
@@ -41,23 +43,15 @@ typedef enum {
     USE_DMA = 8,
 } print_e;
 
-
 typedef struct _sio_t{
 	UART_HandleTypeDef * uart;
-	uint8_t	 ready[SIO_RXTX_CNT];	/* Internal use only */
-	uint16_t buffer_size[SIO_RXTX_CNT];
-	int16_t  bytes_in_buffer[SIO_RXTX_CNT];
-	int16_t  size[SIO_RXTX_CNT];
-	char *buffer[SIO_RXTX_CNT];
+	buffer_t buffer[SIO_RXTX_CNT];
 	print_e mode;
 } sio_t;
 
-typedef struct buf_s{
-	char buffer[LINE_LENGTH];
-	bool isValid;
-} buf_t;
-
-sio_res_e serial_init(sio_t *init);
+//void serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev);
 void  serial_set_mode(print_e mode, bool doReset);
+int8_t serial_waitForNumber(char **key);
+extern kybd_t serial_dev;
 int	logf_debug(const char *__restrict, ...) _ATTRIBUTE ((__format__ (__printf__, 1, 2)));
 #endif /* INC_SERIAL_IO_H_ */

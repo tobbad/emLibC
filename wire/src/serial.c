@@ -42,7 +42,6 @@
 #include <sys/time.h>
 #include <sys/times.h>
 #include "main.h"
-
 #if defined(STM32F303xC)
 #include "stm32f3xx.h"
 #elif defined(STM32F407xx) ||defined(STM32F401xE)
@@ -54,79 +53,100 @@
 #else
 #error Undefined platform
 #endif
-
 #include "serial.h"
+#include "state.h"
+#include "keyboard.h"
 #include "mutex.h"
 #include "_time.h"
-static sio_t sio;
-static buf_t rx_buffer;
-static buf_t tx_buffer;
+#include "buffer.h"
 
-sio_res_e serial_init(sio_t *init) {
-    sio = *init;
-    sio.ready[SIO_RX] = true;
-    sio.ready[SIO_TX] = true;
-    if (sio.buffer[SIO_RX] != NULL) {
-        HAL_UART_Receive_IT(sio.uart, (uint8_t*)rx_buffer.buffer, 1);
-    }
-    serial_set_mode(sio.mode, true);
+buffer_t tx_buffer;
+buffer_t rx_buffer;
+
+
+typedef struct isio_s{
+	UART_HandleTypeDef * uart;
+	buffer_t buffer[SIO_RXTX_CNT];
+	print_e mode;
+	int8_t ready[SIO_RXTX_CNT];
+	dev_handle_t devh;
+	buffer_t actStr;
+	state_t state;
+} isio_t;
+
+static isio_t isio;
+
+void serial_set_mode(print_e mode, bool doReset );
+
+void serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
+	sio_t *init = dev;
+	isio.uart = init->uart;
+	buffer_init(&isio.buffer[SIO_RX], init->buffer[SIO_RX].size, true);
+	buffer_init(&isio.buffer[SIO_TX], init->buffer[SIO_TX].size, true);
+	buffer_init(&isio.actStr,init->buffer[SIO_TX].size, true);
+	buffer_init(&rx_buffer, init->buffer[SIO_RX].size, true);
+    state_init(&isio.state);
+    serial_set_mode(init->mode|USE_DMA, true);
+    HAL_UARTEx_ReceiveToIdle_DMA(isio.uart, rx_buffer.mem, rx_buffer.size);
 	return SIO_OK;
 }
 
 void serial_set_mode(print_e mode, bool doReset ) {
-    sio.mode = mode;
+    isio.mode = mode;
+    time_init();
     if (doReset){
     	time_reset();
     }
-    time_set_mode(sio.mode);
+    time_set_mode(mode);
 
 }
+
 
 int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     uint16_t len=0;
     uint8_t idx=0;
     static uint32_t ltick=0;
     uint32_t tick=0;
-    if ((sio.buffer_size[SIO_TX] != 0) && (sio.buffer[SIO_TX] != NULL)) {
-        sio.ready[SIO_TX] = false;
-         sio.bytes_in_buffer[SIO_TX] = len;
-         if (sio.mode&TIMESTAMP){
-        	 uint32_t t=HAL_GetTick();
-             len = sprintf(sio.buffer[SIO_TX], "%010ld: ", t);
+    if ((isio.buffer[SIO_TX].mem != NULL)) {
+         if (isio.mode&TIMESTAMP){
+        	 uint32_t tick=HAL_GetTick();
+             len = sprintf((char*)isio.buffer[SIO_TX].mem, "%010ld: ", tick);
           }
-         if (sio.mode&GAP_DETECT){
-             len += sprintf(&sio.buffer[SIO_TX][len], " %x ", idx);
+         if (isio.mode&GAP_DETECT){
+             len += sprintf((char*)&isio.buffer[SIO_TX].mem[len], " %x ", idx);
              idx =(idx+1)%USE_DMA;
          }
-         memcpy(&sio.buffer[SIO_TX][len], ptr, txLen);
+         memcpy(&isio.buffer[SIO_TX].mem[len], ptr, txLen);
          len+=txLen;
-         ptr =(uint8_t*) sio.buffer[SIO_TX];
+         isio.buffer[SIO_TX].pl=&isio.buffer[SIO_TX].mem[len];
+         ptr =isio.buffer[SIO_TX].mem;
      }else{
-         if (sio.mode&TIMESTAMP){
+         if (isio.mode&TIMESTAMP){
         	 tick = HAL_GetTick();
-             len = sprintf(tx_buffer.buffer, "%010ld: ", tick);
+             len = sprintf((char*)&tx_buffer, "%010ld: ", tick);
         	 ltick = tick;
           }
-         if (sio.mode&GAP_DETECT){
-             len += sprintf(&tx_buffer.buffer[len], " %x ", idx);
+         if (isio.mode&GAP_DETECT){
+             len += sprintf((char*)&isio.buffer[SIO_TX].mem[len], " %x ", idx);
              idx =(idx+1)%USE_DMA;
          }
-         memcpy(&tx_buffer.buffer[len], ptr, txLen);
+         memcpy(&tx_buffer.mem[len], ptr, txLen);
          len+=txLen;
-         ptr =(uint8_t*)tx_buffer.buffer;
+         isio.buffer[SIO_TX].pl = &isio.buffer[SIO_TX].mem[len];
+         ptr =tx_buffer.mem;
      }
-	 if (sio.uart != NULL) {
-		 if (sio.mode&USE_DMA){
-			 while (!ReadModify_write(&sio.ready[SIO_TX], -1)){}
+	 if (isio.uart != NULL) {
+		 if (isio.mode&USE_DMA){
+			 while (!ReadModify_write(&isio.buffer[SIO_TX].ready, -1)){}
 			 time_start(len, ptr);
-			 HAL_UART_Transmit_DMA(sio.uart, (uint8_t*)ptr, len);
+			 isio.buffer[SIO_RX].ready=false;
+			 HAL_UART_Transmit_DMA(isio.uart, (uint8_t*)ptr, len);
 			 time_end_su();
 		 } else{
 			time_start(len, ptr);
-			HAL_UART_Transmit(sio.uart, (uint8_t*)ptr, len, UART_TIMEOUT_MS);
+			HAL_UART_Transmit(isio.uart, (uint8_t*)ptr, len, UART_TIMEOUT_MS);
 			time_end_tx();
-			sio.bytes_in_buffer[SIO_TX] = 0;
-			sio.ready[SIO_TX] = true;
+			isio.ready[SIO_TX] = true;
 		 }
 	} else {
 		errno = EWOULDBLOCK;
@@ -135,66 +155,139 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     return len;
 }
 
-int _read(int32_t file, uint8_t *ptr, int32_t len) {
+int16_t _read(int32_t file, uint8_t *ptr, int32_t len) {
     HAL_StatusTypeDef status;
-    sio.bytes_in_buffer[SIO_RX] = -1;
-
-    if (sio.uart != NULL) {
-        if ((sio.buffer_size[SIO_RX] == 0) && (sio.buffer[SIO_RX] == NULL)) {
-            sio.ready[SIO_RX] = false;
-            status = HAL_UART_Receive(sio.uart, ptr, len, HAL_MAX_DELAY);
+    uint16_t rLen=0;
+    if (isio.uart != NULL) {
+        if (isio.buffer[SIO_RX].mem == 0) {
+            isio.buffer[SIO_RX].ready = false;
+            status = HAL_UART_Receive(isio.uart, ptr, len, HAL_MAX_DELAY);
             if (status == HAL_OK) {
-                sio.bytes_in_buffer[SIO_RX] = len;
+                isio.buffer[SIO_RX].used = len;
+                rLen = len;
             } else if ((status == HAL_ERROR) || (status == HAL_TIMEOUT)) {
-                sio.bytes_in_buffer[SIO_RX] = -1;
+            	isio.buffer[SIO_RX].used = -1;
             } else  { //HAL_BUSY
                 //Not ready
-                sio.bytes_in_buffer[SIO_RX] = 0;
+            	isio.buffer[SIO_RX].used = 0;
             }
-        } else {// Receive text by IT HAL_UART_Receive_IT
-            // Buffer with size larger than 0 is provided
+        } else if(isio.mode&USE_DMA){
+       		rLen= strlen((char*)isio.actStr.pl);
+       		ptr=isio.actStr.pl;
+       		if (rLen>0){
+       			printf("Received %s"NL,ptr);
+       		}
         }
     }
-    return 0;
-}
-//
-//int __io_getchar(void) {
-//    uint8_t ch = 0;
-//    // Clear the Overrun flag just before receiving the first character
-//    __HAL_UART_CLEAR_OREFLAG(sio.uart);
-//
-//    HAL_UART_Receive(sio.uart, (uint8_t*) &ch, 1, 0);
-//    return ch;
-//}
-//
-//int __io_putchar(char ch) {
-//    // Clear the Overrun flag just before receiving the first character
-//    __HAL_UART_CLEAR_OREFLAG(sio.uart);
-//
-//    HAL_UART_Transmit(sio.uart, (uint8_t*) &ch, 1, 0xFFFF);
-//    return ch;
-//}
-
-void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
-    if (huart == sio.uart) {
-        /* Set transmission flag: transfer complete */
-         while (!ReadModify_write(&sio.ready[SIO_TX], -1)){}
-         time_end_tx();
-        //GpioPinToggle(&uart_toggle);
-        sio.bytes_in_buffer[SIO_TX] = 0;
-    }
+    return rLen;
 }
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-    if (huart == sio.uart) {
-        /* Set transmission flag: transfer complete */
-    	if (sio.buffer[SIO_RX][sio.bytes_in_buffer[SIO_RX]]==0xd){
-    		return;
-    	}
-        sio.bytes_in_buffer[SIO_RX]++;
-        if ((sio.bytes_in_buffer[SIO_TX]==sio.size[SIO_RX])||
-        	(sio.buffer[SIO_RX][sio.bytes_in_buffer[SIO_RX]]==0xa)){
-        	// receive is finished either by CRLF or count of bytes
-        }
-    }
+// If Result is negativ -value is the number, which was entered (0...127)
+// If the result >0: 1 alpha Higher case char where entered
+int16_t serial_scan(dev_handle_t dev){
+	return _read(0, rx_buffer.mem, LINE_LENGTH);
+};
+void serial_reset(dev_handle_t dev, bool hard){};
+
+void serial_state(dev_handle_t dev, state_t *ret){
+	uint16_t len= strlen((char*)isio.actStr.pl);
+	if (len>0){
+		len = MIN(len,CMD_LEN);
+		memcpy(isio.state.clabel.str, isio.actStr.pl, len);
+		uint8_t ctype = clable2type(&isio.state.clabel);
+		if (ctype==ISNUM){
+			state_propagate_index(&isio.state, isio.state.clabel.cmd);
+		}
+	}
+};
+bool serial_isdirty(dev_handle_t dev){return true;};
+void serial_undirty(dev_handle_t dev){};
+kybd_t serial_dev = {
+	.init = &serial_init,
+	.scan = &serial_scan,
+	.reset= &serial_reset,
+	.state = &serial_state,
+    .isdirty = &serial_isdirty,
+    .undirty = &serial_undirty,
+	.dev_type = TERMINAL,
+	.cnt = 16,
+	.first = 0,
+};
+
+
+int8_t serial_waitForNumber(char **key) {
+	static char buffer[LINE_LENGTH];
+	memset(buffer, 0, LINE_LENGTH);
+	HAL_StatusTypeDef status;
+	uint8_t ch = 0xFF;
+	bool stay = true;
+	int16_t idx = 0;
+	while ((ch == 0xff) && (stay)) {
+		status = HAL_UART_Receive(isio.uart, &ch, 1, 0);
+		if (status == HAL_OK) {
+			if (ch == '\r') {
+				stay = false;
+				ch = 0xff;
+			}
+			if (((ch >= '0') && (ch < '9')) || (ch == 'R') || (ch == 'r')
+					|| (ch == '+') || (ch == '-')) {
+				buffer[idx++] = ch;
+				if ((ch == 'R') || (ch == 'r')) {
+					stay = false;
+				}
+				if (idx >= 1) {
+					stay = false;
+				}
+				ch = 0xFF;
+			}
+		}
+	}
+	char *stopstring = NULL;
+	if ((buffer[0] == 'R') || (buffer[0] == 'r')) {
+		*key = &buffer[0];
+		return -1;
+	}
+	long long int res = strtol((char*) &buffer, &stopstring, 10);
+	if (strlen(stopstring) == 0) {
+		*key = &buffer[0];
+		return res;
+	}
+	return -1;
 }
+
+
+/**
+  * @brief  User implementation of the Reception Event Callback
+  *         (Rx event notification called after use of advanced reception service).
+  * @param  huart UART handle
+  * @param  Size  Number of data available in application reception buffer (indicates a position in
+  *               reception buffer until which, data are available)
+  * @retval None
+  */
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size){
+	memset(isio.buffer[SIO_RX].mem, 0, isio.buffer[SIO_RX].size);
+	isio.buffer[SIO_RX].pl = isio.buffer[SIO_RX].mem;
+	size = MIN(size, isio.buffer[SIO_RX].size-1);
+	for (uint16_t i=0;i<size;i++){
+		char ch = *rx_buffer.pl;
+		rx_buffer.pl++;
+		*isio.buffer[SIO_RX].pl = ch;
+		isio.buffer[SIO_RX].pl++;
+		if (isio.buffer[SIO_RX].pl==isio.buffer[SIO_RX].mem+isio.buffer[SIO_RX].size-1){
+			isio.buffer[SIO_RX].pl = isio.buffer[SIO_RX].mem;
+		}
+		if (rx_buffer.pl==rx_buffer.mem+rx_buffer.size-1){
+			rx_buffer.pl = rx_buffer.mem;
+		}
+	}
+	rx_buffer.pl = rx_buffer.mem;
+
+}
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *UartHandle)
+{
+  /* Set transmission flag: transfer complete */
+  time_end_tx();
+  isio.buffer[SIO_RX].ready=true;
+
+}
+

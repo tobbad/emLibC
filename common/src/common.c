@@ -135,6 +135,25 @@ char int2char(uint8_t nr){
     }
 }
 
+uint8_t clable2type(clabel_u *lbl){
+    uint8_t res=NAN;
+    char *stopstring = NULL;
+    lbl->str[CMD_LEN-1]=0;
+    res = strtol(lbl->str, &stopstring, 10);
+    if (strlen(stopstring)==0) {
+        lbl->cmd = res;
+        return ISNUM;
+    }
+    bool itIs=false;
+    for (uint8_t i=0;i<CMD_LEN;i++){
+        itIs &= isascii(lbl->str[i]);
+    }
+    if (itIs){
+        res = ISASCISTR;
+    }
+    return res;
+}
+
 void PrintBuffer(uint8_t *buffer, uint8_t size, char *header) {
     if (header!=NULL){
         printf("%s"NL , header);
