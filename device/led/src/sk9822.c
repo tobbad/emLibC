@@ -8,7 +8,7 @@
 #include "assert.h"
 #include "common.h"
 #include "device.h"
-#include "keyboard.h"
+#include "mkeyboard.h"
 #include "sk9822.h"
 
 #define SK9822_RED_SHIFT 0

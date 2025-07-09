@@ -8,7 +8,7 @@
 #define XPAD_H_
 
 #include "common.h"
-#include "keyboard.h"
+#include "mkeyboard.h"
 #include "device.h"
 #include "gpio.h"
 #include "gpio_port.h"

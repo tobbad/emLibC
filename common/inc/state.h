@@ -8,7 +8,6 @@
 #ifndef INC_STATE_H_
 #define INC_STATE_H_
 #include "common.h"
-#include "state.h"
 
 #define CMD_LEN 4
 
@@ -60,6 +59,7 @@ void state_set_index(state_t * state, uint8_t  nr, key_state_e new_state);
 void state_set_u32(state_t * state, uint32_t u32);
 uint32_t state_get_u32(state_t * state);
 bool state_propagate(state_t *state, char ch);
+bool state_propagate_index(state_t *state, uint8_t nr);
 bool state_is_same(state_t *last, state_t *this);
 bool state_merge(state_t *inState, state_t *outState);
 void state_print(state_t *state,  char *title );

@@ -4,8 +4,8 @@
  *  Created on: Oct 30, 2024
  *      Author: badi
  */
-#ifndef KEYBOARD_H_
-#define KEYBOARD_H_
+#ifndef MKEYBOARD_H_
+#define MKEYBOARD_H_
 
 #include "common.h"
 #include "state.h"
@@ -47,4 +47,4 @@ dev_type_e  keyboard_get_dev_type(dev_handle_t dev);
 
 
 
-#endif /* KEYBOARD_H_ */
+#endif /* MKEYBOARD_H_ */

@@ -7,7 +7,8 @@
 
 #ifndef TERMINAL_H
 #define TERMINAL_H
-#include "keyboard.h"
+#include <mkeyboard.h>
+
 extern kybd_t terminal_dev;
 
 int8_t terminal_waitForNumber(char **key);

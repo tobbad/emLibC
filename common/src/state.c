@@ -18,7 +18,7 @@ int8_t clable2type(clabel_u *lbl){
         res= ISNUM;
     }
     bool itIs=false;
-    for (uint8_t i;i<CMD_LEN;i++){
+    for (uint8_t i=0;i<CMD_LEN;i++){
         itIs &= isascii(lbl->str[i]);
     }
     if (itIs){
