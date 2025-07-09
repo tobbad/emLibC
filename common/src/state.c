@@ -76,7 +76,7 @@ int8_t state_ch2idx(state_t *state, char ch){
 	if (idx<state->first)return idx;
 	if (idx>=state->first+state->cnt)return idx;
 	for (idx=0;idx<MAX_BUTTON_CNT;idx++){
-		if (ch==state->label){
+		if (ch==state->label[idx]){
 			return idx;
 		}
 	}
