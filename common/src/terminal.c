@@ -159,26 +159,27 @@ int8_t terminal_waitForNumber(char **key) {
     static char buffer[LINE_LENGTH];
     memset(buffer, 0, LINE_LENGTH);
     HAL_StatusTypeDef status;
-    uint8_t ch = 0xFF;
+    char ch[3] = {0xFF, 0 ,0};
     bool stay=true;
     int16_t idx = 0;
-    while ((ch == 0xff)&&(stay)) {
-        status = HAL_UART_Receive(_serial.uart, &ch, 1, 0);
+    while ((ch[0] == 0xff)&&(stay)) {
+        status = HAL_UART_Receive(_serial.uart, (uint8_t*)&ch, 1, 0);
         if (status == HAL_OK){
-            if (ch == '\r'){
+            if ((ch[0] == '\r') || (ch[0]=='\n')){
                 stay = false;
-                ch=0xff;
+                ch[0]=0xff;
             }
-            if (((ch >= '0') && (ch < '9')) || (ch == 'R')|| (ch=='r') || (ch == '+') || (ch == '-')) {
-                buffer[idx++] = ch;
-                if ((ch == 'R')|| (ch=='r')){
+            if ((( ch[0]>= '0') && (ch[0] < '9')) || (ch[0] == 'R')|| (ch[0]=='r')) {
+                buffer[idx++] = ch[0];
+                if ((ch[0] == 'R')|| (ch[0]=='r')){
                     stay = false;
                 }
                 if (idx>=1){
                     stay = false;
                 }
-                ch = 0xFF;
+                ch[0] = 0xFF;
             }
+
         }
     }
     char *stopstring = NULL;
