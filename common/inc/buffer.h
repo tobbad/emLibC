@@ -12,7 +12,6 @@
 typedef struct buffer_s {
 	int8_t   ready;
     uint16_t size;
-    int16_t  used; /* used count of bytes pl[used] is  the to next usable byte */
     uint8_t* pl;   /* pointer to first byte used in buffer */
     uint8_t* mem;  /* Start of memory */
 } buffer_t;

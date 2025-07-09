@@ -54,5 +54,4 @@ typedef struct _sio_t{
 void  serial_set_mode(print_e mode, bool doReset);
 int8_t serial_waitForNumber(char **key);
 extern kybd_t serial_dev;
-int	logf_debug(const char *__restrict, ...) _ATTRIBUTE ((__format__ (__printf__, 1, 2)));
 #endif /* INC_SERIAL_IO_H_ */

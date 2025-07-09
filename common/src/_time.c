@@ -27,6 +27,7 @@ typedef struct time_meas_s{
 typedef struct timem_s{
 	time_meas_t time[MEAS_CNT];
 	int8_t idx;
+	uint32_t clk_Hz;
 	uint8_t mode;
 }timem_t;
 
@@ -36,6 +37,7 @@ void time_init(){
     CoreDebug->DEMCR |=  CoreDebug_DEMCR_TRCENA_Msk;
     DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
     time_reset();
+    _time.clk_Hz = HAL_RCC_GetPCLK1Freq();
 }
 
 void time_set_mode(print_e mode){
