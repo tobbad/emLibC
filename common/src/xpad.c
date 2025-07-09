@@ -9,7 +9,7 @@
 #include "device.h"
 #include "gpio.h"
 #include "gpio_port.h"
-#include "keyboard.h"
+#include "mkeyboard.h"
 #include "xpad.h"
 #include "state.h"
 
