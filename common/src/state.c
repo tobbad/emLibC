@@ -8,26 +8,6 @@
 #include "common.h"
 #include "state.h"
 
-int8_t clable2type(clabel_u *lbl){
-    int8_t res=-1;
-    char *stopstring = NULL;
-    lbl->str[CMD_LEN-1]=0;
-    res = strtol(lbl->str, &stopstring, 10);
-    if (strlen(stopstring)==0) {
-        lbl->cmd = res;
-        res= ISNUM;
-    }
-    bool itIs=false;
-    for (uint8_t i=0;i<CMD_LEN;i++){
-        itIs &= isascii(lbl->str[i]);
-    }
-    if (itIs){
-        res = ISASCISTR;
-    }
-    return res;
-}
-
-
 void  state_init(state_t *state){
     state->dirty = false;
     state->first = 0;
