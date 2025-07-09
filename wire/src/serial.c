@@ -55,7 +55,7 @@
 #endif
 #include "serial.h"
 #include "state.h"
-#include "keyboard.h"
+#include "mkeyboard.h"
 #include "mutex.h"
 #include "_time.h"
 #include "buffer.h"
