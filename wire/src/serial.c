@@ -86,7 +86,7 @@ void serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
 	buffer_init(&isio.actStr,init->buffer[SIO_TX].size, true);
 	buffer_init(&rx_buffer, init->buffer[SIO_RX].size, true);
     state_init(&isio.state);
-    serial_set_mode(init->mode|USE_DMA, true);
+    serial_set_mode(init->mode|USE_DMA_RX, true);
     HAL_UARTEx_ReceiveToIdle_DMA(isio.uart, rx_buffer.mem, rx_buffer.size);
 	return SIO_OK;
 }
@@ -114,7 +114,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
           }
          if (isio.mode&GAP_DETECT){
              len += sprintf((char*)&isio.buffer[SIO_TX].mem[len], " %x ", idx);
-             idx =(idx+1)%USE_DMA;
+             idx =(idx+1)%USE_DMA_TX;
          }
          memcpy(&isio.buffer[SIO_TX].mem[len], ptr, txLen);
          len+=txLen;
@@ -128,7 +128,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
           }
          if (isio.mode&GAP_DETECT){
              len += sprintf((char*)&isio.buffer[SIO_TX].mem[len], " %x ", idx);
-             idx =(idx+1)%USE_DMA;
+             idx =(idx+1)%USE_DMA_TX;
          }
          memcpy(&tx_buffer.mem[len], ptr, txLen);
          len+=txLen;
@@ -136,7 +136,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
          ptr =tx_buffer.mem;
      }
 	 if (isio.uart != NULL) {
-		 if (isio.mode&USE_DMA){
+		 if (isio.mode&USE_DMA_TX){
 			 while (!ReadModify_write(&isio.buffer[SIO_TX].ready, -1)){}
 			 time_start(len, ptr);
 			 isio.buffer[SIO_RX].ready=false;
@@ -159,7 +159,13 @@ int16_t _read(int32_t file, uint8_t *ptr, int32_t len) {
     HAL_StatusTypeDef status;
     uint16_t rLen=0;
     if (isio.uart != NULL) {
-        if (isio.buffer[SIO_RX].mem == 0) {
+    	if(isio.mode&USE_DMA_RX){
+			rLen= strlen((char*)isio.actStr.pl);
+			ptr=isio.actStr.pl;
+			if (rLen>0){
+				printf("Received %s"NL,ptr);
+			}
+		} else  if (isio.buffer[SIO_RX].mem == 0) {
             isio.buffer[SIO_RX].ready = false;
             status = HAL_UART_Receive(isio.uart, ptr, len, HAL_MAX_DELAY);
             if (status == HAL_OK) {
@@ -171,12 +177,6 @@ int16_t _read(int32_t file, uint8_t *ptr, int32_t len) {
                 //Not ready
             	isio.buffer[SIO_RX].used = 0;
             }
-        } else if(isio.mode&USE_DMA){
-       		rLen= strlen((char*)isio.actStr.pl);
-       		ptr=isio.actStr.pl;
-       		if (rLen>0){
-       			printf("Received %s"NL,ptr);
-       		}
         }
     }
     return rLen;
@@ -288,6 +288,5 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *UartHandle)
   /* Set transmission flag: transfer complete */
   time_end_tx();
   isio.buffer[SIO_RX].ready=true;
-
 }
 

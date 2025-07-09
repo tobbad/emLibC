@@ -17,7 +17,6 @@ void  state_init(state_t *state){
     for (uint8_t i=0;i<MAX_BUTTON_CNT;i++){
     	state_set_index(state, i, OFF);
     }
-
 }
 
 void state_clear(state_t * state){
@@ -71,6 +70,18 @@ void state_set_index(state_t * state, uint8_t  nr, key_state_e new_state){
     }
     return;
 };
+int8_t state_ch2idx(state_t *state, char ch){
+	int8_t idx=-1;
+	if (state==NULL) return idx;
+	if (idx<state->first)return idx;
+	if (idx>=state->first+state->cnt)return idx;
+	for (idx=0;idx<MAX_BUTTON_CNT;idx++){
+		if (ch==state->label){
+			return idx;
+		}
+	}
+	return -1;
+}
 
 void state_set_u32(state_t * state, uint32_t u32){
 	uint32_t mask;

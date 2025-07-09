@@ -40,7 +40,8 @@ typedef enum {
 	TIMESTAMP = 1,
 	GAP_DETECT = 2,
     ONE_SHOT = 4,
-    USE_DMA = 8,
+    USE_DMA_RX = 8,
+    USE_DMA_TX = 0x10,
 } print_e;
 
 typedef struct _sio_t{
