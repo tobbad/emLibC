@@ -21,5 +21,6 @@ typedef struct buffer_s {
  * is afterwards returned
  */
 buffer_t * buffer_init(buffer_t *buffer, uint16_t size, bool doAlloc);
+buffer_t * buffer_new(uint16_t size);
 
 #endif /* COMMON_INC_BUFFER_H_ */

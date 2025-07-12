@@ -86,12 +86,11 @@ void stateled_update(){
                 for (uint8_t i=0;i<my_stateled.port->cnt;i++){
                     int8_t stateNr = i+my_stateled.lstate.first;
                     key_state_e tState=my_stateled.lstate.state[stateNr];
+                    stateled_on(i);
                     if (tState==OFF){
                         stateled_off(i);
                     } else if (tState==BLINKING){
                         GpioPinWrite(&my_stateled.port->pin[i], bstate);
-                    } else if (tState==ON){
-                        stateled_off(i);
                     }
                 }
             }
