@@ -144,8 +144,9 @@ uint8_t clable2type(clabel_u *lbl){
         lbl->cmd = res;
         return ISNUM;
     }
-    bool itIs=false;
-    for (uint8_t i=0;i<CMD_LEN;i++){
+    bool itIs=true;
+    uint8_t len=strlen(lbl->str);
+    for (uint8_t i=0;i<len;i++){
         itIs &= isascii(lbl->str[i]);
     }
     if (itIs){

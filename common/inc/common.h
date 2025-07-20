@@ -32,7 +32,10 @@ extern "C" {
 #define MAX_BUTTON_CNT 16
 #define CSTATE_CNT 8 // Control label count
 #if !defined(MIN)
-#define MIN(a, b) ((a)<(b)?(a):(b))
+#define MIN(a, b) ((a)<=(b)?(a):(b))
+#endif
+#if !defined(MAX)
+#define MAX(a, b) ((a)>=(b)?(a):(b))
 #endif
 
 #if !defined(MAX)
@@ -60,7 +63,7 @@ typedef union {
                     // den anderen Geräten mitgeteilt wird oder NULL
      char str[CMD_LEN]; //CMD_LEN ist 4 ist leer (0) oder ein command
  }clabel_u;
-
+#define ZERO4 ((32<<24)+(32<<16)+(32<<8)+32) // is "     " as str
 /*
  * Function to serialize the content of buffer as neaty formated
  * string in out. Format is:

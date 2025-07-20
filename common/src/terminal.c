@@ -25,8 +25,7 @@ clabel_u clabel;
 bool data_in = false;
 static void terminal_reset(dev_handle_t dev, bool hard);
 
-static void terminal_init(dev_handle_t handle, dev_type_e dev_type,
-		void *serial) {
+static void terminal_init(dev_handle_t handle, dev_type_e dev_type,	void *serial) {
 	terminal_reset(handle, true);
 	_serial = *(sio_t*) serial;
 	my_term.clabel.cmd = ZERO4;
@@ -211,8 +210,7 @@ int8_t terminal_waitForNumber(char **key) {
 void UART_IdleCallback(void) {
 	data_in = true;
 
-	uint16_t receivedLength = CMD_LEN
-			- __HAL_DMA_GET_COUNTER(_serial.uart->hdmarx);
+	uint16_t receivedLength = CMD_LEN - __HAL_DMA_GET_COUNTER(_serial.uart->hdmarx);
 
 	if (receivedLength > 0 && receivedLength <= 3) {
 		memcpy(&my_term.clabel.cmd, (uint8_t*) &clabel.cmd, receivedLength);

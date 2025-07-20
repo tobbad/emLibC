@@ -42,10 +42,12 @@ typedef enum {
     ONE_SHOT = 4,
     USE_DMA_RX = 8,
     USE_DMA_TX = 0x10,
+	USE_USB	= 0x20,
 } print_e;
 
 typedef struct _sio_t{
 	UART_HandleTypeDef * uart;
+	PCD_HandleTypeDef *pcd;
 	buffer_t buffer[SIO_RXTX_CNT];
 	print_e mode;
 } sio_t;
