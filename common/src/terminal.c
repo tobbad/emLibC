@@ -9,7 +9,7 @@
 #include "device.h"
 #include "serial.h"
 #include "state.h"
-#include "mkeyboard.h"
+#include "keyboard.h"
 
 static state_t my_term = {
 		.first = 1, //First valid value
