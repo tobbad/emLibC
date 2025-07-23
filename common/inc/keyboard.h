@@ -4,18 +4,17 @@
  *  Created on: Oct 30, 2024
  *      Author: badi
  */
-#ifndef MKEYBOARD_H_
-#define MKEYBOARD_H_
+#ifndef __KEYBOARD_H_
+#define __KEYBOARD_H_
 
 #include "common.h"
+#include "keyboard.h"
 #include "state.h"
 #include "device.h"
-#include "xpad.h"
 
 #define SETTLE_TIME_MS	1
 #define SCAN_MS	5
 
-typedef struct xpad_dev_s xpad_dev_t;
 
 extern char* key_state_3c[];
 extern char* key_state_2c[];
@@ -49,4 +48,4 @@ void  keyboard_print(state_t *state, char* start); // Show returned
 
 
 
-#endif /* MKEYBOARD_H_ */
+#endif /* __KEYBOARD_H_ */

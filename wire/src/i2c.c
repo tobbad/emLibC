@@ -20,6 +20,7 @@
  **************************************************************************/
 #include "common.h"
 #include "i2c.h"
+#include "hal_port.h"
 static i2c_t my_dev[I2C_HANDLLE_CNT+1];
 
 i2c_handle li2c_init(I2C_HandleTypeDef * i2c_dev, uint8_t i2cAdr)

@@ -116,7 +116,6 @@ void serial_set_mode(print_e mode, bool doReset ) {
 int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     uint16_t len=0;
     uint8_t idx=0;
-    static uint32_t ltick=0;
     if (!isio.init) return -1;
     uint32_t tick=0;
     if ((isio.buffer[SIO_TX]->mem != NULL)) {
@@ -137,7 +136,6 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
          if (isio.mode&TIMESTAMP){
         	 tick = HAL_GetTick();
              len = sprintf((char*)&tx_buf, "%010ld: ", tick);
-        	 ltick = tick;
           }
          if (isio.mode&GAP_DETECT){
              len += sprintf((char*)&tx_buf, " %x ", idx);
@@ -173,7 +171,7 @@ int16_t _read(int32_t file, uint8_t *ptr, int32_t len) {
     if (!isio.init) return -1;
     if (isio.uart != NULL) {
     	if(isio.mode&USE_DMA_RX){
-			rLen= strlen(isio.buffer[SIO_RX]->mem);
+			rLen= strlen((char*)isio.buffer[SIO_RX]->mem);
 			if ((rLen>0)&&(rLen<CMD_LEN)){
 				memcpy(ptr, isio.state.clabel.str, rLen);
 			} else{
@@ -202,7 +200,7 @@ void serial_state(dev_handle_t dev, state_t *ret){
 	if (!isio.init) return ;
 	uint16_t len= strlen(isio.state.clabel.str);
 	if (len>0){
-		uint8_t ctype = clable2type(isio.state.clabel.str);
+		uint8_t ctype = clable2type(&isio.state.clabel);
 		if (ctype==ISNUM){
 			state_propagate_index(&isio.state, isio.state.clabel.cmd);
 		}

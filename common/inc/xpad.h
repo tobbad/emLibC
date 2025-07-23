@@ -15,7 +15,6 @@
 
 #define STABLE_CNT 5
 #define EIGHT_BUTTON_CNT 8
-typedef struct kybd_s kybd_t;
 
 typedef struct key_s{
 	bool last;
