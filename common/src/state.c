@@ -19,9 +19,9 @@ void  state_init(state_t *state){
     }
 }
 
-void state_clear(state_t * state){
-    for (uint8_t nr=state->first;nr<=state->first+state->cnt;nr++){
-    	state_set_index(state, nr, OFF);
+void state_reset(state_t * state){
+    for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++){
+    	state_set_index(state, i, OFF);
     }
     state->dirty=false;
 }

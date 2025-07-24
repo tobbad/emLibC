@@ -56,7 +56,7 @@ int16_t keyboard_scan(dev_handle_t dev) {
 	    my_kkybd[dev]->plcnt=my_kkybd[dev]->pcnt-1;
 	}
 	if ((my_kkybd[dev]->plcnt>0) &&(my_kkybd[dev]->cnt-my_kkybd[dev]->plcnt)%key_reset_cnt==0){
-		keyboard_reset(dev, false);
+		keyboard_reset(dev);
 		my_kkybd[dev]->pcnt=-1;
 		printf("Reset dirty"NL);
 	}
@@ -64,9 +64,9 @@ int16_t keyboard_scan(dev_handle_t dev) {
 	return res;
 }
 ;
-void keyboard_reset(dev_handle_t dev, bool hard) {
+void keyboard_reset(dev_handle_t dev) {
 	if ((dev > 0) && my_kkybd[dev] != NULL) {
-		my_kkybd[dev]->reset(dev, hard);
+		my_kkybd[dev]->reset(dev);
 	}
 	return;
 }

@@ -13,9 +13,9 @@
 
 static state_t my_term = {
 		.first = 1, //First valid value
-		.cnt = 8, .state = { OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF,
-				OFF, OFF, OFF, OFF, OFF, OFF }, .label = { ' ', '1', '2', '3',
-				'4', '5', '6', '7', '8', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+		.cnt = 8,
+		.state = { OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF },
+		.label = { ' ', '1', '2', '3', '4', '5', '6', '7', '8', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
 		.dirty = false,
 
 };
@@ -23,13 +23,13 @@ static sio_t _serial;
 clabel_u clabel;
 #define ZERO4 ((32<<24)+(32<<16)+(32<<8)+32)
 bool data_in = false;
-static void terminal_reset(dev_handle_t dev, bool hard);
+static void terminal_reset(dev_handle_t dev);
 
 static void terminal_init(dev_handle_t handle, dev_type_e dev_type,	void *serial) {
-	terminal_reset(handle, true);
+	terminal_reset(handle);
 	_serial = *(sio_t*) serial;
 	my_term.clabel.cmd = ZERO4;
-	state_clear(&my_term);
+	state_reset(&my_term);
 
 }
 //
@@ -125,12 +125,10 @@ static void terminal_undirty(dev_handle_t dev) {
 	return;
 }
 
-static void terminal_reset(dev_handle_t dev, bool hard) {
+static void terminal_reset(dev_handle_t dev) {
 	my_term.dirty = false;
-	if (hard) {
-		for (uint8_t i = my_term.first; i < my_term.first + my_term.cnt; i++) {
-			my_term.state[i] = OFF;
-		}
+	for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
+		my_term.state[i] = OFF;
 	}
 	return;
 }

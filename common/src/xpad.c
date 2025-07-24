@@ -105,7 +105,7 @@ static int8_t label2int8(char label){
 	return -value;
 
 }
-static void xpad_reset(dev_handle_t devh, bool hard);
+static void xpad_reset(dev_handle_t devh);
 
 static void xpad_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
 	if (dev_type == DEV_TYPE_NA)
@@ -157,7 +157,7 @@ static void xpad_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
 //	for (uint8_t val=0;val<MAX_BUTTON_CNT;val++){
 //		printf("val= 0x%01x ->  0x%01x"NL, val, my_xpad[devh].val2idx[val] );
 //	}
-	xpad_reset(devh, true);
+	xpad_reset(devh);
 }
 
 static void xpad_set_spalten_pin(dev_handle_t devh, uint8_t spalten_nr) {
@@ -308,6 +308,7 @@ static void xpad_state(dev_handle_t devh, state_t *oState) {
 		}
 		oState->label[oIdx]   = my_xpad[devh].state.label[iIdx];
 	}
+	state_reset(&my_xpad[devh].state);
 	return;
 }
 static bool xpad_isdirty(dev_handle_t devh) {
@@ -326,19 +327,18 @@ static void xpad_undirty(dev_handle_t devh) {
     return;
 }
 
-static void xpad_reset(dev_handle_t devh, bool hard) {
+static void xpad_reset(dev_handle_t devh) {
 	if (mpy_xpad[devh] == NULL) {
 		printf("No valid handle on reset"NL);
 		return;
 	}
 	my_xpad[devh].state.dirty = false;
 	for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
-		if (hard) {
-			my_xpad[devh].state.state[i] = OFF;
-			my_xpad[devh].key[i] = reset_key;
-			my_xpad[devh].state.dirty= false;
-		}
+		my_xpad[devh].state.state[i] = OFF;
+		my_xpad[devh].key[i] = reset_key;
 	}
+	my_xpad[devh].state.dirty= false;
+
 	return;
 }
 

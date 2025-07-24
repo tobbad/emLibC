@@ -195,10 +195,10 @@ int16_t serial_scan(dev_handle_t dev){
 	if (!isio.init) return -1;
 	return _read(0, isio.buffer[SIO_RX]->mem, RX_BUFFER_SIZE);
 };
-void serial_reset(dev_handle_t dev, bool hard){
+void serial_reset(dev_handle_t dev){
      memset(isio.buffer[SIO_RX]->mem, 0, RX_BUFFER_SIZE);
      memset(isio.buffer[SIO_TX]->mem, 0, TX_BUFFER_SIZE);
-     isio.state, isio.state.clabel.cmd =0;
+     state_reset(&isio.state);
      memset(rx_buf, 0, RX_BUFFER_SIZE);
      memset(tx_buf, 0, TX_BUFFER_SIZE);
 };

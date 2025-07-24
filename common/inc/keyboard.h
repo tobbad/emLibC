@@ -22,7 +22,7 @@ extern char* key_state_2c[];
 typedef struct kybd_s{
 	void (*init)(dev_handle_t dev, dev_type_e dev_type, void *device);
 	int16_t (*scan)(dev_handle_t dev);
-	void (*reset)(dev_handle_t dev, bool hard);
+	void (*reset)(dev_handle_t dev);
     void (*state)(dev_handle_t dev, state_t *ret);
     bool (*isdirty)(dev_handle_t dev);
     void (*undirty)(dev_handle_t dev);
@@ -40,7 +40,7 @@ dev_handle_t keyboard_init(kybd_t *kybd, void *device);
 // If Result is negativ -value is the number, which was entered (0...127)
 // If the result >0: 1 alpha Higher case char where entered
 int16_t keyboard_scan(dev_handle_t dev);
-void keyboard_reset(dev_handle_t dev, bool hard);
+void keyboard_reset(dev_handle_t dev);
 void keyboard_state(dev_handle_t dev, state_t *ret);
 bool keyboard_isdirty(dev_handle_t dev);
 void keyboard_undirty(dev_handle_t dev);

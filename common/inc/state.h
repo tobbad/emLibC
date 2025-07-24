@@ -42,7 +42,7 @@ typedef struct statea_s{
 int8_t state_ch2idx(state_t *state, char ch);
 int8_t state_nr2idx(state_t *state, uint8_t nr);
 void state_init(state_t *state);
-void state_clear(state_t * state);
+void state_reset(state_t * state);
 void state_undirty(state_t * state);
 key_state_e state_get_state(state_t * state, char ch);
 void state_set_value(state_t * state, uint8_t nr, key_state_e new_state);
