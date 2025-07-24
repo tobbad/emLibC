@@ -30,7 +30,6 @@ extern "C" {
 #define NL  NEWLINE
 #define LINE_LENGTH	96 // FIXME -> CHAR_PER_LINE
 #define MAX_BUTTON_CNT 16
-#define CSTATE_CNT 8 // Control label count
 #if !defined(MIN)
 #define MIN(a, b) ((a)<=(b)?(a):(b))
 #endif

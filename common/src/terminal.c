@@ -95,7 +95,6 @@ static int16_t terminal_scan(dev_handle_t dev) {
 				ch = 0xFF;
 			}
 		}
-		stay = false;
 	}
 	char *stopstring = NULL;
 	long long int res = strtol((char*) &clabel.str, &stopstring, 10);

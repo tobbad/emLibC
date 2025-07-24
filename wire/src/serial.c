@@ -86,8 +86,8 @@ void serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
 	sio_t *init = dev;
 	isio.uart = init->uart;
 	isio.pcd = init->pcd;
-	isio.buffer[SIO_RX]= buffer_new(init->buffer[SIO_RX].size);
-	isio.buffer[SIO_TX]= buffer_new(init->buffer[SIO_TX].size);
+	isio.buffer[SIO_RX]= buffer_new(init->buffer[SIO_RX]->size);
+	isio.buffer[SIO_TX]= buffer_new(init->buffer[SIO_TX]->size);
     state_init(&isio.state);
     isio.mode = init->mode|USE_DMA_RX;
     memset(rx_buf, 0, RX_BUFFER_SIZE);
@@ -114,8 +114,10 @@ void serial_set_mode(print_e mode, bool doReset ) {
 
 
 int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
+
     uint16_t len=0;
     uint8_t idx=0;
+    txLen = MIN(txLen, TX_BUFFER_SIZE-2);
     if (!isio.init) return -1;
     uint32_t tick=0;
     if ((isio.buffer[SIO_TX]->mem != NULL)) {
@@ -141,7 +143,13 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
              len += sprintf((char*)&tx_buf, " %x ", idx);
              idx =(idx+1)%USE_DMA_TX;
          }
-         memcpy(&tx_buf, ptr, txLen);
+         if (txLen>TX_BUFFER_SIZE-len-3){
+             txLen =MIN(TX_BUFFER_SIZE-len-3, txLen);
+             ptr[len-3] = NL[0];
+             ptr[len-3] = NL[1];
+             txLen = TX_BUFFER_SIZE-len-1;
+         }
+         memcpy(&tx_buf[len], ptr, txLen);
          len+=txLen;
          ptr =(uint8_t*)tx_buf;
      }
@@ -172,11 +180,6 @@ int16_t _read(int32_t file, uint8_t *ptr, int32_t len) {
     if (isio.uart != NULL) {
     	if(isio.mode&USE_DMA_RX){
 			rLen= strlen((char*)isio.buffer[SIO_RX]->mem);
-			if ((rLen>0)&&(rLen<CMD_LEN)){
-				memcpy(ptr, isio.state.clabel.str, rLen);
-			} else{
-				isio.state.clabel.cmd =ZERO4;
-			}
 		} else  if (isio.buffer[SIO_RX]->mem == 0) {
             isio.buffer[SIO_RX]->ready = false;
             HAL_UART_Receive(isio.uart, isio.buffer[SIO_RX]->mem, len, HAL_MAX_DELAY);
@@ -190,10 +193,14 @@ int16_t _read(int32_t file, uint8_t *ptr, int32_t len) {
 // If the result >0: 1 alpha Higher case char where entered
 int16_t serial_scan(dev_handle_t dev){
 	if (!isio.init) return -1;
-	return _read(0, isio.buffer[SIO_RX]->mem, LINE_LENGTH);
+	return _read(0, isio.buffer[SIO_RX]->mem, RX_BUFFER_SIZE);
 };
 void serial_reset(dev_handle_t dev, bool hard){
-	memset(rx_buf, 0, LINE_LENGTH);
+     memset(isio.buffer[SIO_RX]->mem, 0, RX_BUFFER_SIZE);
+     memset(isio.buffer[SIO_TX]->mem, 0, TX_BUFFER_SIZE);
+     isio.state, isio.state.clabel.cmd =0;
+     memset(rx_buf, 0, RX_BUFFER_SIZE);
+     memset(tx_buf, 0, TX_BUFFER_SIZE);
 };
 
 void serial_state(dev_handle_t dev, state_t *ret){
@@ -277,6 +284,8 @@ void  HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size){
 		}
 		*isio.buffer[SIO_RX]->pl =0; // End string
 		new = (char*)isio.buffer[SIO_RX]->mem;
+		memset((uint8_t*)&isio.state.clabel, 0, CMD_LEN);
+		memcpy((uint8_t*)&isio.state.clabel, new, strlen(new));
 		HAL_UARTEx_ReceiveToIdle_DMA(isio.uart,(uint8_t*) rx_buf, RX_BUFFER_SIZE);
 	}
 }

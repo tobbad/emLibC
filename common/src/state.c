@@ -161,7 +161,8 @@ bool state_merge(state_t *inState, state_t *outState){
         printf("Payload cnt=(%d, %d) can not be merged"NL,inState->cnt,outState->cnt);
         return false;
     }
-    printf("inState.cnt: %d, outState.cnt: %d"NL, inState->cnt,outState->cnt);
+    if (inState->dirty==0) return false;
+    //printf("inState.cnt: %d, outState.cnt: %d"NL, inState->cnt,outState->cnt);
     outState->dirty=false;
     if (outState->clabel.cmd!= inState->clabel.cmd){
     	outState->clabel.cmd= inState->clabel.cmd;
