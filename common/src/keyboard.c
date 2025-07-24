@@ -52,15 +52,6 @@ int16_t keyboard_scan(dev_handle_t dev) {
 	if ((dev > 0) && my_kkybd[dev] != NULL) {
 		res = my_kkybd[dev]->scan(dev);
 	}
-	if (res>0){ // A number was enter
-	    my_kkybd[dev]->plcnt=my_kkybd[dev]->pcnt-1;
-	}
-	if ((my_kkybd[dev]->plcnt>0) &&(my_kkybd[dev]->cnt-my_kkybd[dev]->plcnt)%key_reset_cnt==0){
-		keyboard_reset(dev);
-		my_kkybd[dev]->pcnt=-1;
-		printf("Reset dirty"NL);
-	}
-	my_kkybd[dev]->pcnt++;
 	return res;
 }
 ;
