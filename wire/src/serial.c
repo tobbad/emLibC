@@ -169,7 +169,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
 	 } else if (isio.pcd!=NULL){
 		 CDC_Transmit_FS(ptr, len);
 	 } else{
-		 printf("No Uart or USB is given"NL);
+		 printf("No UART or USB is given"NL);
 	 }
     return len;
 }
@@ -205,12 +205,15 @@ void serial_reset(dev_handle_t dev){
 
 void serial_state(dev_handle_t dev, state_t *ret){
 	if (!isio.init) return ;
+    isio.state.first= ret->first;
+    isio.state.cnt= ret->cnt;
 	uint16_t len= strlen(isio.state.clabel.str);
 	if (len>0){
 		uint8_t ctype = clable2type(&isio.state.clabel);
 		if (ctype==ISNUM){
 			state_propagate_index(&isio.state, isio.state.clabel.cmd);
 		}
+		state_merge(&isio.state, ret);
 	}
 };
 bool serial_isdirty(dev_handle_t dev){return isio.state.dirty;};
