@@ -32,7 +32,7 @@ em_msg memory_device_write(dev_handle_t hdl, const uint8_t *data, uint16_t count
         for (uint16_t i = 0;i<cnt; i++)
         {
             printf("set buf[%u] = %u\n",i,  data[i]);
-            mDev[hdl].buffer->pl[mDev[hdl].buffer->used++] = data[i];
+            mDev[hdl].buffer->mem[buffer->used++] = data[i];
         }
         return EM_OK;
     }

@@ -47,10 +47,6 @@ typedef struct rbufline_s {
 	uint16_t nxtLineRdIdx;
     int16_t valid_cnt;
 } rbufline_t;
-
-
-
-
 /* 
  * Reset all fields 
  * even sets the buffer to NULL without freeing it!!!
