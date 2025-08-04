@@ -8,11 +8,12 @@
 #include <string.h>
 #include <stdint.h>
 #include "device.h"
-#include "state.h"
+#include "buffer.h"
+#include "buffer_pool.h"
 
 
 #include "gtest/gtest.h"
-state_t state;
+buffet_pool_t pool;
 
 using ::testing::Return;
 

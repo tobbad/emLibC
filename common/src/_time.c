@@ -4,8 +4,6 @@
  *  Created on: Jan 22, 2025
  *      Author: badi
  */
-#include "common.h"
-#include "serial.h"
 #include "_time.h"
 #define MEAS_CNT 10
 #define LINE_CHAR 10

@@ -5,6 +5,8 @@ import re
 
 cwd= os.getcwd()
 print("Start in %s" % cwd)
+remove_cut_files = ("_time.c",)
+
 
 
 env = Environment()
@@ -22,6 +24,10 @@ def getSrcFromFolder(srcDirs, srcPattern, trgtDir):
         print("Process %s folder with pattern \"%s\"" % (srcF,srcF+srcPattern))
         #print(glob.glob(srcF+srcPattern))
         for f in glob.glob(srcF+srcPattern):
+            fname=f.split("/")[-1]
+            if fname in remove_cut_files:
+                print("  Skip %s" %fname)
+                continue
             print("  Append %s" %(trgtDir+f)) 
             res.append(trgtDir+f)
     return tuple(res)
@@ -97,7 +103,6 @@ testCutFolders = ()
 genTestFolders = ('./test/',)
 incPath  = ()
 
-
 linkLibs =()
 
 if  target == 'test_common':
@@ -105,8 +110,8 @@ if  target == 'test_common':
     cutFolders += ('./common/src/',)
     testCutFolders = ('./common/test/',)
     ccFlags  = '-DUNIT_TEST '
-    incPath +=('./common/inc/',)
-    incPath +=('./common/test/',)
+    incPath += ('./common/inc/',)
+    incPath += ('./common/test/',)
     incPath += ('./test/',)
     incPath+= (googletest_include_paths[0],)
     incPath+= (googletest_include_paths[1],)
@@ -154,6 +159,7 @@ else:
 if debug:
     print("*** Debug build...")
     binFolder = './'
+    print("Include path %s" % str(incPath))
 else:
     print("*** Release build...")
     binFolder = './'
@@ -174,16 +180,13 @@ googlelibs= getSrcFromFolder((googletest_framework_root+"/lib/",), "*.a", ".")
 googleLib=Dir(googletest_framework_root+"/lib/")
 linkLibs+=(googlelibs)
 lib  =   'cut'
-env.SharedLibrary(
-target = lib,
-source = cutFiles)
+env.StaticLibrary(target = lib, source = cutFiles)
 linkLibs += ("lib"+lib,)
 
 lib  =   'testcom'
-env.SharedLibrary(
-target = lib,
-source = testComFiles)
+env.StaticLibrary(target = lib, source = testComFiles)
 linkLibs += ("lib"+lib,)
+
 print("LinkLibs =%s" % str(linkLibs))
 
 print("Include path : %s" % " ".join(i for i in incPath)) 
@@ -192,8 +195,7 @@ print("testCutFiles : %s" % " ".join(i for i in testCutFiles))
 print("testComFiles : %s" % " ".join(i for i in testComFiles))
 print("libGoogle    : %s" % " ".join(i for i in googlelibs))
 print("linkLibs     : %s" % " ".join(i for i in linkLibs))
-include =Dir("#/common/inc")
-env.Environment(CPPPATH=include)
+env.Environment(CPPPATH=incPath)
 #env.Environment(CPPPATH=incPath)
 env.Environment(CPPFLAGS="-I"+str(incPath))
 

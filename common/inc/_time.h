@@ -7,6 +7,7 @@
 
 #ifndef COMMON_INC__TIME_H_
 #define COMMON_INC__TIME_H_
+#include "common.h"
 #include "serial.h"
 
 void time_init();
