@@ -12,6 +12,14 @@
 #ifdef UNIT_TEST
 uint32_t HAL_GetTick(){return 1;};
 #endif
+char key2char[][4] = {
+	"OFF",
+	"BLI",
+	"ON",
+	"NA",
+};
+
+
 
 em_msg  state_init(state_t *state){
 	em_msg res =EM_ERR;
@@ -100,11 +108,7 @@ em_msg state_set_index(state_t * state, uint8_t  nr, key_state_e new_state){
 int8_t state_ch2idx(state_t *state, char ch){
 	em_msg res =EM_ERR;
 	if (state==NULL) return res;
-	int8_t idx=-1;
-	if (state==NULL) return idx;
-	if (idx<state->first)return idx;
-	if (idx>=state->first+state->cnt)return idx;
-	for (idx=0;idx<MAX_STATE_CNT;idx++){
+	for (uint8_t idx=0;idx<MAX_STATE_CNT;idx++){
 		if (ch==state->label[idx]){
 			return idx;
 		}

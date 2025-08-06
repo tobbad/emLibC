@@ -20,6 +20,8 @@ typedef enum{
     STATE_CNT
 }key_state_e;
 
+extern char key2char[][4];
+
 #define MAX_STATE_CNT MAX_BUTTON_CNT
 typedef struct state_s{
     uint8_t first;
