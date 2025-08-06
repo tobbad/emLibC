@@ -64,7 +64,7 @@ def modify_chip_definitions(files=None, define_name='PERIPH_BASE'):
             with open(f, 'w') as fd:
                 fd.write(os.linesep.join(res))               
 
-modify_chip_definitions()
+#modify_chip_definitions()
 testComLib = 'ctest'
 cutLib  =   'cut'
 drvLib  =   'drv'
@@ -195,15 +195,23 @@ print("testCutFiles : %s" % " ".join(i for i in testCutFiles))
 print("testComFiles : %s" % " ".join(i for i in testComFiles))
 print("libGoogle    : %s" % " ".join(i for i in googlelibs))
 print("linkLibs     : %s" % " ".join(i for i in linkLibs))
-env.Environment(CPPPATH=incPath)
 #env.Environment(CPPPATH=incPath)
-env.Environment(CPPFLAGS="-I"+str(incPath))
-
+#env.Environment(CPPPATH=incPath)
+print(str(incPath))
+env["CPPPATH"] =  str(incPath) 
 libPath  = binFolder
 ccDebFlags = '-g '
 ccFlags  += '-Wall ' + ("" if not debug else " %s" % ccDebFlags)
 cflags  =" -std=c11 -fstack-protector-strong"
 cxxflags=" -std=c++1z"
+print('type(env["CPPPATH"])=%s'% type(env["CPPPATH"]))
+print('env["CPPPATH"]=%s'% env["CPPPATH"])
+print('type(env[CPPPATH])=%s'% type(env["CPPPATH"]))
+print('env[CPPPATH]=%s'% env["CPPPATH"])
+#env["CPPPATH"] = +="."
+print("******DUMP ENV")
+print(type(env))
+env.Dump()
 
 if target != 'emlib':
     print(testCutFiles)

@@ -5,6 +5,7 @@
  *      Author: badi
  */
 #include "buffer.h"
+#include "state.h"
 
 buffer_t * buffer_init(buffer_t *buffer, uint16_t size){
 	if (buffer!=NULL){

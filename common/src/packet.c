@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "common.h"
+#include "buffer.h"
 #include "device.h"
 #include "packet.h"
 

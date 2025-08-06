@@ -21,20 +21,18 @@ list(REMOVE_ITEM COMMON_HEADER_FILES "${COMMON_INC_DIR}/keyboard.h")
 list(REMOVE_ITEM COMMON_HEADER_FILES "${COMMON_INC_DIR}/xpad.h")
 list(REMOVE_ITEM COMMON_HEADER_FILES "${COMMON_INC_DIR}/terminal.h")
 list(REMOVE_ITEM COMMON_HEADER_FILES "${COMMON_SRC_DIR}/slip.h")
-list(REMOVE_ITEM COMMON_HEADER_FILES "${COMMON_SRC_DIR}/state.h")
 
 # GoogleTest Pfad
 set(GOOGLETEST_DIR "${CMAKE_SOURCE_DIR}/test/googletest/")
 # Füge GoogleTest hinzu
 message(STATUS "Füge GoogleTest hinzu...")
 add_subdirectory(${GOOGLETEST_DIR})
-
 # Zusätzlichen Include-Pfad definieren
 set(GTEST  "${CMAKE_SOURCE_DIR}/test/googletest/googletest")
 
 # Füge den zusätzlichen Include-Pfad zur Bibliothek hinzu
 #target_include_directories(my_library PUBLIC ${ADDITIONAL_INC_DIR})
-
+add_definitions("-DUNIT_TEST")
 # Sammle alle Quell- und Testdateien
 message(STATUS "Sammle Quell- und Testdateien...")
 file(GLOB COMMON_SRC_FILES "${COMMON_SRC_DIR}/*.c")
@@ -44,16 +42,16 @@ list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_SRC_DIR}/xpad.c")
 list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_SRC_DIR}/keyboard.c")
 list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_SRC_DIR}/xpad.c")
 list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_SRC_DIR}/terminal.c")
+list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_SRC_DIR}/stateled.c")
 list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_SRC_DIR}/slip.c")
-list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_SRC_DIR}/state.c")
-list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_SRC_DIR}/memory_device.c")
 file(GLOB TEST_SRC_FILES "${COMMON_TEST_DIR}/*.cpp")
-list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/slip_test.cpp")
-list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/state_test.cpp")
+list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/buffer_test.cpp")
+list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/device_test.cpp")
 list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/packet_test.cpp")
 list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/ringbuffer_test.cpp")
-list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/ringbuffer_test.cpp")
-list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/ringbuffer_test.cpp")
+list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/slip_test.cpp")
+list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/simple_test.cpp")
+#list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/state_test.cpp")
 
 
 # Erstelle die Bibliothek

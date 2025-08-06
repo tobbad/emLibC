@@ -16,8 +16,9 @@ extern "C" {
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#ifndef UNIT_TEST
 #include "hal_port.h"
-#include "buffer.h"
+#endif
 #ifdef UNIT_TEST
 #define STATIC
 #include <stdio.h>
@@ -75,6 +76,7 @@ uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer, uint16_t buffer_s
 uint16_t common_crc16(uint8_t *data_p, uint16_t length);
 void PrintBuffer(uint8_t *buffer, uint8_t size, char *header);
 uint8_t clable2type(clabel_u *lbl);
+char int2hchar(uint8_t idx);
 
 #ifdef __cplusplus
 }

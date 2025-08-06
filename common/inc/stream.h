@@ -26,6 +26,7 @@ extern "C" {
 #include <stdint.h>
 #include "common.h"
 #include "device.h"
+#include "buffer.h"
 
 typedef struct stream_dev_t_ {
     buffer_t send_buffer;

@@ -37,7 +37,7 @@ typedef enum {
 
 typedef struct device_s {
     void * user_data;
-    dev_handle_t (*open)(dev_handle_t hdl, void * user_data);
+    em_msg (*open)(dev_handle_t hdl, void * user_data);
     em_msg (*read)(dev_handle_t hdl, uint8_t *buffer, uint16_t *cnt);
     em_msg (*write)(dev_handle_t hdl, const uint8_t *buffer, uint16_t cnt);
     em_msg (*ioctrl)(dev_handle_t hdl, dev_command_t cmd, uint16_t value);

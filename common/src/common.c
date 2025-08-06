@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include "common.h"
+#include "state.h"
 
 uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer, uint16_t buffer_size, bool write_asci)
 {
@@ -126,13 +127,21 @@ uint16_t common_crc16(uint8_t *data_p, uint16_t length)
 
     return (crc);
 }
-
-char int2char(uint8_t nr){
-    if (isprint(nr)){
-        return nr;
+/* Int to Hex char*/
+char int2hchar(uint8_t nr){
+	static char ret=' ';
+    if (nr<MAX_STATE_CNT){
+    	if (nr<10){
+    		ret =  nr+'0';
+    	} else if(nr<34){
+    		ret= nr-10+'A';
+    	} else{
+    		ret= '.';
+    	}
     } else{
-        return '.';
+        ret= '.';
     }
+    return ret;
 }
 
 uint8_t clable2type(clabel_u *lbl){
@@ -169,7 +178,7 @@ void PrintBuffer(uint8_t *buffer, uint8_t size, char *header) {
             memset(addOn, ' ', cnt);
         }
         printf("x%02x ", buffer[i]);
-        addOn[i%cnt]=int2char(buffer[i]);
+        addOn[i%cnt]=int2hchar(buffer[i]);
         if (i%cnt==cnt-1){
             printf("%s", addOn);
         }

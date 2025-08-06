@@ -18,6 +18,7 @@
 
 #ifndef COMMON_INC_SLIP_H_
 #define COMMON_INC_SLIP_H_
+
 #ifdef __cplusplus
 extern "C"
 {
