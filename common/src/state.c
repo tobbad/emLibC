@@ -15,8 +15,8 @@ uint32_t HAL_GetTick(){return 1;};
 char key2char[][4] = {
 	"OFF",
 	"BLI",
-	"ON",
-	"NA",
+	"ON ",
+	"NA ",
 };
 
 
@@ -30,7 +30,7 @@ em_msg  state_init(state_t *state){
     state->clabel.cmd =0;
     memcpy(&state->label, &"0123456789ABCDEF", MAX_STATE_CNT);
     for (uint8_t i=0;i<MAX_STATE_CNT;i++){
-    	state_set_index(state, i, OFF);
+    	state_set_key_by_idx(state, i, OFF);
     }
     res = EM_OK;
     return res;
@@ -40,7 +40,7 @@ em_msg state_reset(state_t * state){
 	em_msg res =EM_ERR;
 	if (state==NULL) return res;
      for (uint8_t i = 0; i < MAX_STATE_CNT; i++){
-    	state_set_index(state, i, OFF);
+    	 state_set_key_by_idx(state, i, OFF);
     }
     state->dirty=false;
     res = EM_OK;
@@ -57,62 +57,82 @@ em_msg state_undirty(state_t * state){
     return res;
 }
 
-em_msg state_set_value(state_t * state, uint8_t nr, key_state_e new_state ){
+
+em_msg state_set_key_by_idx(state_t * state,uint8_t nr, key_state_e new_state){
 	em_msg res =EM_ERR;
 	if (state==NULL) return res;
-    if ((nr>=state->first)&&(nr<=state->cnt)){
-        if (state->state[nr]!=new_state){
-            state->state[nr] = new_state;
-            state->dirty=true;
-        }
-    }
+	if (new_state>=STATE_CNT) return res;
+    if ((nr<state->first)||(nr>=(state->first+state->cnt))) return res;
+	state->state[nr] = new_state;
     res = EM_OK;
     return res;
+}
 
-};
 
-
-em_msg state_set_label(state_t * state, char ch, key_state_e new_state){
+em_msg state_set_key_by_lbl(state_t * state, char lbl, key_state_e new_state){
 	em_msg res =EM_ERR;
 	if (state==NULL) return res;
-     if (isalpha(ch)){
-        state->clabel.str[0] = toupper(ch);
-        return res;
-    }
-    uint8_t nr = state_ch2idx(state, ch);
+    uint8_t nr = state_ch2idx(state, lbl);
     if (nr<0) return res;
     if ((nr>=state->first)&&(nr<=state->cnt)){
         if (state->state[nr]!=new_state){
             state->state[nr] = new_state;
             state->dirty=true;
+            printf("Set %s to %d\n", lbl, new_state);
         }
     }
     res = EM_OK;
     return res;
 };
 
-em_msg state_set_index(state_t * state, uint8_t  nr, key_state_e new_state){
+
+key_state_e state_get_key_by_lbl(state_t * state, char ch){
 	em_msg res =EM_ERR;
 	if (state==NULL) return res;
-    if (nr<0) return res;
-    if (nr>=MAX_STATE_CNT) return res;
-    if ((nr>=state->first)&&(nr<=state->cnt)){
-        if (state->state[nr]!=new_state){
-            state->state[nr] = new_state;
-            state->dirty=true;
-        }
-    }
-    res = EM_OK;
+    int8_t idx = state_ch2idx(state, ch );
+    if (idx<0) return res;
+    res =(state->state[idx]&(0x03));
     return res;
-};
+}
+
+key_state_e state_get_key_by_idx(state_t * state, uint8_t idx){
+	em_msg res =EM_ERR;
+	if (state==NULL) return res;
+    if ((idx<state->first)||(idx>=(state->first+state->cnt))) return res;
+    res =(state->state[idx]&(0x03));
+    return res;
+}
+
+em_msg state_propagate_by_lbl(state_t *state, char ch){
+	em_msg res =EM_ERR;
+	if (state==NULL) return res;
+    uint8_t idx = state_ch2idx(state, ch);
+	if (idx == EM_ERR) return res;
+	state->state[idx] = (state->state[idx]+1)%STATE_CNT;
+	state->dirty=true;
+	res =state->dirty;
+    return res;
+
+}
+em_msg state_propagate_by_idx(state_t *state, uint8_t idx){
+	em_msg res =EM_ERR;
+	if (state==NULL) return res;
+    if ((idx<state->first)||(idx>=(state->first+state->cnt))) return res;
+    state->state[idx] = (state->state[idx]+1)%STATE_CNT;
+    state->dirty=true;
+    res =state->dirty;
+    return res;
+}
+
 int8_t state_ch2idx(state_t *state, char ch){
 	em_msg res =EM_ERR;
 	if (state==NULL) return res;
-	for (uint8_t idx=0;idx<MAX_STATE_CNT;idx++){
+	for (uint8_t idx=state->first;idx<state->first+state->cnt;idx++){
 		if (ch==state->label[idx]){
 			return idx;
 		}
 	}
+	//printf("'%c' -> Error\n", ch);
 	return EM_ERR;
 }
 
@@ -120,12 +140,15 @@ em_msg state_set_u32(state_t * state, uint32_t u32){
 	em_msg res =EM_ERR;
 	if (state==NULL) return res;
 	uint32_t mask;
+	state_init(state);
     for (uint8_t i=0;i<MAX_STATE_CNT;i++){
-    	uint8_t shift=2*i ;
-    	mask = (0x3<<shift);
-    	uint32_t x = (u32&mask);
-    	x >>= shift;
-        state->state[i] = x;
+    	if ((i>state->first)&&(i<=state->first+state->cnt)){
+			uint8_t shift=2*i ;
+			mask = (0x3<<shift);
+			uint32_t x = (u32&mask);
+			x >>= shift;
+			state->state[i] = x;
+    	}
     }
     res = EM_OK;
     return res;
@@ -136,65 +159,14 @@ uint32_t state_get_u32(state_t * state){
 	em_msg res =EM_ERR;
 	if (state==NULL) return res;
     res =0;
+    uint32_t u32state=0;
     for (uint8_t i=0;i<MAX_STATE_CNT;i++){
-        res |= (state->state[i]&0x3)<<(2*i);
+    	if ((i>=state->first)&&(i<=state->first+state->cnt)){
+			u32state = (state->state[i]&0x3);
+			res |= ((u32state)<<(2*i));
+    	}
+        //printf("nr %02d, state= x%02x, %s), res= 0x%08x\n", i, u32state,  key2char[u32state], res);
     }
-    return res;
-}
-
-em_msg state_propagate(state_t *state, char ch){
-	em_msg res =EM_ERR;
-	if (state==NULL) return res;
-    if (isalpha(ch)){
-        return false;
-    }
-    uint8_t nr = state_ch2idx(state, ch);
-    if (nr<0){
-        printf("Cannot propagate key %c"NL, ch);
-        return false;
-    };
-    state->state[nr] = (state->state[nr]+1)%STATE_CNT;
-    state->dirty=true;
-    res =state->dirty;
-    return res;
-
-}
-em_msg state_propagate_index(state_t *state, uint8_t idx){
-	em_msg res =EM_ERR;
-	if (state==NULL) return res;
-    if ((idx<state->first)||(idx>state->first+state->cnt)){
-        printf("Cannot propagate key %c"NL, idx);
-        return res;
-    };
-    state->state[idx] = (state->state[idx]+1)%STATE_CNT;
-    state->dirty=true;
-    res =state->dirty;
-    return res;
-}
-
-key_state_e state_get_state(state_t * state, char ch){
-	em_msg res =EM_ERR;
-	if (state==NULL) return res;
-    uint8_t nr = state_ch2idx(state, ch );
-    if (nr<0){
-        printf("%08ld: Cannot get key %c"NL, HAL_GetTick(),ch);
-        return EM_ERR;
-    };
-    res =state->state[nr];
-    return res;
-}
-
-em_msg state_set_state(state_t * state,uint8_t nr, key_state_e ks){
-	em_msg res =EM_ERR;
-	if (state==NULL) return res;
-	if (ks>=STATE_CNT) return res;
-	if (nr>=MAX_STATE_CNT) return res;
-	if ((nr<state->first)||(nr>=state->first+state->cnt)){
-		printf("Try to modify unused state %d"NL, nr);
-		return res ;
-	}
-	state->state[nr] = ks;
-    res = EM_OK;
     return res;
 }
 
@@ -302,17 +274,24 @@ uint8_t state_get_cnt(state_t *state) {
 uint8_t state_get_first(state_t *state){
 	em_msg res =EM_ERR;
 	if (state==NULL) return res;
-    return state->first;
+    res = state->first;
+    return res;
+
 };
 em_msg state_set_cnt(state_t *state, uint8_t nr){
 	em_msg res =EM_ERR;
 	if (state==NULL) return res;
     state->cnt=nr;
+    res = EM_OK;
+     return res;
 };
 
 em_msg state_set_first(state_t *state, uint8_t nr){
 	em_msg res =EM_ERR;
 	if (state==NULL) return res;
     state->first=nr;
+    res = EM_OK;
+     return res;
+
 };
 
