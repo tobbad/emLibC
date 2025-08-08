@@ -169,7 +169,14 @@ uint32_t state_get_u32(state_t * state){
     }
     return res;
 }
-
+em_msg state_copy(state_t *from, state_t *to){
+    em_msg res =EM_ERR;
+    if (from==NULL) return res;
+    if (to==NULL) return res;
+    memcpy(to, from, sizeof(state_t));
+    res = EM_OK;
+    return res;
+}
 
 em_msg state_is_same(state_t *last, state_t *this){
 	em_msg res =EM_ERR;
@@ -203,14 +210,6 @@ em_msg state_merge(state_t *inState, state_t *outState){
     }
     return outState->dirty;
 
-}
-em_msg  state_copy(state_t *from, state_t *to ){
-	em_msg res =EM_ERR;
-	if (from==NULL) return res;
-	if (to==NULL) return res;
-    memcpy(to, from, sizeof(state_t));
-    res = EM_OK;
-    return res;
 }
 
 em_msg state_print(state_t *state,  char *title ){

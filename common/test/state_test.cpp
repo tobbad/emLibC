@@ -188,3 +188,36 @@ TEST_F(StateTest, TestSetLimitedStates){
 
 }
 
+
+TEST_F(StateTest, TestCopyMergeAndCompare){
+    state_t state1;
+    state_t state2;
+    state_t state3;
+    state_t merge;
+    state_init(&state1);
+    state_init(&state2);
+    state_init(&state3);
+    state_init(&state3);
+    em_msg res;
+    // Setup test state
+    for (uint8_t i=0;i<9;i++){
+        key_state_e s1, s2;
+        state_set_key_by_idx(&state1,i ,(key_state_e)(i/3));
+        state_set_key_by_idx(&state2,i ,(key_state_e)(i%3));
+    }
+    state_copy(&state2, &merge);
+    state_merge(&state1, &merge);
+    state_set_key_by_idx(&state3, 0, OFF);
+    state_set_key_by_idx(&state3, 1, BLINKING);
+    state_set_key_by_idx(&state3, 2, ON);
+    state_set_key_by_idx(&state3, 3, BLINKING);
+    state_set_key_by_idx(&state3, 4, ON);
+    state_set_key_by_idx(&state3, 5, OFF);
+    state_set_key_by_idx(&state3, 6, OFF);
+    state_set_key_by_idx(&state3, 7, BLINKING);
+    state_set_key_by_idx(&state3, 8, ON);
+    res = state_is_same(&merge, &state3);
+	EXPECT_EQ(res, EM_OK);
+
+
+}

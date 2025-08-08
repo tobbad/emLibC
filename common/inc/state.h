@@ -57,6 +57,7 @@ em_msg state_propagate_by_lbl(state_t *state, char ch);
 em_msg state_propagate_by_idx(state_t *state, uint8_t nr);
 em_msg state_set_u32(state_t * state, uint32_t u32);
 uint32_t state_get_u32(state_t * state);
+em_msg state_copy(state_t *from, state_t *to);
 em_msg state_is_same(state_t *last, state_t *cur);
 em_msg state_merge(state_t *inState, state_t *outState);
 em_msg state_print(state_t *state,  char *title );
