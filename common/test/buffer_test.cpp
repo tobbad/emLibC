@@ -64,5 +64,12 @@ TEST_F(BufferTest, SetDataToBufferAndReadItBack){
 
 TEST_F(BufferTest, CreateBufferPool){
 	buffer_pool_t * pool = buffer_pool_new(rBufCnt, rBufSize);
+	buffer_t *buffer;
+	for (uint8_t i=0;i<rBufSize;i++){
+		buffer = buffer_pool_get(pool);
+		EXPECT_NE(buffer, (buffer_t *)NULL);
+	}
+	buffer = buffer_pool_get(pool);
+	EXPECT_EQ(buffer, (buffer_t *)NULL);
 
 }
