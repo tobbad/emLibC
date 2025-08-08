@@ -15,20 +15,18 @@ extern "C" {
 #endif
 
 typedef enum {
-	ZERO,   // Filled with 0
-	EMPTY,  // Can be used
-	READY,  // Data in it, can be used (means dirty)
-	LOCKED, // Is currently used
+	ZERO,  // Filled with 0
+	USED,  // Data in it, can be used (means dirty)
 	BSTATE_CNT
 } state_e ;
 
 typedef struct buffer_s {
 	state_e  state;
     uint16_t size;
-    uint8_t* pl;   /* pointer to first byte used in buffer */
-    uint8_t* mem;  /* Start of memory */
+    uint8_t* pl;  /* pointer to first byte used in buffer */
+    uint8_t* mem; /* Start of memory */
     uint8_t used; // Count of bytes used in this buffer
-    uint8_t user; // Count of user using this buffer
+    uint8_t id;   // id of buffer
 } buffer_t;
 /*
  * Create a new buffer with given size field filled in, if doAlloc is true
@@ -37,10 +35,10 @@ typedef struct buffer_s {
  */
 buffer_t * buffer_init(buffer_t *buffer, uint16_t size);
 buffer_t * buffer_new(uint16_t size);
-buffer_t * buffer_reset(buffer_t *buffer);
+em_msg  buffer_reset(buffer_t *buffer);
 em_msg  buffer_set(buffer_t *buffer, uint8_t* data, const uint8_t size);
 em_msg  buffer_get(buffer_t *buffer, uint8_t* data, uint8_t *size);
-
+bool buffer_is_used(buffer_t *buffer);
 #ifdef __cplusplus
 }
 #endif

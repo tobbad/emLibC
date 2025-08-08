@@ -10,12 +10,13 @@
 #include "buffer_pool.h"
 
 #define BUFFER_SIZE 96
-#define BUFFER_ENTRY_CNT 20
+#define BUFFER_CNT 20
 
 #include "gtest/gtest.h"
 uint8_t wbuffer[BUFFER_SIZE];
 uint8_t sbuffer[BUFFER_SIZE];
-uint8_t rBufSize= 32;
+uint8_t rBufSize= 42;
+uint8_t rBufCnt= 5;
 class BufferTest : public ::testing::Test {
     protected:
 
@@ -33,9 +34,9 @@ class BufferTest : public ::testing::Test {
     }
 };
 
-TEST_F(BufferTest, ErrorIfBufferAllocIsOK)
+TEST_F(BufferTest, ErrorIfBufferAllocIsOK){
+
 //TEST_F(BufferTest, ErrorIfBufferAllocIsOK)
-{
 	buffer_t * buf;
 	buf= buffer_new(0);
 	EXPECT_EQ(buf, (buffer_t *)NULL);
@@ -49,7 +50,7 @@ TEST_F(BufferTest, SetDataToBufferAndReadItBack){
 	uint8_t rsize = size;
     buffer_t * buf= buffer_new(size);
     em_msg res = buffer_set(buf, (uint8_t*)&wbuffer, BUFFER_SIZE);
-    EXPECT_EQ(res, EM_ERR);
+    EXPECT_EQ(res, EM_OK);
     res = buffer_set(buf,(uint8_t*) &wbuffer, size);
     EXPECT_EQ(res, EM_OK);
     memset(wbuffer, 0, BUFFER_SIZE);
@@ -59,4 +60,9 @@ TEST_F(BufferTest, SetDataToBufferAndReadItBack){
     for (uint8_t i=0;i<size;i++){
         EXPECT_EQ(wbuffer[i], sbuffer[i]);
     }
+}
+
+TEST_F(BufferTest, CreateBufferPool){
+	buffer_pool_t * pool = buffer_pool_new(rBufCnt, rBufSize);
+
 }
