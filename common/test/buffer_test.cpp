@@ -9,27 +9,54 @@
 #include "buffer.h"
 #include "buffer_pool.h"
 
+#define BUFFER_SIZE 96
+#define BUFFER_ENTRY_CNT 20
 
 #include "gtest/gtest.h"
-buffer_t *buffer;
-
-
+uint8_t wbuffer[BUFFER_SIZE];
+uint8_t sbuffer[BUFFER_SIZE];
+uint8_t rBufSize= 32;
 class BufferTest : public ::testing::Test {
     protected:
 
-    void SetUp() override
-    {
-        
+    void SetUp() override    {
+        for (uint8_t i=0;i<BUFFER_SIZE;i++){
+            wbuffer[i]=i;
+        }
+        memcpy(sbuffer, wbuffer, BUFFER_SIZE);
     }
 
-    void TearDown()
-    {
+    void TearDown() {
+        for (uint8_t i=0;i<rBufSize;i++){
+            EXPECT_EQ(wbuffer[i], i);
+        }
     }
 };
 
-TEST_F(BufferTest, ErrorIfStateNotGood)
+TEST_F(BufferTest, ErrorIfBufferAllocIsOK)
+//TEST_F(BufferTest, ErrorIfBufferAllocIsOK)
 {
-    buffer_t * buf= buffer_new(32);
-
+	buffer_t * buf;
+	buf= buffer_new(0);
+	EXPECT_EQ(buf, (buffer_t *)NULL);
+    buf= buffer_new(rBufSize);
     EXPECT_NE(buf, (buffer_t *)NULL);
+}
+
+TEST_F(BufferTest, SetDataToBufferAndReadItBack){
+//TEST_F(BufferTest, DISABLED_SetDataToBufferAndReadItBack){
+	const uint8_t size = rBufSize;
+	uint8_t rsize = size;
+    buffer_t * buf= buffer_new(size);
+    em_msg res = buffer_set(buf, (uint8_t*)&wbuffer, BUFFER_SIZE);
+    EXPECT_EQ(res, EM_ERR);
+    res = buffer_set(buf,(uint8_t*) &wbuffer, size);
+    EXPECT_EQ(res, EM_OK);
+    memset(wbuffer, 0, BUFFER_SIZE);
+    res = buffer_get(buf, (uint8_t*)&wbuffer, &rsize);
+    EXPECT_EQ(res, EM_OK);
+    EXPECT_EQ(rsize, size);
+    for (uint8_t i=0;i<size;i++){
+        EXPECT_EQ(wbuffer[i], sbuffer[i]);
+    }
 }

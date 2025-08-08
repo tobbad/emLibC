@@ -45,6 +45,7 @@ extern "C" {
 typedef enum {
 	EM_ERR = -1,
 	EM_OK = 0,
+    EM_TRUE,
 } em_msg;
 
 typedef union {
