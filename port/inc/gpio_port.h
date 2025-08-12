@@ -7,7 +7,7 @@
 
 #ifndef GPIO_PORT_H_
 #define GPIO_PORT_H_
-#include "gpio.h"
+#include "_gpio.h"
 
 typedef struct gpio_port_s {
 	gpio_pin_t  pin[10];

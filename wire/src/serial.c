@@ -155,9 +155,9 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
      }
 	 if (isio.uart != NULL) {
 		 if (isio.mode&USE_DMA_TX){
-			 while (!ReadModify_write(&isio.buffer[SIO_TX]->ready, -1)){}
+			 while (!ReadModify_write((int8_t*)&isio.buffer[SIO_TX]->state, 1)){}
 			 time_start(len, ptr);
-			 isio.buffer[SIO_RX]->ready=false;
+			 isio.buffer[SIO_RX]->state=USED;
 			 HAL_UART_Transmit_DMA(isio.uart, (uint8_t*)ptr, len);
 			 time_end_su();
 		 } else{
@@ -181,7 +181,7 @@ int16_t _read(int32_t file, uint8_t *ptr, int32_t len) {
     	if(isio.mode&USE_DMA_RX){
 			rLen= strlen((char*)isio.buffer[SIO_RX]->mem);
 		} else  if (isio.buffer[SIO_RX]->mem == 0) {
-            isio.buffer[SIO_RX]->ready = false;
+            isio.buffer[SIO_RX]->state = USED;
             HAL_UART_Receive(isio.uart, isio.buffer[SIO_RX]->mem, len, HAL_MAX_DELAY);
         }
     }
@@ -211,7 +211,7 @@ void serial_state(dev_handle_t dev, state_t *ret){
 	if (len>0){
 		uint8_t ctype = clable2type(&isio.state.clabel);
 		if (ctype==ISNUM){
-			state_propagate_index(&isio.state, isio.state.clabel.cmd);
+			state_propagate_by_idx(&isio.state, isio.state.clabel.cmd);
 		}
 		state_merge(&isio.state, ret);
 	}
@@ -298,6 +298,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *UartHandle)
 {
   /* Set transmission flag: transfer complete */
   time_end_tx();
-  isio.buffer[SIO_RX]->ready=true;
+  memset(isio.buffer[SIO_RX]->mem, 0, isio.buffer[SIO_RX]->size);
+  isio.buffer[SIO_RX]->state=ZERO;
 }
 

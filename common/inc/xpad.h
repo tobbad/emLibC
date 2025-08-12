@@ -32,7 +32,7 @@ typedef struct xpad_dev_s{
 	state_t state;
 } xpad_dev_t;
 
-extern status xscan_dev;
+extern kybd_t xscan_dev;
 extern kybd_t eight_dev;
 
 

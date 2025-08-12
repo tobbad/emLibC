@@ -107,7 +107,7 @@ static int16_t terminal_scan(dev_handle_t dev) {
 	int8_t idx = state_ch2idx(&my_term, clabel.str[0]);
 	if ((idx >= my_term.first) && (res <= my_term.first + my_term.cnt)) {
 		my_term.dirty = true;
-		state_propagate_index(&my_term, idx);
+		state_propagate_by_idx(&my_term, idx);
 	} else {
 		printf("Command %s"NL, my_term.clabel.str);
 	}
