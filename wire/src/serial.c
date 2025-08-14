@@ -83,6 +83,7 @@ static char  *new = NULL;
 void serial_set_mode(print_e mode, bool doReset );
 
 void serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
+	if (isio.init) return;
 	sio_t *init = dev;
 	isio.uart = init->uart;
 	isio.pcd = init->pcd;
