@@ -78,7 +78,7 @@ em_msg state_set_key_by_lbl(state_t * state, char lbl, key_state_e new_state){
         if (state->state[nr]!=new_state){
             state->state[nr] = new_state;
             state->dirty=true;
-            printf("Set %s to %d\n", lbl, new_state);
+            printf("Set %c to %d\n", lbl, new_state);
         }
     }
     res = EM_OK;
