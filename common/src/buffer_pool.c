@@ -9,18 +9,16 @@
 #include "buffer_pool.h"
 buffer_pool_t* buffer_pool_new(uint8_t bcnt, uint8_t charCnt){
     buffer_pool_t *bp;
-    if (bp!=NULL){
-    	bp = malloc(sizeof(buffer_pool_t));
-		memset(bp, 0, sizeof(buffer_pool_t));
-		bp->bufer_cnt = bcnt;
-		bp->buffer = (buffer_t *)malloc(bp->bufer_cnt*sizeof(buffer_t*));
-		bp->sbuffer = (buffer_t *)malloc(bp->bufer_cnt*sizeof(buffer_t*));
-		memset(bp->sbuffer, 0, bp->bufer_cnt*sizeof(buffer_t*));
-		if (bp->buffer!=NULL) return NULL;
-		for (uint8_t i=0;i<bcnt;i++){
-			bp->buffer[i] = *buffer_new(charCnt);
-		}
-    }else return NULL;
+	bp = malloc(sizeof(buffer_pool_t));
+	memset(bp, 0, sizeof(buffer_pool_t));
+	bp->bufer_cnt = bcnt;
+	bp->buffer = (buffer_t *)malloc(bp->bufer_cnt*sizeof(buffer_t*));
+	bp->sbuffer = (buffer_t *)malloc(bp->bufer_cnt*sizeof(buffer_t*));
+	memset(bp->sbuffer, 0, bp->bufer_cnt*sizeof(buffer_t*));
+	if (bp->buffer!=NULL) return NULL;
+	for (uint8_t i=0;i<bcnt;i++){
+		bp->buffer[i] = *buffer_new(charCnt);
+	}
     return bp;
 }
 
