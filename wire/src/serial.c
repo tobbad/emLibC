@@ -220,6 +220,7 @@ void serial_state(dev_handle_t dev, state_t *ret){
 bool serial_isdirty(dev_handle_t dev){return isio.state.dirty;};
 
 void serial_undirty(dev_handle_t dev){state_undirty(&isio.state);};
+
 kybd_t serial_dev = {
 	.init = &serial_init,
 	.scan = &serial_scan,

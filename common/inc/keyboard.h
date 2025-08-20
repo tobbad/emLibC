@@ -8,7 +8,6 @@
 #define __KEYBOARD_H_
 
 #include "common.h"
-#include "keyboard.h"
 #include "state.h"
 #include "device.h"
 
