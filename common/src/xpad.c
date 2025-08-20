@@ -7,7 +7,7 @@
 #include "common.h"
 #include "state.h"
 #include "device.h"
-#include "gpio.h"
+#include "_gpio.h"
 #include "gpio_port.h"
 #include "keyboard.h"
 #include "xpad.h"

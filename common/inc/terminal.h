@@ -7,7 +7,7 @@
 
 #ifndef TERMINAL_H
 #define TERMINAL_H
-#include <keyboard.h>
+#include "keyboard.h"
 
 extern kybd_t terminal_dev;
 

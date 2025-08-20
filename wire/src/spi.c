@@ -19,7 +19,7 @@
  *
  **************************************************************************/
 #include "common.h"
-#include "gpio.h"
+#include "_gpio.h"
 #include "spi.h"
 static spi_t myDev[DEV_CNT];
 
