@@ -41,6 +41,7 @@ em_msg  buffer_set(buffer_t *buffer, uint8_t* data, const uint8_t size){
 	uint8_t msize = MIN(size, buffer->size);
 	buffer->size = msize;
 	memcpy(buffer->mem, data, buffer->size);
+	buffer->state = USED;
 	res = EM_OK;
 	return res;
 }

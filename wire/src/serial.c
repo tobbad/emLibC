@@ -102,6 +102,11 @@ void serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
 	return;
 }
 
+void serial_io_init(dev_handle_t devh, void *dev) {
+	if (isio.init) return;
+	serial_init(0, 0, dev);
+}
+
 void serial_set_mode(print_e mode, bool doReset ) {
     isio.mode = mode|USE_DMA_RX;
     time_init();
@@ -112,10 +117,14 @@ void serial_set_mode(print_e mode, bool doReset ) {
 
 }
 
+em_msg serial_write(dev_handle_t hdl, const uint8_t *buffer, uint16_t cnt){
+
+}
+
 
 int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
 
-    uint16_t len=0;
+    uint16_t len=-1;
     uint8_t idx=0;
     txLen = MIN(txLen, TX_BUFFER_SIZE-2);
     if (!isio.init) return -1;
@@ -174,6 +183,15 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     return len;
 }
 
+em_msg serial_read(uint8_t *buffer, uint16_t *cnt){
+	em_msg res= EM_OK;
+	int16_t rLen =  _read(buffer, *cnt);
+	*cnt =rLen;
+	if (rLen<0){
+		res = EM_ERR;
+	}
+	return res;
+}
 int16_t _read(int32_t file, uint8_t *ptr, int32_t len) {
     uint16_t rLen=0;
     if (!isio.init) return -1;
@@ -184,6 +202,7 @@ int16_t _read(int32_t file, uint8_t *ptr, int32_t len) {
             isio.buffer[SIO_RX]->state = USED;
             HAL_UART_Receive(isio.uart, isio.buffer[SIO_RX]->mem, len, HAL_MAX_DELAY);
         }
+
     }
 
     return rLen;
@@ -230,6 +249,16 @@ kybd_t serial_dev = {
 	.dev_type = TERMINAL,
 	.cnt = 8,
 	.first = 1,
+};
+
+device_t serial_io = {
+	.open = &serial_io_init,
+	.read = &serial_read,
+	.write= &serial_write,
+	.ioctrl =NULL,
+    .close = NULL,
+    .ready_cb = NULL
+	.dev_type = DEV_OPEN | DEV_READ |DEV_WRITE
 };
 
 
@@ -287,6 +316,7 @@ void  HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size){
 			}
 		}
 		*isio.buffer[SIO_RX]->pl =0; // End string
+		*isio.buffer[SIO_RX]->state = READY;
 		new = (char*)isio.buffer[SIO_RX]->mem;
 		memset((uint8_t*)&isio.state.clabel, 0, CMD_LEN);
 		memcpy((uint8_t*)&isio.state.clabel, new, strlen(new));
