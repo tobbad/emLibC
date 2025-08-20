@@ -29,10 +29,11 @@
 
 #ifndef INC_SERIAL_IO_H_
 #define INC_SERIAL_IO_H_
+#include "keyboard.h"
 #include "common.h"
 #include "device.h"
-#include "keyboard.h"
 #include "buffer.h"
+
 #define UART_TIMEOUT_MS 100
 typedef enum {SIO_ERROR=-1, SIO_OK=0, } sio_res_e;
 typedef enum {SIO_RX=0, SIO_TX, SIO_RXTX_CNT} sio_channel_e;
