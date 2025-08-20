@@ -263,6 +263,9 @@ em_msg    state_set_dirty(state_t *state ){
 	em_msg res =EM_ERR;
 	if (state==NULL) return res;
 	state->dirty=true;
+	res =EM_OK;
+	return res;
+
 }
 
 uint8_t state_get_cnt(state_t *state) {

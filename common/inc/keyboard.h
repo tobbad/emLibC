@@ -35,7 +35,6 @@ typedef struct kybd_s{
 
 
 dev_handle_t keyboard_init(kybd_t *kybd, void *device);
-
 // If Result is negativ -value is the number, which was entered (0...127)
 // If the result >0: 1 alpha Higher case char where entered
 int16_t keyboard_scan(dev_handle_t dev);
