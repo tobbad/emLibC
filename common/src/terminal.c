@@ -25,11 +25,12 @@ clabel_u clabel;
 bool data_in = false;
 static void terminal_reset(dev_handle_t dev);
 
-static void terminal_init(dev_handle_t handle, dev_type_e dev_type,	void *serial) {
+static em_msg terminal_init(dev_handle_t handle, dev_type_e dev_type,	void *serial) {
 	terminal_reset(handle);
 	_serial = *(sio_t*) serial;
 	my_term.clabel.cmd = ZERO4;
 	state_reset(&my_term);
+	return EM_OK;
 
 }
 //

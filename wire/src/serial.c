@@ -85,8 +85,8 @@ static char  *new = NULL;
 
 void serial_set_mode(print_e mode, bool doReset );
 
-void serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
-	if (isio.init) return;
+em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
+	if (isio.init) return EM_ERR;
 	sio_t *init = dev;
 	isio.uart = init->uart;
 #ifdef HAL_PCD_MODULE_ENABLED
@@ -105,12 +105,13 @@ void serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
 	// setbuf(stdout, NULL);
 	// flush buffer:
 	// fflush(stdout);
-	return;
+	return EM_OK;
 }
 
-void serial_io_open(dev_handle_t devh, void *dev) {
-	if (isio.init) return;
-	serial_init(0, 0, dev);
+em_msg serial_io_open(dev_handle_t devh, void *dev) {
+	if (isio.init) return EM_ERR;
+	return serial_init(0, 0, dev);
+
 }
 
 void serial_set_mode(print_e mode, bool doReset ) {
@@ -123,7 +124,7 @@ void serial_set_mode(print_e mode, bool doReset ) {
 
 }
 
-em_msg serial_write(dev_handle_t hdl, const uint8_t *buffer, uint16_t cnt){
+em_msg serial_write(dev_handle_t hdl, const uint8_t *buffer, int16_t cnt){
 	printf("%s", buffer);
 	return EM_OK;
 }
@@ -192,7 +193,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     return len;
 }
 
-em_msg serial_read(uint8_t *buffer, uint16_t *cnt){
+em_msg serial_read(dev_handle_t hdl, uint8_t *buffer, int16_t *cnt){
 	em_msg res= EM_OK;
 	int16_t _cnt= *cnt;
 	int16_t rLen =  fread(buffer,(size_t) 1,(size_t)_cnt, stdin);

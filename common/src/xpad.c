@@ -107,9 +107,9 @@ static int8_t label2int8(char label){
 }
 static void xpad_reset(dev_handle_t devh);
 
-static void xpad_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
+static em_msg xpad_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
 	if (dev_type == DEV_TYPE_NA)
-		return;
+		return EM_ERR;
 	xpad_dev_t * device =(xpad_dev_t*)dev;
 	my_xpad[devh].dev_type= dev_type;
 	mpy_xpad[devh] = &my_xpad[devh];
@@ -143,6 +143,7 @@ static void xpad_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
 	}else{
 		my_xpad[devh].zeile.cnt=1;
 	}
+	return EM_OK;
 
 //	memset(my_xpad[devh].val2idx, -1, MAX_BUTTON_CNT);
 //	for (uint8_t val=0;val<MAX_BUTTON_CNT;val++){
