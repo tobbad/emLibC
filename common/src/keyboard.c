@@ -12,20 +12,22 @@
 #include "gpio_port.h"
 #define key_reset_cnt 100
 
-static kybd_t *my_kkybd[DEVICE_CNT];
+static kybd_t*  my_kybd[DEVICE_CNT];
 
 char *key_state_3c[] = { "   ", "BLI", "ON ", "NA ", };
 char *key_state_2c[] = { "  ", "BL", "ON ", "NA ", };
 
 
 static uint8_t keyboard_find_dev(kybd_t *kybd) {
-	for (uint8_t i = 0; i < DEVICE_CNT; i++) {
-		if (my_kkybd[i] == kybd) {
+    uint8_t i;
+	for (i = 1; i < DEVICE_CNT; i++) {
+		if (my_kybd[i] == kybd) {
 			return i;
 		}
 	}
-	for (uint8_t i = 1; i < DEVICE_CNT; i++) {
-		if (my_kkybd[i] == NULL) {
+	for ( i = 1; i < DEVICE_CNT; i++) {
+		if (my_kybd[i] == NULL) {
+		    my_kybd[i]=kybd;
 			return i ;
 		}
 	}
@@ -37,7 +39,6 @@ dev_handle_t keyboard_init(kybd_t *kybd, void *device) {
 	if (kybd != NULL) {
 		dev_nr = keyboard_find_dev(kybd);
 		if (dev_nr > 0) {
-			my_kkybd[dev_nr] = kybd;
 			kybd->init(dev_nr, kybd->dev_type, device);
             kybd->pcnt = -1;
 		}
@@ -49,35 +50,35 @@ dev_handle_t keyboard_init(kybd_t *kybd, void *device) {
 
 int16_t keyboard_scan(dev_handle_t dev) {
 	int16_t res = 0;
-	if ((dev > 0) && my_kkybd[dev] != NULL) {
-		res = my_kkybd[dev]->scan(dev);
+	if ((dev > 0) && my_kybd[dev] != NULL) {
+		res = my_kybd[dev]->scan(dev);
 	}
 	return res;
 }
 ;
 void keyboard_reset(dev_handle_t dev) {
-	if ((dev > 0) && my_kkybd[dev] != NULL) {
-		my_kkybd[dev]->reset(dev);
+	if ((dev > 0) && my_kybd[dev] != NULL) {
+		my_kybd[dev]->reset(dev);
 	}
 	return;
 }
 
 void keyboard_state(dev_handle_t dev, state_t *ret) {
-    if ((dev > 0) && my_kkybd[dev] != NULL) {
-        my_kkybd[dev]->state(dev, ret);
+    if ((dev > 0) && my_kybd[dev] != NULL) {
+        my_kybd[dev]->state(dev, ret);
     }
     return;
 }
 void keyboard_undirty(dev_handle_t dev) {
-    if ((dev > 0) && my_kkybd[dev] != NULL) {
-        my_kkybd[dev]->undirty(dev);
+    if ((dev > 0) && my_kybd[dev] != NULL) {
+        my_kybd[dev]->undirty(dev);
     }
     return;
 }
 
 bool keyboard_isdirty(dev_handle_t dev) {
-    if ((dev > 0) && my_kkybd[dev] != NULL) {
-        return my_kkybd[dev]->isdirty(dev);
+    if ((dev > 0) && my_kybd[dev] != NULL) {
+        return my_kybd[dev]->isdirty(dev);
     }
     return false;
 }
