@@ -19,7 +19,7 @@ buffer_t * buffer_init(buffer_t *buffer, uint16_t size){
 
 buffer_t * buffer_new(uint16_t size){
 	if (size==0) return NULL;
-	buffer_t *buffer = malloc(sizeof(buffer_t));
+	buffer_t * buffer = (buffer_t*)malloc(sizeof(buffer_t));
 	memset(buffer , 0, sizeof(buffer_t));
 	buffer_init(buffer, size);
 	return buffer;
