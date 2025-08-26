@@ -224,12 +224,8 @@ em_msg state_print(state_t *state,  char *title ){
     }
     printf("first : %d"NL, state->first);
     printf("cnt   : %d"NL, state->cnt);
-    if (strlen(state->clabel.str)<CMD_LEN){
-    	printf("clabel: %s"NL, state->clabel.str );
-    } else{
-    	printf("clabel: 0x%08lx"NL, state->clabel.cmd);
-    }
-    	printf("Label : ");
+   	printf("clabel: 0x%08lx"NL, state->clabel.cmd);
+   	printf("label : ");
     for (uint8_t i = 0; i<MAX_BUTTON_CNT; i++){
         char c = state->label[i];
         if (isprint(c)){
