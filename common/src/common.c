@@ -171,14 +171,17 @@ void PrintBuffer(uint8_t *buffer, uint8_t size, char *header) {
     static const uint8_t cnt=8;
     char addOn[cnt+1];
     addOn[cnt]=0;
-    printf("Head");
     for (uint8_t i = 0; i < size; i++) {
         if (i%cnt==0){
             printf(NL"0x%02x:  ", i);
             memset(addOn, ' ', cnt);
         }
         printf("x%02x ", buffer[i]);
-        addOn[i%cnt]=int2hchar(buffer[i]);
+        if (isprint(buffer[i])){
+        	addOn[i%cnt]=buffer[i];
+        }else{
+        	addOn[i%cnt]='.';
+        }
         if (i%cnt==cnt-1){
             printf("%s", addOn);
         }
