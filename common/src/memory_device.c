@@ -25,7 +25,7 @@ em_msg memory_device_open(dev_handle_t hdl, void *user_data)
     return EM_ERR;
 }
 
-em_msg memory_device_write(dev_handle_t hdl, const uint8_t *data, uint16_t count)
+em_msg memory_device_write(dev_handle_t hdl, const uint8_t *data, int16_t count)
 {
     if ((NULL != mDev[hdl].buffer) && (mDev[hdl].buffer->used  >= 1) && (NULL != data))
     {
@@ -40,7 +40,7 @@ em_msg memory_device_write(dev_handle_t hdl, const uint8_t *data, uint16_t count
     return EM_ERR;
 }
 
-em_msg memory_device_read(dev_handle_t hdl,  uint8_t *data, uint16_t* count)
+em_msg memory_device_read(dev_handle_t hdl,  uint8_t *data, int16_t* count)
 {
     if ((NULL != mDev[hdl].buffer) && (mDev[hdl].buffer->used >= 1) && (NULL != data))
     {
