@@ -176,22 +176,22 @@ void PrintBuffer(uint8_t *buffer, uint8_t size, char *header) {
     uint8_t idx=0;
     for (idx = 0; idx < pcnt; idx++) {
         if (idx%cnt==0){
-            printf(NL"0x%04x: ", idx);
-            memset(addOn, ' ', cnt);
+            printf(NL"0x%04X: ", idx);
+            memset(addOn, '.', cnt);
             aIdx=0;
         }
         if (idx<size){
-            printf("%02x ", buffer[idx]);
+            printf("%02X ", buffer[idx]);
             if (isprint(buffer[idx])){
-                addOn[idx%cnt]=buffer[idx];
+                addOn[aIdx++] = buffer[idx];
             }else{
-                addOn[aIdx++]='.';
+                addOn[aIdx++] = '.';
             }
         } else {
             printf("   ");
-            addOn[aIdx++]='.';
+            addOn[aIdx++]=' ';
         }
-        if (idx%cnt==cnt-1){
+        if (aIdx==cnt){
             printf(" %s", addOn);
         }
     }

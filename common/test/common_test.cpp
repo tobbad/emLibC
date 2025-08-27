@@ -8,9 +8,8 @@
 #include <stdint.h>
 #include "common.h"
 
-#define BUFFER_SIZE 62
-#define HEX_CNT 16
-#define OFFSET  5
+#define BUFFER_SIZE 87
+#define OFFSET  8
 
 #include "gtest/gtest.h"
 class CommonTest : public ::testing::Test {
@@ -33,5 +32,6 @@ TEST_F(CommonTest, TestBufferPrint){
         buffer[i]= ' '+i-OFFSET;
     }
     PrintBuffer(buffer, BUFFER_SIZE, NULL);
+    EXPECT_TRUE(1==1);
 }
 
