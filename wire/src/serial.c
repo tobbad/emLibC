@@ -309,7 +309,7 @@ int8_t serial_waitForNumber(char **key) {
   * @retval None
   */
 void  HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size){
-	if (huart->Instance == USART2){
+	if (huart == isio.uart){
 		uint8_t idx=0;
 		memset(isio.buffer[SIO_RX]->mem, 0, isio.buffer[SIO_RX]->size);
 		isio.buffer[SIO_RX]->pl = isio.buffer[SIO_RX]->mem;
