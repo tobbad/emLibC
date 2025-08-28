@@ -61,6 +61,7 @@ uint32_t state_get_u32(state_t * state);
 em_msg state_copy(state_t *from, state_t *to);
 em_msg state_is_same(state_t *last, state_t *cur);
 em_msg state_merge(state_t *inState, state_t *outState);
+em_msg state_check(state_t *state );
 em_msg state_print(state_t *state,  char *title );
 uint8_t state_get_cnt(state_t *state);
 uint8_t state_get_first(state_t *state);
