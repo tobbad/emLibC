@@ -35,6 +35,9 @@
 #include "buffer.h"
 
 #define UART_TIMEOUT_MS 100
+#define TX_BUFFER_SIZE   96
+#define RX_BUFFER_SIZE   20
+
 typedef enum {SIO_ERROR=-1, SIO_OK=0, } sio_res_e;
 typedef enum {SIO_RX=0, SIO_TX, SIO_RXTX_CNT} sio_channel_e;
 
