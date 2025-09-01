@@ -221,6 +221,7 @@ em_msg state_merge(state_t *inState, state_t *outState) {
 			outState->state[onr] = inState->state[inr];
 		}
 	}
+	state_reset(inState);
 	return outState->dirty;
 
 }
