@@ -296,22 +296,32 @@ static int16_t xpad_spalten_scan(dev_handle_t devh) {
 
 
 static void xpad_state(dev_handle_t devh, state_t *oState) {
-	if (mpy_xpad[devh] == NULL) {
-		printf("No valid handle on state"NL);
-		return;
-	}
-	uint8_t oIdx = oState->first;
-	uint8_t iIdx = my_xpad[devh].state.first;
-	for (uint8_t i=0; i<oState->cnt;i++, iIdx++, oIdx++) {
-		if (oState->state[oIdx]   != my_xpad[devh].state.state[iIdx]){
-			oState->state[oIdx]   = my_xpad[devh].state.state[iIdx];
-			oState->dirty = true;
-		}
-		oState->label[oIdx]   = my_xpad[devh].state.label[iIdx];
-	}
-	state_reset(&my_xpad[devh].state);
-	return;
+    if (mpy_xpad[devh] == NULL) {
+        printf("No valid handle on state"NL);
+        return;
+    }
+    uint8_t oIdx = oState->first;
+    uint8_t iIdx = my_xpad[devh].state.first;
+    for (uint8_t i=0; i<oState->cnt;i++, iIdx++, oIdx++) {
+        if (oState->state[oIdx]   != my_xpad[devh].state.state[iIdx]){
+            oState->state[oIdx]   = my_xpad[devh].state.state[iIdx];
+            oState->dirty = true;
+        }
+        oState->label[oIdx]   = my_xpad[devh].state.label[iIdx];
+    }
+    state_reset(&my_xpad[devh].state);
+    return;
 }
+
+static void xpad_diff(dev_handle_t devh, state_t *state, state_t *diff) {
+    if (mpy_xpad[devh] == NULL) {
+        printf("No valid handle on state"NL);
+        return;
+    }
+    state_diff(&my_xpad[devh].state, state, diff);
+    return;
+}
+
 static bool xpad_isdirty(dev_handle_t devh) {
     if (mpy_xpad[devh] == NULL) {
         printf("No valid handle on state"NL);
@@ -347,7 +357,8 @@ kybd_t xscan_dev = {
 	.init = &xpad_init,
 	.scan = &xpad_spalten_scan,
 	.reset= &xpad_reset,
-	.state = &xpad_state,
+    .state = &xpad_state,
+    .diff = &xpad_diff
     .isdirty = &xpad_isdirty,
     .undirty = &xpad_undirty,
 	.dev_type = XSCAN,
@@ -360,6 +371,7 @@ kybd_t eight_dev = {
 	.scan = &xpad_eight_scan,
 	.reset =&xpad_reset,
 	.state = &xpad_state,
+    .diff = &xpad_diff,
     .isdirty = &xpad_isdirty,
     .undirty = &xpad_undirty,
 	.dev_type = EIGHTKEY,

@@ -57,15 +57,22 @@ int16_t keyboard_scan(dev_handle_t dev) {
 }
 ;
 void keyboard_reset(dev_handle_t dev) {
-	if ((dev > 0) && my_kybd[dev] != NULL) {
-		my_kybd[dev]->reset(dev);
-	}
-	return;
+    if ((dev > 0) && my_kybd[dev] != NULL) {
+        my_kybd[dev]->reset(dev);
+    }
+    return;
 }
 
 void keyboard_state(dev_handle_t dev, state_t *ret) {
     if ((dev > 0) && my_kybd[dev] != NULL) {
         my_kybd[dev]->state(dev, ret);
+    }
+    return;
+}
+
+void keyboard_diff(dev_handle_t dev, state_t *ref, state_t *add) {
+    if ((dev > 0) && my_kybd[dev] != NULL) {
+        my_kybd[dev]->diff(ref, add);
     }
     return;
 }

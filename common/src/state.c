@@ -52,6 +52,13 @@ em_msg state_undirty(state_t *state) {
 	return res;
 }
 
+
+key_state_e state_key_diff(key_state_e state1, key_state_e state2){
+    if (state1 == state2) return OFF;
+    if (state2 > state1) return (state2-state1);
+    return (state2+STATE_CNT-state1); //state2 < state1
+}
+
 em_msg state_set_key_by_idx(state_t *state, uint8_t nr, key_state_e new_state) {
 	em_msg res = EM_ERR;
 	if (state == NULL)
@@ -82,7 +89,7 @@ em_msg state_set_key_by_lbl(state_t *state, char lbl, key_state_e new_state) {
 	res = EM_OK;
 	return res;
 }
-;
+
 
 key_state_e state_get_key_by_lbl(state_t *state, char ch) {
 	em_msg res = EM_ERR;
@@ -202,36 +209,79 @@ em_msg state_is_same(state_t *last, state_t *this) {
 	return res;
 }
 
+em_msg state_add(state_t *ref, state_t *add) {
+    em_msg res = EM_ERR;
+    if (state_check(ref))
+        return res;
+    if (state_check(add))
+        return res;
+    ref->dirty = false;
+    if (ref->clabel.cmd != add->clabel.cmd) {
+        ref->clabel.cmd = add->clabel.cmd;
+        ref->dirty = true;
+    }
+    for (uint8_t i = ref->first;i < ref->first + ref->cnt; i) {
+        if (add->state[i]==BLINKING) {
+            state_propagate_by_idx(ref, i);
+        }else{
+            state_propagate_by_idx(ref, i);
+            state_propagate_by_idx(ref, i);
+        }
+    }
+    return ref->dirty;
+
+}
+
+em_msg state_diff(state_t *ref, state_t *state, state_t *diff) {
+    em_msg res = EM_ERR;
+    if (state_check(ref)) return res;
+    if (state_check(state)) return res;
+    if (state_check(diff)) return res;
+    //printf("inState.cnt: %d, outState.cnt: %d"NL, inState->cnt,outState->cnt);
+    diff->dirty = false;
+    if (ref->clabel.cmd != state->clabel.cmd) {
+        ref->clabel.cmd = state->clabel.cmd;
+        diff->dirty = true;
+    }
+    for (uint8_t i = ref->first;i < ref->first + ref->cnt; i++) {
+        if (ref->state[i] != state->state[i]) {
+            diff->dirty = true;
+            diff->state[i] = state_key_diff(ref->state[i], state->state[i]);
+        }
+    }
+    return diff->dirty;
+
+}
 em_msg state_merge(state_t *inState, state_t *outState) {
-	em_msg res = EM_ERR;
-	if (state_check(inState))
-		return res;
-	if (state_check(outState))
-		return res;
-	//printf("inState.cnt: %d, outState.cnt: %d"NL, inState->cnt,outState->cnt);
-	outState->dirty = false;
-	if (outState->clabel.cmd != inState->clabel.cmd) {
-		outState->clabel.cmd = inState->clabel.cmd;
-		outState->dirty = true;
-	}
-	for (uint8_t inr = inState->first, onr = outState->first;
-			inr < inState->first + inState->cnt; inr++, onr++) {
-		if (inState->state[inr] != outState->state[onr]) {
-			outState->dirty = true;
-			outState->state[onr] = inState->state[inr];
-		}
-	}
-	state_reset(inState);
-	return outState->dirty;
+    em_msg res = EM_ERR;
+    if (state_check(inState))
+        return res;
+    if (state_check(outState))
+        return res;
+    //printf("inState.cnt: %d, outState.cnt: %d"NL, inState->cnt,outState->cnt);
+    outState->dirty = false;
+    if (outState->clabel.cmd != inState->clabel.cmd) {
+        outState->clabel.cmd = inState->clabel.cmd;
+        outState->dirty = true;
+    }
+    for (uint8_t inr = inState->first, onr = outState->first;
+            inr < inState->first + inState->cnt; inr++, onr++) {
+        if (inState->state[inr] != outState->state[onr]) {
+            outState->dirty = true;
+            outState->state[onr] = inState->state[inr];
+        }
+    }
+    state_reset(inState);
+    return outState->dirty;
 
 }
 em_msg state_check(state_t *state) {
 	em_msg res = EM_ERR;
 	if (state == NULL)
 		return res;
-	if (state->first >= MAX_STATE_CNT)
+	if (state->first > MAX_STATE_CNT)
 		return res;
-	if (state->cnt >= MAX_STATE_CNT)
+	if (state->cnt > MAX_STATE_CNT)
 		return res;
 	if (state->first > state->cnt)
 		return res;
@@ -256,14 +306,14 @@ em_msg state_print(state_t *state, char *title) {
 	for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
 		char c = state->label[i];
 		if (isprint(c)) {
-			printf("%c", state->label[i]);
+			printf(" %c  ", state->label[i]);
 		} else {
-			printf(".");
+			printf("....");
 		}
 	}
 	printf(NL"State : ");
 	for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {
-		printf("%01x", state->state[i]);
+		printf("%s ", key2char[state->state[i]]);
 	}
 	printf(NL);
 	(state->dirty && 0x01) ? printf("Dirty"NL) : printf("Not Dirty"NL);
@@ -283,10 +333,9 @@ em_msg state_get_dirty(state_t *state) {
 		return res;
 	return state->dirty;
 }
+
 em_msg state_set_dirty(state_t *state) {
 	em_msg res = EM_ERR;
-	if (state_check(state))
-		return res;
 	state->dirty = true;
 	res = EM_OK;
 	return res;
@@ -295,15 +344,11 @@ em_msg state_set_dirty(state_t *state) {
 
 uint8_t state_get_cnt(state_t *state) {
 	em_msg res = EM_ERR;
-	if (state_check(state))
-		return res;
 	return state->cnt;
 }
 ;
 uint8_t state_get_first(state_t *state) {
 	em_msg res = EM_ERR;
-	if (state_check(state))
-		return res;
 	res = state->first;
 	return res;
 
@@ -311,8 +356,6 @@ uint8_t state_get_first(state_t *state) {
 ;
 em_msg state_set_cnt(state_t *state, uint8_t nr) {
 	em_msg res = EM_ERR;
-	if (state_check(state))
-		return res;
 	state->cnt = nr;
 	res = EM_OK;
 	return res;

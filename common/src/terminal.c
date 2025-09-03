@@ -115,7 +115,11 @@ static int16_t terminal_scan(dev_handle_t dev) {
 	return my_term.dirty;
 }
 static void terminal_state(dev_handle_t dev, state_t *ret) {
-	state_merge(&my_term, ret); // problem here
+    state_merge(&my_term, ret); // problem here
+}
+
+static void terminal_diff(state_t *ref, state_t *add) {
+    state_diff(&my_term, ref, add);
 }
 
 static bool terminal_isdirty(dev_handle_t dev) {

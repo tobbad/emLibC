@@ -29,11 +29,10 @@ class StateTest : public ::testing::Test {
 
 TEST_F(StateTest, TestNullTestCorrectLabelsAndInitState){
 	state_t state;
-    em_msg res = state_init(NULL);
+    em_msg res = state_init(&state);
     key_state_e key;
     uint32_t stat;
-    EXPECT_EQ(res, EM_ERR);
-    res = state_init(&state);
+    EXPECT_EQ(res, EM_OK);
     EXPECT_EQ(state.first, 0);
     EXPECT_EQ(state.cnt , MAX_STATE_CNT);
     EXPECT_EQ(state.dirty, false);
@@ -221,3 +220,94 @@ TEST_F(StateTest, TestCopyMergeAndCompare){
 
 
 }
+
+
+TEST_F(StateTest, TestSubKeyState){
+    key_state_e res;
+    res = state_key_diff(OFF, OFF);
+    EXPECT_EQ(res, OFF);
+    res = state_key_diff(OFF, BLINKING);
+    EXPECT_EQ(res, BLINKING);
+    res = state_key_diff(OFF, ON);
+    EXPECT_EQ(res, ON);
+
+    res = state_key_diff(BLINKING, OFF);
+    EXPECT_EQ(res, ON);
+    res = state_key_diff(BLINKING, BLINKING);
+    EXPECT_EQ(res, OFF);
+    res = state_key_diff(BLINKING, ON);
+    EXPECT_EQ(res, BLINKING);
+
+    res = state_key_diff(ON, OFF);
+    EXPECT_EQ(res, BLINKING);
+    res = state_key_diff(ON, BLINKING);
+    EXPECT_EQ(res, ON);
+    res = state_key_diff(ON, ON);
+    EXPECT_EQ(res, OFF);
+
+
+}
+TEST_F(StateTest, TestSubKeyStateVec){
+    state_t state1;
+    state_t state2;
+    state_t diff;
+    state_t rdiff;
+    uint8_t i = 0;
+    state_init(&state1);
+    state_init(&state2);
+    state_init(&diff);
+    state_init(&rdiff);
+    state_set_key_by_idx(&rdiff, i++, OFF);
+    state_set_key_by_idx(&rdiff, i++, BLINKING);
+    state_set_key_by_idx(&rdiff, i++, ON);
+    state_set_key_by_idx(&rdiff, i++, ON);
+    state_set_key_by_idx(&rdiff, i++, OFF);
+    state_set_key_by_idx(&rdiff, i++, BLINKING);
+    state_set_key_by_idx(&rdiff, i++, BLINKING);
+    state_set_key_by_idx(&rdiff, i++, ON);
+    state_set_key_by_idx(&rdiff, i++, OFF);
+    em_msg res = EM_OK;
+    // Setup test state
+    for (uint8_t i=0;i<9;i++){
+        key_state_e s1, s2;
+        state_set_key_by_idx(&state1,i ,(key_state_e)(i/3));
+        state_set_key_by_idx(&state2,i ,(key_state_e)(i%3));
+    }
+    state_diff(&state1, &state2, &diff);
+    //state_print(&state1, (char*)"state1");
+    //state_print(&state2, (char*)"state2");
+    //state_print(&diff, (char*)"diff");
+    res= state_is_same(&rdiff, &diff);
+    EXPECT_EQ(res, true);
+}
+
+TEST_F(StateTest, TesKeyAdd){
+    state_t state1;
+    state_t state2;
+    state_t diff;
+    state_t add;
+    state_init(&state1);
+    state_init(&state2);
+    state_init(&diff);
+    em_msg res = EM_OK;
+    printf("Setup test state"NL);
+    for (uint8_t i=0;i<9;i++){
+        key_state_e s1, s2;
+        state_set_key_by_idx(&state1,i ,(key_state_e)(i/3));
+        state_set_key_by_idx(&state2,i ,(key_state_e)(i%3));
+        printf("%d"NL, i);
+    }
+    printf("state_diff"NL);
+    state_diff(&state1, &state2, &diff);
+    printf("state_add"NL);
+    state_add(&state2, &add);
+    printf("state_print 1"NL);
+    state_print(&state1, (char*)"state1");
+    printf("state_print 2"NL);
+    state_print(&state2, (char*)"state2");
+    printf("state_print diff"NL);
+    state_print(&diff, (char*)"diff");
+    res= state_is_same(&state1, &state2);
+    EXPECT_EQ(res, true);
+}
+
