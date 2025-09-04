@@ -70,9 +70,15 @@ void keyboard_state(dev_handle_t dev, state_t *ret) {
     return;
 }
 
-void keyboard_diff(dev_handle_t dev, state_t *ref, state_t *add) {
+void keyboard_diff(dev_handle_t dev, state_t *ref, state_t *diff) {
     if ((dev > 0) && my_kybd[dev] != NULL) {
-        my_kybd[dev]->diff(ref, add);
+        my_kybd[dev]->diff(dev, ref, diff);
+    }
+    return;
+}
+void keyboard_add(dev_handle_t dev, state_t *add) {
+    if ((dev > 0) && my_kybd[dev] != NULL) {
+        my_kybd[dev]->add(dev, add);
     }
     return;
 }

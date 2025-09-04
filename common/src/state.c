@@ -37,6 +37,7 @@ em_msg state_reset(state_t *state) {
 	for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {
 		state_set_key_by_idx(state, i, OFF);
 	}
+	state->clabel.cmd = 0;
 	state->dirty = false;
 	res = EM_OK;
 	return res;
@@ -202,7 +203,7 @@ em_msg state_is_same(state_t *last, state_t *this) {
 		return res;
 	if (state_check(this))
 		return res;
-	res = true;
+	res = (last->clabel.cmd==this->clabel.cmd);
 	for (uint8_t i = this->first; i < this->first + this->cnt; i++) {
 		res &= (last->state[i] == this->state[i]);
 	}
@@ -220,7 +221,7 @@ em_msg state_add(state_t *ref, state_t *add) {
         ref->clabel.cmd = add->clabel.cmd;
         ref->dirty = true;
     }
-    for (uint8_t i = ref->first;i < ref->first + ref->cnt; i) {
+    for (uint8_t i = ref->first;i < ref->first + ref->cnt; i++) {
         if (add->state[i]==BLINKING) {
             state_propagate_by_idx(ref, i);
         }else{
@@ -241,6 +242,7 @@ em_msg state_diff(state_t *ref, state_t *state, state_t *diff) {
     diff->dirty = false;
     if (ref->clabel.cmd != state->clabel.cmd) {
         ref->clabel.cmd = state->clabel.cmd;
+        diff->clabel.cmd = state->clabel.cmd;
         diff->dirty = true;
     }
     for (uint8_t i = ref->first;i < ref->first + ref->cnt; i++) {
@@ -271,7 +273,6 @@ em_msg state_merge(state_t *inState, state_t *outState) {
             outState->state[onr] = inState->state[inr];
         }
     }
-    state_reset(inState);
     return outState->dirty;
 
 }

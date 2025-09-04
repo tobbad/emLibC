@@ -245,6 +245,16 @@ void serial_state(dev_handle_t dev, state_t *ret){
 		state_reset(&isio.state);
 	}
 };
+
+void serial_diff(dev_handle_t dev, state_t *ref, state_t *diff){
+	if (!isio.init) return ;
+	state_diff(ref, &isio.state, diff);
+};
+
+void serial_add(dev_handle_t dev, state_t *add){
+	if (!isio.init) return ;
+	state_add(&isio.state, add);
+};
 bool serial_isdirty(dev_handle_t dev){return isio.state.dirty;};
 
 void serial_undirty(dev_handle_t dev){state_undirty(&isio.state);};
@@ -254,6 +264,8 @@ kybd_t serial_dev = {
 	.scan = &serial_scan,
 	.reset= &serial_reset,
 	.state = &serial_state,
+	.diff = &serial_diff,
+	.add = &serial_add,
     .isdirty = &serial_isdirty,
     .undirty = &serial_undirty,
 	.dev_type = TERMINAL,

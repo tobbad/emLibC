@@ -23,7 +23,8 @@ typedef struct kybd_s{
 	int16_t (*scan)(dev_handle_t dev);
 	void (*reset)(dev_handle_t dev);
     void (*state)(dev_handle_t dev, state_t *ret);
-    void (*diff)(dev_handle_t dev, state_t *ref, state_t *add);
+    void (*add)(dev_handle_t dev, state_t *add);
+    void (*diff)(dev_handle_t dev, state_t *ref, state_t *diff);
     bool (*isdirty)(dev_handle_t dev);
     void (*undirty)(dev_handle_t dev);
 	dev_type_e dev_type;
@@ -41,6 +42,8 @@ dev_handle_t keyboard_init(kybd_t *kybd, void *device);
 int16_t keyboard_scan(dev_handle_t dev);
 void keyboard_reset(dev_handle_t dev);
 void keyboard_state(dev_handle_t dev, state_t *ret);
+void keyboard_add(dev_handle_t dev, state_t *add);
+void keyboard_diff(dev_handle_t dev, state_t *ret,state_t *diff);
 bool keyboard_isdirty(dev_handle_t dev);
 void keyboard_undirty(dev_handle_t dev);
 void  keyboard_print(state_t *state, char* start); // Show returned

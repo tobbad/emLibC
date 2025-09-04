@@ -118,8 +118,12 @@ static void terminal_state(dev_handle_t dev, state_t *ret) {
     state_merge(&my_term, ret); // problem here
 }
 
-static void terminal_diff(state_t *ref, state_t *add) {
-    state_diff(&my_term, ref, add);
+static void terminal_diff(dev_handle_t dev, state_t *ref, state_t *diff) {
+    state_diff(&my_term, ref, diff);
+}
+
+static void terminal_add(dev_handle_t dev, state_t *add) {
+    state_add(&my_term, add);
 }
 
 static bool terminal_isdirty(dev_handle_t dev) {
@@ -143,9 +147,13 @@ kybd_t terminal_dev = {
 		.scan = &terminal_scan,
 		.reset = &terminal_reset,
 		.state = &terminal_state,
+		.add = &terminal_add,
+		.diff = &terminal_diff,
 		.isdirty = &terminal_isdirty,
 		.undirty = &terminal_undirty,
-		.dev_type = TERMINAL, .cnt = 8, .first = 1
+		.dev_type = TERMINAL,
+		.cnt = 8,
+		.first = 1
 
 };
 

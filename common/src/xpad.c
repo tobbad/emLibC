@@ -322,6 +322,15 @@ static void xpad_diff(dev_handle_t devh, state_t *state, state_t *diff) {
     return;
 }
 
+static void xpad_add(dev_handle_t devh, state_t *add) {
+    if (mpy_xpad[devh] == NULL) {
+        printf("No valid handle on state"NL);
+        return;
+    }
+    state_add(&my_xpad[devh].state, add);
+    return;
+}
+
 static bool xpad_isdirty(dev_handle_t devh) {
     if (mpy_xpad[devh] == NULL) {
         printf("No valid handle on state"NL);
@@ -358,7 +367,8 @@ kybd_t xscan_dev = {
 	.scan = &xpad_spalten_scan,
 	.reset= &xpad_reset,
     .state = &xpad_state,
-    .diff = &xpad_diff
+    .diff = &xpad_diff,
+    .add = &xpad_add,
     .isdirty = &xpad_isdirty,
     .undirty = &xpad_undirty,
 	.dev_type = XSCAN,
@@ -372,6 +382,7 @@ kybd_t eight_dev = {
 	.reset =&xpad_reset,
 	.state = &xpad_state,
     .diff = &xpad_diff,
+    .add = &xpad_add,
     .isdirty = &xpad_isdirty,
     .undirty = &xpad_undirty,
 	.dev_type = EIGHTKEY,
