@@ -268,11 +268,10 @@ em_msg state_merge(state_t *inState, state_t *outState){
 		outState->clabel.cmd = inState->clabel.cmd;
 		outState->dirty = true;
 	}
-	for (uint8_t inr = inState->first, onr = outState->first;
-			inr < inState->first + inState->cnt; inr++, onr++) {
-		if (inState->state[inr] != outState->state[onr]) {
+	for (uint8_t i = inState->first;i < inState->first + inState->cnt; i++) {
+		if (inState->state[i] != outState->state[i]) {
 			outState->dirty = true;
-			outState->state[onr] = inState->state[inr];
+			outState->state[i] = inState->state[i];
 		}
 	}
 	return outState->dirty;
