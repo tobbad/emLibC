@@ -20,15 +20,16 @@ typedef enum {
 } bp_type_e;
 
 typedef struct buffer_pool_s{
-	uint8_t bufer_cnt;
+	uint8_t buffer_cnt;
 	buffer_t *buffer;
 	buffer_t *sbuffer;
 	bp_type_e type;
 }buffer_pool_t;
 
-buffer_pool_t* buffer_pool_new(uint8_t charCnt, uint8_t bcnt);
+buffer_pool_t* buffer_pool_new(uint8_t lcnt ,uint8_t charCnt);
 buffer_t * buffer_pool_get(buffer_pool_t *bp);
 em_msg buffer_pool_return(buffer_pool_t *bp, buffer_t *buffer);
+em_msg buffer_pool_print(buffer_pool_t *bp);
 
 #ifdef __cplusplus
 }

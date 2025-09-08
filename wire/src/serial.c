@@ -42,7 +42,9 @@
 #include <sys/time.h>
 #include <sys/times.h>
 #include "main.h"
+#ifdef HAL_PCD_MODULE_ENABLED
 #include "usbd_cdc_if.h"
+#endif
 #if defined(STM32F303xC)
 #include "stm32f3xx.h"
 #elif defined(STM32F407xx) ||defined(STM32F401xE)
@@ -57,7 +59,6 @@
 #include "common.h"
 #include "serial.h"
 #include "state.h"
-#include "keyboard.h"
 #include "mutex.h"
 #include "_time.h"
 #include "buffer.h"
@@ -68,7 +69,9 @@ static char tx_buf[TX_BUFFER_SIZE];
 
 typedef struct isio_s{
 	UART_HandleTypeDef * uart;
+#ifdef HAL_PCD_MODULE_ENABLED
 	PCD_HandleTypeDef *pcd;
+#endif
 	buffer_t *buffer[SIO_RXTX_CNT];
 	print_e mode;
 	int8_t ready[SIO_RXTX_CNT];
@@ -82,13 +85,15 @@ static char  *new = NULL;
 
 void serial_set_mode(print_e mode, bool doReset );
 
-void serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
-	if (isio.init) return;
+em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
+	if (isio.init) return EM_ERR;
 	sio_t *init = dev;
 	isio.uart = init->uart;
+#ifdef HAL_PCD_MODULE_ENABLED
 	isio.pcd = init->pcd;
-	isio.buffer[SIO_RX]= buffer_new(init->buffer[SIO_RX]->size);
-	isio.buffer[SIO_TX]= buffer_new(init->buffer[SIO_TX]->size);
+#endif
+	isio.buffer[SIO_RX] = buffer_new(init->buffer[SIO_RX]->size);
+	isio.buffer[SIO_TX] = buffer_new(init->buffer[SIO_TX]->size);
     state_init(&isio.state);
     isio.mode = init->mode|USE_DMA_RX;
     memset(rx_buf, 0, RX_BUFFER_SIZE);
@@ -100,7 +105,13 @@ void serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
 	// setbuf(stdout, NULL);
 	// flush buffer:
 	// fflush(stdout);
-	return;
+	return EM_OK;
+}
+
+em_msg serial_io_open(dev_handle_t devh, void *dev) {
+	if (isio.init) return EM_ERR;
+	return serial_init(0, 0, dev);
+
 }
 
 void serial_set_mode(print_e mode, bool doReset ) {
@@ -113,10 +124,15 @@ void serial_set_mode(print_e mode, bool doReset ) {
 
 }
 
+em_msg serial_write(dev_handle_t hdl, const uint8_t *buffer, int16_t cnt){
+	printf("%s", buffer);
+	return EM_OK;
+}
+
 
 int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
 
-    uint16_t len=0;
+    uint16_t len=-1;
     uint8_t idx=0;
     txLen = MIN(txLen, TX_BUFFER_SIZE-2);
     if (!isio.init) return -1;
@@ -167,16 +183,27 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
 			time_end_tx();
 			isio.ready[SIO_TX] = true;
 		 }
+#ifdef HAL_PCD_MODULE_ENABLED
 	 } else if (isio.pcd!=NULL){
 		 CDC_Transmit_FS(ptr, len);
+#endif
 	 } else{
 		 printf("No UART or USB is given"NL);
 	 }
     return len;
 }
 
-int16_t _read(int32_t file, uint8_t *ptr, int32_t len) {
-    uint16_t rLen=0;
+em_msg serial_read(dev_handle_t hdl, uint8_t *buffer, int16_t *cnt){
+	em_msg res= EM_OK;
+	int16_t _cnt= *cnt;
+	int16_t rLen =  fread(buffer,(size_t) 1,(size_t)_cnt, stdin);
+	if (rLen<0){
+		res = EM_ERR;
+	}
+	return res;
+}
+int16_t _read(int32_t file, uint8_t *ptr, int16_t len) {
+    uint16_t rLen;
     if (!isio.init) return -1;
     if (isio.uart != NULL) {
     	if(isio.mode&USE_DMA_RX){
@@ -215,21 +242,45 @@ void serial_state(dev_handle_t dev, state_t *ret){
 			state_propagate_by_idx(&isio.state, isio.state.clabel.cmd);
 		}
 		state_merge(&isio.state, ret);
+		state_reset(&isio.state);
 	}
+};
+
+void serial_diff(dev_handle_t dev, state_t *ref, state_t *diff){
+	if (!isio.init) return ;
+	state_diff(ref, &isio.state, diff);
+};
+
+void serial_add(dev_handle_t dev, state_t *add){
+	if (!isio.init) return ;
+	state_add(&isio.state, add);
 };
 bool serial_isdirty(dev_handle_t dev){return isio.state.dirty;};
 
 void serial_undirty(dev_handle_t dev){state_undirty(&isio.state);};
+
 kybd_t serial_dev = {
 	.init = &serial_init,
 	.scan = &serial_scan,
 	.reset= &serial_reset,
 	.state = &serial_state,
+	.diff = &serial_diff,
+	.add = &serial_add,
     .isdirty = &serial_isdirty,
     .undirty = &serial_undirty,
 	.dev_type = TERMINAL,
 	.cnt = 8,
 	.first = 1,
+};
+
+device_t serial_io = {
+	.open = &serial_io_open,
+	.read = &serial_read,
+	.write= &serial_write,
+	.ioctrl =NULL,
+    .close = NULL,
+    .ready_cb = NULL,
+	.dev_type = DEV_OPEN | DEV_READ |DEV_WRITE,
 };
 
 
@@ -271,7 +322,7 @@ int8_t serial_waitForNumber(char **key) {
   * @retval None
   */
 void  HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size){
-	if (huart->Instance == USART2){
+	if (huart == isio.uart){
 		uint8_t idx=0;
 		memset(isio.buffer[SIO_RX]->mem, 0, isio.buffer[SIO_RX]->size);
 		isio.buffer[SIO_RX]->pl = isio.buffer[SIO_RX]->mem;
@@ -287,6 +338,7 @@ void  HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size){
 			}
 		}
 		*isio.buffer[SIO_RX]->pl =0; // End string
+		isio.buffer[SIO_RX]->state = USED;
 		new = (char*)isio.buffer[SIO_RX]->mem;
 		memset((uint8_t*)&isio.state.clabel, 0, CMD_LEN);
 		memcpy((uint8_t*)&isio.state.clabel, new, strlen(new));

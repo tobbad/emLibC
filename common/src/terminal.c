@@ -25,11 +25,12 @@ clabel_u clabel;
 bool data_in = false;
 static void terminal_reset(dev_handle_t dev);
 
-static void terminal_init(dev_handle_t handle, dev_type_e dev_type,	void *serial) {
+static em_msg terminal_init(dev_handle_t handle, dev_type_e dev_type,	void *serial) {
 	terminal_reset(handle);
 	_serial = *(sio_t*) serial;
 	my_term.clabel.cmd = ZERO4;
 	state_reset(&my_term);
+	return EM_OK;
 
 }
 //
@@ -114,7 +115,15 @@ static int16_t terminal_scan(dev_handle_t dev) {
 	return my_term.dirty;
 }
 static void terminal_state(dev_handle_t dev, state_t *ret) {
-	state_merge(&my_term, ret); // problem here
+    state_merge(&my_term, ret); // problem here
+}
+
+static void terminal_diff(dev_handle_t dev, state_t *ref, state_t *diff) {
+    state_diff(&my_term, ref, diff);
+}
+
+static void terminal_add(dev_handle_t dev, state_t *add) {
+    state_add(&my_term, add);
 }
 
 static bool terminal_isdirty(dev_handle_t dev) {
@@ -138,9 +147,13 @@ kybd_t terminal_dev = {
 		.scan = &terminal_scan,
 		.reset = &terminal_reset,
 		.state = &terminal_state,
+		.add = &terminal_add,
+		.diff = &terminal_diff,
 		.isdirty = &terminal_isdirty,
 		.undirty = &terminal_undirty,
-		.dev_type = TERMINAL, .cnt = 8, .first = 1
+		.dev_type = TERMINAL,
+		.cnt = 8,
+		.first = 1
 
 };
 

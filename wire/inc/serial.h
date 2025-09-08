@@ -29,13 +29,18 @@
 
 #ifndef INC_SERIAL_IO_H_
 #define INC_SERIAL_IO_H_
+#include "keyboard.h"
 #include "common.h"
 #include "device.h"
-#include "keyboard.h"
 #include "buffer.h"
+
 #define UART_TIMEOUT_MS 100
+#define TX_BUFFER_SIZE   96
+#define RX_BUFFER_SIZE   20
+
 typedef enum {SIO_ERROR=-1, SIO_OK=0, } sio_res_e;
 typedef enum {SIO_RX=0, SIO_TX, SIO_RXTX_CNT} sio_channel_e;
+
 typedef enum {
 	RAW = 0,
 	TIMESTAMP = 1,
@@ -48,7 +53,9 @@ typedef enum {
 
 typedef struct _sio_t{
 	UART_HandleTypeDef * uart;
+#ifdef HAL_PCD_MODULE_ENABLED
 	PCD_HandleTypeDef *pcd;
+#endif
 	buffer_t *buffer[SIO_RXTX_CNT];
 	print_e mode;
 } sio_t;
@@ -56,4 +63,6 @@ typedef struct _sio_t{
 void  serial_set_mode(print_e mode, bool doReset);
 int8_t serial_waitForNumber(char **key);
 extern kybd_t serial_dev;
+extern device_t serial_io;
+
 #endif /* INC_SERIAL_IO_H_ */

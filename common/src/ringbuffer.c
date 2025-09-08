@@ -129,25 +129,6 @@ em_msg rbuf_write_byte(rbuf_hdl_t hdl, uint8_t byte)
     }
     return res;
 }
-em_msg rbuf_write_bytes(rbuf_hdl_t hdl, const uint8_t* bytes, uint16_t count){
-    em_msg res = EM_ERR;
-    rbuf_t *rbuf = get_rbuf(hdl);
-    uint16_t free;
-    if (rbuf == NULL)
-    {
-        return res;
-    }
-    free = rbuf_free(hdl);
-    if (free>=count)
-    {
-        res = EM_OK;
-        for (uint16_t i = 0;i<count && (res == EM_OK);i++)
-        {
-            res = rbuf_write_byte(hdl, bytes[i]);
-        }
-    }
-    return res;
-}
 
 
 em_msg rbuf_read_byte(rbuf_hdl_t hdl, uint8_t *byte)
@@ -172,7 +153,27 @@ em_msg rbuf_read_byte(rbuf_hdl_t hdl, uint8_t *byte)
     return res;
 }
 
-em_msg rbuf_read_bytes(rbuf_hdl_t hdl, uint8_t *bytes, uint16_t *count){
+em_msg rbuf_write_bytes(rbuf_hdl_t hdl, const uint8_t* bytes, int16_t count){
+    em_msg res = EM_ERR;
+    rbuf_t *rbuf = get_rbuf(hdl);
+    uint16_t free;
+    if (rbuf == NULL)
+    {
+        return res;
+    }
+    free = rbuf_free(hdl);
+    if (free>=count)
+    {
+        res = EM_OK;
+        for (uint16_t i = 0;i<count && (res == EM_OK);i++)
+        {
+            res = rbuf_write_byte(hdl, bytes[i]);
+        }
+    }
+    return res;
+}
+
+em_msg rbuf_read_bytes(rbuf_hdl_t hdl, uint8_t *bytes, int16_t *count){
     em_msg res = EM_ERR;
     rbuf_t *rbuf = get_rbuf(hdl);
     uint16_t available;
@@ -193,7 +194,7 @@ em_msg rbuf_read_bytes(rbuf_hdl_t hdl, uint8_t *bytes, uint16_t *count){
     return res;
 }
 
-em_msg rbuf_pull_line(rbuf_hdl_t hdl, uint8_t* bytes, uint16_t *count){
+em_msg rbuf_pull_line(rbuf_hdl_t hdl, uint8_t* bytes, int16_t *count){
     em_msg res = EM_ERR;
     rbuf_t *rbuf = get_rbuf(hdl);
     if ((rbuf == NULL)|| (rbuf->buffer==NULL))
@@ -211,7 +212,7 @@ em_msg rbuf_pull_line(rbuf_hdl_t hdl, uint8_t* bytes, uint16_t *count){
     return res;
 }
 
-em_msg rbuf_push_line(rbuf_hdl_t hdl, const uint8_t* bytes, uint16_t count){
+em_msg rbuf_push_line(rbuf_hdl_t hdl, const uint8_t* bytes, int16_t count){
     em_msg res = EM_ERR;
     rbuf_t *rbuf = get_rbuf(hdl);
     if (rbuf == NULL)

@@ -5,7 +5,7 @@
  *      Author: badi
  */
 #include "common.h"
-#include "gpio.h"
+#include "_gpio.h"
 #include "gpio_port.h"
 em_msg GpioPortInit(gpio_port_t *port){
 	for (uint8_t i=0;i<port->cnt;i++){

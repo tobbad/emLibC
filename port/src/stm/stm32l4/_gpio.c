@@ -6,7 +6,7 @@
  */
 #include <stdio.h>
 #include "common.h"
-#include "gpio.h"
+#include "_gpio.h"
 
 em_msg GpioPinInit(gpio_pin_t *pin){
 	GPIO_InitTypeDef GPIO_InitStruct = {0};

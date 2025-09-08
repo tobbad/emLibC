@@ -20,6 +20,7 @@ typedef enum {
 	BSTATE_CNT
 } state_e ;
 
+extern char* state2str[];
 typedef struct buffer_s {
 	state_e  state;
     uint16_t size;
@@ -33,12 +34,13 @@ typedef struct buffer_s {
  * the memory is claimed as well, The filled in struct
  * is afterwards returned
  */
-buffer_t * buffer_init(buffer_t *buffer, uint16_t size);
 buffer_t * buffer_new(uint16_t size);
 em_msg  buffer_reset(buffer_t *buffer);
 em_msg  buffer_set(buffer_t *buffer, uint8_t* data, const uint8_t size);
 em_msg  buffer_get(buffer_t *buffer, uint8_t* data, uint8_t *size);
 bool buffer_is_used(buffer_t *buffer);
+void buffer_print(buffer_t *buffer, uint8_t nr);
+
 #ifdef __cplusplus
 }
 #endif

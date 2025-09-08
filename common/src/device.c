@@ -102,8 +102,6 @@ em_msg device_read(dev_handle_t hdl, uint8_t *buffer, uint16_t *cnt){
     return res;
 }
 
-
-
 void device_print(dev_handle_t hdl){
     device_t *dev = my_devicesp[hdl];
     if (dev != NULL) {

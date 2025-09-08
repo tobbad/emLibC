@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-#include "gpio.h"
+#include "_gpio.h"
 #define MAX_SPI_TRANSFER_SIZE 4
 #define SPI_TIMEOUT 10
 typedef struct _spi_t

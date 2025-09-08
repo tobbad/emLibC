@@ -129,17 +129,15 @@ uint16_t common_crc16(uint8_t *data_p, uint16_t length)
 }
 /* Int to Hex char*/
 char int2hchar(uint8_t nr){
-	static char ret=' ';
+	static char ret='0';
     if (nr<MAX_STATE_CNT){
     	if (nr<10){
     		ret =  nr+'0';
-    	} else if(nr<34){
+    	} else if(nr-10<17){
     		ret= nr-10+'A';
-    	} else{
-    		ret= '.';
     	}
     } else{
-        ret= '.';
+        ret= ' ';
     }
     return ret;
 }
@@ -166,21 +164,35 @@ uint8_t clable2type(clabel_u *lbl){
 
 void PrintBuffer(uint8_t *buffer, uint8_t size, char *header) {
     if (header!=NULL){
-        printf("%s"NL , header);
+        printf("Print %s buffer of size %d", header, size);
+    } else{
+        printf("Print buffer of size %d", size);
     }
+    uint8_t aIdx=0;
     static const uint8_t cnt=8;
     char addOn[cnt+1];
     addOn[cnt]=0;
-    printf("Head");
-    for (uint8_t i = 0; i < size; i++) {
-        if (i%cnt==0){
-            printf(NL"0x%02x:  ", i);
-            memset(addOn, ' ', cnt);
+    uint8_t pcnt= ((size>>3)+1)<<3;
+    uint8_t idx=0;
+    for (idx = 0; idx < pcnt; idx++) {
+        if (idx%cnt==0){
+            printf(NL"0x%04X: ", idx);
+            memset(addOn, '.', cnt);
+            aIdx=0;
         }
-        printf("x%02x ", buffer[i]);
-        addOn[i%cnt]=int2hchar(buffer[i]);
-        if (i%cnt==cnt-1){
-            printf("%s", addOn);
+        if (idx<size){
+            printf("%02X ", buffer[idx]);
+            if (isprint(buffer[idx])){
+                addOn[aIdx++] = buffer[idx];
+            }else{
+                addOn[aIdx++] = '.';
+            }
+        } else {
+            printf("   ");
+            addOn[aIdx++]=' ';
+        }
+        if (aIdx==cnt){
+            printf(" %s", addOn);
         }
     }
     printf(NL);

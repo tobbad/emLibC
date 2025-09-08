@@ -7,7 +7,7 @@
 #include "common.h"
 #include "state.h"
 #include "stateled.h"
-#include "gpio.h"
+#include "_gpio.h"
 #include "gpio_port.h"
 #define INIT_LED_TIME 100
 typedef struct led_line_s{
