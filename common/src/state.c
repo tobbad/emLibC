@@ -48,6 +48,15 @@ em_msg state_reset(state_t * state){
 
 }
 
+em_msg state_check(state_t *state) {
+	em_msg res = EM_ERR;
+	if (state == NULL) return res;
+	if (state->first > MAX_STATE_CNT) return res;
+	if (state->cnt > MAX_STATE_CNT) return res;
+	if (state->first > state->cnt) return res;
+	res = EM_OK;
+	return res;
+}
 
 em_msg state_undirty(state_t * state){
 	em_msg res =EM_ERR;
@@ -191,21 +200,18 @@ em_msg state_is_same(state_t *last, state_t *this){
 
 em_msg state_merge(state_t *inState, state_t *outState){
 	em_msg res =EM_ERR;
-	if (inState==NULL) return res;
-	if (outState==NULL) return res;
-	if (inState->cnt != outState->cnt) return res;
-    if (inState->dirty==0) return res;
+	if (state_check(inState)) return res;
+	if (state_check(outState)) return res;
     //printf("inState.cnt: %d, outState.cnt: %d"NL, inState->cnt,outState->cnt);
     outState->dirty=false;
     if (outState->clabel.cmd!= inState->clabel.cmd){
     	outState->clabel.cmd= inState->clabel.cmd;
     	outState->dirty=true;
     }
-    for (uint8_t inr=inState->first,onr=outState->first;
-            inr<inState->first+inState->cnt;inr++, onr++){
-        if (inState->state[inr]!=outState->state[onr]) {
+    for (uint8_t i=inState->first;i<inState->first+inState->cnt;i++){
+        if (inState->state[i]!=outState->state[i]) {
             outState->dirty=true;
-            outState->state[onr] = inState->state[inr];
+            outState->state[i] = inState->state[i];
         }
     }
     return outState->dirty;

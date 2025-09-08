@@ -48,6 +48,7 @@ int8_t state_ch2idx(state_t *state, char ch);
 int8_t state_nr2idx(state_t *state, uint8_t nr);
 em_msg state_init(state_t *state);
 em_msg state_reset(state_t * state);
+em_msg state_check(state_t * state);
 em_msg state_undirty(state_t * state);
 key_state_e state_get_key_by_lbl(state_t * state, char ch);
 key_state_e state_get_key_by_idx(state_t * state, uint8_t idx);
