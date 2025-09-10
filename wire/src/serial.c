@@ -184,7 +184,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
 			isio.ready[SIO_TX] = true;
 		 }
 #ifdef HAL_PCD_MODULE_ENABLED
-	 } else if (isio.pcd!=NULL){
+	 } else if(isio.mode&USE_USB){
 		 CDC_Transmit_FS(ptr, len);
 #endif
 	 } else{
@@ -353,5 +353,9 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *UartHandle)
   time_end_tx();
   memset(isio.buffer[SIO_RX]->mem, 0, isio.buffer[SIO_RX]->size);
   isio.buffer[SIO_RX]->state=ZERO;
+#ifdef HAL_PCD_MODULE_ENABLED
+  USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+#endif
+
 }
 
