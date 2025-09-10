@@ -67,6 +67,10 @@
 static char rx_buf[RX_BUFFER_SIZE];
 static char tx_buf[TX_BUFFER_SIZE];
 
+#ifdef HAL_PCD_MODULE_ENABLED
+extern USBD_HandleTypeDef hUsbDeviceFS;
+#endif
+
 typedef struct isio_s{
 	UART_HandleTypeDef * uart;
 #ifdef HAL_PCD_MODULE_ENABLED
