@@ -18,6 +18,7 @@ em_msg state_init(state_t *state) {
 	em_msg res = EM_ERR;
 	if (state == NULL)
 		return res;
+	memset(state, 0, sizeof(state_t));
 	state->dirty = false;
 	state->first = 0;
 	state->cnt = MAX_STATE_CNT;
@@ -217,7 +218,7 @@ em_msg state_add(state_t *ref, state_t *add) {
     for (uint8_t i = ref->first;i < ref->first + ref->cnt; i++) {
         if (add->state[i]==BLINKING) {
             state_propagate_by_idx(ref, i);
-        }else{
+        }else if (add->state[i]==ON){
             state_propagate_by_idx(ref, i);
             state_propagate_by_idx(ref, i);
         }
@@ -252,7 +253,7 @@ em_msg state_diff(state_t *ref, state_t *state, state_t *diff) {
     for (uint8_t ri = ref->first, si = state->first;
             ri < ref->first + ref->cnt,si < state->first + state->cnt;
             ri++,si++) {
-        if (ref->state[ri] != state->state[ri]) {
+        if (ref->state[ri] != state->state[si]) {
             diff->dirty = true;
             diff->state[ri] = state_key_diff(ref->state[ri], state->state[si]);
         }
@@ -326,15 +327,15 @@ em_msg state_get_dirty(state_t *state) {
 }
 
 em_msg state_set_dirty(state_t *state) {
-	em_msg res = EM_ERR;
-	state->dirty = true;
-	res = EM_OK;
-	return res;
-
+    em_msg res = EM_ERR;
+    state->dirty = true;
+    res = EM_OK;
+    return res;
 }
 
 uint8_t state_get_cnt(state_t *state) {
 	em_msg res = EM_ERR;
+    if (state_check(state)) return res;
 	return state->cnt;
 }
 ;
@@ -347,6 +348,7 @@ uint8_t state_get_first(state_t *state) {
 ;
 em_msg state_set_cnt(state_t *state, uint8_t nr) {
 	em_msg res = EM_ERR;
+    if (state_check(state)) return res;
 	state->cnt = nr;
 	res = EM_OK;
 	return res;

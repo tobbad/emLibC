@@ -70,11 +70,11 @@ void keyboard_state(dev_handle_t dev, state_t *ret) {
     return;
 }
 
-void keyboard_diff(dev_handle_t dev, state_t *ref, state_t *diff) {
+em_msg keyboard_diff(dev_handle_t dev, state_t *ref, state_t *diff) {
     if ((dev > 0) && my_kybd[dev] != NULL) {
-        my_kybd[dev]->diff(dev, ref, diff);
+        return my_kybd[dev]->diff(dev, ref, diff);
     }
-    return;
+    return EM_ERR;
 }
 void keyboard_add(dev_handle_t dev, state_t *add) {
     if ((dev > 0) && my_kybd[dev] != NULL) {

@@ -70,6 +70,8 @@ em_msg state_add(state_t *inState, state_t *add);
 em_msg state_merge(state_t *inState, state_t *outState);
 em_msg state_check(state_t *state );
 em_msg state_print(state_t *state,  char *title );
+em_msg state_get_dirty(state_t *state);
+em_msg state_set_dirty(state_t *state) ;
 uint8_t state_get_cnt(state_t *state);
 uint8_t state_get_first(state_t *state);
 em_msg state_set_cnt(state_t *state, uint8_t nr);

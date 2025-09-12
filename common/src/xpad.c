@@ -310,6 +310,7 @@ static void xpad_state(dev_handle_t devh, state_t *oState) {
         return;
     }
     uint8_t oIdx = oState->first;
+    oState->clabel.cmd = my_xpad[devh].state.clabel.cmd;
     uint8_t iIdx = my_xpad[devh].state.first;
     for (uint8_t i=0; i<oState->cnt;i++, iIdx++, oIdx++) {
         if (oState->state[oIdx]   != my_xpad[devh].state.state[iIdx]){
@@ -322,12 +323,12 @@ static void xpad_state(dev_handle_t devh, state_t *oState) {
     return;
 }
 
-static em_msg xpad_diff(dev_handle_t devh, state_t *state, state_t *diff) {
+static em_msg xpad_diff(dev_handle_t devh, state_t *ref, state_t *diff) {
     if (mpy_xpad[devh] == NULL) {
         printf("No valid handle on state"NL);
         return EM_ERR;
     }
-    return state_diff(&my_xpad[devh].state, state, diff);
+    return state_diff(ref, &my_xpad[devh].state, diff);
 }
 
 static em_msg xpad_add(dev_handle_t devh, state_t *add) {
