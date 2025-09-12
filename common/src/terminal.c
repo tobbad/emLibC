@@ -118,12 +118,12 @@ static void terminal_state(dev_handle_t dev, state_t *ret) {
     state_merge(&my_term, ret); // problem here
 }
 
-static void terminal_diff(dev_handle_t dev, state_t *ref, state_t *diff) {
-    state_diff(&my_term, ref, diff);
+static em_msg terminal_diff(dev_handle_t dev, state_t *ref, state_t *diff) {
+    return state_diff(&my_term, ref, diff);
 }
 
-static void terminal_add(dev_handle_t dev, state_t *add) {
-    state_add(&my_term, add);
+static em_msg terminal_add(dev_handle_t dev, state_t *add) {
+    return state_add(&my_term, add);
 }
 
 static bool terminal_isdirty(dev_handle_t dev) {

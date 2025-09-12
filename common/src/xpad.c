@@ -107,6 +107,13 @@ static int8_t label2int8(char label){
 }
 static void xpad_reset(dev_handle_t devh);
 
+
+em_msg xpad_copy_state(devh){
+    state_t * from = &default_eight_dev.state;
+    state_t * to   = &my_xpad[devh].state;
+    return state_copy(from, to);
+};
+
 static em_msg xpad_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
 	if (dev_type == DEV_TYPE_NA)
 		return EM_ERR;
@@ -162,12 +169,6 @@ static em_msg xpad_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
 	xpad_reset(devh);
 }
 
-
-void     xpad_copy_state(devh){
-    uint8_t * from = &default_eight_dev.state;
-    uint8_t * to   = &my_xpad[devh].state;
-    state_copy(from, to);
-};
 
 static void xpad_set_spalten_pin(dev_handle_t devh, uint8_t spalten_nr) {
 	if (mpy_xpad[devh] == NULL) {
@@ -321,22 +322,20 @@ static void xpad_state(dev_handle_t devh, state_t *oState) {
     return;
 }
 
-static void xpad_diff(dev_handle_t devh, state_t *state, state_t *diff) {
+static em_msg xpad_diff(dev_handle_t devh, state_t *state, state_t *diff) {
     if (mpy_xpad[devh] == NULL) {
         printf("No valid handle on state"NL);
-        return;
+        return EM_ERR;
     }
-    state_diff(&my_xpad[devh].state, state, diff);
-    return;
+    return state_diff(&my_xpad[devh].state, state, diff);
 }
 
-static void xpad_add(dev_handle_t devh, state_t *add) {
+static em_msg xpad_add(dev_handle_t devh, state_t *add) {
     if (mpy_xpad[devh] == NULL) {
         printf("No valid handle on state"NL);
-        return;
+        return EM_ERR;
     }
-    state_add(&my_xpad[devh].state, add);
-    return;
+    return state_add(&my_xpad[devh].state, add);
 }
 
 static bool xpad_isdirty(dev_handle_t devh) {

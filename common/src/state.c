@@ -249,10 +249,12 @@ em_msg state_diff(state_t *ref, state_t *state, state_t *diff) {
         diff->clabel.cmd = state->clabel.cmd;
         diff->dirty = true;
     }
-    for (uint8_t i = ref->first;i < ref->first + ref->cnt; i++) {
-        if (ref->state[i] != state->state[i]) {
+    for (uint8_t ri = ref->first, si = state->first;
+            ri < ref->first + ref->cnt,si < state->first + state->cnt;
+            ri++,si++) {
+        if (ref->state[ri] != state->state[ri]) {
             diff->dirty = true;
-            diff->state[i] = state_key_diff(ref->state[i], state->state[i]);
+            diff->state[ri] = state_key_diff(ref->state[ri], state->state[si]);
         }
     }
     return diff->dirty;

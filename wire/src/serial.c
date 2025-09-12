@@ -250,15 +250,16 @@ void serial_state(dev_handle_t dev, state_t *ret){
 	}
 };
 
-void serial_diff(dev_handle_t dev, state_t *ref, state_t *diff){
-	if (!isio.init) return ;
-	state_diff(ref, &isio.state, diff);
+em_msg serial_diff(dev_handle_t dev, state_t *ref, state_t *diff){
+	if (!isio.init) return EM_ERR;
+	return state_diff(ref, &isio.state, diff);
 };
 
-void serial_add(dev_handle_t dev, state_t *add){
-	if (!isio.init) return ;
-	state_add(&isio.state, add);
+em_msg serial_add(dev_handle_t dev, state_t *add){
+	if (!isio.init) return EM_ERR;
+	return state_add(&isio.state, add);
 };
+
 bool serial_isdirty(dev_handle_t dev){return isio.state.dirty;};
 
 void serial_undirty(dev_handle_t dev){state_undirty(&isio.state);};
