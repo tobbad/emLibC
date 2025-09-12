@@ -158,8 +158,16 @@ static em_msg xpad_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
 //	for (uint8_t val=0;val<MAX_BUTTON_CNT;val++){
 //		printf("val= 0x%01x ->  0x%01x"NL, val, my_xpad[devh].val2idx[val] );
 //	}
+    xpad_copy_state(devh);
 	xpad_reset(devh);
 }
+
+
+void     xpad_copy_state(devh){
+    uint8_t * from = &default_eight_dev.state;
+    uint8_t * to   = &my_xpad[devh].state;
+    state_copy(from, to);
+};
 
 static void xpad_set_spalten_pin(dev_handle_t devh, uint8_t spalten_nr) {
 	if (mpy_xpad[devh] == NULL) {
@@ -352,13 +360,7 @@ static void xpad_reset(dev_handle_t devh) {
 		printf("No valid handle on reset"NL);
 		return;
 	}
-	my_xpad[devh].state.dirty = false;
-	for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
-		my_xpad[devh].state.state[i] = OFF;
-		my_xpad[devh].key[i] = reset_key;
-	}
-	my_xpad[devh].state.dirty= false;
-
+    state_reset(&my_xpad[devh].state);
 	return;
 }
 
