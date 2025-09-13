@@ -251,7 +251,7 @@ em_msg state_diff(state_t *ref, state_t *state, state_t *diff) {
         diff->dirty = true;
     }
     for (uint8_t ri = ref->first, si = state->first;
-            ri < ref->first + ref->cnt,si < state->first + state->cnt;
+            ri < ref->first + ref->cnt;
             ri++,si++) {
         if (ref->state[ri] != state->state[si]) {
             diff->dirty = true;
