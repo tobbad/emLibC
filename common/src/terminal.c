@@ -66,7 +66,7 @@ static em_msg terminal_init(dev_handle_t handle, dev_type_e dev_type,	void *seri
 //	}
 //	return res;
 //}
-static int16_t terminal_scan(dev_handle_t dev) {
+static uint16_t terminal_scan(dev_handle_t dev) {
 	char ch = 0xFF;
 	static bool asked = false;
 	HAL_StatusTypeDef status;

@@ -282,8 +282,7 @@ em_msg state_merge(state_t *inState, state_t *outState){
 
 em_msg state_print(state_t *state, char *title) {
 	em_msg res = EM_ERR;
-	if (state_check(state))
-		return res;
+	if (state_check(state))	return res;
 	if (title != NULL) {
 		printf("%s"NL, title);
 	}

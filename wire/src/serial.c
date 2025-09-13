@@ -223,7 +223,7 @@ int16_t _read(int32_t file, uint8_t *ptr, int16_t len) {
 
 // If Result is negativ -value is the number, which was entered (0...127)
 // If the result >0: 1 alpha Higher case char where entered
-int16_t serial_scan(dev_handle_t dev){
+uint16_t serial_scan(dev_handle_t dev){
 	if (!isio.init) return -1;
 	return _read(0, isio.buffer[SIO_RX]->mem, RX_BUFFER_SIZE);
 };
