@@ -238,7 +238,7 @@ void serial_reset(dev_handle_t dev){
 };
 
 void serial_state(dev_handle_t dev, state_t *ret){
-    if (!isio.init) return EM_ERR;
+    if (!isio.init) return;
     isio.state.first= ret->first;
     isio.state.cnt= ret->cnt;
 	uint16_t len= strlen(isio.state.clabel.str);
@@ -262,9 +262,15 @@ em_msg serial_add(dev_handle_t dev, state_t *add){
 	return state_add(&isio.state, add);
 };
 
-bool serial_isdirty(dev_handle_t dev){  if (!isio.init) return EM_ERR;return isio.state.dirty;};
+bool serial_isdirty(dev_handle_t dev){
+    if (!isio.init) return EM_ERR;
+    return isio.state.dirty;
+};
 
-void serial_undirty(dev_handle_t dev){  if (!isio.init) return EM_ERR;state_undirty(&isio.state);};
+void serial_undirty(dev_handle_t dev){
+    if (!isio.init) return;
+    state_undirty(&isio.state);
+};
 
 kybd_t serial_dev = {
 	.init = &serial_init,
@@ -292,7 +298,8 @@ device_t serial_io = {
 
 
 int8_t serial_waitForNumber(char **key) {
-    if (!isio.init) return EM_ERR;	char *str=NULL;
+    if (!isio.init) return EM_ERR;
+    char *str=NULL;
 	clabel_u lbl ={.cmd=0};
 	uint8_t len=0;
 	uint8_t i;
