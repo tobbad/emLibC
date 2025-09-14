@@ -113,7 +113,7 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
 }
 
 em_msg serial_io_open(dev_handle_t devh, void *dev) {
-	if (isio.init) return EM_ERR;
+	if (!isio.init) return EM_ERR;
 	return serial_init(0, 0, dev);
 
 }
@@ -129,13 +129,14 @@ void serial_set_mode(print_e mode, bool doReset ) {
 }
 
 em_msg serial_write(dev_handle_t hdl, const uint8_t *buffer, int16_t cnt){
+    if (!isio.init) return EM_ERR;
 	printf("%s", buffer);
 	return EM_OK;
 }
 
 
 int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
-
+    if (!isio.init) return EM_ERR;
     uint16_t len=-1;
     uint8_t idx=0;
     txLen = MIN(txLen, TX_BUFFER_SIZE-2);
@@ -198,6 +199,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
 }
 
 em_msg serial_read(dev_handle_t hdl, uint8_t *buffer, int16_t *cnt){
+    if (!isio.init) return EM_ERR;
 	em_msg res= EM_OK;
 	int16_t _cnt= *cnt;
 	int16_t rLen =  fread(buffer,(size_t) 1,(size_t)_cnt, stdin);
@@ -208,7 +210,7 @@ em_msg serial_read(dev_handle_t hdl, uint8_t *buffer, int16_t *cnt){
 }
 int16_t _read(int32_t file, uint8_t *ptr, int16_t len) {
     uint16_t rLen;
-    if (!isio.init) return -1;
+    if (!isio.init) return EM_ERR;
     if (isio.uart != NULL) {
     	if(isio.mode&USE_DMA_RX){
 			rLen= strlen((char*)isio.buffer[SIO_RX]->mem);
@@ -224,7 +226,7 @@ int16_t _read(int32_t file, uint8_t *ptr, int16_t len) {
 // If Result is negativ -value is the number, which was entered (0...127)
 // If the result >0: 1 alpha Higher case char where entered
 uint16_t serial_scan(dev_handle_t dev){
-	if (!isio.init) return -1;
+    if (!isio.init) return EM_ERR;
 	return _read(0, isio.buffer[SIO_RX]->mem, RX_BUFFER_SIZE);
 };
 void serial_reset(dev_handle_t dev){
@@ -236,7 +238,7 @@ void serial_reset(dev_handle_t dev){
 };
 
 void serial_state(dev_handle_t dev, state_t *ret){
-	if (!isio.init) return ;
+    if (!isio.init) return EM_ERR;
     isio.state.first= ret->first;
     isio.state.cnt= ret->cnt;
 	uint16_t len= strlen(isio.state.clabel.str);
@@ -260,9 +262,9 @@ em_msg serial_add(dev_handle_t dev, state_t *add){
 	return state_add(&isio.state, add);
 };
 
-bool serial_isdirty(dev_handle_t dev){return isio.state.dirty;};
+bool serial_isdirty(dev_handle_t dev){  if (!isio.init) return EM_ERR;return isio.state.dirty;};
 
-void serial_undirty(dev_handle_t dev){state_undirty(&isio.state);};
+void serial_undirty(dev_handle_t dev){  if (!isio.init) return EM_ERR;state_undirty(&isio.state);};
 
 kybd_t serial_dev = {
 	.init = &serial_init,
@@ -290,7 +292,7 @@ device_t serial_io = {
 
 
 int8_t serial_waitForNumber(char **key) {
-	char *str=NULL;
+    if (!isio.init) return EM_ERR;	char *str=NULL;
 	clabel_u lbl ={.cmd=0};
 	uint8_t len=0;
 	uint8_t i;
