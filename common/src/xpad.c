@@ -234,7 +234,7 @@ static uint16_t xpad_update_key(uint8_t devh, uint8_t zeile, bool pinVal) {
 					% STATE_CNT);
 			//my_xpad[devh].state.dirty = true;
             my_xpad[devh].state.dirty = true;
-			//printf("Pushed   Key @ (zeile =%d, z=%d, s=%d, value = %c)"NL, zeile, z, s, label);
+			printf("Pushed   Key @ (zeile =%d, z=%d, s=%d, value = %c)"NL, zeile, z, s, label);
 		} else {
 			//printf("Released Key @ (zeile =%d, z=%d, s=%d, value = %c)"NL, zeile, z , s, label);
 			my_xpad[devh].key[zeile].cnt=0;
@@ -275,7 +275,7 @@ static uint16_t xpad_eight_scan(dev_handle_t devh) {
 	if (res==0) return -1;
 	uint16_t index =key2value(res);
 	char ch = my_xpad[devh].state.label[index];
-	printf("Got Keyscan %d, index %d, label %c"NL, res, index, ch);
+	printf("Got Keyscan %04x, index %d, label %c"NL, res, index, ch);
 	return res;
 }
 
