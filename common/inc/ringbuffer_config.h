@@ -10,7 +10,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    
+
 #define RBUF_REGISTERS 5
 #define CHARS_PER_LINE 80
 

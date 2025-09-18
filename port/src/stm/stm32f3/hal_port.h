@@ -10,5 +10,4 @@
 
 #include "stm32f3xx.h"
 
-
 #endif /* LIB_PORT_STM32F3_HAL_PORT_H_ */

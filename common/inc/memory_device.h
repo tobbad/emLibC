@@ -8,8 +8,7 @@
 #ifndef COMMON_TEST_MEMORY_DEVICE_H_
 #define COMMON_TEST_MEMORY_DEVICE_H_
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 #include "common.h"

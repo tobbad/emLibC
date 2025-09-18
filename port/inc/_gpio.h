@@ -10,12 +10,12 @@
 #include "common.h"
 #include "hal_port.h"
 
-typedef struct gpio_pin_s{
-	GPIO_TypeDef* port;
-	uint16_t pin;
-	bool def;
-	bool inv;
-	GPIO_InitTypeDef conf;
+typedef struct gpio_pin_s {
+  GPIO_TypeDef *port;
+  uint16_t pin;
+  bool def;
+  bool inv;
+  GPIO_InitTypeDef conf;
 } gpio_pin_t;
 
 em_msg GpioPinInit(gpio_pin_t *pin);

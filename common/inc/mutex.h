@@ -11,5 +11,4 @@
 
 bool ReadModify_write(int8_t *mem, int8_t add);
 
-
 #endif /* COMMON_INC_MUTEX_H_ */

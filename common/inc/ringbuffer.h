@@ -22,33 +22,33 @@ typedef int8_t rbuf_hdl_t;
  * if rdIdx == wrIdx: Ringbuffer is empty
  * if wrIdx
  */
-typedef struct rbuf_t_{
-	bool empty;
-	uint16_t nxtWrIdx;
-	uint16_t nxtRdIdx;
-	uint8_t *buffer;
-    uint16_t buffer_size;
-    bool dirty;
+typedef struct rbuf_t_ {
+  bool empty;
+  uint16_t nxtWrIdx;
+  uint16_t nxtRdIdx;
+  uint8_t *buffer;
+  uint16_t buffer_size;
+  bool dirty;
 } rbuf_t;
 
-typedef struct rbufm_s{
-	bool empty;
-	uint16_t nxtWrIdx;
-	uint16_t nxtRdIdx;
-	uint8_t *buffer;
-    uint16_t buffer_size;
+typedef struct rbufm_s {
+  bool empty;
+  uint16_t nxtWrIdx;
+  uint16_t nxtRdIdx;
+  uint8_t *buffer;
+  uint16_t buffer_size;
 } rbufm_t;
 
 typedef struct rbufline_s {
-	rbuf_t rbuf_reg[RBUF_REGISTERS];
-	bool empty;
-	rbuf_hdl_t current;
-	uint16_t nxtLineWrIdx;
-	uint16_t nxtLineRdIdx;
-    int16_t valid_cnt;
+  rbuf_t rbuf_reg[RBUF_REGISTERS];
+  bool empty;
+  rbuf_hdl_t current;
+  uint16_t nxtLineWrIdx;
+  uint16_t nxtLineRdIdx;
+  int16_t valid_cnt;
 } rbufline_t;
-/* 
- * Reset all fields 
+/*
+ * Reset all fields
  * even sets the buffer to NULL without freeing it!!!
  */
 extern const rbuf_t rbuf_clear;
@@ -65,14 +65,15 @@ em_msg rbuf_write_byte(rbuf_hdl_t hdl, uint8_t byte);
  */
 em_msg rbuf_read_byte(rbuf_hdl_t hdl, uint8_t *byte);
 /*
- * Read at most count (input) bytes, really count of bytes is in the returned count value
+ * Read at most count (input) bytes, really count of bytes is in the returned
+ * count value
  */
-em_msg rbuf_write_bytes(rbuf_hdl_t hdl, const uint8_t* bytes, int16_t count);
+em_msg rbuf_write_bytes(rbuf_hdl_t hdl, const uint8_t *bytes, int16_t count);
 em_msg rbuf_read_bytes(rbuf_hdl_t hdl, uint8_t *bytes, int16_t *count);
 em_msg rbuf_get_device(rbuf_hdl_t hdl, device_t *device, dev_func_t dev_type);
 
-em_msg rbuf_pull_line(rbuf_hdl_t hdl, uint8_t* bytes, int16_t *count);
-em_msg rbuf_push_line(rbuf_hdl_t hdl, const uint8_t* bytes, int16_t count);
+em_msg rbuf_pull_line(rbuf_hdl_t hdl, uint8_t *bytes, int16_t *count);
+em_msg rbuf_push_line(rbuf_hdl_t hdl, const uint8_t *bytes, int16_t count);
 
 #ifdef __cplusplus
 }

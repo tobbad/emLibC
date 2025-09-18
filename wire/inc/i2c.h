@@ -25,15 +25,13 @@ extern "C" {
 
 #define I2C_HANDLLE_CNT 1
 #define MAX_TRANSFER_SIZE 10
-typedef struct _i2c_t
-{
-    I2C_HandleTypeDef *i2c;
-	uint8_t adr;
+typedef struct _i2c_t {
+  I2C_HandleTypeDef *i2c;
+  uint8_t adr;
 } i2c_t;
-typedef uint8_t i2c_handle ;
+typedef uint8_t i2c_handle;
 
-
-i2c_handle li2c_init(I2C_HandleTypeDef * i2c_dev, uint8_t i2cAdr);
+i2c_handle li2c_init(I2C_HandleTypeDef *i2c_dev, uint8_t i2cAdr);
 em_msg i2c_write(i2c_handle i2c_h, uint8_t cnt, uint8_t *txbuffer);
 em_msg i2c_read(i2c_handle i2c_h, uint8_t cnt, uint8_t *rxbuffer);
 
