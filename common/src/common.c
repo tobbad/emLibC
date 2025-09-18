@@ -162,6 +162,17 @@ uint8_t clable2type(clabel_u *lbl){
     return res;
 }
 
+int8_t clabel2uint8(clabel_u *lbl){
+	uint8_t res=-1;
+	char ch = lbl->str[0];
+	res = ch-'0';
+	if (res<10) return res;
+	res = ch-'A'-10;
+	if (res<16) return res;
+	return -1;
+
+};
+
 void PrintBuffer(uint8_t *buffer, uint8_t size, char *header) {
     if (header!=NULL){
         printf("Print %s buffer of size %d", header, size);
