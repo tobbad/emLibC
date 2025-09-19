@@ -10,7 +10,7 @@
 #include "main.h"
 #include "serial.h"
 #include "state.h"
-
+// clang-format off
 static state_t my_term = {
     .first = 1, // First valid value
     .cnt = 8,
@@ -19,6 +19,8 @@ static state_t my_term = {
     .dirty = false,
 
 };
+// clang-format on
+
 static sio_t _serial;
 clabel_u clabel;
 #define ZERO4 ((32 << 24) + (32 << 16) + (32 << 8) + 32)
@@ -32,40 +34,7 @@ static em_msg terminal_init(dev_handle_t handle, dev_type_e dev_type, void *seri
     state_reset(&my_term);
     return EM_OK;
 }
-//
-// static uint16_t terminal_scan(dev_handle_t dev) {
-//    char ch;
-//	static bool asked = false;
-//	int16_t res = -1;
-//	//char allowed_keys={'R'};
-//
-//	if (!asked) {
-//		asked = true;
-//		printf("Please enter key"NL);
-//	}
-//	uint16_t rxLen=CMD_LEN;
-//    HAL_StatusTypeDef status;
-//    data_in=false;
-//    //status = HAL_UART_Receive(sio.uart, (uint8_t*)&ch, 1, 0);
-//	while (!data_in) {
-//		status = HAL_UART_Receive_DMA(sio.uart, (uint8_t*)&clabel.cmd,
-// rxLen);
-//	}
-//	ch = toupper(my_term.clabel.str[0]);
-//	int8_t idx=state_ch2idx(&my_term, ch);
-//	if (idx>=0){
-//		res = ch - '0';
-//		my_term.dirty= true;
-//		if (res<9){
-//			state_propagate(&my_term, ch);
-//			return res;
-//		}
-//	} else {
-//		my_term.clabel.str[CMD_LEN-1]=0;
-//		printf("Command %s"NL, my_term.clabel.str);
-//	}
-//	return res;
-//}
+
 static uint16_t terminal_scan(dev_handle_t dev) {
     char ch = 0xFF;
     static bool asked = false;
@@ -80,7 +49,7 @@ static uint16_t terminal_scan(dev_handle_t dev) {
         // status = HAL_UART_Receive(_serial.uart, (uint8_t*)&clabel.cmd, CMD_LEN);
         status = HAL_UART_Receive(_serial.uart, (uint8_t *)&ch, 1, 0);
         if (status == HAL_OK) {
-            if (ch == 0x0a) { // linefeed lf
+            if (ch == 0x0a) { //
                 stay = false;
                 ch = 0xff;
             }

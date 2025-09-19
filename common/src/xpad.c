@@ -126,18 +126,8 @@ static xpad_dev_t default_eight_dev = {
     .dev_type = EIGHTKEY,
     .state =
         {
-            .label =
-                {
-                    '1',
-                    '2',
-                    '3',
-                    '4',
-                    '5',
-                    '6',
-                    '7',
-                    '8',
-                },
-            .state = {OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
+            .label = { '1', '2', '3', '4', '5', '6', '7', '8'  },
+            .state = { OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF  },
             .cnt = EIGHT_BUTTON_CNT,
             .first = 0,
         },
