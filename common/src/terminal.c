@@ -14,10 +14,8 @@
 static state_t my_term = {
     .first = 1, // First valid value
     .cnt = 8,
-    .state = {OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF,
-              OFF, OFF, OFF},
-    .label = {' ', '1', '2', '3', '4', '5', '6', '7', '8', ' ', ' ', ' ', ' ',
-              ' ', ' ', ' '},
+    .state = {OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
+    .label = {' ', '1', '2', '3', '4', '5', '6', '7', '8', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
     .dirty = false,
 
 };

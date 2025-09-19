@@ -9,7 +9,7 @@
 #define EMLIBC_COMMON_INC_BUFFER_POOL_H_
 
 #include "common.h"
-
+#include "buffer.h"
 #ifdef __cplusplus
 extern "C" {
 #endif

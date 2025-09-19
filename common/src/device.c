@@ -83,7 +83,7 @@ em_msg device_reset(dev_handle_t hdl) {
  * @param cnt Count of bytes to write
  * @return EM_ERR ie NULL device given or write function is NULL
  */
-em_msg device_write(dev_handle_t hdl, const uint8_t *buffer, uint16_t cnt) {
+em_msg device_write(dev_handle_t hdl, const uint8_t *buffer, int16_t cnt) {
   device_t *dev = my_devicesp[hdl];
   em_msg res = EM_ERR;
   if ((dev != NULL) && (NULL != dev->write)) {
@@ -92,7 +92,7 @@ em_msg device_write(dev_handle_t hdl, const uint8_t *buffer, uint16_t cnt) {
   return res;
 }
 
-em_msg device_read(dev_handle_t hdl, uint8_t *buffer, uint16_t *cnt) {
+em_msg device_read(dev_handle_t hdl, uint8_t *buffer, int16_t *cnt) {
   em_msg res = EM_ERR;
   device_t *dev = my_devicesp[hdl];
   if ((dev != NULL) && (NULL != dev->read)) {

@@ -15,6 +15,10 @@
 extern "C" {
 #endif
 
+
+#include "common.h"
+#include "device.h"
+#include "buffer.h"
 #define PACKET_DEV_COUNT 10
 #define PACKET_MAX_LENGTH 4096
 

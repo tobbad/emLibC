@@ -58,8 +58,8 @@ typedef enum {
 
 dev_handle_t device_init(device_t *dev, void *user_data);
 em_msg device_check(dev_handle_t hdl, dev_func_t dev_type);
-em_msg device_read(dev_handle_t hdl, uint8_t *buffer, uint16_t *cnt);
-em_msg device_write(dev_handle_t hdl, const uint8_t *buffer, uint16_t cnt);
+em_msg device_read(dev_handle_t hdl, uint8_t *buffer, int16_t *cnt);
+em_msg device_write(dev_handle_t hdl, const uint8_t *buffer, int16_t cnt);
 em_msg device_reset(dev_handle_t hdl);
 void device_print(dev_handle_t hdl);
 
