@@ -208,13 +208,13 @@ static uint16_t xpad_update_key(uint8_t devh, uint8_t zeile, bool pinVal) {
     my_xpad[devh].key[zeile].unstable =
         my_xpad[devh].key[zeile].unstable || (my_xpad[devh].key[zeile].current ^ my_xpad[devh].key[zeile].last);
     if (my_xpad[devh].key[zeile].current ^ my_xpad[devh].key[zeile].last) {
-         //printf("Set unstable to %d"NL,my_xpad[devh].key[zeile].unstable);
+         printf("Set unstable to %d"NL,my_xpad[devh].key[zeile].unstable);
     }
     if (my_xpad[devh].key[zeile].unstable) {
         if (my_xpad[devh].key[zeile].current == my_xpad[devh].key[zeile].last) {
             my_xpad[devh].key[zeile].cnt++;
             if (pinVal != false) {
-                printf("Increased zeile %d to %d (pinVal=%d)"NL, zeile, my_xpad[devh].key[zeile].cnt, pinVal);
+                //printf("Increased zeile %d to %d (pinVal=%d)"NL, zeile, my_xpad[devh].key[zeile].cnt, pinVal);
             }
         } else {
             // printf("Reset zeile %d from %d (pinVal=%d)"NL, zeile,
@@ -228,8 +228,7 @@ static uint16_t xpad_update_key(uint8_t devh, uint8_t zeile, bool pinVal) {
         char label = my_xpad[devh].state.label[zeile];
         my_xpad[devh].key[zeile].last = pinVal;
         my_xpad[devh].key[zeile].stable = pinVal;
-        // printf("Reached zeile %d logi level %d (pinVal=%d)"NL, zeile,STABLE_CNT,
-        // pinVal);
+        // printf("Reached zeile %d logi level %d (pinVal=%d)"NL, zeile,STABLE_CNT, pinVal);
         if (my_xpad[devh].key[zeile].stable) {
             my_xpad[devh].state.state[zeile] = ((my_xpad[devh].state.state[zeile] + 1) % STATE_CNT);
             // my_xpad[devh].state.dirty = true;
