@@ -133,6 +133,7 @@ static xpad_dev_t default_eight_dev = {
         },
 };
 static void xpad_reset(dev_handle_t devh);
+
 static uint16_t xpad_read_zeile(dev_handle_t devh, uint8_t spalten_nr);
 
 static uint8_t index_2_zei(xpad_dev_t *kbd, uint8_t index) {
