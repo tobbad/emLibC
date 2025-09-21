@@ -213,7 +213,7 @@ em_msg serial_read(dev_handle_t hdl, uint8_t *buffer, int16_t *cnt) {
     return res;
 }
 int16_t _read(int32_t file, uint8_t *ptr, int16_t len) {
-    int16_t rLen=-1;
+    int16_t rLen = -1;
     if (!isio.init)
         return EM_ERR;
     if (isio.uart != NULL) {
@@ -224,7 +224,8 @@ int16_t _read(int32_t file, uint8_t *ptr, int16_t len) {
             HAL_UART_Receive(isio.uart, isio.buffer[SIO_RX]->mem, len, HAL_MAX_DELAY);
         }
     }
-    if (rLen==0) rLen=-1;
+    if (rLen == 0)
+        rLen = -1;
     return rLen;
 }
 
