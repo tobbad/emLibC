@@ -18,6 +18,8 @@ em_msg GpioPinInit(gpio_pin_t *pin) {
             __HAL_RCC_GPIOB_CLK_ENABLE();
         } else if (pin->port == GPIOC) {
             __HAL_RCC_GPIOC_CLK_ENABLE();
+        } else if (pin->port == GPIOD) {
+            __HAL_RCC_GPIOD_CLK_ENABLE();
         } else {
             printf("unknwn port 0x%8p" NL, pin->port);
         }

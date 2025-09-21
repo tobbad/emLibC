@@ -35,7 +35,7 @@ static em_msg terminal_init(dev_handle_t handle, dev_type_e dev_type, void *seri
     return EM_OK;
 }
 
-static uint16_t terminal_scan(dev_handle_t dev) {
+static int16_t terminal_scan(dev_handle_t dev) {
     char ch = 0xFF;
     static bool asked = false;
     HAL_StatusTypeDef status;
@@ -69,7 +69,7 @@ static uint16_t terminal_scan(dev_handle_t dev) {
     char *stopstring = NULL;
     long long int res = strtol((char *)&clabel.str, &stopstring, 10);
     if (stopstring == &clabel.str[0]) {
-        return 0;
+        return -1;
     }
     uint8_t resi = res;
     printf("Got key %d" NL, resi);
@@ -81,7 +81,7 @@ static uint16_t terminal_scan(dev_handle_t dev) {
     } else {
         printf("Command %s" NL, my_term.clabel.str);
     }
-    return my_term.dirty;
+    return idx;
 }
 static void terminal_state(dev_handle_t dev, state_t *ret) {
     state_merge(&my_term, ret); // problem here

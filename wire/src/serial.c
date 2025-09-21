@@ -213,7 +213,7 @@ em_msg serial_read(dev_handle_t hdl, uint8_t *buffer, int16_t *cnt) {
     return res;
 }
 int16_t _read(int32_t file, uint8_t *ptr, int16_t len) {
-    uint16_t rLen;
+    int16_t rLen=-1;
     if (!isio.init)
         return EM_ERR;
     if (isio.uart != NULL) {
@@ -224,13 +224,13 @@ int16_t _read(int32_t file, uint8_t *ptr, int16_t len) {
             HAL_UART_Receive(isio.uart, isio.buffer[SIO_RX]->mem, len, HAL_MAX_DELAY);
         }
     }
-
+    if (rLen==0) rLen=-1;
     return rLen;
 }
 
 // If Result is negativ -value is the number, which was entered (0...127)
 // If the result >0: 1 alpha Higher case char where entered
-uint16_t serial_scan(dev_handle_t dev) {
+int16_t serial_scan(dev_handle_t dev) {
     if (!isio.init)
         return EM_ERR;
     return _read(0, isio.buffer[SIO_RX]->mem, RX_BUFFER_SIZE);

@@ -54,6 +54,7 @@ em_msg state_set(state_t *state, uint8_t nr, key_state_e ns) {
     if (state == NULL)
         return res;
     state_set(state, nr, ns);
+    return EM_OK;
 }
 
 em_msg state_check(state_t *state) {
