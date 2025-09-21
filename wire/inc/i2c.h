@@ -22,7 +22,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+#include "common.h"
 #define I2C_HANDLLE_CNT 1
 #define MAX_TRANSFER_SIZE 10
 typedef struct _i2c_t {
