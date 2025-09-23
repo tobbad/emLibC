@@ -136,7 +136,6 @@ uint8_t clable2type(clabel_u *lbl) {
     lbl->str[CMD_LEN - 1] = 0;
     res = strtol(lbl->str, &stopstring, 10);
     if (strlen(stopstring) == 0) {
-        lbl->cmd = res;
         return ISNUM;
     }
     bool itIs = true;
