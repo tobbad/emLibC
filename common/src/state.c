@@ -49,6 +49,16 @@ em_msg state_reset(state_t *state) {
     return res;
 }
 
+em_msg state_undirty(state_t *state) {
+    em_msg res = EM_ERR;
+    if (state == NULL)
+        return res;
+    state->clabel.cmd = 0;
+    state->dirty = false;
+    res = EM_OK;
+    return res;
+}
+
 em_msg state_set(state_t *state, uint8_t nr, key_state_e ns) {
     em_msg res = EM_ERR;
     if (state == NULL)
@@ -71,14 +81,6 @@ em_msg state_check(state_t *state) {
     return res;
 }
 
-em_msg state_undirty(state_t *state) {
-    em_msg res = EM_ERR;
-    if (state == NULL)
-        return res;
-    state->dirty = false;
-    res = EM_OK;
-    return res;
-}
 
 key_state_e state_key_diff(key_state_e state1, key_state_e state2) {
     if (state1 == state2)

@@ -256,7 +256,6 @@ void serial_state(dev_handle_t dev, state_t *ret) {
             state_propagate_by_idx(&isio.state, isio.state.clabel.cmd);
         }
         state_merge(&isio.state, ret);
-        state_reset(&isio.state);
     }
 };
 
