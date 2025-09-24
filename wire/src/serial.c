@@ -253,7 +253,8 @@ void serial_state(dev_handle_t dev, state_t *ret) {
     if (len > 0) {
         uint8_t ctype = clable2type(&isio.state.clabel);
         if (ctype == ISNUM) {
-            state_propagate_by_idx(&isio.state, isio.state.clabel.cmd);
+        	uint8_t nr = clabel2uint8(&isio.state.clabel);
+            state_propagate_by_idx(&isio.state, nr);
         }
         state_merge(&isio.state, ret);
     }
@@ -329,7 +330,7 @@ int8_t serial_waitForNumber(char **key) {
     uint8_t ctype = clable2type(&lbl);
     if (ctype == ISNUM) {
         *key = (char *)&str[0];
-        return lbl.cmd;
+        return clabel2uint8(&lbl);
     }
     if (ctype == ISASCISTR) {
         *key = (char *)&str[0];
