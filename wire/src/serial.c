@@ -62,7 +62,7 @@
 #include "mutex.h"
 #include "serial.h"
 #include "state.h"
-#include "stm32l4xx_ll_usart.h"
+#include "hal_port.h"
 
 static char rx_buf[RX_BUFFER_SIZE];
 static char tx_buf[TX_BUFFER_SIZE];
