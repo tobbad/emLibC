@@ -97,6 +97,7 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
 #ifdef HAL_PCD_MODULE_ENABLED
     isio.pcd = init->pcd;
 #endif
+    isio.devh = dev_type;
     isio.buffer[SIO_RX] = buffer_new(init->buffer[SIO_RX]->size);
     isio.buffer[SIO_TX] = buffer_new(init->buffer[SIO_TX]->size);
     state_init(&isio.state);
@@ -213,7 +214,7 @@ em_msg serial_read(dev_handle_t hdl, uint8_t *buffer, int16_t *cnt) {
     return res;
 }
 int16_t _read(int32_t file, uint8_t *ptr, int16_t len) {
-    int16_t rLen = -1;
+    uint16_t rLen;
     if (!isio.init)
         return EM_ERR;
     if (isio.uart != NULL) {
@@ -224,13 +225,12 @@ int16_t _read(int32_t file, uint8_t *ptr, int16_t len) {
             HAL_UART_Receive(isio.uart, isio.buffer[SIO_RX]->mem, len, HAL_MAX_DELAY);
         }
     }
-    if (rLen == 0)
-        rLen = -1;
+
     return rLen;
 }
 
-// If Result is negativ -value is the number, which was entered (0...127)
-// If the result >0: 1 alpha Higher case char where entered
+// If the result >0: number of char in buffers
+// EM_ERR: Serial was not initialized
 int16_t serial_scan(dev_handle_t dev) {
     if (!isio.init)
         return EM_ERR;
@@ -253,11 +253,13 @@ void serial_state(dev_handle_t dev, state_t *ret) {
     if (len > 0) {
         uint8_t ctype = clable2type(&isio.state.clabel);
         if (ctype == ISNUM) {
-        	uint8_t nr = clabel2uint8(&isio.state.clabel);
-            state_propagate_by_idx(&isio.state, nr);
+            if (!state_get_dirty(&isio.state)){
+                uint8_t nr = clabel2uint8(&isio.state.clabel);
+                state_propagate_by_idx(&isio.state, nr);
+            }
         }
-        state_merge(&isio.state, ret);
     }
+    state_merge(&isio.state, ret);
 };
 
 em_msg serial_diff(dev_handle_t dev, state_t *ref, state_t *diff) {

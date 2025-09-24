@@ -236,12 +236,12 @@ em_msg state_add(state_t *ref, state_t *add) {
         ref->clabel.cmd = add->clabel.cmd;
         ref->dirty = true;
     }
-    for (uint8_t i = ref->first; i < ref->first + ref->cnt; i++) {
-        if (add->state[i] == BLINKING) {
-            state_propagate_by_idx(ref, i);
-        } else if (add->state[i] == ON) {
-            state_propagate_by_idx(ref, i);
-            state_propagate_by_idx(ref, i);
+    for (uint8_t i1 = ref->first, i2 = add->first; i1 < ref->first + ref->cnt; i1++, i2++) {
+        if (add->state[i2] == BLINKING) {
+            state_propagate_by_idx(ref, i1);
+        } else if (add->state[i2] == ON) {
+            state_propagate_by_idx(ref, i1);
+            state_propagate_by_idx(ref, i1);
         }
     }
     return ref->dirty;
@@ -254,8 +254,8 @@ em_msg state_is_same(state_t *last, state_t *this) {
     if (state_check(this))
         return res;
     res = true;
-    for (uint8_t i = this->first; i < this->first + this->cnt; i++) {
-        res &= (last->state[i] == this->state[i]);
+    for (uint8_t i1 = last->first, i2 = this->first; i1 < last->first + last->cnt; i1++, i2++) {
+        res &= (last->state[i1] == this->state[i2]);
     }
     return res;
 }
@@ -295,10 +295,10 @@ em_msg state_merge(state_t *inState, state_t *outState) {
         outState->clabel.cmd = inState->clabel.cmd;
         outState->dirty = true;
     }
-    for (uint8_t i = inState->first; i < inState->first + inState->cnt; i++) {
-        if (inState->state[i] != outState->state[i]) {
+    for (uint8_t ri = inState->first, oi = outState->first; ri < inState->first + inState->cnt; ri++, oi++) {
+        if (inState->state[ri] != outState->state[oi]) {
             outState->dirty = true;
-            outState->state[i] = inState->state[i];
+            outState->state[ri] = inState->state[oi];
         }
     }
     return outState->dirty;
