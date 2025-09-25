@@ -27,6 +27,7 @@ em_msg state_init(state_t *state) {
     state->dirty = false;
     state->first = 0;
     state->cnt = MAX_STATE_CNT;
+    state->dummy = 0xFF;
     state->clabel.cmd = 0;
     memcpy(&state->label, &"0123456789ABCDEF", MAX_STATE_CNT);
     for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {

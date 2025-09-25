@@ -35,12 +35,11 @@ typedef struct state_s {
 } state_t; // Size is 2*MAX_BUTTON_CNT + 4=  36 Byte (MAX_BUTTON_CNT = 16)
 
 typedef struct statea_s {
-  uint8_t
-      range;  // Unteres Nibble: tiefstes gültiges Labele (0-15):
-              // Oberes Nibble: letzes gültiges Label (0-15)
-              // und daher hat ein Label nur 2 Bit in den 16 Bit state Variable
-  bool dirty; // Das zwei Topbit indizieren die Art der clabel (01: *cmd, 11;
-              // str[CMD_LEN])
+  uint8_t  range;  // Unteres Nibble: tiefstes gültiges Labele (0-15):
+                   // Oberes Nibble: letzes gültiges Label (0-15)
+                   // und daher hat ein Label nur 2 Bit in den 16 Bit state Variable
+  bool     dirty; // Das zwei Topbit indizieren die Art der clabel (01: *cmd, 11;
+                  // str[CMD_LEN])
   uint32_t state;  // Jedes label hat eine  state: 00=OFF, 01: BLINKING, 11 ON
                    // 16*2 =32 Bit
   clabel_u clabel; // 4 Bytes

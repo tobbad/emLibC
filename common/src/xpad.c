@@ -336,7 +336,7 @@ static int16_t xpad_eight_scan(dev_handle_t devh) {
     return index;
 }
 
-static uint16_t xpad_spalten_scan(dev_handle_t devh) {
+static int16_t xpad_spalten_scan(dev_handle_t devh) {
     if (mpy_xpad[devh] == NULL) {
         printf("No valid handle on scan" NL);
         return false;
