@@ -9,5 +9,6 @@
 #define LIB_PORT_STM32F4_HAL_PORT_H_
 
 #include "stm32f4xx.h"
+#define MCU "STM32F4xx"
 
 #endif /* LIB_PORT_STM32F4_HAL_PORT_H_ */
