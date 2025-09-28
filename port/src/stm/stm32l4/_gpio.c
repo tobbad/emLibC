@@ -4,9 +4,8 @@
  *  Created on: 28.12.2019
  *      Author: badi
  */
-#include "_gpio.h"
 #include "common.h"
-#include <stdio.h>
+#include "_gpio.h"
 
 em_msg GpioPinInit(gpio_pin_t *pin) {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
