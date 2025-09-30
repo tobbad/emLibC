@@ -105,7 +105,7 @@ em_msg slip_write(slip_handle_e hdl, const uint8_t *buffer, uint16_t length) {
         }
         res = EM_OK;
         for (uint16_t idx = 0; idx < length && (res == EM_OK); idx++) {
-            uint8_t value = buffer[idx];
+            value = buffer[idx];
             // printf("Process value[%d] = 0x%02x\n", idx, value);
             if (codec[hdl].function == SLIP_ENCODE) {
                 uint8_t mapIdx = 0;

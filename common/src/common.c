@@ -20,7 +20,6 @@ uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer, uint16_t buffer_s
     static const char INTERCHARSP[] = " ";
     static const uint8_t addr_inc = 16;
     char ascii[17];
-    uint8_t abuf_idx = 0;
     uint16_t out_idx = 0;
     uint16_t ava_size = out_size;
     int wr_size;
@@ -89,7 +88,7 @@ uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer, uint16_t buffer_s
  * Name     Polynomial  Reversed?   Init-value  XOR-out     Check
  * x-25     0x11021     True        0x0000      0xFFFF      0x906E
 */
-uint16_t common_crc16(uint8_t *data_p, uint16_t length) {
+uint16_t common_crc16(const uint8_t *data_p, uint16_t length) {
     const uint16_t CRC_POLY = 0x8408;
     uint8_t i;
     uint32_t data;
@@ -161,7 +160,7 @@ int8_t clabel2uint8(clabel_u *lbl) {
     return -1;
 };
 
-void PrintBuffer(uint8_t *buffer, uint8_t size, char *header) {
+void PrintBuffer(const uint8_t *buffer, uint8_t size, const char *header) {
     if (header != NULL) {
         printf("Print %s buffer of size %d", header, size);
     } else {

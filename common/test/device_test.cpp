@@ -7,7 +7,7 @@
 
 
 dev_handle_t dummy_open(dev_handle_t dev, void *){ return 0; };
-em_msg dummy_read(dev_handle_t hdl, uint8_t *buffer, uint16_t *cnt){ return EM_ERR;};
+em_msg dummy_read(dev_handle_t hdl, const uint8_t *buffer, const uint16_t *cnt){ return EM_ERR;};
 em_msg dummy_write(dev_handle_t hdl, const uint8_t *buffer, uint16_t cnt){ return EM_ERR;};
 em_msg dummy_ioctrl(dev_handle_t hdl, dev_command_t cmd, uint16_t value){ return EM_ERR;};
 em_msg dummy_close(dev_handle_t hdl){ return EM_ERR;};

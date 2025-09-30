@@ -83,20 +83,18 @@ void stateled_update() {
         cnt++;
         cnt = ((cnt) % my_stateled.cycle_size);
         bool bstate = (cnt < (my_stateled.cycle_size >> 1));
-        if (my_stateled.init) {
-            if (!state_is_same(my_stateled.state, &my_stateled.lstate)) {
-                my_stateled.lstate = *my_stateled.state;
-                // printf("Ledline Update"NL);
-            } else {
-                for (uint8_t i = 0; i < my_stateled.port->cnt; i++) {
-                    int8_t stateNr = i + my_stateled.lstate.first;
-                    key_state_e tState = my_stateled.lstate.state[stateNr];
-                    stateled_on(i);
-                    if (tState == OFF) {
-                        stateled_off(i);
-                    } else if (tState == BLINKING) {
-                        GpioPinWrite(&my_stateled.port->pin[i], bstate);
-                    }
+        if (!state_is_same(my_stateled.state, &my_stateled.lstate)) {
+            my_stateled.lstate = *my_stateled.state;
+            // printf("Ledline Update"NL);
+        } else {
+            for (uint8_t i = 0; i < my_stateled.port->cnt; i++) {
+                int8_t stateNr = i + my_stateled.lstate.first;
+                key_state_e tState = my_stateled.lstate.state[stateNr];
+                stateled_on(i);
+                if (tState == OFF) {
+                    stateled_off(i);
+                } else if (tState == BLINKING) {
+                    GpioPinWrite(&my_stateled.port->pin[i], bstate);
                 }
             }
         }

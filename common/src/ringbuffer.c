@@ -61,7 +61,7 @@ rbuf_hdl_t rbuf_register(uint8_t *buffer, uint16_t size) {
 }
 
 rbuf_hdl_t rbuf_deregister(rbuf_hdl_t hdl) {
-    rbuf_t *rbuf = get_rbuf(hdl);
+    const rbuf_t *rbuf = get_rbuf(hdl);
     if (rbuf == NULL) {
         return hdl;
     }
@@ -74,7 +74,7 @@ rbuf_hdl_t rbuf_deregister(rbuf_hdl_t hdl) {
  */
 uint16_t rbuf_free(rbuf_hdl_t hdl) {
     uint16_t count = 0;
-    rbuf_t *rbuf = get_rbuf(hdl);
+    const rbuf_t *rbuf = get_rbuf(hdl);
     if (rbuf == NULL) {
         return count;
     }
@@ -93,7 +93,7 @@ uint16_t rbuf_free(rbuf_hdl_t hdl) {
 
 em_msg rbuf_write_byte(rbuf_hdl_t hdl, uint8_t byte) {
     em_msg res = EM_ERR;
-    rbuf_t *rbuf = get_rbuf(hdl);
+    const rbuf_t *rbuf = get_rbuf(hdl);
     if (rbuf == NULL) {
         return res;
     }
@@ -109,7 +109,7 @@ em_msg rbuf_write_byte(rbuf_hdl_t hdl, uint8_t byte) {
 
 em_msg rbuf_read_byte(rbuf_hdl_t hdl, uint8_t *byte) {
     em_msg res = EM_ERR;
-    rbuf_t *rbuf = get_rbuf(hdl);
+    const rbuf_t *rbuf = get_rbuf(hdl);
     if ((rbuf == NULL) || (rbuf->buffer == NULL)) {
         return res;
     }

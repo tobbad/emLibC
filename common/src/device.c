@@ -55,7 +55,7 @@ dev_handle_t device_init(device_t *dev, void *user_data) {
  */
 em_msg device_check(dev_handle_t hdl, dev_func_t dev_type) {
     bool is_ok = false;
-    device_t *dev = my_devicesp[hdl];
+    const device_t *dev = my_devicesp[hdl];
     if (dev != NULL) {
         is_ok = ((NULL != dev->open) || ((dev_type & DEV_OPEN) == 0));
         is_ok = is_ok && ((NULL != dev->read) || ((dev_type & DEV_READ) == 0));
@@ -102,7 +102,7 @@ em_msg device_read(dev_handle_t hdl, uint8_t *buffer, int16_t *cnt) {
 }
 
 void device_print(dev_handle_t hdl) {
-    device_t *dev = my_devicesp[hdl];
+    const device_t *dev = my_devicesp[hdl];
     if (dev != NULL) {
         printf("open     =  %p" NL, dev->open);
         printf("read     =  %p" NL, dev->read);
