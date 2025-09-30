@@ -68,7 +68,7 @@ em_msg state_set(state_t *state, uint8_t nr, key_state_e ns) {
     return EM_OK;
 }
 
-em_msg state_check(state_t *state) {
+em_msg state_check(const state_t *state) {
     em_msg res = EM_ERR;
     if (state == NULL)
         return res;
@@ -167,7 +167,7 @@ em_msg state_propagate_by_idx(state_t *state, uint8_t idx) {
     return res;
 }
 
-int8_t state_ch2idx(state_t *state, char ch) {
+int8_t state_ch2idx(const state_t *state, char ch) {
     em_msg res = EM_ERR;
     if (state == NULL)
         return res;
@@ -213,9 +213,9 @@ uint32_t state_get_u32(state_t *state) {
         // printf("nr %02d, state= x%02x, %s), res= 0x%08x\n", i, u32state,
         // key2char[u32state], res);
     }
-    return res;
+    return u32state;
 }
-em_msg state_copy(state_t *from, state_t *to) {
+em_msg state_copy(const state_t *from, state_t *to) {
     em_msg res = EM_ERR;
     if (state_check(from))
         return res;
@@ -305,7 +305,7 @@ em_msg state_merge(state_t *inState, state_t *outState) {
     return outState->dirty;
 }
 
-em_msg state_print(state_t *state, char *title) {
+em_msg state_print(const state_t *state, const char *title) {
     em_msg res = EM_ERR;
     if (state_check(state))
         return res;

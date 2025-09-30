@@ -75,8 +75,8 @@ typedef union {
  */
 uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer,
                 uint16_t buffer_size, bool write_asci);
-uint16_t common_crc16(uint8_t *data_p, uint16_t length);
-void PrintBuffer(uint8_t *buffer, uint8_t size, char *header);
+uint16_t common_crc16(const uint8_t *data_p, uint16_t length);
+void PrintBuffer(const uint8_t *buffer, uint8_t size, const char *header);
 uint8_t clable2type(clabel_u *lbl);
 int8_t clabel2uint8(clabel_u *lbl);
 char int2hchar(uint8_t idx);

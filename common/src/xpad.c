@@ -178,7 +178,7 @@ em_msg xpad_copy_state(dev_handle_t devh) {
 static em_msg xpad_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     if (dev_type == DEV_TYPE_NA)
         return EM_ERR;
-    xpad_dev_t *device = (xpad_dev_t *)dev;
+    const xpad_dev_t *device = (xpad_dev_t *)dev;
     my_xpad[devh].dev_type = dev_type;
     mpy_xpad[devh] = &my_xpad[devh];
     if (device != NULL) {

@@ -21,6 +21,7 @@ uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer, uint16_t buffer_s
     static const uint8_t addr_inc = 16;
     char ascii[17];
     uint16_t out_idx = 0;
+    uint16_t abuf_idx = 0;
     uint16_t ava_size = out_size;
     int wr_size;
     for (uint32_t addr = 0; addr < buffer_size; addr += addr_inc) {

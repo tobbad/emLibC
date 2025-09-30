@@ -46,7 +46,7 @@ typedef struct statea_s {
 } statea_t; // Size is 10 Bytes, Label gibt es nicht da es owiso MAX_BUTTON_CNT
             // (0..MAX_BUTTON_CNT-1) Labels gibt
 
-int8_t state_ch2idx(state_t *state, char ch);
+int8_t state_ch2idx(const state_t *state, char ch);
 int8_t state_nr2idx(state_t *state, uint8_t nr);
 em_msg state_init(state_t *state);
 em_msg state_reset(state_t *state);
@@ -62,13 +62,13 @@ em_msg state_propagate_by_lbl(state_t *state, char ch);
 em_msg state_propagate_by_idx(state_t *state, uint8_t nr);
 em_msg state_set_u32(state_t *state, uint32_t u32);
 uint32_t state_get_u32(state_t *state);
-em_msg state_copy(state_t *from, state_t *to);
+em_msg state_copy(const state_t *from, state_t *to);
 em_msg state_is_same(state_t *last, state_t *cur);
 em_msg state_diff(state_t *ref, state_t *state, state_t *diff);
 em_msg state_add(state_t *inState, state_t *add);
 em_msg state_merge(state_t *inState, state_t *outState);
-em_msg state_check(state_t *state);
-em_msg state_print(state_t *state, char *title);
+em_msg state_check(const state_t *state);
+em_msg state_print(const state_t *state, const char *title);
 em_msg state_get_dirty(state_t *state);
 em_msg state_set_dirty(state_t *state);
 uint8_t state_get_cnt(state_t *state);
