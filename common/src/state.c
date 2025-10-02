@@ -23,7 +23,7 @@ em_msg state_init(state_t *state) {
     em_msg res = EM_ERR;
     if (state == NULL)
         return res;
-    memset(state, 0, sizeof(state_t));
+    memset(state, -1, sizeof(state_t));
     state->dirty = false;
     state->first = 0;
     state->cnt = MAX_STATE_CNT;
