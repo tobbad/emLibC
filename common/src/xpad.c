@@ -22,77 +22,23 @@ xpad_dev_t *mpy_xpad[DEVICE_CNT];
 static mkey_t reset_key = {.last = 1, .current = 1, .unstable = 0, .cnt = 0, .stable = true};
 
 static xpad_dev_t default_xscan_dev = {
-    .spalte =
-        {
-            // Output
+    .spalte = {// Output
             .cnt = SPALTEN_CNT,
-            .pin =
-                {
-                    {.port = GPIOA,
-                     .pin = GPIO_PIN_0,
-                     .conf =
-                         {
-                             .Mode = GPIO_MODE_OUTPUT_PP,
-                             .Pull = GPIO_PULLUP,
-                         }}, // spalte 1
-                    {.port = GPIOA,
-                     .pin = GPIO_PIN_4,
-                     .conf =
-                         {
-                             .Mode = GPIO_MODE_OUTPUT_PP,
-                             .Pull = GPIO_PULLUP,
-                         }}, // spalte 2
-                    {.port = GPIOB,
-                     .pin = GPIO_PIN_3,
-                     .conf =
-                         {
-                             .Mode = GPIO_MODE_OUTPUT_PP,
-                             .Pull = GPIO_PULLUP,
-                         }}, // spalte 3
-                    {.port = GPIOC,
-                     .pin = GPIO_PIN_1,
-                     .conf =
-                         {
-                             .Mode = GPIO_MODE_OUTPUT_PP,
-                             .Pull = GPIO_PULLUP,
-                         }}, // spalte 4
-                },
+            .pin = {
+                {.port = GPIOA, .pin = GPIO_PIN_0, .conf=  {.Mode = GPIO_MODE_OUTPUT_PP,  .Pull = GPIO_PULLUP}}, // spalte 1
+                {.port = GPIOA, .pin = GPIO_PIN_4, .conf = {.Mode = GPIO_MODE_OUTPUT_PP,   .Pull = GPIO_PULLUP}}, // spalte 2
+                {.port = GPIOB, .pin = GPIO_PIN_3, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Pull = GPIO_PULLUP}}, // spalte 3
+                {.port = GPIOC, .pin = GPIO_PIN_1, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Pull = GPIO_PULLUP}}, // spalte 4
+            },
         },
-    .zeile =
-        {
-            // Input
+    .zeile = {// Input
             .cnt = ZEILEN_CNT,
-            .pin =
-                {
-                    {.port = GPIOA,
-                     .pin = GPIO_PIN_10,
-                     .conf =
-                         {
-                             .Mode = GPIO_MODE_INPUT,
-                             .Pull = GPIO_PULLUP,
-                         }}, // zeilen 1
-                    {.port = GPIOB,
-                     .pin = GPIO_PIN_3,
-                     .conf =
-                         {
-                             .Mode = GPIO_MODE_INPUT,
-                             .Pull = GPIO_PULLUP,
-                         }}, // zeilen 2
-                    {.port = GPIOB,
-                     .pin = GPIO_PIN_5,
-                     .conf =
-                         {
-                             .Mode = GPIO_MODE_INPUT,
-                             .Pull = GPIO_PULLUP,
-                         }}, // zeilen 3
-                    {.port = GPIOB,
-                     .pin = GPIO_PIN_10,
-                     .conf =
-                         {
-                             .Mode = GPIO_MODE_INPUT,
-                             .Pull = GPIO_PULLUP,
-                         }}, // zeilen 4
-                },
+            .pin = {
+                {.port = GPIOA, .pin = GPIO_PIN_10, .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP,}},// zeilen 1
+                {.port = GPIOB, .pin = GPIO_PIN_3,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}}, // zeilen 2
+                {.port = GPIOB, .pin = GPIO_PIN_5,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}}, // zeilen 3
+                {.port = GPIOB, .pin = GPIO_PIN_10, .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}}, // zeilen 4
+            },
         },
     .dev_type = XSCAN,
     .state =
@@ -135,45 +81,9 @@ static xpad_dev_t default_eight_dev = {
 };
 static void xpad_reset(dev_handle_t devh);
 static void xpad_reset_key(mkey_t *key, uint8_t cnt);
-
 static uint16_t xpad_read_zeile(dev_handle_t devh, uint8_t spalten_nr);
+static em_msg xpad_copy_state(dev_handle_t devh);
 
-static uint8_t index_2_zei(xpad_dev_t *kbd, uint8_t index) {
-    uint8_t res = index % (kbd->zeile.cnt);
-    return res;
-}
-static uint8_t index_2_spa(xpad_dev_t *kbd, uint8_t index) {
-    uint8_t zei = index_2_zei(kbd, index);
-    uint8_t res = index - zei * kbd->spalte.cnt;
-    return res;
-}
-
-static uint8_t zei_spa_2_index(xpad_dev_t *kbd, uint8_t zeile, uint8_t spalte) {
-    return (uint8_t)(spalte + zeile * kbd->spalte.cnt);
-}
-
-static int8_t label2int8(char label) {
-    int8_t value = label - '0';
-    if (label == ' ')
-        return -1;
-    if (value < 10)
-        return value;
-    if (value > 9) {
-        label &= 0xEF;
-        value = label - 'a' + 10;
-        if (value > MAX_STATE_CNT)
-            return -1;
-    } else {
-        return -1;
-    }
-    return value;
-}
-
-em_msg xpad_copy_state(dev_handle_t devh) {
-    state_t *from = &default_eight_dev.state;
-    state_t *to = &my_xpad[devh].state;
-    return state_copy(from, to);
-};
 
 static em_msg xpad_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     if (dev_type == DEV_TYPE_NA)
@@ -215,6 +125,44 @@ static em_msg xpad_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     xpad_copy_state(devh);
     xpad_reset(devh);
     return EM_OK;
+}
+
+
+static em_msg xpad_copy_state(dev_handle_t devh) {
+    state_t *from = &default_eight_dev.state;
+    state_t *to = &my_xpad[devh].state;
+    return state_copy(from, to);
+};
+
+static uint8_t index_2_zei(xpad_dev_t *kbd, uint8_t index) {
+    uint8_t res = index % (kbd->zeile.cnt);
+    return res;
+}
+static uint8_t index_2_spa(xpad_dev_t *kbd, uint8_t index) {
+    uint8_t zei = index_2_zei(kbd, index);
+    uint8_t res = index - zei * kbd->spalte.cnt;
+    return res;
+}
+
+static uint8_t zei_spa_2_index(xpad_dev_t *kbd, uint8_t zeile, uint8_t spalte) {
+    return (uint8_t)(spalte + zeile * kbd->spalte.cnt);
+}
+
+static int8_t label2int8(char label) {
+    int8_t value = label - '0';
+    if (label == ' ')
+        return -1;
+    if (value < 10)
+        return value;
+    if (value > 9) {
+        label &= 0xEF;
+        value = label - 'a' + 10;
+        if (value > MAX_STATE_CNT)
+            return -1;
+    } else {
+        return -1;
+    }
+    return value;
 }
 
 static void xpad_set_spalten_pin(dev_handle_t devh, uint8_t spalten_nr) {

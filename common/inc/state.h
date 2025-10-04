@@ -71,6 +71,7 @@ em_msg state_check(const state_t *state);
 em_msg state_print(const state_t *state, const char *title);
 em_msg state_get_dirty(state_t *state);
 em_msg state_set_dirty(state_t *state);
+em_msg state_set_undirty(state_t *state);
 uint8_t state_get_cnt(state_t *state);
 uint8_t state_get_first(state_t *state);
 em_msg state_set_cnt(state_t *state, uint8_t nr);

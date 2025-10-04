@@ -236,6 +236,7 @@ int16_t serial_scan(dev_handle_t dev) {
         return EM_ERR;
     return _read(0, isio.buffer[SIO_RX]->mem, RX_BUFFER_SIZE);
 };
+
 void serial_reset(dev_handle_t dev) {
     memset(isio.buffer[SIO_RX]->mem, 0, RX_BUFFER_SIZE);
     memset(isio.buffer[SIO_TX]->mem, 0, TX_BUFFER_SIZE);
@@ -244,11 +245,8 @@ void serial_reset(dev_handle_t dev) {
     memset(tx_buf, 0, TX_BUFFER_SIZE);
 };
 
-void serial_state(dev_handle_t dev, state_t *ret) {
-    if (!isio.init)
-        return;
-    isio.state.first = ret->first;
-    isio.state.cnt = ret->cnt;
+void serial_apply_change(void) {
+    if (!isio.init) return;
     uint16_t len = strlen(isio.state.clabel.str);
     if (len > 0) {
         uint8_t ctype = clable2type(&isio.state.clabel);
@@ -259,7 +257,14 @@ void serial_state(dev_handle_t dev, state_t *ret) {
             }
         }
     }
-    state_merge(&isio.state, ret);
+};
+
+void serial_get_state(dev_handle_t dev, state_t *ret) {
+    if (!isio.init)
+        return;
+    isio.state.first = ret->first;
+    isio.state.cnt = ret->cnt;
+    memcpy(ret, &isio.state, sizeof(state_t));
 };
 
 em_msg serial_diff(dev_handle_t dev, state_t *ref, state_t *diff) {
@@ -283,14 +288,14 @@ bool serial_isdirty(dev_handle_t dev) {
 void serial_undirty(dev_handle_t dev) {
     if (!isio.init)
         return;
-    state_undirty(&isio.state);
+    state_set_undirty(&isio.state);
 };
 
 kybd_t serial_dev = {
     .init = &serial_init,
     .scan = &serial_scan,
     .reset = &serial_reset,
-    .state = &serial_state,
+    .state = &serial_get_state,
     .diff = &serial_diff,
     .add = &serial_add,
     .isdirty = &serial_isdirty,
@@ -371,6 +376,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
         new = (char *)isio.buffer[SIO_RX]->mem;
         memset((uint8_t *)&isio.state.clabel, 0, CMD_LEN);
         memcpy((uint8_t *)&isio.state.clabel, new, strlen(new));
+        serial_apply_change();
         HAL_UARTEx_ReceiveToIdle_DMA(isio.uart, (uint8_t *)rx_buf, RX_BUFFER_SIZE);
     }
 }
