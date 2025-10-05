@@ -29,7 +29,9 @@ class StateTest : public ::testing::Test {
 
 TEST_F(StateTest, TestNullTestCorrectLabelsAndInitState){
 	state_t state;
-    em_msg res = state_init(&state);
+    em_msg res = state_init(NULL);
+    EXPECT_EQ(res, EM_ERR);
+    res = state_init(&state);
     key_state_e key;
     uint32_t stat;
     EXPECT_EQ(res, EM_OK);
@@ -64,16 +66,18 @@ TEST_F(StateTest, Teststate_ch2idx){
 
 }
 
-TEST_F(StateTest, TestSetAllStatesPropagadeIdxIdx){
+TEST_F(StateTest, TestSetAllStatesPropagadeIdx){
      state_t state;
      state_init(&state);
+     //state_print(&state, "Initial state"NL);
      key_state_e key;
-     uint32_t u32State;
+     uint32_t u32State=0;
      em_msg res;
      for (uint8_t i=0;i<MAX_STATE_CNT;i++){
     	key =state_get_key_by_idx(&state, i);
         EXPECT_EQ(key, (uint8_t) OFF);
         res= state_propagate_by_idx(&state, i);
+        EXPECT_EQ(res, 1);
         key =state_get_key_by_idx(&state, i);
         EXPECT_EQ(key,  BLINKING);
         res= state_propagate_by_idx(&state, i);
@@ -81,10 +85,12 @@ TEST_F(StateTest, TestSetAllStatesPropagadeIdxIdx){
         EXPECT_EQ(key,  ON);
     }
     u32State = state_get_u32(&state);
-    EXPECT_EQ(u32State, 0xAAAAAAAA);
+    //printf("Final u32 state %08x"NL, u32State);
+    //state_print(&state, "Final state"NL);
+    EXPECT_EQ(u32State, 0xaaaaaaaa);
 }
 
-TEST_F(StateTest, TestSetAllStatesPropagateLblLbl){
+TEST_F(StateTest, TestSetAllStatesPropagateLbl){
      state_t state;
      state_init(&state);
      key_state_e key;
@@ -281,32 +287,29 @@ TEST_F(StateTest, TestSubKeyStateVec){
     EXPECT_EQ(res, true);
 }
 
-TEST_F(StateTest, TesKeyAdd){
+TEST_F(StateTest, TestKeyAdd){
     state_t state1;
     state_t state2;
     state_t diff;
-    state_t add;
     state_init(&state1);
     state_init(&state2);
     state_init(&diff);
     em_msg res = EM_OK;
-    printf("Setup test state"NL);
+    //printf("Setup test state"NL);
     for (uint8_t i=0;i<9;i++){
         key_state_e s1, s2;
         state_set_key_by_idx(&state1,i ,(key_state_e)(i/3));
         state_set_key_by_idx(&state2,i ,(key_state_e)(i%3));
-        printf("%d"NL, i);
+        //printf("%d"NL, i);
     }
-    printf("state_diff"NL);
+    //state_print(&state1, (char*)"state 1");
+    //state_print(&state2, (char*)"state 2");
     state_diff(&state1, &state2, &diff);
-    printf("state_add"NL);
-    state_add(&state2, &add);
-    printf("state_print 1"NL);
-    state_print(&state1, (char*)"state1");
-    printf("state_print 2"NL);
-    state_print(&state2, (char*)"state2");
-    printf("state_print diff"NL);
-    state_print(&diff, (char*)"diff");
+    //state_print(&diff, (char*)"state1 -state2");
+    state_add(&state1, &diff);
+    //printf("state 1 +diff"NL);
+    //state_print(&state1, (char*)"state1 + diff");
+
     res= state_is_same(&state1, &state2);
     EXPECT_EQ(res, true);
 }

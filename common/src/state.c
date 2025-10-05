@@ -116,8 +116,10 @@ key_state_e state_get_key_by_lbl(state_t *state, char ch) {
 key_state_e state_get_key_by_idx(state_t *state, uint8_t idx) {
     em_msg res = EM_ERR;
     if (state_check(state)) return res;
-    if ((idx < state->first) || (idx >= (state->first + state->cnt)))
+    if ((idx < state->first) || (idx > (state->first + state->cnt))){
         return res;
+    }
+
     res = (state->state[idx] & (0x03));
     return res;
 }
@@ -136,8 +138,11 @@ em_msg state_propagate_by_lbl(state_t *state, char ch) {
 em_msg state_propagate_by_idx(state_t *state, uint8_t idx) {
     em_msg res = EM_ERR;
     if (state_check(state)) return res;
-    if ((idx <= state->first) || (idx >= (state->first + state->cnt)))
+    if ( (idx > (state->first + state->cnt))){
+        //printf("idx (%d)  > %d"NL, idx,  state->first + state->cnt);
         return res;
+    }
+
     state->state[idx] = (state->state[idx] + 1) % STATE_CNT;
     state->dirty = true;
     res = state->dirty;
@@ -178,16 +183,15 @@ uint32_t state_get_u32(state_t *state) {
     em_msg res = EM_ERR;
     if (state_check(state)) return res;
     res = 0;
-    uint32_t u32state = 0;
+    uint32_t keystate = 0;
     for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {
         if ((i >= state->first) && (i <= state->first + state->cnt)) {
-            u32state = (state->state[i] & 0x3);
-            res |= ((u32state) << (2 * i));
+            keystate = (state->state[i] & 0x3);
+            res |= ((keystate) << (2 * i));
         }
-        // printf("nr %02d, state= x%02x, %s), res= 0x%08x\n", i, u32state,
-        // key2char[u32state], res);
+        //printf("nr %02d, state= %s), res= 0x%08x\n", i, key2char[keystate], res);
     }
-    return u32state;
+    return res;
 }
 em_msg state_copy(const state_t *from, state_t *to) {
     em_msg res = EM_ERR;
