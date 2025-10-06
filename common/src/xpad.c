@@ -71,8 +71,7 @@ static xpad_dev_t default_eight_dev = {
         },
 
     .dev_type = EIGHTKEY,
-    .state =
-        {
+    .state = {
             .label = {'1', '2', '3', '4', '5', '6', '7', '8'},
             .state = {OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
             .cnt = EIGHT_BUTTON_CNT,
@@ -193,62 +192,62 @@ static void xpad_reset_key(mkey_t *key, uint8_t cnt) {
     return;
 }
 
-static uint16_t xpad_update_key(uint8_t devh, uint8_t zeile, bool pinVal) {
-    my_xpad[devh].key[zeile].current = pinVal;
+static uint16_t xpad_update_key(uint8_t devh, uint8_t index, bool pinVal) {
+    my_xpad[devh].key[index].current = pinVal;
     //	if (pinVal) {
     //		printf("Pushed @ (index= %d) to %d"NL, index, pinVal);
     //	}
     // uint8_t z,s = INDEX_2_ZEI_SPA(index);
-    uint8_t z = index_2_zei(&my_xpad[devh], zeile);
-    uint8_t s = index_2_spa(&my_xpad[devh], zeile);
+    uint8_t z = index_2_zei(&my_xpad[devh], index);
+    uint8_t s = index_2_spa(&my_xpad[devh], index);
     uint8_t res = 0;
     //	if (my_xpad[devh].key[index].current ^ my_xpad[devh].key[index].last) {
     //		printf("Detected Key @ (index =%d) with label %c"NL, index, my_xpad[devh].state.label[index]);
     //	}
     // bool unstable = my_xpad[devh].key[index].unstable;
-    my_xpad[devh].key[zeile].unstable =
-        my_xpad[devh].key[zeile].unstable || (my_xpad[devh].key[zeile].current ^ my_xpad[devh].key[zeile].last);
-    if (my_xpad[devh].key[zeile].current ^ my_xpad[devh].key[zeile].last) {
-        // printf("Set unstable to %d"NL,my_xpad[devh].key[zeile].unstable);
+    my_xpad[devh].key[index].unstable =
+        my_xpad[devh].key[index].unstable || (my_xpad[devh].key[index].current ^ my_xpad[devh].key[index].last);
+    if (my_xpad[devh].key[index].current ^ my_xpad[devh].key[index].last) {
+        // printf("Set unstable to %d"NL,my_xpad[devh].key[index].unstable);
     }
-    if (my_xpad[devh].key[zeile].unstable) {
-        if (my_xpad[devh].key[zeile].current == my_xpad[devh].key[zeile].last) {
-            my_xpad[devh].key[zeile].cnt++;
+    if (my_xpad[devh].key[index].unstable) {
+        if (my_xpad[devh].key[index].current == my_xpad[devh].key[index].last) {
+            my_xpad[devh].key[index].cnt++;
             if (pinVal != false) {
-                // printf("Increased zeile %d to %d (pinVal=%d)"NL, zeile, my_xpad[devh].key[zeile].cnt, pinVal);   unknwn
+                // printf("Increased index %d to %d (pinVal=%d)"NL, index, my_xpad[devh].key[index].cnt, pinVal);   unknwn
                 // port
             }
         } else {
-            // printf("Reset zeile %d from %d (pinVal=%d)"NL, zeile,
-            // my_xpad[devh].key[zeile].cnt, pinVal);
-            my_xpad[devh].key[zeile].cnt = 0;
+            // printf("Reset index %d from %d (pinVal=%d)"NL, index,
+            // my_xpad[devh].key[index].cnt, pinVal);
+            my_xpad[devh].key[index].cnt = 0;
         }
     }
-    if (my_xpad[devh].key[zeile].cnt > STABLE_CNT) {
+    if (my_xpad[devh].key[index].cnt > STABLE_CNT) {
         // We got a stable state
-        my_xpad[devh].key[zeile].unstable = false;
-        char label = my_xpad[devh].state.label[zeile];
-        my_xpad[devh].key[zeile].last = pinVal;
-        my_xpad[devh].key[zeile].stable = pinVal;
-        // printf("Reached zeile %d logi level %d (pinVal=%d)"NL, zeile,STABLE_CNT, pinVal);
-        if (my_xpad[devh].key[zeile].stable) {
-            my_xpad[devh].state.state[zeile] = ((my_xpad[devh].state.state[zeile] + 1) % STATE_CNT);
+        my_xpad[devh].key[index].unstable = false;
+        char label = my_xpad[devh].state.label[index];
+        my_xpad[devh].key[index].last = pinVal;
+        my_xpad[devh].key[index].stable = pinVal;
+        // printf("Reached index %d logi level %d (pinVal=%d)"NL, index,STABLE_CNT, pinVal);
+        if (my_xpad[devh].key[index].stable) {
+            state_propagate_by_idx(&my_xpad[devh].state , index);
             // my_xpad[devh].state.dirty = true;
             my_xpad[devh].state.dirty = true;
-            // printf("Pushed   Key @ (zeile =%d, z=%d, s=%d, value = %c)" NL, zeile, z, s, label);
+            // printf("Pushed   Key @ (index =%d, z=%d, s=%d, value = %c)" NL, index, z, s, label);
         } else {
-            // printf("Released Key @ (zeile =%d, z=%d, s=%d, value = %c)"NL, zeile, z s, label);
+            // printf("Released Key @ (index =%d, z=%d, s=%d, value = %c)"NL, index, z s, label);
             // ,
-            my_xpad[devh].key[zeile].cnt = 0;
+            my_xpad[devh].key[index].cnt = 0;
         }
         res = res | (pinVal << z);
-        my_xpad[devh].key[zeile].cnt = 0;
+        my_xpad[devh].key[index].cnt = 0;
     }
 
-    //	if (my_xpad[devh].key[zeile].current ^ my_xpad[devh].key[zeile].last) {
-    //		my_xpad[devh].key[zeile].cnt = 0;
+    //	if (my_xpad[devh].key[index].current ^ my_xpad[devh].key[index].last) {
+    //		my_xpad[devh].key[index].cnt = 0;
     //	}
-    my_xpad[devh].key[zeile].last = my_xpad[devh].key[zeile].current;
+    my_xpad[devh].key[index].last = my_xpad[devh].key[index].current;
     return res;
 }
 

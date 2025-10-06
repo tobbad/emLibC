@@ -248,6 +248,11 @@ void serial_reset(dev_handle_t dev) {
 void serial_apply_change(void) {
     if (!isio.init) return;
     uint16_t len = strlen(isio.state.clabel.str);
+    for (char i=0; i<CMD_LEN;i++){
+        if (isalpha(isio.state.clabel.str[i])){
+            isio.state.clabel.str[i] &= 0xdf;
+        }
+    }
     if (len > 0) {
         uint8_t ctype = clable2type(&isio.state.clabel);
         if (ctype == ISNUM) {
