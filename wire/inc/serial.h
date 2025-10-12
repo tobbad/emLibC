@@ -35,8 +35,13 @@
 #include "keyboard.h"
 
 #define UART_TIMEOUT_MS 100
+#ifndef TX_BUFFER_SIZE
 #define TX_BUFFER_SIZE 96
+#endif
+
+#ifndef RX_BUFFER_SIZE
 #define RX_BUFFER_SIZE 20
+#endif
 
 typedef enum {
   SIO_ERROR = -1,
