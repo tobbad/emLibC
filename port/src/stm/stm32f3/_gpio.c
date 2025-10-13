@@ -29,6 +29,7 @@ em_msg GpioPinInit(gpio_pin_t *pin) {
         GPIO_InitStruct.Speed = pin->conf.Speed;
         HAL_GPIO_Init(pin->port, &GPIO_InitStruct);
         if (pin->conf.Mode == GPIO_MODE_OUTPUT_PP) {
+            GPIO_PinState state = pin->inv ^ pin->def;
             HAL_GPIO_WritePin(pin->port, pin->pin, state);
         }
         res = EM_OK;
