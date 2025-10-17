@@ -35,6 +35,7 @@
 #include "keyboard.h"
 
 #define UART_TIMEOUT_MS 100
+
 #ifndef TX_BUFFER_SIZE
 #define TX_BUFFER_SIZE 96
 #endif
