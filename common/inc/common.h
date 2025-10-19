@@ -16,6 +16,7 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #ifndef UNIT_TEST
 #include "hal_port.h"
 #endif
