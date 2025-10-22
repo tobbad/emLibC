@@ -43,7 +43,7 @@
 #include <sys/times.h>
 #include <time.h>
 #ifdef HAL_PCD_MODULE_ENABLED
-#include "usbd_cdc_if.h"
+//#include "usbd_cdc_if.h"
 #endif
 #if defined(STM32F303xC)
 #include "stm32f3xx.h"
@@ -68,13 +68,13 @@ static char rx_buf[RX_BUFFER_SIZE];
 static char tx_buf[TX_BUFFER_SIZE];
 
 #ifdef HAL_PCD_MODULE_ENABLED
-extern USBD_HandleTypeDef hUsbDeviceFS;
+//extern USBD_HandleTypeDef hUsbDeviceFS;
 #endif
 
 typedef struct isio_s {
     UART_HandleTypeDef *uart;
 #ifdef HAL_PCD_MODULE_ENABLED
-    PCD_HandleTypeDef *pcd;
+//    PCD_HandleTypeDef *pcd;
 #endif
     buffer_t *buffer[SIO_RXTX_CNT];
     print_e mode;
@@ -194,7 +194,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
         }
 #ifdef HAL_PCD_MODULE_ENABLED
     } else if (isio.mode & USE_USB) {
-        CDC_Transmit_FS(ptr, len);
+//        CDC_Transmit_FS(ptr, len);
 #endif
     } else {
         printf("No UART or USB is given" NL);
@@ -392,6 +392,6 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *UartHandle) {
     memset(isio.buffer[SIO_RX]->mem, 0, isio.buffer[SIO_RX]->size);
     isio.buffer[SIO_RX]->state = ZERO;
 #ifdef HAL_PCD_MODULE_ENABLED
-    USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+    //USBD_CDC_ReceivePacket(&hUsbDeviceFS);
 #endif
 }
