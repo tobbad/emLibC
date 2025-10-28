@@ -10,8 +10,8 @@
 em_msg GpioPinInit(gpio_pin_t *pin) {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
     uint8_t res = EM_ERR;
-    if (pin == NULL) {
-    	printf("Got NULL pointer as pin"NL);
+    if (pin->port == NULL) {
+    	printf("Got NULL pointer as port "NL);
     	return res;
     }
     if (pin != NULL) {
