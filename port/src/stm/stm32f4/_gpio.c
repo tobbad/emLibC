@@ -10,6 +10,10 @@
 em_msg GpioPinInit(gpio_pin_t *pin) {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
     uint8_t res = EM_ERR;
+    if (pin == NULL) {
+    	printf("Got NULL pointer as pin"NL);
+    	return res;
+    }
     if (pin != NULL) {
         if (pin->port == GPIOA) {
             __HAL_RCC_GPIOA_CLK_ENABLE();
@@ -20,7 +24,7 @@ em_msg GpioPinInit(gpio_pin_t *pin) {
         } else if (pin->port == GPIOD) {
             __HAL_RCC_GPIOD_CLK_ENABLE();
         } else {
-            printf("unknwn port 0x%8p" NL, pin->port);
+            printf("unknown port 0x%8p" NL, pin->port);
         }
 
         GPIO_InitStruct.Pin = pin->pin;
