@@ -6,8 +6,4 @@
  */
 #include "stream.h"
 
-
-
-em_msg stream_init(void) {
-    return EM_OK;
-}
+em_msg stream_init(void) { return EM_OK; }

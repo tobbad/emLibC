@@ -6,9 +6,9 @@
  */
 #ifndef COMMON_INC_SIMPLE_TEST_H_
 #define COMMON_INC_SIMPLE_TEST_H_
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {

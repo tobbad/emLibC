@@ -22,7 +22,7 @@ class PacketTest : public ::testing::Test {
     mbuf buffer_t = {
     	.size = BLK_SIZE,
     	.used =0
-    	.mem = &buffer
+    	.mem = buffer
     	.pl = &buffer,
     };
     void SetUp() override

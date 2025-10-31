@@ -15,29 +15,29 @@ extern "C" {
 #endif
 
 typedef enum {
-	ZERO,  // Filled with 0
-	USED,  // Data in it, can be used (means dirty)
-	BSTATE_CNT
-} state_e ;
+  ZERO, // Filled with 0
+  USED, // Data in it, can be used (means dirty)
+  BSTATE_CNT
+} state_e;
 
-extern char* state2str[];
+extern char *state2str[];
 typedef struct buffer_s {
-	state_e  state;
-    uint16_t size;
-    uint8_t* pl;  /* pointer to first byte used in buffer */
-    uint8_t* mem; /* Start of memory */
-    uint8_t used; // Count of bytes used in this buffer
-    uint8_t id;   // id of buffer
+  state_e state;
+  uint16_t size;
+  uint8_t *pl;  /* pointer to first byte used in buffer */
+  uint8_t *mem; /* Start of memory */
+  uint8_t used; // Count of bytes used in this buffer
+  uint8_t id;   // id of buffer
 } buffer_t;
 /*
  * Create a new buffer with given size field filled in, if doAlloc is true
  * the memory is claimed as well, The filled in struct
  * is afterwards returned
  */
-buffer_t * buffer_new(uint16_t size);
-em_msg  buffer_reset(buffer_t *buffer);
-em_msg  buffer_set(buffer_t *buffer, uint8_t* data, const uint8_t size);
-em_msg  buffer_get(buffer_t *buffer, uint8_t* data, uint8_t *size);
+buffer_t *buffer_new(uint16_t size);
+em_msg buffer_reset(buffer_t *buffer);
+em_msg buffer_set(buffer_t *buffer, uint8_t *data, const uint8_t size);
+em_msg buffer_get(buffer_t *buffer, uint8_t *data, uint8_t *size);
 bool buffer_is_used(buffer_t *buffer);
 void buffer_print(buffer_t *buffer, uint8_t nr);
 
