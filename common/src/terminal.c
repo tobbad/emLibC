@@ -23,7 +23,6 @@ static state_t my_term = {
 
 static sio_t _serial;
 clabel_u clabel;
-#define ZERO4 ((32 << 24) + (32 << 16) + (32 << 8) + 32)
 bool data_in = false;
 static void terminal_reset(dev_handle_t dev);
 
