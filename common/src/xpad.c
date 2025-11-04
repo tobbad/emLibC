@@ -388,6 +388,7 @@ kybd_t xscan_dev = {
     .scan = &xpad_spalten_scan,
     .reset = &xpad_reset,
     .state = &xpad_state,
+    .set_state = &xpad_set_state,
     .diff = &xpad_diff,
     .add = &xpad_add,
     .isdirty = &xpad_isdirty,
