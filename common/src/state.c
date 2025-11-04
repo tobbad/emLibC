@@ -54,6 +54,15 @@ em_msg state_set(state_t *state, uint8_t nr, key_state_e ns) {
     state_set(state, nr, ns);
     return EM_OK;
 }
+em_msg state_set_state(state_t *inState, state_t * outState) {
+    em_msg res = EM_ERR;
+    if (state_check(inState)) return res;
+    if (state_check(outState)) return res;
+    for (uint8_t oi=inState->first, ii= outState->first; oi<= inState->first + inState->cnt;oi++,ii++){
+    	outState->state[ii] = inState->state[oi];
+	}
+    return EM_OK;
+}
 
 em_msg state_check(const state_t *state) {
     em_msg res = EM_ERR;
@@ -208,12 +217,12 @@ em_msg state_add(state_t *ref, state_t *add) {
     if (state_check(add)) return res;
     ref->dirty = false;
     add->clabel.cmd = ref->clabel.cmd;
-    for (uint8_t i1 = ref->first, i2 = add->first; i1 < ref->first + ref->cnt; i1++, i2++) {
-        if (add->state[i2] == BLINKING) {
-            state_propagate_by_idx(ref, i1);
-        } else if (add->state[i2] == ON) {
-            state_propagate_by_idx(ref, i1);
-            state_propagate_by_idx(ref, i1);
+    for (uint8_t r = ref->first, a = add->first; r < ref->first + ref->cnt; r++, a++) {
+        if (add->state[a] == BLINKING) {
+            state_propagate_by_idx(ref, r);
+        } else if (add->state[a] == ON) {
+            state_propagate_by_idx(ref, r);
+            state_propagate_by_idx(ref, r);
         }
     }
     return ref->dirty;

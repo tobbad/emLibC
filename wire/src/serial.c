@@ -245,6 +245,10 @@ void serial_reset(dev_handle_t dev) {
     memset(tx_buf, 0, TX_BUFFER_SIZE);
 };
 
+void serial_set_state(dev_handle_t dev, state_t * state) {
+	state_set_state(state, &isio.state);
+};
+
 void serial_apply_change(void) {
     if (!isio.init) return;
     uint16_t len = strlen(isio.state.clabel.str);
@@ -300,6 +304,7 @@ kybd_t serial_dev = {
     .init = &serial_init,
     .scan = &serial_scan,
     .reset = &serial_reset,
+    .set_state = &serial_set_state,
     .state = &serial_get_state,
     .diff = &serial_diff,
     .add = &serial_add,

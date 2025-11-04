@@ -22,6 +22,7 @@ typedef struct kybd_s {
   int16_t (*scan)(dev_handle_t dev);
   void (*reset)(dev_handle_t dev);
   void (*state)(dev_handle_t dev, state_t *ret);
+  void (*set_state)(dev_handle_t dev, state_t *state);
   em_msg (*add)(dev_handle_t dev, state_t *add);
   em_msg (*diff)(dev_handle_t dev, state_t *ref, state_t *diff);
   bool (*isdirty)(dev_handle_t dev);
@@ -38,6 +39,7 @@ dev_handle_t keyboard_init(kybd_t *kybd, void *device);
 // If the result >0: 1 alpha Higher case char where entered
 int16_t keyboard_scan(dev_handle_t dev);
 void keyboard_reset(dev_handle_t dev);
+void keyboard_set_state(dev_handle_t dev, state_t *state);
 void keyboard_state(dev_handle_t dev, state_t *ret);
 void keyboard_add(dev_handle_t dev, state_t *add);
 em_msg keyboard_diff(dev_handle_t dev, state_t *ret, state_t *diff);

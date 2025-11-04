@@ -90,26 +90,30 @@ static em_msg xpad_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     const xpad_dev_t *device = (xpad_dev_t *)dev;
     my_xpad[devh].dev_type = dev_type;
     mpy_xpad[devh] = &my_xpad[devh];
-    if (device != NULL) {
-        my_xpad[devh].spalte = device->spalte;
-        my_xpad[devh].zeile = device->zeile;
-        memcpy(&my_xpad[devh].state, &device->state, sizeof(state_t));
-    } else {
-        if (dev_type == XSCAN) {
-            my_xpad[devh].spalte = default_xscan_dev.spalte;
-            my_xpad[devh].zeile = default_xscan_dev.zeile;
-            my_xpad[devh].state = default_xscan_dev.state;
-            memcpy(&my_xpad[devh].state, &default_xscan_dev.state, sizeof(state_t));
-        } else if (dev_type == EIGHTKEY) {
-            my_xpad[devh].spalte = default_eight_dev.spalte;
-            my_xpad[devh].zeile = default_eight_dev.zeile;
-            memset(&my_xpad[devh].state, 0, sizeof(state_t));
-            memcpy(&my_xpad[devh].state, &default_eight_dev.state, sizeof(state_t));
-        } else if (dev_type == TERMINAL) {
-            printf("Setup terminal %d" NL, dev_type);
-        }
-    }
-    if (my_xpad[devh].spalte.cnt > 0) {
+	if (dev_type == XSCAN) {
+		if (device==NULL){
+			my_xpad[devh].spalte = default_xscan_dev.spalte;
+			my_xpad[devh].zeile = default_xscan_dev.zeile;
+		} else{
+			my_xpad[devh].spalte = device->spalte;
+			my_xpad[devh].zeile = device->zeile;
+		}
+		my_xpad[devh].state = default_xscan_dev.state;
+		memcpy(&my_xpad[devh].state, &default_xscan_dev.state, sizeof(state_t));
+	} else if (dev_type == EIGHTKEY) {
+		if (device==NULL){
+			my_xpad[devh].spalte = default_xscan_dev.spalte;
+			my_xpad[devh].zeile = default_xscan_dev.zeile;
+		}else {
+			my_xpad[devh].spalte = device->spalte;
+			my_xpad[devh].zeile = device->zeile;
+		}
+		memset(&my_xpad[devh].state, 0, sizeof(state_t));
+		memcpy(&my_xpad[devh].state, &default_eight_dev.state, sizeof(state_t));
+	} else if (dev_type == TERMINAL) {
+		printf("Setup terminal %d" NL, dev_type);
+	}
+if (my_xpad[devh].spalte.cnt > 0) {
         GpioPortInit(&my_xpad[devh].spalte);
     } else {
         my_xpad[devh].spalte.cnt = 1;
@@ -121,17 +125,9 @@ static em_msg xpad_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
         my_xpad[devh].zeile.cnt = 1;
     }
     xpad_reset_key(my_xpad[devh].key, MAX_BUTTON_CNT);
-    xpad_copy_state(devh);
-    xpad_reset(devh);
     return EM_OK;
 }
 
-
-static em_msg xpad_copy_state(dev_handle_t devh) {
-    state_t *from = &default_eight_dev.state;
-    state_t *to = &my_xpad[devh].state;
-    return state_copy(from, to);
-};
 
 static uint8_t index_2_zei(xpad_dev_t *kbd, uint8_t index) {
     uint8_t res = index % (kbd->zeile.cnt);
@@ -275,8 +271,7 @@ static int16_t xpad_eight_scan(dev_handle_t devh) {
         GpioPinRead(&my_xpad[devh].zeile.pin[zeile], &pin);
         res = res | (xpad_update_key(devh, zeile, pin));
     }
-    if (res == 0)
-        return -1;
+    if (res == 0) return -1;
     index = key2value(res);
     char ch = my_xpad[devh].state.label[index];
     // printf("Got Keyscan 0x%04x, index %d, label %c"NL, res, index, ch);
@@ -379,6 +374,15 @@ static void xpad_reset(dev_handle_t devh) {
     return;
 }
 
+static void xpad_set_state(dev_handle_t devh, state_t* state ) {
+    if (mpy_xpad[devh] == NULL) {
+        printf("No valid handle on reset" NL);
+        return;
+    }
+    state_set_state(&my_xpad[devh].state, state);
+    return;
+}
+
 kybd_t xscan_dev = {
     .init = &xpad_init,
     .scan = &xpad_spalten_scan,
@@ -398,6 +402,7 @@ kybd_t eight_dev = {
     .scan = &xpad_eight_scan,
     .reset = &xpad_reset,
     .state = &xpad_state,
+    .set_state = &xpad_set_state,
     .diff = &xpad_diff,
     .add = &xpad_add,
     .isdirty = &xpad_isdirty,
