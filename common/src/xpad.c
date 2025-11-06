@@ -190,9 +190,11 @@ static void xpad_reset_key(mkey_t *key, uint8_t cnt) {
 
 static uint16_t xpad_update_key(uint8_t devh, uint8_t index, bool pinVal) {
     my_xpad[devh].key[index].current = pinVal;
-	if (pinVal) {
-		//printf("Pushed @ (index= %d) to %d"NL, index, pinVal);
-	}
+/*
+//	if (pinVal) {
+//		printf("Pushed @ (index= %d) to %d"NL, index, pinVal);
+//	}
+*/
     // uint8_t z,s = INDEX_2_ZEI_SPA(index);
     uint8_t z = index_2_zei(&my_xpad[devh], index);
     uint8_t s = index_2_spa(&my_xpad[devh], index);
