@@ -63,8 +63,8 @@ static xpad_dev_t default_eight_dev = {
                     {.port = GPIOC, .pin = GPIO_PIN_2,  .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 2
                     {.port = GPIOC, .pin = GPIO_PIN_3,  .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 3
                     {.port = GPIOA, .pin = GPIO_PIN_0,  .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 4
-                    {.port = GPIOA, .pin = GPIO_PIN_4,  .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 5
                     {.port = GPIOA, .pin = GPIO_PIN_5,  .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 6
+                    {.port = GPIOA, .pin = GPIO_PIN_4,  .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 5
                     {.port = GPIOC, .pin = GPIO_PIN_15, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 7
                     {.port = GPIOC, .pin = GPIO_PIN_9,  .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 8
                 },
