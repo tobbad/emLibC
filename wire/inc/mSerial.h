@@ -36,22 +36,21 @@ typedef enum {SIO_RX=0, SIO_TX, SIO_RXTX_CNT} sio_channel_e;
 typedef enum {log=1, direct=2} print_e;
 
 
-typedef struct _sio_t
+typedef struct _mSio_t
 {
     UART_HandleTypeDef * uart;
     bool     ready[SIO_RXTX_CNT];   /* Internal use only */
     uint16_t buffer_size[SIO_RXTX_CNT];
     int16_t  bytes_in_buffer[SIO_RXTX_CNT];
     uint8_t *buffer[SIO_RXTX_CNT];
-} sio_t;
+} mSio_t;
 
 typedef struct buf_s{
     uint8_t buffer[LINE_LENGTH];
     bool isValid;
 } buf_t;
 
-sio_res_e serial_init(sio_t *init);
-void  serial_addMode(print_e mode);
-void serial_removeMode(print_e mode);
-int logf_debug(const char *__restrict, ...) _ATTRIBUTE ((__format__ (__printf__, 1, 2)));
+sio_res_e mserial_init(mSio_t *init);
+void  mserial_addMode(print_e mode);
+void mserial_removeMode(print_e mode);
 #endif /* INC_MSERIAL_IO_H_ */
