@@ -375,12 +375,12 @@ static void xpad_reset(dev_handle_t devh) {
     return;
 }
 
-static void xpad_set_state(dev_handle_t devh, state_t* state ) {
+static void xpad_set_state(dev_handle_t devh, const state_t* state ) {
     if (mpy_xpad[devh] == NULL) {
         printf("No valid handle on reset" NL);
         return;
     }
-    state_set_state(&my_xpad[devh].state, state);
+    state_set_state(state, &my_xpad[devh].state);
     return;
 }
 
