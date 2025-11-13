@@ -43,7 +43,7 @@
 #include <sys/times.h>
 #include <time.h>
 #ifdef HAL_PCD_MODULE_ENABLED
-//#include "usbd_cdc_if.h"
+#include "usbd_cdc_if.h"
 #endif
 #if defined(STM32F303xC)
 #include "stm32f3xx.h"
@@ -74,7 +74,7 @@ static char tx_buf[TX_BUFFER_SIZE];
 typedef struct isio_s {
     UART_HandleTypeDef *uart;
 #ifdef HAL_PCD_MODULE_ENABLED
-//    PCD_HandleTypeDef *pcd;
+    PCD_HandleTypeDef *pcd;
 #endif
     buffer_t *buffer[SIO_RXTX_CNT];
     print_e mode;
@@ -90,18 +90,31 @@ static char *new = NULL;
 void serial_set_mode(print_e mode, bool doReset);
 
 em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
-    if (isio.init)
-        return EM_ERR;
+    if (isio.init) return EM_ERR;
     sio_t *init = dev;
     isio.uart = init->uart;
 #ifdef HAL_PCD_MODULE_ENABLED
-    //isio.pcd = init->pcd;
+    isio.pcd = init->pcd;
 #endif
     isio.devh = dev_type;
-    isio.buffer[SIO_RX] = buffer_new(init->buffer[SIO_RX]->size);
-    isio.buffer[SIO_TX] = buffer_new(init->buffer[SIO_TX]->size);
+    if (init->buffer[SIO_RX]->size&&init->buffer[SIO_RX]->mem==0){
+    	buffer_init(init->buffer[SIO_RX]);
+    }
+    if (isio.buffer[SIO_RX]==0){
+    	isio.buffer[SIO_RX] = init->buffer[SIO_RX];
+    } else
+	if (init->buffer[SIO_RX]->size&&init->buffer[SIO_RX]->mem==0){
+		buffer_init(init->buffer[SIO_RX]);
+	}
+
+    if (init->buffer[SIO_TX]->size&&init->buffer[SIO_TX]->mem==0){
+    	buffer_init(init->buffer[SIO_RX]);
+    }
+    if (isio.buffer[SIO_TX]==0){
+    	isio.buffer[SIO_TX] = init->buffer[SIO_TX];
+    }
     state_init(&isio.state);
-    isio.mode = init->mode | USE_DMA_RX;
+    isio.mode = init->mode | USE_DMA_TX;
     memset(rx_buf, 0, RX_BUFFER_SIZE);
     memset(tx_buf, 0, TX_BUFFER_SIZE);
     serial_set_mode(init->mode, true);
@@ -115,8 +128,7 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
 }
 
 em_msg serial_io_open(dev_handle_t devh, void *dev) {
-    if (!isio.init)
-        return EM_ERR;
+    if (!isio.init) return EM_ERR;
     return serial_init(0, 0, dev);
 }
 
@@ -130,8 +142,7 @@ void serial_set_mode(print_e mode, bool doReset) {
 }
 
 em_msg serial_write(dev_handle_t hdl, const uint8_t *buffer, int16_t cnt) {
-    if (!isio.init)
-        return EM_ERR;
+    if (!isio.init) return EM_ERR;
     printf("%s", buffer);
     return EM_OK;
 }
@@ -142,8 +153,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     uint16_t len = -1;
     uint8_t idx = 0;
     txLen = MIN(txLen, TX_BUFFER_SIZE - 2);
-    if (!isio.init)
-        return -1;
+    if (!isio.init)  return -1;
     uint32_t tick = 0;
     if ((isio.buffer[SIO_TX]->mem != NULL)) {
         if (isio.mode & TIMESTAMP) {
@@ -158,6 +168,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
         memcpy(&isio.buffer[SIO_TX]->mem[len], ptr, txLen);
         len += txLen;
         isio.buffer[SIO_TX]->mem[len] = 0;
+        isio.buffer[SIO_TX]->used =len;
         ptr = isio.buffer[SIO_TX]->mem;
     } else {
         if (isio.mode & TIMESTAMP) {
@@ -180,8 +191,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     }
     if (isio.uart != NULL) {
         if (isio.mode & USE_DMA_TX) {
-            while (!ReadModify_write((int8_t *)&isio.buffer[SIO_TX]->state, 1)) {
-            }
+            while (!ReadModify_write((int8_t *)&isio.buffer[SIO_TX]->state, 1)) {};
             time_start(len, ptr);
             isio.buffer[SIO_RX]->state = USED;
             HAL_UART_Transmit_DMA(isio.uart, (uint8_t *)ptr, len);
@@ -194,7 +204,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
         }
 #ifdef HAL_PCD_MODULE_ENABLED
     } else if (isio.mode & USE_USB) {
-//        CDC_Transmit_FS(ptr, len);
+        CDC_Transmit_FS(ptr, len);
 #endif
     } else {
         printf("No UART or USB is given" NL);
@@ -245,7 +255,7 @@ void serial_reset(dev_handle_t dev) {
     memset(tx_buf, 0, TX_BUFFER_SIZE);
 };
 
-void serial_set_state(dev_handle_t dev, state_t * state) {
+void serial_set_state(dev_handle_t dev, const state_t * state) {
 	state_set_state(state, &isio.state);
 };
 

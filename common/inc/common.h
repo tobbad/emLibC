@@ -32,12 +32,14 @@ extern "C" {
 #define NL NEWLINE
 #define LINE_LENGTH 96 // FIXME -> CHAR_PER_LINE
 #define MAX_BUTTON_CNT 16
-#if !defined(MIN)
+
+#ifndef MIN
 #define MIN(a, b) ((a) <= (b) ? (a) : (b))
 #endif
-#if !defined(MAX)
-#define MAX(a, b) ((a) >= (b) ? (a) : (b))
-#endif
+
+#ifndef MAX
+#define MAX(a, b)  (((a) > (b)) ? (a) : (b))
+#endif /* MAX */
 
 #if !defined(MAX)
 #define MAX(a, b) ((a) > (b) ? (a) : (b))

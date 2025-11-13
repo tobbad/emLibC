@@ -22,7 +22,7 @@ typedef struct kybd_s {
   int16_t (*scan)(dev_handle_t dev);
   void (*reset)(dev_handle_t dev);
   void (*state)(dev_handle_t dev, state_t *ret);
-  void (*set_state)(dev_handle_t dev, state_t *state);
+  void (*set_state)(dev_handle_t dev, const state_t *state);
   em_msg (*add)(dev_handle_t dev, state_t *add);
   em_msg (*diff)(dev_handle_t dev, state_t *ref, state_t *diff);
   bool (*isdirty)(dev_handle_t dev);

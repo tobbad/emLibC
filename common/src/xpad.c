@@ -81,8 +81,7 @@ static xpad_dev_t default_eight_dev = {
 static void xpad_reset(dev_handle_t devh);
 static void xpad_reset_key(mkey_t *key, uint8_t cnt);
 static uint16_t xpad_read_zeile(dev_handle_t devh, uint8_t spalten_nr);
-static em_msg xpad_copy_state(dev_handle_t devh);
-
+static void xpad_set_state(dev_handle_t devh, const state_t* state );
 
 static em_msg xpad_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     if (dev_type == DEV_TYPE_NA)
