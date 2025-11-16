@@ -63,12 +63,12 @@
 #include "serial.h"
 #include "state.h"
 #include "hal_port.h"
-
 static char rx_buf[RX_BUFFER_SIZE];
 static char tx_buf[TX_BUFFER_SIZE];
 
 #ifdef HAL_PCD_MODULE_ENABLED
-//extern USBD_HandleTypeDef hUsbDeviceFS;
+#include "usbd_cdc_if.h"
+extern USBD_HandleTypeDef hUsbDeviceFS;
 #endif
 
 typedef struct isio_s {
@@ -225,8 +225,7 @@ em_msg serial_read(dev_handle_t hdl, uint8_t *buffer, int16_t *cnt) {
 }
 int16_t _read(int32_t file, uint8_t *ptr, int16_t len) {
     uint16_t rLen;
-    if (!isio.init)
-        return EM_ERR;
+    if (!isio.init) return EM_ERR;
     if (isio.uart != NULL) {
         if (isio.mode & USE_DMA_RX) {
             rLen = strlen((char *)isio.buffer[SIO_RX]->mem);
@@ -235,7 +234,6 @@ int16_t _read(int32_t file, uint8_t *ptr, int16_t len) {
             HAL_UART_Receive(isio.uart, isio.buffer[SIO_RX]->mem, len, HAL_MAX_DELAY);
         }
     }
-
     return rLen;
 }
 
@@ -405,7 +403,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *UartHandle) {
     /* Set transmission flag: transfer complete */
     time_end_tx();
     memset(isio.buffer[SIO_RX]->mem, 0, isio.buffer[SIO_RX]->size);
-    isio.buffer[SIO_RX]->state = ZERO;
+    isio.buffer[SIO_RX]->state = READY;
 #ifdef HAL_PCD_MODULE_ENABLED
     //USBD_CDC_ReceivePacket(&hUsbDeviceFS);
 #endif
