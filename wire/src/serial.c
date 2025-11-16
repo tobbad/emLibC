@@ -226,6 +226,7 @@ em_msg serial_read(dev_handle_t hdl, uint8_t *buffer, int16_t *cnt) {
 int16_t _read(int32_t file, uint8_t *ptr, int16_t len) {
     uint16_t rLen;
     if (!isio.init) return EM_ERR;
+#ifdef HAL_PCD_MODULE_ENABLED
     if (usb_rxBuffer.state== READY){
         uint16_t msize = MIN(*len, buffer->size);
         buffer_get(&usb_rxBuffer, ptr, msize);
@@ -234,6 +235,7 @@ int16_t _read(int32_t file, uint8_t *ptr, int16_t len) {
         }
         return msize;
     }
+#endif
     if (isio.uart != NULL) {
         if (isio.mode & USE_DMA_RX) {
             rLen = strlen((char *)isio.buffer[SIO_RX]->mem);
