@@ -232,6 +232,7 @@ int16_t _read(int32_t file, uint8_t *ptr, int16_t len) {
         if (msize!=len){
             printf("Request transfer %d, deliver %d Bytes"NL, len, msize);
         }
+        return msize;
     }
     if (isio.uart != NULL) {
         if (isio.mode & USE_DMA_RX) {
