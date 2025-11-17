@@ -44,7 +44,7 @@ buffer_t *buffer_pool_get(buffer_pool_t *bp) {
         if (!buffer_is_used(&bp->buffer[i])) {
             buffer = &bp->buffer[i];
             buffer->id = i;
-            buffer->state = USED;
+            buffer->state = BUFFER_USED;
         }
     }
     return buffer;

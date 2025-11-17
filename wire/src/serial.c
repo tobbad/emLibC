@@ -66,11 +66,6 @@
 static char rx_buf[RX_BUFFER_SIZE];
 static char tx_buf[TX_BUFFER_SIZE];
 
-#ifdef HAL_PCD_MODULE_ENABLED
-#include "usbd_cdc_if.h"
-extern USBD_HandleTypeDef hUsbDeviceFS;
-#endif
-
 typedef struct isio_s {
     UART_HandleTypeDef *uart;
 #ifdef HAL_PCD_MODULE_ENABLED
@@ -193,7 +188,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
         if (isio.mode & USE_DMA_TX) {
             while (!ReadModify_write((int8_t *)&isio.buffer[SIO_TX]->state, 1)) {};
             time_start(len, ptr);
-            isio.buffer[SIO_RX]->state = USED;
+            isio.buffer[SIO_RX]->state = BUFFER_USED;
             HAL_UART_Transmit_DMA(isio.uart, (uint8_t *)ptr, len);
             time_end_su();
         } else {
@@ -227,7 +222,7 @@ int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
     uint16_t rLen;
     if (!isio.init) return EM_ERR;
 #ifdef HAL_PCD_MODULE_ENABLED
-    if (usb_rxBuffer.state== READY){
+    if (usb_rxBuffer.state== BUFFER_READY){
         uint16_t msize = MIN(len, &usb_rxBuffer.size);
         buffer_get(&usb_rxBuffer, ptr, &msize);
         if (msize!=len){
@@ -240,7 +235,7 @@ int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
         if (isio.mode & USE_DMA_RX) {
             rLen = strlen((char *)isio.buffer[SIO_RX]->mem);
         } else if (isio.buffer[SIO_RX]->mem == 0) {
-            isio.buffer[SIO_RX]->state = USED;
+            isio.buffer[SIO_RX]->state = BUFFER_USED;
             HAL_UART_Receive(isio.uart, isio.buffer[SIO_RX]->mem, len, HAL_MAX_DELAY);
         }
     }
@@ -400,7 +395,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
             }
         }
         *isio.buffer[SIO_RX]->pl = 0; // End string
-        isio.buffer[SIO_RX]->state = USED;
+        isio.buffer[SIO_RX]->state = BUFFER_USED;
         new = (char *)isio.buffer[SIO_RX]->mem;
         memset((uint8_t *)&isio.state.clabel, 0, CMD_LEN);
         memcpy((uint8_t *)&isio.state.clabel, new, strlen(new));
@@ -413,7 +408,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *UartHandle) {
     /* Set transmission flag: transfer complete */
     time_end_tx();
     memset(isio.buffer[SIO_RX]->mem, 0, isio.buffer[SIO_RX]->size);
-    isio.buffer[SIO_RX]->state = READY;
+    isio.buffer[SIO_RX]->state = BUFFER_READY;
 #ifdef HAL_PCD_MODULE_ENABLED
     //USBD_CDC_ReceivePacket(&hUsbDeviceFS);
 #endif

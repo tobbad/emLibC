@@ -7,7 +7,7 @@
 #include "buffer.h"
 #include "state.h"
 
-char *state2Str[BSTATE_CNT] = {(char *)&"READY", (char *)&"USED"};
+char *state2Str[BUFFER_CNT] = {(char *)&"BUFFER_READY", (char *)&"USED"};
 
 buffer_t *buffer_init(buffer_t* buffer) {
     if (buffer->mem != 0)  return NULL;
@@ -32,7 +32,7 @@ em_msg buffer_reset(buffer_t *buffer) {
     if (buffer == NULL)  return res;
     memset(buffer->mem, 0, buffer->size);
     buffer->pl = buffer->mem;
-    buffer->state = READY;
+    buffer->state = BUFFER_READY;
     buffer->used = 0;
     buffer->id = 0;
     res = EM_OK;
@@ -44,7 +44,7 @@ em_msg buffer_set(buffer_t *buffer, uint8_t *data, const uint16_t size) {
     uint16_t msize = MIN(size, buffer->size);
     buffer->size = msize;
     memcpy(buffer->mem, data, buffer->size);
-    buffer->state = USED;
+    buffer->state = BUFFER_USED;
     res = EM_OK;
     return res;
 }
@@ -57,12 +57,12 @@ em_msg buffer_get(buffer_t *buffer, uint8_t *data, uint16_t *size) {
     }
     uint16_t msize = MIN(*size, buffer->size);
     memcpy(data, buffer->mem, msize);
-    buffer->state = READY;
+    buffer->state = BUFFER_READY;
     *size=msize;
     return res;
 }
 
-bool buffer_is_used(buffer_t *buffer) { return buffer->state == USED; }
+bool buffer_is_used(buffer_t *buffer) { return buffer->state == BUFFER_USED; }
 
 void buffer_print(buffer_t *buffer, uint8_t nr) {
     printf("Info of buffer  (%2d): @%p" NL, nr, buffer);

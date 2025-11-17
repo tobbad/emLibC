@@ -15,9 +15,9 @@ extern "C" {
 #endif
 
 typedef enum {
-  READY, // Buffer can be used
-  USED, // Data in it, can be used (means dirty)
-  BSTATE_CNT
+  BUFFER_READY, // Buffer can be used
+  BUFFER_USED, // Data in it, can be used (means dirty)
+  BUFFER_CNT
 } state_e;
 
 extern char *state2str[];
