@@ -22,7 +22,7 @@ char key2char[][4] = {
 em_msg state_init(state_t *state) {
     em_msg res = EM_ERR;
     if (state == NULL) return res;
-    memset(state, 0, sizeof(state_t));
+    memset(state, -1, sizeof(state_t));
     state->dirty = false;
     state->first = 0;
     state->cnt = MAX_STATE_CNT;
@@ -54,13 +54,14 @@ em_msg state_set(state_t *state, uint8_t nr, key_state_e ns) {
     state_set(state, nr, ns);
     return EM_OK;
 }
-em_msg state_set_state(const state_t *inState, state_t * outState) {
+em_msg state_set_state(const state_t *from, state_t * to) {
     em_msg res = EM_ERR;
-    if (state_check(inState)) return res;
-    if (state_check(outState)) return res;
-    for (uint8_t oi=inState->first, ii= outState->first; oi<= inState->first + inState->cnt;oi++,ii++){
-    	outState->state[ii] = inState->state[oi];
+    if (state_check(to)) return res;
+    if (state_check(from)) return res;
+    for (uint8_t oi=from->first, ii= to->first; oi<= from->first + from->cnt;oi++,ii++){
+    	to->state[ii] = from->state[oi];
 	}
+    state_set_undirty(to);
     return EM_OK;
 }
 
