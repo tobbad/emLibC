@@ -32,7 +32,7 @@ typedef struct state_s {
   clabel_u clabel;                  // is 4 bytes
   key_state_e state[MAX_STATE_CNT]; // 16 bytes
   char label[MAX_STATE_CNT];        // 16 bytes
-} state_t; // Size is 2*MAX_BUTTON_CNT + 4=  36 Byte (MAX_BUTTON_CNT = 16)
+} state_t; // Size is 2*MAX_BUTTON_CNT + 8=  40 Byte (MAX_BUTTON_CNT = 16)
 
 typedef struct statea_s {
   uint8_t  range;  // Unteres Nibble: tiefstes gültiges Labele (0-15):
