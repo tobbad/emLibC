@@ -56,6 +56,7 @@
 #else
 #error Undefined platform
 #endif
+#include "main.h"
 #include "_time.h"
 #include "buffer.h"
 #include "common.h"
@@ -222,9 +223,9 @@ int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
     uint16_t rLen;
     if (!isio.init) return EM_ERR;
 #ifdef HAL_PCD_MODULE_ENABLED
-    if (usb_rxBuffer.state== BUFFER_READY){
-        uint16_t msize = MIN(len, usb_rxBuffer.size);
-        buffer_get(&usb_rxBuffer, ptr, &msize);
+    if (urx_buffer.state== BUFFER_READY){
+        uint16_t msize = MIN(len, urx_buffer.size);
+        buffer_get(&urx_buffer, ptr, &msize);
         if (msize!=len){
             printf("Request transfer %d, deliver %d Bytes"NL, len, msize);
         }
