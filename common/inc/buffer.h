@@ -37,7 +37,7 @@ typedef struct buffer_s {
 buffer_t *buffer_new(uint16_t size);
 buffer_t *buffer_init(buffer_t *buffer);
 em_msg buffer_reset(buffer_t *buffer);
-em_msg buffer_set(buffer_t *buffer, uint8_t *data, const uint16_t size);
+em_msg buffer_set(buffer_t *buffer, uint8_t *data, const uint32_t size);
 em_msg buffer_get(buffer_t *buffer, uint8_t *data, uint16_t *size);
 bool buffer_is_used(buffer_t *buffer);
 void buffer_print(buffer_t *buffer, uint8_t nr);

@@ -227,7 +227,7 @@ int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
         uint16_t msize = MIN(len, urx_buffer.size);
         buffer_get(&urx_buffer, ptr, &msize);
         if (msize!=len){
-            printf("Request transfer %d, deliver %d Bytes"NL, len, msize);
+            printf("Only transfer %d of %d"NL, msize, len);
         }
         return msize;
     }

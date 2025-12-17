@@ -39,9 +39,9 @@ em_msg buffer_reset(buffer_t *buffer) {
     return res;
 }
 
-em_msg buffer_set(buffer_t *buffer, uint8_t *data, const uint16_t size) {
+em_msg buffer_set(buffer_t *buffer, uint8_t *data, const uint32_t size) {
     em_msg res = EM_ERR;
-    uint16_t msize = MIN(size, buffer->size);
+    uint32_t msize = MIN(size, buffer->size);
     buffer->size = msize;
     memcpy(buffer->mem, data, buffer->size);
     buffer->state = BUFFER_USED;
