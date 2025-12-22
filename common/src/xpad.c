@@ -72,10 +72,10 @@ static xpad_dev_t default_eight_dev = {
 
     .dev_type = EIGHTKEY,
     .state = {
-            .label = {'0','1', '2', '3', '4', '5', '6', '7', '8'},
+            .label = {'1','2', '3', '4', '5', '6', '7', '8'},
             .state = {OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
-            .cnt = EIGHT_BUTTON_CNT+1,
-            .first = 1,
+            .cnt = EIGHT_BUTTON_CNT,
+            .first = 0,
         },
 };
 static void xpad_reset(dev_handle_t devh);
@@ -273,7 +273,7 @@ static int16_t xpad_eight_scan(dev_handle_t devh) {
     }
     if (res == 0) return -1;
     index = key2value(res);
-    char ch = my_xpad[devh].state.label[index+1];
+    char ch = my_xpad[devh].state.label[index];
     index = label2int8(ch);
     printf("Got Keyscan 0x%04x, index %d, label %c"NL, res, index, ch);
     return index;

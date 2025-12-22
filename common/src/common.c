@@ -161,7 +161,7 @@ int8_t clabel2uint8(clabel_u *lbl) {
     return -1;
 };
 
-void PrintBuffer(const uint8_t *buffer, uint8_t size, const char *header) {
+void print_buffer(const uint8_t *buffer, uint8_t size, const char *header) {
     if (header != NULL) {
         printf("Print %s buffer of size %d", header, size);
     } else {
