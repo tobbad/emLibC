@@ -205,8 +205,6 @@ uint32_t state_get_u32(state_t *state) {
 }
 em_msg state_copy(const state_t *from, state_t *to) {
     em_msg res = EM_ERR;
-    if (state_check(from)) return res;
-    if (state_check(to)) return res;
     memcpy(to, from, sizeof(state_t));
     res = EM_OK;
     return res;
@@ -304,7 +302,7 @@ em_msg state_print(const state_t *state, const char *title) {
             printf("....");
         }
     }
-    printf(NL "State = ");
+    printf(NL "State   = ");
     for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {
         printf("%s ", key2char[state->state[i]]);
     }
