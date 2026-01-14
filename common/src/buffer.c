@@ -9,15 +9,17 @@
 
 char *state2Str[BUFFER_CNT] = {(char *)&"BUFFER_READY", (char *)&"USED"};
 
-buffer_t *buffer_init(buffer_t* buffer) {
-    if (buffer->mem != 0)  return NULL;
+buffer_t *buffer_init(buffer_t *buffer) {
+    if (buffer->mem != 0)
+        return NULL;
     buffer->mem = malloc(buffer->size);
     buffer_reset(buffer);
     return buffer;
 }
 
 buffer_t *buffer_new(uint16_t size) {
-    if (size == 0) return NULL;
+    if (size == 0)
+        return NULL;
     buffer_t *buffer = (buffer_t *)malloc(sizeof(buffer_t));
     memset(buffer, 0, sizeof(buffer_t));
     buffer->size = size;
@@ -29,7 +31,8 @@ buffer_t *buffer_new(uint16_t size) {
 
 em_msg buffer_reset(buffer_t *buffer) {
     em_msg res = EM_ERR;
-    if (buffer == NULL)  return res;
+    if (buffer == NULL)
+        return res;
     memset(buffer->mem, 0, buffer->size);
     buffer->pl = buffer->mem;
     buffer->state = BUFFER_READY;
@@ -58,7 +61,7 @@ em_msg buffer_get(buffer_t *buffer, uint8_t *data, uint16_t *size) {
     uint16_t msize = MIN(*size, buffer->size);
     memcpy(data, buffer->mem, msize);
     buffer->state = BUFFER_READY;
-    *size=msize;
+    *size = msize;
     return res;
 }
 

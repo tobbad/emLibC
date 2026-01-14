@@ -9,8 +9,8 @@
 #include "common.h"
 em_msg GpioPortInit(gpio_port_t *port) {
     for (uint8_t i = 0; i < port->cnt; i++) {
-        if (GpioPinInit(&port->pin[i])==EM_ERR)  {
-        	printf("Pin %d is not good"NL, i);
+        if (GpioPinInit(&port->pin[i]) == EM_ERR) {
+            printf("Pin %d is not good" NL, i);
         }
     }
     return EM_OK;

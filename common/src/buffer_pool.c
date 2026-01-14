@@ -27,14 +27,13 @@ buffer_pool_t *buffer_pool_new(uint8_t lcnt, uint8_t charCnt) {
     return bp;
 }
 
-
-//buffer_pool_t *buffer_pool_delete(buffer_pool_t *bp){
-//    for (uint8_t i = 0; i < bp->buffer_cnt; i++) {
-//        free(bp->buffer[i]);
-//    }
-//    free(bp->buffer);
-//    free(bp);
-//}
+// buffer_pool_t *buffer_pool_delete(buffer_pool_t *bp){
+//     for (uint8_t i = 0; i < bp->buffer_cnt; i++) {
+//         free(bp->buffer[i]);
+//     }
+//     free(bp->buffer);
+//     free(bp);
+// }
 
 buffer_t *buffer_pool_get(buffer_pool_t *bp) {
     if (bp == NULL)

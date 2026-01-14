@@ -4,14 +4,14 @@
  *  Created on: 28.12.2019
  *      Author: badi
  */
-#include "common.h"
 #include "_gpio.h"
+#include "common.h"
 
 em_msg GpioPinInit(gpio_pin_t *pin) {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
     uint8_t res = EM_ERR;
     if (pin->port == NULL) {
-    	printf("Got NULL pointer as port "NL);
+        printf("Got NULL pointer as port " NL);
     }
     if (pin != NULL) {
         if (pin->port == GPIOA) {

@@ -56,14 +56,14 @@
 #else
 #error Undefined platform
 #endif
-#include "main.h"
 #include "_time.h"
 #include "buffer.h"
 #include "common.h"
+#include "hal_port.h"
+#include "main.h"
 #include "mutex.h"
 #include "serial.h"
 #include "state.h"
-#include "hal_port.h"
 static char rx_buf[RX_BUFFER_SIZE];
 static char tx_buf[TX_BUFFER_SIZE];
 
@@ -86,28 +86,28 @@ static char *new = NULL;
 void serial_set_mode(print_e mode, bool doReset);
 
 em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
-    if (isio.init) return EM_ERR;
+    if (isio.init)
+        return EM_ERR;
     sio_t *init = dev;
     isio.uart = init->uart;
 #ifdef HAL_PCD_MODULE_ENABLED
     isio.pcd = init->pcd;
 #endif
     isio.devh = dev_type;
-    if (init->buffer[SIO_RX]->size&&init->buffer[SIO_RX]->mem==0){
-    	buffer_init(init->buffer[SIO_RX]);
+    if (init->buffer[SIO_RX]->size && init->buffer[SIO_RX]->mem == 0) {
+        buffer_init(init->buffer[SIO_RX]);
     }
-    if (isio.buffer[SIO_RX]==0){
-    	isio.buffer[SIO_RX] = init->buffer[SIO_RX];
-    } else
-	if (init->buffer[SIO_RX]->size&&init->buffer[SIO_RX]->mem==0){
-		buffer_init(init->buffer[SIO_RX]);
-	}
+    if (isio.buffer[SIO_RX] == 0) {
+        isio.buffer[SIO_RX] = init->buffer[SIO_RX];
+    } else if (init->buffer[SIO_RX]->size && init->buffer[SIO_RX]->mem == 0) {
+        buffer_init(init->buffer[SIO_RX]);
+    }
 
-    if (init->buffer[SIO_TX]->size&&init->buffer[SIO_TX]->mem==0){
-    	buffer_init(init->buffer[SIO_RX]);
+    if (init->buffer[SIO_TX]->size && init->buffer[SIO_TX]->mem == 0) {
+        buffer_init(init->buffer[SIO_RX]);
     }
-    if (isio.buffer[SIO_TX]==0){
-    	isio.buffer[SIO_TX] = init->buffer[SIO_TX];
+    if (isio.buffer[SIO_TX] == 0) {
+        isio.buffer[SIO_TX] = init->buffer[SIO_TX];
     }
     state_init(&isio.state);
     isio.mode = init->mode | USE_DMA_TX;
@@ -124,7 +124,8 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
 }
 
 em_msg serial_io_open(dev_handle_t devh, void *dev) {
-    if (!isio.init) return EM_ERR;
+    if (!isio.init)
+        return EM_ERR;
     return serial_init(0, 0, dev);
 }
 
@@ -138,7 +139,8 @@ void serial_set_mode(print_e mode, bool doReset) {
 }
 
 em_msg serial_write(dev_handle_t hdl, const uint8_t *buffer, int16_t cnt) {
-    if (!isio.init) return EM_ERR;
+    if (!isio.init)
+        return EM_ERR;
     printf("%s", buffer);
     return EM_OK;
 }
@@ -149,7 +151,8 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     uint16_t len = -1;
     uint8_t idx = 0;
     txLen = MIN(txLen, TX_BUFFER_SIZE - 2);
-    if (!isio.init)  return -1;
+    if (!isio.init)
+        return -1;
     uint32_t tick = 0;
     if ((isio.buffer[SIO_TX]->mem != NULL)) {
         if (isio.mode & TIMESTAMP) {
@@ -164,7 +167,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
         memcpy(&isio.buffer[SIO_TX]->mem[len], ptr, txLen);
         len += txLen;
         isio.buffer[SIO_TX]->mem[len] = 0;
-        isio.buffer[SIO_TX]->used =len;
+        isio.buffer[SIO_TX]->used = len;
         ptr = isio.buffer[SIO_TX]->mem;
     } else {
         if (isio.mode & TIMESTAMP) {
@@ -187,7 +190,8 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     }
     if (isio.uart != NULL) {
         if (isio.mode & USE_DMA_TX) {
-            while (!ReadModify_write((int8_t *)&isio.buffer[SIO_TX]->state, 1)) {};
+            while (!ReadModify_write((int8_t *)&isio.buffer[SIO_TX]->state, 1)) {
+            };
             time_start(len, ptr);
             isio.buffer[SIO_RX]->state = BUFFER_USED;
             HAL_UART_Transmit_DMA(isio.uart, (uint8_t *)ptr, len);
@@ -221,13 +225,14 @@ em_msg serial_read(dev_handle_t hdl, uint8_t *buffer, int16_t *cnt) {
 }
 int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
     uint16_t rLen;
-    if (!isio.init) return EM_ERR;
+    if (!isio.init)
+        return EM_ERR;
 #ifdef HAL_PCD_MODULE_ENABLED
-    if (urx_buffer.state== BUFFER_READY){
+    if (urx_buffer.state == BUFFER_READY) {
         uint16_t msize = MIN(len, urx_buffer.size);
         buffer_get(&urx_buffer, ptr, &msize);
-        if (msize!=len){
-            printf("Only transfer %d of %d"NL, msize, len);
+        if (msize != len) {
+            printf("Only transfer %d of %d" NL, msize, len);
         }
         return msize;
     }
@@ -259,22 +264,21 @@ void serial_reset(dev_handle_t dev) {
     memset(tx_buf, 0, TX_BUFFER_SIZE);
 };
 
-void serial_set_state(dev_handle_t dev, const state_t * state) {
-	state_set_state(state, &isio.state);
-};
+void serial_set_state(dev_handle_t dev, const state_t *state) { state_set_state(state, &isio.state); };
 
 void serial_apply_change(void) {
-    if (!isio.init) return;
+    if (!isio.init)
+        return;
     uint16_t len = strlen(isio.state.clabel.str);
-    for (uint8_t i=0; i<CMD_LEN;i++){
-        if (isalpha((int)isio.state.clabel.str[i])){
+    for (uint8_t i = 0; i < CMD_LEN; i++) {
+        if (isalpha((int)isio.state.clabel.str[i])) {
             isio.state.clabel.str[i] &= 0xdf;
         }
     }
     if (len > 0) {
         uint8_t ctype = clable2type(&isio.state.clabel);
         if (ctype == ISNUM) {
-            if (!state_get_dirty(&isio.state)){
+            if (!state_get_dirty(&isio.state)) {
                 uint8_t nr = clabel2uint8(&isio.state.clabel);
                 state_propagate_by_idx(&isio.state, nr);
             }
@@ -411,6 +415,6 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *UartHandle) {
     memset(isio.buffer[SIO_RX]->mem, 0, isio.buffer[SIO_RX]->size);
     isio.buffer[SIO_RX]->state = BUFFER_READY;
 #ifdef HAL_PCD_MODULE_ENABLED
-    //USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+    // USBD_CDC_ReceivePacket(&hUsbDeviceFS);
 #endif
 }

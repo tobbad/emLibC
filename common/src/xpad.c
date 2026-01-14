@@ -22,23 +22,43 @@ xpad_dev_t *mpy_xpad[DEVICE_CNT];
 static mkey_t reset_key = {.last = 1, .current = 1, .unstable = 0, .cnt = 0, .stable = true};
 
 static xpad_dev_t default_xscan_dev = {
-    .spalte = {// Output
+    .spalte =
+        {
+            // Output
             .cnt = SPALTEN_CNT,
-            .pin = {
-                {.port = GPIOA, .pin = GPIO_PIN_0, .conf=  {.Mode = GPIO_MODE_OUTPUT_PP,  .Pull = GPIO_PULLUP}}, // spalte 1
-                {.port = GPIOA, .pin = GPIO_PIN_4, .conf = {.Mode = GPIO_MODE_OUTPUT_PP,   .Pull = GPIO_PULLUP}}, // spalte 2
-                {.port = GPIOB, .pin = GPIO_PIN_3, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Pull = GPIO_PULLUP}}, // spalte 3
-                {.port = GPIOC, .pin = GPIO_PIN_1, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Pull = GPIO_PULLUP}}, // spalte 4
-            },
+            .pin =
+                {
+                    {.port = GPIOA,
+                     .pin = GPIO_PIN_0,
+                     .conf = {.Mode = GPIO_MODE_OUTPUT_PP, .Pull = GPIO_PULLUP}}, // spalte 1
+                    {.port = GPIOA,
+                     .pin = GPIO_PIN_4,
+                     .conf = {.Mode = GPIO_MODE_OUTPUT_PP, .Pull = GPIO_PULLUP}}, // spalte 2
+                    {.port = GPIOB,
+                     .pin = GPIO_PIN_3,
+                     .conf = {.Mode = GPIO_MODE_OUTPUT_PP, .Pull = GPIO_PULLUP}}, // spalte 3
+                    {.port = GPIOC,
+                     .pin = GPIO_PIN_1,
+                     .conf = {.Mode = GPIO_MODE_OUTPUT_PP, .Pull = GPIO_PULLUP}}, // spalte 4
+                },
         },
-    .zeile = {// Input
+    .zeile =
+        {
+            // Input
             .cnt = ZEILEN_CNT,
-            .pin = {
-                {.port = GPIOA, .pin = GPIO_PIN_10, .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP,}},// zeilen 1
-                {.port = GPIOB, .pin = GPIO_PIN_3,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}}, // zeilen 2
-                {.port = GPIOB, .pin = GPIO_PIN_5,  .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}}, // zeilen 3
-                {.port = GPIOB, .pin = GPIO_PIN_10, .conf = { .Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}}, // zeilen 4
-            },
+            .pin =
+                {
+                    {.port = GPIOA,
+                     .pin = GPIO_PIN_10,
+                     .conf =
+                         {
+                             .Mode = GPIO_MODE_INPUT,
+                             .Pull = GPIO_PULLUP,
+                         }},                                                                                     // zeilen 1
+                    {.port = GPIOB, .pin = GPIO_PIN_3, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // zeilen 2
+                    {.port = GPIOB, .pin = GPIO_PIN_5, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // zeilen 3
+                    {.port = GPIOB, .pin = GPIO_PIN_10, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}}, // zeilen 4
+                },
         },
     .dev_type = XSCAN,
     .state =
@@ -59,20 +79,21 @@ static xpad_dev_t default_eight_dev = {
             .cnt = EIGHT_BUTTON_CNT,
             .pin =
                 {
-                    {.port = GPIOC, .pin = GPIO_PIN_1,  .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 1
-                    {.port = GPIOC, .pin = GPIO_PIN_2,  .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 2
-                    {.port = GPIOC, .pin = GPIO_PIN_3,  .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 3
-                    {.port = GPIOA, .pin = GPIO_PIN_0,  .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 4
-                    {.port = GPIOA, .pin = GPIO_PIN_4,  .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 6
-                    {.port = GPIOA, .pin = GPIO_PIN_5,  .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 5
-                    {.port = GPIOC, .pin = GPIO_PIN_15, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 7
-                    {.port = GPIOC, .pin = GPIO_PIN_9,  .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 8
+                    {.port = GPIOC, .pin = GPIO_PIN_1, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 1
+                    {.port = GPIOC, .pin = GPIO_PIN_2, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 2
+                    {.port = GPIOC, .pin = GPIO_PIN_3, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 3
+                    {.port = GPIOA, .pin = GPIO_PIN_0, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 4
+                    {.port = GPIOA, .pin = GPIO_PIN_4, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 6
+                    {.port = GPIOA, .pin = GPIO_PIN_5, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 5
+                    {.port = GPIOC, .pin = GPIO_PIN_15, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}}, // Taste 7
+                    {.port = GPIOC, .pin = GPIO_PIN_9, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 8
                 },
         },
 
     .dev_type = EIGHTKEY,
-    .state = {
-            .label = {'1','2', '3', '4', '5', '6', '7', '8'},
+    .state =
+        {
+            .label = {'1', '2', '3', '4', '5', '6', '7', '8'},
             .state = {OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},
             .cnt = EIGHT_BUTTON_CNT,
             .first = 0,
@@ -81,7 +102,7 @@ static xpad_dev_t default_eight_dev = {
 static void xpad_reset(dev_handle_t devh);
 static void xpad_reset_key(mkey_t *key, uint8_t cnt);
 static uint16_t xpad_read_zeile(dev_handle_t devh, uint8_t spalten_nr);
-static void xpad_set_state(dev_handle_t devh, const state_t* state );
+static void xpad_set_state(dev_handle_t devh, const state_t *state);
 
 static em_msg xpad_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     if (dev_type == DEV_TYPE_NA)
@@ -89,30 +110,30 @@ static em_msg xpad_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     const xpad_dev_t *device = (xpad_dev_t *)dev;
     my_xpad[devh].dev_type = dev_type;
     mpy_xpad[devh] = &my_xpad[devh];
-	if (dev_type == XSCAN) {
-		if (device==NULL){
-			my_xpad[devh].spalte = default_xscan_dev.spalte;
-			my_xpad[devh].zeile = default_xscan_dev.zeile;
-		} else{
-			my_xpad[devh].spalte = device->spalte;
-			my_xpad[devh].zeile = device->zeile;
-		}
-		my_xpad[devh].state = default_xscan_dev.state;
-		memcpy(&my_xpad[devh].state, &default_xscan_dev.state, sizeof(state_t));
-	} else if (dev_type == EIGHTKEY) {
-		if (device==NULL){
-			my_xpad[devh].spalte = default_eight_dev.spalte;
-			my_xpad[devh].zeile =  default_eight_dev.zeile;
-		}else {
-			my_xpad[devh].spalte = device->spalte;
-			my_xpad[devh].zeile = device->zeile;
-		}
-		memset(&my_xpad[devh].state, 0, sizeof(state_t));
-		memcpy(&my_xpad[devh].state, &default_eight_dev.state, sizeof(state_t));
-	} else if (dev_type == TERMINAL) {
-		printf("Setup terminal %d" NL, dev_type);
-	}
-if (my_xpad[devh].spalte.cnt > 0) {
+    if (dev_type == XSCAN) {
+        if (device == NULL) {
+            my_xpad[devh].spalte = default_xscan_dev.spalte;
+            my_xpad[devh].zeile = default_xscan_dev.zeile;
+        } else {
+            my_xpad[devh].spalte = device->spalte;
+            my_xpad[devh].zeile = device->zeile;
+        }
+        my_xpad[devh].state = default_xscan_dev.state;
+        memcpy(&my_xpad[devh].state, &default_xscan_dev.state, sizeof(state_t));
+    } else if (dev_type == EIGHTKEY) {
+        if (device == NULL) {
+            my_xpad[devh].spalte = default_eight_dev.spalte;
+            my_xpad[devh].zeile = default_eight_dev.zeile;
+        } else {
+            my_xpad[devh].spalte = device->spalte;
+            my_xpad[devh].zeile = device->zeile;
+        }
+        memset(&my_xpad[devh].state, 0, sizeof(state_t));
+        memcpy(&my_xpad[devh].state, &default_eight_dev.state, sizeof(state_t));
+    } else if (dev_type == TERMINAL) {
+        printf("Setup terminal %d" NL, dev_type);
+    }
+    if (my_xpad[devh].spalte.cnt > 0) {
         GpioPortInit(&my_xpad[devh].spalte);
     } else {
         my_xpad[devh].spalte.cnt = 1;
@@ -126,7 +147,6 @@ if (my_xpad[devh].spalte.cnt > 0) {
     xpad_reset_key(my_xpad[devh].key, MAX_BUTTON_CNT);
     return EM_OK;
 }
-
 
 static uint8_t index_2_zei(xpad_dev_t *kbd, uint8_t index) {
     uint8_t res = index % (kbd->zeile.cnt);
@@ -189,11 +209,11 @@ static void xpad_reset_key(mkey_t *key, uint8_t cnt) {
 
 static uint16_t xpad_update_key(uint8_t devh, uint8_t index, bool pinVal) {
     my_xpad[devh].key[index].current = pinVal;
-/*
-//	if (pinVal) {
-//		printf("Pushed @ (index= %d) to %d"NL, index, pinVal);
-//	}
-*/
+    /*
+    //	if (pinVal) {
+    //		printf("Pushed @ (index= %d) to %d"NL, index, pinVal);
+    //	}
+    */
     // uint8_t z,s = INDEX_2_ZEI_SPA(index);
     uint8_t z = index_2_zei(&my_xpad[devh], index);
     uint8_t s = index_2_spa(&my_xpad[devh], index);
@@ -202,15 +222,16 @@ static uint16_t xpad_update_key(uint8_t devh, uint8_t index, bool pinVal) {
     //		printf("Detected Key @ (index =%d) with label %c"NL, index, my_xpad[devh].state.label[index]);
     //	}
     // bool unstable = my_xpad[devh].key[index].unstable;
-    my_xpad[devh].key[index].unstable =  my_xpad[devh].key[index].unstable || (my_xpad[devh].key[index].current ^ my_xpad[devh].key[index].last);
+    my_xpad[devh].key[index].unstable =
+        my_xpad[devh].key[index].unstable || (my_xpad[devh].key[index].current ^ my_xpad[devh].key[index].last);
     if (my_xpad[devh].key[index].current ^ my_xpad[devh].key[index].last) {
-        //printf("Set unstable to %d"NL, my_xpad[devh].key[index].unstable);
+        // printf("Set unstable to %d"NL, my_xpad[devh].key[index].unstable);
     }
     if (my_xpad[devh].key[index].unstable) {
         if (my_xpad[devh].key[index].current == my_xpad[devh].key[index].last) {
             my_xpad[devh].key[index].cnt++;
             if (pinVal != false) {
-                 //printf("Increased index %d to %d (pinVal=%d)"NL, index, my_xpad[devh].key[index].cnt, pinVal);
+                // printf("Increased index %d to %d (pinVal=%d)"NL, index, my_xpad[devh].key[index].cnt, pinVal);
             }
         } else {
             // printf("Reset index %d from %d (pinVal=%d)"NL, index,
@@ -226,7 +247,7 @@ static uint16_t xpad_update_key(uint8_t devh, uint8_t index, bool pinVal) {
         my_xpad[devh].key[index].stable = pinVal;
         // printf("Reached index %d logi level %d (pinVal=%d)"NL, index,STABLE_CNT, pinVal);
         if (my_xpad[devh].key[index].stable) {
-            state_propagate_by_idx(&my_xpad[devh].state , index);
+            state_propagate_by_idx(&my_xpad[devh].state, index);
             // my_xpad[devh].state.dirty = true;
             my_xpad[devh].state.dirty = true;
             // printf("Pushed   Key @ (index =%d, z=%d, s=%d, value = %c)" NL, index, z, s, label);
@@ -271,11 +292,12 @@ static int16_t xpad_eight_scan(dev_handle_t devh) {
         pin = pin;
         res = res | (xpad_update_key(devh, zeile, pin));
     }
-    if (res == 0) return -1;
+    if (res == 0)
+        return -1;
     index = key2value(res);
     char ch = my_xpad[devh].state.label[index];
     index = label2int8(ch);
-    printf("Got Keyscan 0x%04x, index %d, label %c"NL, res, index, ch);
+    printf("Got Keyscan 0x%04x, index %d, label %c" NL, res, index, ch);
     return index;
 }
 
@@ -375,7 +397,7 @@ static void xpad_reset(dev_handle_t devh) {
     return;
 }
 
-static void xpad_set_state(dev_handle_t devh, const state_t* to ) {
+static void xpad_set_state(dev_handle_t devh, const state_t *to) {
     if (mpy_xpad[devh] == NULL) {
         printf("No valid handle on reset" NL);
         return;

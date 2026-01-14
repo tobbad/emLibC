@@ -71,11 +71,11 @@ void keyboard_reset(dev_handle_t dev) {
     return;
 }
 
-void keyboard_set_state(dev_handle_t dev, state_t *state){
+void keyboard_set_state(dev_handle_t dev, state_t *state) {
     if ((dev > 0) && my_kybd[dev] != NULL) {
         my_kybd[dev]->set_state(dev, state);
     }
- }
+}
 
 void keyboard_state(dev_handle_t dev, state_t *ret) {
     if ((dev > 0) && my_kybd[dev] != NULL) {
