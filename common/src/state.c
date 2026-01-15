@@ -314,20 +314,20 @@ em_msg state_print(const state_t *state, const char *title) {
         printf("Do not print corrupted payload" NL);
         return res;
     }
-    printf("state_t = %d" NL, sizeof(state_t));
-    printf("first   = %d" NL, state->first);
-    printf("cnt     = %d" NL, state->cnt);
-    printf("clabel  = 0x%04lx" NL, state->clabel.cmd);
-    printf("label   = ");
+    printf("state_t   = %d" NL, sizeof(state_t));
+    printf("first     = %d" NL, state->first);
+    printf("cnt       = %d" NL, state->cnt);
+    printf("clabel    = 0x%04lx" NL, state->clabel.cmd);
+    printf("label     = ");
     for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
         char c = state->label[i];
         if (isprint(c)) {
-            printf(" %c  ", state->label[i]);
+            printf(" %c    ", state->label[i]);
         } else {
             printf("....");
         }
     }
-    printf(NL "State   = ");
+    printf(NL "State     = ");
     for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {
         printf("%s ", key2char[state->state[i]]);
     }
