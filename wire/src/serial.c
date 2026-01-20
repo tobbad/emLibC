@@ -133,20 +133,23 @@ void serial_set_mode(print_e mode, bool doReset) {
 }
 
 em_msg serial_write(dev_handle_t hdl, const uint8_t *buffer, int16_t cnt) {
-    if (!isio.init)
-        return EM_ERR;
+    // clang-format off
+    if (!isio.init) return EM_ERR;
+    // clang-format on
     printf("%s", buffer);
     return EM_OK;
 }
 
 int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
-    if (!isio.init)
-        return EM_ERR;
+    // clang-format off
+    if (!isio.init) return EM_ERR;
+    // clang-format on
     uint16_t len = 0;
     uint8_t idx = 0;
     txLen = MIN(txLen, TX_BUFFER_SIZE - 3);
-    if (!isio.init)
-        return -1;
+    // clang-format off
+    if (!isio.init) return -1;
+    // clang-format on
     uint32_t tick = 0;
     if (isio.buffer[SIO_TX]->mem != NULL) {
         if (isio.mode & TIMESTAMP) {
