@@ -9,14 +9,16 @@
 
 char *state2Str[BUFFER_CNT] = {(char *)&"BUFFER_READY", (char *)&"USED"};
 
-buffer_t *buffer_new(buffer_t *_buffer) {
+buffer_t *buffer_new(uint16_t size) {
+    buffer_t *buffer =  NULL;
     // clang-format off
-    if (_buffer->size = 0) return NULL;
+    if (size == 0) return buffer;
     // clang-format on
-    buffer_t *buffer = (buffer_t *)malloc(sizeof(buffer_t));
-    buffer->size = _buffer->size;
-    buffer->used = 0;
+    buffer = (buffer_t *)malloc(sizeof(buffer_t));
+    memset(buffer, 0, sizeof(buffer_t));
     buffer->mem = malloc(buffer->size);
+    buffer->size = size;
+    buffer->used = 0;
     buffer_reset(buffer);
     return buffer;
 }
@@ -37,7 +39,7 @@ em_msg buffer_reset(buffer_t *buffer) {
 
 em_msg buffer_set(buffer_t *buffer, uint8_t *data, const uint32_t size) {
     em_msg res = EM_ERR;
-    uint32_t msize = MIN(size, buffer->size);
+    uint16_t msize = MIN(size, buffer->size);
     buffer->size = msize;
     memcpy(buffer->mem, data, buffer->size);
     buffer->state = BUFFER_USED;
@@ -61,9 +63,14 @@ em_msg buffer_get(buffer_t *buffer, uint8_t *data, uint16_t *size) {
 bool buffer_is_used(buffer_t *buffer) { return buffer->state == BUFFER_USED; }
 
 void buffer_print(buffer_t *buffer, uint8_t nr) {
-    printf("Info of buffer  (%2d): @%p" NL, nr, buffer);
-    printf("Data                : @%p" NL, buffer->mem);
-    printf("Char count          : %2d" NL, buffer->size);
-    printf("Char used           : %d" NL, buffer->used);
-    printf("Buffer state is     : %s" NL, state2Str[buffer->state]);
+    if (buffer==NULL){
+        printf("buffer is NULL"NL);
+        return;
+    }
+    printf("Info of buffer nr=%1d = 0x@%p" NL, nr, buffer);
+    printf("Data                  = 0x0@%p" NL, buffer->mem);
+    printf("buffer size           = %1d"NL, buffer->size);
+    printf("buffer used           = %d" NL, buffer->used);
+    printf("buffei id             = %d" NL, buffer->id);
+    printf("Buffer state is       = %s" NL, state2Str[buffer->state]);
 }

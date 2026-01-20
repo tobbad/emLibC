@@ -21,7 +21,7 @@ typedef enum {
 
 typedef struct buffer_pool_s {
   uint8_t buffer_cnt;
-  buffer_t *buffer;
+  buffer_t *buffer; //Buffer array
   buffer_t *sbuffer;
   bp_type_e type;
 } buffer_pool_t;

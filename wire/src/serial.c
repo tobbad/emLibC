@@ -95,8 +95,8 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
 #ifdef HAL_PCD_MODULE_ENABLED
     isio.pcd = init->pcd;
 #endif
-    isio.buffer[SIO_RX] = buffer_new(init->buffer[SIO_RX]);
-    isio.buffer[SIO_TX] = buffer_new(init->buffer[SIO_TX]);
+    isio.buffer[SIO_RX] = buffer_new(init->buffer[SIO_RX]->size);
+    isio.buffer[SIO_TX] = buffer_new(init->buffer[SIO_TX]->size);
     if (init->buffer[SIO_RX]->size == 0 || &init->buffer[SIO_RX]->mem[0] == NULL) {
         assert("RX Memory must be provided in serial" NL);
     }
