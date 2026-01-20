@@ -9,20 +9,12 @@
 
 char *state2Str[BUFFER_CNT] = {(char *)&"BUFFER_READY", (char *)&"USED"};
 
-buffer_t *buffer_init(buffer_t *buffer) {
-    if (buffer->mem != 0)
-        return NULL;
-    buffer->mem = malloc(buffer->size);
-    buffer_reset(buffer);
-    return buffer;
-}
-
-buffer_t *buffer_new(uint16_t size) {
-    if (size == 0)
-        return NULL;
+buffer_t *buffer_new(buffer_t *_buffer) {
+    // clang-format off
+    if (_buffer->size = 0) return NULL;
+    // clang-format on
     buffer_t *buffer = (buffer_t *)malloc(sizeof(buffer_t));
-    memset(buffer, 0, sizeof(buffer_t));
-    buffer->size = size;
+    buffer->size = _buffer->size;
     buffer->used = 0;
     buffer->mem = malloc(buffer->size);
     buffer_reset(buffer);
@@ -30,9 +22,10 @@ buffer_t *buffer_new(uint16_t size) {
 }
 
 em_msg buffer_reset(buffer_t *buffer) {
+    // clang-format off
     em_msg res = EM_ERR;
-    if (buffer == NULL)
-        return res;
+    if (buffer == NULL) return res;
+    // clang-format on
     memset(buffer->mem, 0, buffer->size);
     buffer->pl = buffer->mem;
     buffer->state = BUFFER_READY;

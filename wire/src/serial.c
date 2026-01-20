@@ -89,25 +89,19 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     if (isio.init)
         return EM_ERR;
     sio_t *init = dev;
+    memset(&isio, 0, sizeof(isio_t));
     isio.uart = init->uart;
+    isio.devh = dev_type;
 #ifdef HAL_PCD_MODULE_ENABLED
     isio.pcd = init->pcd;
 #endif
-    isio.devh = dev_type;
-    if (init->buffer[SIO_RX]->size && init->buffer[SIO_RX]->mem == 0) {
-        buffer_init(init->buffer[SIO_RX]);
+    isio.buffer[SIO_RX] = buffer_new(init->buffer[SIO_RX]);
+    isio.buffer[SIO_TX] = buffer_new(init->buffer[SIO_TX]);
+    if (init->buffer[SIO_RX]->size == 0 || &init->buffer[SIO_RX]->mem[0] == NULL) {
+        assert("RX Memory must be provided in serial" NL);
     }
-    if (isio.buffer[SIO_RX] == 0) {
-        isio.buffer[SIO_RX] = init->buffer[SIO_RX];
-    } else if (init->buffer[SIO_RX]->size && init->buffer[SIO_RX]->mem == 0) {
-        buffer_init(init->buffer[SIO_RX]);
-    }
-
-    if (init->buffer[SIO_TX]->size && init->buffer[SIO_TX]->mem == 0) {
-        buffer_init(init->buffer[SIO_RX]);
-    }
-    if (isio.buffer[SIO_TX] == 0) {
-        isio.buffer[SIO_TX] = init->buffer[SIO_TX];
+    if (init->buffer[SIO_TX]->size == 0 || &init->buffer[SIO_TX]->mem[0] == NULL) {
+        assert("TX Memory must be provided in serial" NL);
     }
     state_init(&isio.state);
     isio.mode = init->mode | USE_DMA_TX;
@@ -148,13 +142,13 @@ em_msg serial_write(dev_handle_t hdl, const uint8_t *buffer, int16_t cnt) {
 int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     if (!isio.init)
         return EM_ERR;
-    uint16_t len = -1;
+    uint16_t len = 0;
     uint8_t idx = 0;
-    txLen = MIN(txLen, TX_BUFFER_SIZE - 2);
+    txLen = MIN(txLen, TX_BUFFER_SIZE - 3);
     if (!isio.init)
         return -1;
     uint32_t tick = 0;
-    if ((isio.buffer[SIO_TX]->mem != NULL)) {
+    if (isio.buffer[SIO_TX]->mem != NULL) {
         if (isio.mode & TIMESTAMP) {
             uint32_t tick = HAL_GetTick();
             len = sprintf((char *)isio.buffer[SIO_TX]->mem, "%010ld: ", tick);
@@ -163,7 +157,6 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
             len += sprintf((char *)&isio.buffer[SIO_TX]->mem[len], " %x ", idx);
             idx = (idx + 1) % USE_DMA_TX;
         }
-        txLen = MIN(TX_BUFFER_SIZE - len - 1, txLen);
         memcpy(&isio.buffer[SIO_TX]->mem[len], ptr, txLen);
         len += txLen;
         isio.buffer[SIO_TX]->mem[len] = 0;
@@ -177,12 +170,6 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
         if (isio.mode & GAP_DETECT) {
             len += sprintf((char *)&tx_buf, " %x ", idx);
             idx = (idx + 1) % USE_DMA_TX;
-        }
-        if (txLen > TX_BUFFER_SIZE - len - 3) {
-            txLen = MIN(TX_BUFFER_SIZE - len - 3, txLen);
-            ptr[len - 3] = NL[0];
-            ptr[len - 3] = NL[1];
-            txLen = TX_BUFFER_SIZE - len - 1;
         }
         memcpy(&tx_buf[len], ptr, txLen);
         len += txLen;
