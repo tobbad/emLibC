@@ -16,7 +16,8 @@ buffer_t *buffer_new(uint16_t size) {
     // clang-format on
     buffer = (buffer_t *)malloc(sizeof(buffer_t));
     memset(buffer, 0, sizeof(buffer_t));
-    buffer->mem = malloc(buffer->size);
+    buffer->mem = malloc(size);
+    memset(buffer->mem, 0, size);
     buffer->size = size;
     buffer->used = 0;
     buffer_reset(buffer);
@@ -28,7 +29,8 @@ em_msg buffer_reset(buffer_t *buffer) {
     em_msg res = EM_ERR;
     if (buffer == NULL) return res;
     // clang-format on
-    memset(buffer->mem, 0, buffer->size);
+    uint8_t *m  = buffer->mem;
+    memset(m, 0, buffer->size);
     buffer->pl = buffer->mem;
     buffer->state = BUFFER_READY;
     buffer->used = 0;

@@ -97,12 +97,6 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
 #endif
     isio.buffer[SIO_RX] = buffer_new(init->buffer[SIO_RX]->size);
     isio.buffer[SIO_TX] = buffer_new(init->buffer[SIO_TX]->size);
-    if (init->buffer[SIO_RX]->size == 0 || &init->buffer[SIO_RX]->mem[0] == NULL) {
-        assert("RX Memory must be provided in serial" NL);
-    }
-    if (init->buffer[SIO_TX]->size == 0 || &init->buffer[SIO_TX]->mem[0] == NULL) {
-        assert("TX Memory must be provided in serial" NL);
-    }
     state_init(&isio.state);
     isio.mode = init->mode | USE_DMA_TX;
     memset(rx_buf, 0, RX_BUFFER_SIZE);
@@ -247,8 +241,10 @@ int16_t serial_scan(dev_handle_t dev) {
 };
 
 void serial_reset(dev_handle_t dev) {
-    memset(isio.buffer[SIO_RX]->mem, 0, RX_BUFFER_SIZE);
-    memset(isio.buffer[SIO_TX]->mem, 0, TX_BUFFER_SIZE);
+    buffer_t *buf = isio.buffer[SIO_RX];
+    buffer_reset(buf);
+    buf = isio.buffer[SIO_TX];
+    buffer_reset(buf);
     state_reset(&isio.state);
     memset(rx_buf, 0, RX_BUFFER_SIZE);
     memset(tx_buf, 0, TX_BUFFER_SIZE);

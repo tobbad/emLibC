@@ -322,7 +322,7 @@ em_msg state_print(const state_t *state, const char *title) {
     for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
         char c = state->label[i];
         if (isprint(c)) {
-            printf(" %c    ", state->label[i]);
+            printf(" %c  ", state->label[i]);
         } else {
             printf("....");
         }
