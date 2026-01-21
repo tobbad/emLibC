@@ -28,7 +28,8 @@ typedef struct state_s {
   uint8_t dirty; // bitfield??
                  //  Evtl. können in den obersten 2 bit der Inhalt des clabel
                  //  fields encodiert werden (01: cmd, 11:str))
-  uint8_t dummy;
+  uint8_t id;    // 8 Bitcounter bei jedem Senden seines Packets inkrementier wird
+                 // mitgesendet wird
   clabel_u clabel;                  // is 4 bytes
   key_state_e state[MAX_STATE_CNT]; // 16 bytes
   char label[MAX_STATE_CNT];        // 16 bytes
