@@ -70,7 +70,7 @@ typedef union {
 #define ZERO4 ((32<<24)+(32<<16)+(32<<8)+32) // is "     " as str
 
  typedef struct idx2str_s {
-     char    str[14];
+     char    str[26];
      uint8_t idx;
  } idx2str_t;
 
