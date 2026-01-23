@@ -26,21 +26,18 @@ em_msg state_init(state_t *state) {
     memset(state, -1, sizeof(state_t));
     state->dirty = false;
     state->first = 0;
-    state->cnt = MAX_STATE_CNT;
-    state->dummy = 0xFF;
+    state->cnt   = MAX_STATE_CNT;
+    state->id    = 0xFF;
     state->clabel.cmd = 0;
     memcpy(&state->label, &"0123456789ABCDEF", MAX_STATE_CNT);
-    for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {
-        state_set_key_by_idx(state, i, OFF);
-    }
+    state_reset(state);
     res = EM_OK;
     return res;
 }
 
 em_msg state_reset(state_t *state) {
     em_msg res = EM_ERR;
-    if (state_check(state))
-        return res;
+    if (state_check(state)) return res;
     for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {
         state_set_key_by_idx(state, i, OFF);
     }

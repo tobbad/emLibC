@@ -19,7 +19,6 @@ buffer_t *buffer_new(uint16_t size) {
     buffer->mem = malloc(size);
     memset(buffer->mem, 0, size);
     buffer->size = size;
-    buffer->used = 0;
     buffer_reset(buffer);
     return buffer;
 }

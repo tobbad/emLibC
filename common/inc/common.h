@@ -68,6 +68,17 @@ typedef union {
      char str[CMD_LEN]; //CMD_LEN ist 4 ist leer (0) oder ein command
  }clabel_u;
 #define ZERO4 ((32<<24)+(32<<16)+(32<<8)+32) // is "     " as str
+
+ typedef struct idx2str_s {
+     char    str[14];
+     uint8_t idx;
+ } idx2str_t;
+
+ typedef struct idxa2str_s {
+     uint8_t cnt;
+     idx2str_t *entry;
+ } idxa2str_t;
+
 /*
  * Function to serialize the content of buffer as neaty formated
  * string in out. Format is:
@@ -82,6 +93,8 @@ uint16_t common_crc16(const uint8_t *data_p, uint16_t length);
 void print_buffer(const uint8_t *buffer, uint8_t size, const char *header);
 uint8_t clable2type(clabel_u *lbl);
 int8_t clabel2uint8(clabel_u *lbl);
+char* idxa2str(idxa2str_t *map, uint8_t idx);
+char* idx2str(idx2str_t *map, uint8_t cnt, uint8_t idx);
 char int2hchar(uint8_t idx);
 
 #ifdef __cplusplus
