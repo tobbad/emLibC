@@ -33,13 +33,13 @@
 #include "common.h"
 #include "device.h"
 #include "keyboard.h"
+#include "_time.h"
 
 #define UART_TIMEOUT_MS 100
 
 #ifndef TX_BUFFER_SIZE
 #define TX_BUFFER_SIZE 96
 #endif
-
 #ifndef RX_BUFFER_SIZE
 #define RX_BUFFER_SIZE 20
 #endif
@@ -48,6 +48,7 @@ typedef enum {
   SIO_ERROR = -1,
   SIO_OK = 0,
 } sio_res_e;
+
 typedef enum { SIO_RX = 0, SIO_TX, SIO_RXTX_CNT } sio_channel_e;
 
 typedef enum {
@@ -68,6 +69,7 @@ typedef struct _sio_t {
   buffer_t *buffer[SIO_RXTX_CNT];
   print_e mode;
 } sio_t;
+extern time_handle_t  shdl;
 
 void serial_set_mode(print_e mode, bool doReset);
 int8_t serial_waitForNumber(char **key);

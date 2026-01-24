@@ -12,9 +12,10 @@
 
 #define TIME_DEV_CNT 3
 typedef int8_t  time_handle_t;
-void time_init();
+
 time_handle_t time_new();
-void time_set_mode(time_handle_t hdl, print_e mode);
+void time_init();
+void time_set_mode(time_handle_t hdl, uint8_t mode);
 void time_reset(time_handle_t hdl);
 void time_start(time_handle_t hdl,uint8_t count, uint8_t *ptr);
 void time_end_su(time_handle_t hdl);

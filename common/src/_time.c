@@ -4,7 +4,9 @@
  *  Created on: Jan 22, 2025
  *      Author: badi
  */
+#include "serial.h"
 #include "_time.h"
+
 #define MEAS_CNT 10
 #define LINE_CHAR 10
 
@@ -38,7 +40,7 @@ timem_t _time;
 
 em_msg time_check_hdl(time_handle_t hdl){
     em_msg  res = EM_ERR;
-    if ((hdl>=0)&&(TIME_DEV_CNT < hdl)) return EM_OK;
+    if ((hdl>=0)|(hdl <TIME_DEV_CNT)) return EM_OK;
     return res;
 }
 
@@ -55,7 +57,7 @@ void time_init() {
 time_handle_t time_new(){
     time_handle_t  res = EM_ERR;
     for (uint8_t hdl =0 ;hdl < TIME_DEV_CNT; hdl++){
-        if ( _time.used & (1<<hdl) ==0 ){
+        if ( (_time.used & (1<<hdl)) ==0 ){
             _time.used |=(1<<hdl);
             time_reset(hdl);
             return hdl;
@@ -64,7 +66,7 @@ time_handle_t time_new(){
     return res;
 }
 
-void time_set_mode(time_handle_t hdl, print_e mode) {
+void time_set_mode(time_handle_t hdl, uint8_t mode) {
     if (time_check_hdl(hdl)==EM_ERR) return;
     _time.time[hdl].mode = mode;
 }
@@ -109,11 +111,11 @@ void time_end_tx(time_handle_t hdl) {
 
 void time_print(time_handle_t hdl, char *titel) {
     if (time_check_hdl(hdl)==EM_ERR) return;
-    if (titel != NULL) printf("%s" NL, titel);
+    if (titel != NULL) printf("%s // Transfer time us, count baud" NL, titel);
     printf("data:[" NL);
     for (uint8_t i = 0; i < MEAS_CNT; i++) {
-        printf("[ %llu, %u, %ld ]," NL, _time.time[hdl].measurement[_time.time[hdl].idx].duration_tx_us,_time.time[hdl].measurement[_time.time[hdl].idx].count,
-                _time.time[hdl].measurement[_time.time[hdl].idx].baud);
+        printf("    [ %u, %u, %ld ],"NL,(uint32_t) _time.time[hdl].measurement[_time.time[hdl].idx].duration_tx_us, (uint32_t)_time.time[hdl].measurement[_time.time[hdl].idx].count,
+                (uint32_t)_time.time[hdl].measurement[_time.time[hdl].idx].baud);
     }
     printf("]" NL);
 }
