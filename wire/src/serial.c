@@ -72,12 +72,13 @@ typedef struct isio_s {
 #ifdef HAL_PCD_MODULE_ENABLED
     PCD_HandleTypeDef *pcd;
 #endif
-    buffer_t *buffer[SIO_RXTX_CNT];
-    print_e mode;
-    int8_t ready[SIO_RXTX_CNT];
-    dev_handle_t devh;
-    state_t state;
-    bool init;
+    buffer_t       *buffer[SIO_RXTX_CNT];
+    print_e        mode;
+    int8_t         ready[SIO_RXTX_CNT];
+    dev_handle_t   devh;
+    state_t        state;
+    bool           init;
+    time_handle_t  thdl;
 } isio_t;
 
 static isio_t isio;
@@ -103,6 +104,7 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     memset(tx_buf, 0, TX_BUFFER_SIZE);
     serial_set_mode(init->mode, true);
     HAL_UARTEx_ReceiveToIdle_DMA(isio.uart, (uint8_t *)rx_buf, RX_BUFFER_SIZE);
+    isio.thdl = time_new();
     isio.init = true;
     // we could set the output buffer size to 0:
     // setbuf(stdout, NULL);
@@ -121,9 +123,9 @@ void serial_set_mode(print_e mode, bool doReset) {
     isio.mode = mode | USE_DMA_RX;
     time_init();
     if (doReset) {
-        time_reset();
+        time_reset(isio.thdl);
     }
-    time_set_mode(mode);
+    time_set_mode(isio.thdl, mode);
 }
 
 em_msg serial_write(dev_handle_t hdl, const uint8_t *buffer, int16_t cnt) {
@@ -176,14 +178,14 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
         if (isio.mode & USE_DMA_TX) {
             while (!ReadModify_write((int8_t *)&isio.buffer[SIO_TX]->state, 1)) {
             };
-            time_start(len, ptr);
+            time_start(isio.thdl, len, ptr);
             isio.buffer[SIO_RX]->state = BUFFER_USED;
             HAL_UART_Transmit_DMA(isio.uart, (uint8_t *)ptr, len);
-            time_end_su();
+            time_end_su(isio.thdl);
         } else {
-            time_start(len, ptr);
+            time_start(isio.thdl, len, ptr);
             HAL_UART_Transmit(isio.uart, ptr, len, UART_TIMEOUT_MS);
-            time_end_tx();
+            time_end_tx(isio.thdl);
             isio.ready[SIO_TX] = true;
         }
 #ifdef HAL_PCD_MODULE_ENABLED
@@ -397,7 +399,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *UartHandle) {
     /* Set transmission flag: transfer complete */
-    time_end_tx();
+    time_end_tx(isio.thdl);
     memset(isio.buffer[SIO_RX]->mem, 0, isio.buffer[SIO_RX]->size);
     isio.buffer[SIO_RX]->state = BUFFER_READY;
 #ifdef HAL_PCD_MODULE_ENABLED
