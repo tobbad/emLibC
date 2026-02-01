@@ -42,6 +42,7 @@
 #include <sys/time.h>
 #include <sys/times.h>
 #include <time.h>
+#include "stm32l4xx_hal_conf.h"
 #ifdef HAL_PCD_MODULE_ENABLED
 #include "usbd_cdc_if.h"
 #endif
@@ -188,10 +189,11 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
             HAL_UART_Transmit(isio.uart, ptr, len, UART_TIMEOUT_MS);
             time_end_tx(shdl);
             isio.ready[SIO_TX] = true;
-        }
 #ifdef HAL_PCD_MODULE_ENABLED
-    } else if (isio.mode & USE_USB) {
-        CDC_Transmit_FS(ptr, len);
+            if (isio.mode & USE_USB) {
+                CDC_Transmit_FS(ptr, len);
+            }
+        }
 #endif
     } else {
         printf("No UART or USB is given" NL);

@@ -10,7 +10,7 @@
 #include "common.h"
 #include "serial.h"
 
-#define TIME_DEV_CNT 3
+#define TIME_DEV_CNT 5
 typedef int8_t  time_handle_t;
 
 time_handle_t time_new();
