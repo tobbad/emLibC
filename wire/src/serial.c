@@ -186,8 +186,8 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
             if (isio.mode & USE_USB) {
                 CDC_Transmit_FS(ptr, len);
             }
-        }
 #endif
+        }
     } else {
         printf("No UART or USB is given" NL);
     }
