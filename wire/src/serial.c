@@ -42,6 +42,7 @@
 #include <sys/time.h>
 #include <sys/times.h>
 #include <time.h>
+#include "stm32l4xx_hal_conf.h"
 #ifdef HAL_PCD_MODULE_ENABLED
 #include "usbd_cdc_if.h"
 #endif
@@ -89,8 +90,7 @@ static char *new = NULL;
 void serial_set_mode(print_e mode, bool doReset);
 
 em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
-    if (isio.init)
-        return EM_ERR;
+    if (isio.init) return EM_ERR;
     sio_t *init = dev;
     memset(&isio, 0, sizeof(isio_t));
     isio.uart = init->uart;
