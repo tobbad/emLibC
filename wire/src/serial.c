@@ -92,9 +92,6 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     memset(&isio, 0, sizeof(isio_t));
     isio.uart = init->uart;
     isio.devh = dev_type;
-#ifdef HAL_PCD_MODULE_ENABLED
-    isio.pcd = init->pcd;
-#endif
     isio.buffer[SIO_RX] = buffer_new(init->buffer[SIO_RX]->size);
     isio.buffer[SIO_TX] = buffer_new(init->buffer[SIO_TX]->size);
     state_init(&isio.state);
