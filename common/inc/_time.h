@@ -8,7 +8,6 @@
 #ifndef COMMON_INC__TIME_H_
 #define COMMON_INC__TIME_H_
 #include "common.h"
-#include "serial.h"
 
 #define TIME_DEV_CNT 5
 typedef int8_t  time_handle_t;

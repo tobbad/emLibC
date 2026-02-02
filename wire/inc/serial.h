@@ -63,9 +63,6 @@ typedef enum {
 
 typedef struct _sio_t {
   UART_HandleTypeDef *uart;
-#ifdef HAL_PCD_MODULE_ENABLED
-  PCD_HandleTypeDef *pcd;
-#endif
   buffer_t *buffer[SIO_RXTX_CNT];
   print_e mode;
 } sio_t;

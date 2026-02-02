@@ -72,9 +72,6 @@ static char tx_buf[TX_BUFFER_SIZE];
 
 typedef struct isio_s {
     UART_HandleTypeDef *uart;
-#ifdef HAL_PCD_MODULE_ENABLED
-    PCD_HandleTypeDef *pcd;
-#endif
     buffer_t       *buffer[SIO_RXTX_CNT];
     print_e        mode;
     int8_t         ready[SIO_RXTX_CNT];

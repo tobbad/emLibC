@@ -11,24 +11,24 @@
 buffer_pool_t *buffer_pool_new(uint8_t lcnt, uint8_t charCnt) {
     buffer_pool_t *bp = NULL;
     bp = malloc(sizeof(buffer_pool_t));
-    if (bp==NULL){
-        printf("Can not allocate buffer_pool_t"NL);
+    if (bp == NULL) {
+        printf("Can not allocate buffer_pool_t" NL);
         return NULL;
     }
     assert(bp != NULL);
     memset(bp, 0, sizeof(buffer_pool_t));
     bp->buffer_cnt = lcnt;
     bp->buffer = (buffer_t *)malloc(bp->buffer_cnt * sizeof(buffer_t *));
-    printf("Bufferarray= %p"NL, bp->buffer);
+    printf("Bufferarray= %p" NL, bp->buffer);
     memset(bp->buffer, 0, bp->buffer_cnt * sizeof(buffer_t *));
-    if (bp->buffer == NULL){
-        printf("Can not allocate buffer_t"NL);
+    if (bp->buffer == NULL) {
+        printf("Can not allocate buffer_t" NL);
         return NULL;
     }
     for (uint8_t i = 0; i < bp->buffer_cnt; i++) {
         ((buffer_t *)bp->buffer)[i] = *buffer_new(charCnt);
-        if (&bp->buffer[i] == (buffer_t *)NULL ){
-            printf("Can not allocate buffer %d"NL, i);
+        if (&bp->buffer[i] == (buffer_t *)NULL) {
+            printf("Can not allocate buffer %d" NL, i);
         }
     }
     printf("Buffer pool is %p" NL, bp);
