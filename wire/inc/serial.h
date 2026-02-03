@@ -57,7 +57,7 @@ typedef enum {
   GAP_DETECT = 2,
   ONE_SHOT = 4,
   USE_DMA_RX = 0x8,
-  USE_DMA_TX = 0x10,
+  USE_DMA_TX = 0x10, // Does not work
   USE_USB = 0x20,
 } print_e;
 

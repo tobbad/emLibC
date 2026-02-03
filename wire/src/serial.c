@@ -176,8 +176,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
 #endif
     if (isio.uart != NULL) {
         if (isio.mode & USE_DMA_TX) {
-            while (!ReadModify_write((int8_t *)&isio.buffer[SIO_TX]->state, 1)) {
-            };
+            while (!ReadModify_write((int8_t *)&isio.buffer[SIO_TX]->state, 1)) { };
             time_start(shdl, len, ptr);
             isio.buffer[SIO_RX]->state = BUFFER_USED;
             HAL_UART_Transmit_DMA(isio.uart, (uint8_t *)ptr, len);
