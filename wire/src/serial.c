@@ -138,9 +138,6 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     uint16_t len = 0;
     uint8_t idx = 0;
     txLen = MIN(txLen, TX_BUFFER_SIZE - 3);
-    // clang-format off
-    if (!isio.init) return -1;
-    // clang-format on
     uint32_t tick = 0;
     if (isio.buffer[SIO_TX]->mem != NULL) {
         if (isio.mode & TIMESTAMP) {
