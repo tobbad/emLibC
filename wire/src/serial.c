@@ -169,6 +169,11 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
         len += txLen;
         ptr = (uint8_t *)tx_buf;
     }
+#ifdef HAL_PCD_MODULE_ENABLED
+        if (isio.mode & USE_USB) {
+            CDC_Transmit_FS(ptr, len);
+        }
+#endif
     if (isio.uart != NULL) {
         if (isio.mode & USE_DMA_TX) {
             while (!ReadModify_write((int8_t *)&isio.buffer[SIO_TX]->state, 1)) {
@@ -182,11 +187,6 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
             HAL_UART_Transmit(isio.uart, ptr, len, UART_TIMEOUT_MS);
             time_end_tx(shdl);
             isio.ready[SIO_TX] = true;
-#ifdef HAL_PCD_MODULE_ENABLED
-            if (isio.mode & USE_USB) {
-                CDC_Transmit_FS(ptr, len);
-            }
-#endif
         }
     } else {
         printf("No UART or USB is given" NL);
