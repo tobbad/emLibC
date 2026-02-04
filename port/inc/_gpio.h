@@ -8,7 +8,6 @@
 #ifndef GPIO_H_
 #define GPIO_H_
 #include "common.h"
-#include "hal_port.h"
 
 typedef struct gpio_pin_s {
   GPIO_TypeDef *port;
