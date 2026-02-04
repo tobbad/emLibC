@@ -112,6 +112,7 @@ void time_end_tx(time_handle_t hdl) {
             (_time.time[hdl].measurement[_time.time[hdl].idx].stop_tx_us -
              _time.time[hdl].measurement[_time.time[hdl].idx].start_us) /
             10000;
+        assert(_time.time[hdl].measurement[_time.time[hdl].idx].duration_tx_us!=0);
         _time.time[hdl].measurement[_time.time[hdl].idx].baud =
             1000000 * 10 * _time.time[hdl].measurement[_time.time[hdl].idx].count /
             _time.time[hdl].measurement[_time.time[hdl].idx].duration_tx_us;
