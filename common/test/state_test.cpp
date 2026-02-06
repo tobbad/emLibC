@@ -227,6 +227,45 @@ TEST_F(StateTest, TestCopyMergeAndCompare){
 
 }
 
+TEST_F(StateTest, TestCopyMergeAndCompareOneOff){
+    const uint8_t cnt = 8;
+    state_t state1;
+    state_t state2;
+    state_t state3;
+    state_t merge;
+    state_init(&state1);
+    state1.first = 2;
+    state1.cnt = cnt;
+    state_init(&state2);
+    state_init(&state3);
+    em_msg res;
+    // Setup test state
+    for (uint8_t i=0;i<cnt;i++){
+        key_state_e s1, s2;
+        state_set_key_by_idx(&state1,i ,(key_state_e)(i/3));
+        state_set_key_by_idx(&state2,i ,(key_state_e)(i%3));
+    }
+    state_copy(&state2, &merge);
+    state_print(&state1, "State1");
+    state_print(&state2, "State2");
+    state_merge(&state1, &merge);
+    state_print(&merge, "Merge1");
+    state_set_key_by_idx(&state3, 0, OFF);
+    state_set_key_by_idx(&state3, 1, BLINKING);
+    state_set_key_by_idx(&state3, 2, ON);
+    state_set_key_by_idx(&state3, 3, BLINKING);
+    state_set_key_by_idx(&state3, 4, ON);
+    state_set_key_by_idx(&state3, 5, OFF);
+    state_set_key_by_idx(&state3, 6, OFF);
+    state_set_key_by_idx(&state3, 7, BLINKING);
+    state_set_key_by_idx(&state3, 8, ON);
+    state_print(&state3, "State3");
+    res = state_is_same(&merge, &state3);
+    EXPECT_EQ(res, EM_OK);
+
+
+}
+
 
 TEST_F(StateTest, TestSubKeyState){
     key_state_e res;
