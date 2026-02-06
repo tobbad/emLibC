@@ -294,7 +294,7 @@ em_msg state_merge(state_t *inState, state_t *outState) {
     for (uint8_t ri = inState->first, oi = outState->first; ri < inState->first + inState->cnt; ri++, oi++) {
         if (inState->state[ri] != outState->state[oi]) {
             outState->dirty = true;
-            outState->state[ri] = inState->state[oi];
+            outState->state[oi] = inState->state[ri];
         }
     }
     return outState->dirty;

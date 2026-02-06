@@ -218,6 +218,7 @@ int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
     if (isio.uart != NULL) {
         if (isio.mode & USE_DMA_RX) {
             rLen = strlen((char *)isio.buffer[SIO_RX]->mem);
+            memcpy(ptr, isio.buffer[SIO_RX]->mem, rLen);
         } else if (isio.buffer[SIO_RX]->mem == 0) {
             isio.buffer[SIO_RX]->state = BUFFER_USED;
             HAL_UART_Receive(isio.uart, isio.buffer[SIO_RX]->mem, len, HAL_MAX_DELAY);
