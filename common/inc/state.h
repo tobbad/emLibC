@@ -78,6 +78,10 @@ uint8_t state_get_cnt(state_t *state);
 uint8_t state_get_first(state_t *state);
 em_msg state_set_cnt(state_t *state, uint8_t nr);
 em_msg state_set_first(state_t *state, uint8_t nr);
+// only for Debug
+#ifdef UNIT_TEST
+em_msg state_set_key_by_idx_unchecked(state_t *state, uint8_t nr, uint8_t new_state);
+#endif
 
 #ifdef __cplusplus
 }

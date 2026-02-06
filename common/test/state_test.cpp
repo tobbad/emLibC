@@ -228,7 +228,8 @@ TEST_F(StateTest, TestCopyMergeAndCompare){
 }
 
 TEST_F(StateTest, TestCopyMergeAndCompareOneOff){
-    const uint8_t cnt = 8;
+    const uint8_t cnt = 9;
+    em_msg res;
     state_t state1;
     state_t state2;
     state_t state3;
@@ -238,12 +239,14 @@ TEST_F(StateTest, TestCopyMergeAndCompareOneOff){
     state1.cnt = cnt;
     state_init(&state2);
     state_init(&state3);
-    em_msg res;
     // Setup test state
     for (uint8_t i=0;i<cnt;i++){
         key_state_e s1, s2;
-        state_set_key_by_idx(&state1,i ,(key_state_e)(i/3));
-        state_set_key_by_idx(&state2,i ,(key_state_e)(i%3));
+        printf("Set key %d"NL, i);
+        state_set_key_by_idx_unchecked(&state1, i+ state1.first , STATE_CNT);
+        char lbd = state1.label[state1.first+i];
+        //state_set_key_by_lbl(&state1, lbd ,(key_state_e)(i/3));
+        state_set_key_by_idx(&state2, i ,  (key_state_e)(i%3));
     }
     state_copy(&state2, &merge);
     state_print(&state1, "State1");

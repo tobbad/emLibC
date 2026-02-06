@@ -34,7 +34,6 @@ set(GTEST  "${CMAKE_SOURCE_DIR}/test/googletest/googletest")
 
 # Füge den zusätzlichen Include-Pfad zur Bibliothek hinzu
 #target_include_directories(my_library PUBLIC ${ADDITIONAL_INC_DIR})
-add_definitions("-DUNIT_TEST")
 # Sammle alle Quell- und Testdateien
 message(STATUS "Sammle Quell- und Testdateien...")
 file(GLOB COMMON_SRC_FILES "${COMMON_SRC_DIR}/*.c")
@@ -60,25 +59,36 @@ list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/simple_test.cpp")
 # Erstelle die Bibliothek
 message(STATUS "Erstelle die Bibliothek...")
 add_library(cut ${COMMON_SRC_FILES})
+target_compile_definitions(cut PRIVATE $<$<BOOL:UNIT_TEST>:>)
 target_include_directories(cut PUBLIC ${COMMON_INC_DIR})
 
 # Füge die Compiler-Definition hinzu, wenn USE_CUSTOM_FEATURE aktiviert ist
 if(DEBUG)
-    target_compile_definitions(cut PUBLIC DEBUG)
+    target_compile_definitions(cut PUBLIC UNIT_TEST)
 endif()
 
 #add_compile_options(-H)
+if(TARGET state_test)
+    message(FATAL_ERROR "state_test target already exists!") 
+endif()
+
+get_target_property(CUT_DEFS cut COMPILE_DEFINITIONS)
+message(STATUS "cut COMPILE_DEFINITIONS = ${CUT_DEFS}")
 
 # Erstelle eine ausführbare Datei für jeden Test
 foreach(TEST_FILE ${TEST_SRC_FILES})
     get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
+
     message(STATUS "Erstelle ausführbare Testdatei: ${TEST_NAME}")
     add_executable(${TEST_NAME} ${TEST_FILE} ${ALL_TESTS_FILE})
-    target_include_directories(${TEST_NAME} PRIVATE ${COMMON_INC_DIR} ${GOOGLETEST_DIR} ${GTEST} )
+
+    target_include_directories(${TEST_NAME}
+        PRIVATE ${COMMON_INC_DIR} ${GOOGLETEST_DIR} ${GTEST} )
+
+    target_compile_definitions(${TEST_NAME} PRIVATE UNIT_TEST)
     target_link_libraries(${TEST_NAME} cut gtest gtest_main pthread)
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
 endforeach()
-
 # Test mit CTest aktivieren
 message(STATUS "Aktiviere Tests mit CTest...")
 enable_testing()

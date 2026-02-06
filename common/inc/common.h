@@ -28,6 +28,10 @@ extern "C" {
 #endif
 #define ELCNT(array) (array == 0) ? 0 : (sizeof((array)) / sizeof((array[0])))
 
+//#ifdef UNIT_TEST
+//#warning "Building emLibC with UNIT_TEST enabled"
+//#endif
+
 #define NEWLINE "\r\n"
 #define NL NEWLINE
 #define LINE_LENGTH 96 // FIXME -> CHAR_PER_LINE

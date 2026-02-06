@@ -12,11 +12,16 @@
 #ifdef UNIT_TEST
 uint32_t HAL_GetTick() { return 1; };
 #endif
-char key2char[][4] = {
-    "OFF",
-    "BLI",
-    "ON ",
-    "NA ",
+
+idx2str_t cmd[] = {
+    {.str = "OFF", .idx= OFF},
+    {.str = "BLI", .idx= BLINKING},
+    {.str = "ON ", .idx= ON },
+    {.str = "NA ", .idx= 0xff},
+};
+idxa2str_t state2str={
+    .cnt = 4,
+    .entry= (idx2str_t*)&cmd
 };
 
 em_msg state_init(state_t *state) {
@@ -100,13 +105,24 @@ em_msg state_set_key_by_idx(state_t *state, uint8_t nr, key_state_e new_state) {
     return res;
 }
 
+#ifdef UNIT_TEST
+em_msg state_set_key_by_idx_unchecked(state_t *state, uint8_t nr, uint8_t new_state) {
+    em_msg res = EM_ERR;
+    if (state_check(state))    return res;
+    if ((nr < state->first) || (nr >= (state->first + state->cnt))) return res;
+    state->state[nr] = new_state;
+    res = EM_OK;
+    return res;
+}
+#endif
+
 em_msg state_set_key_by_lbl(state_t *state, char lbl, key_state_e new_state) {
     em_msg res = EM_ERR;
     if (state_check(state))
         return res;
     uint8_t nr = state_ch2idx(state, lbl);
-    if (nr < 0)
-        return res;
+    printf("Map %c -> %d"NL, lbl, nr);
+    if (nr < 0) return res;
     if ((nr >= state->first) && (nr <= state->cnt)) {
         if (state->state[nr] != new_state) {
             state->state[nr] = new_state;
@@ -120,11 +136,9 @@ em_msg state_set_key_by_lbl(state_t *state, char lbl, key_state_e new_state) {
 
 key_state_e state_get_key_by_lbl(state_t *state, char ch) {
     em_msg res = EM_ERR;
-    if (state_check(state))
-        return res;
+    if (state_check(state)) return res;
     int8_t idx = state_ch2idx(state, ch);
-    if (idx < 0)
-        return res;
+    if (idx < 0)  return res;
     res = (state->state[idx] & (0x03));
     return res;
 }
@@ -311,7 +325,6 @@ em_msg state_print(const state_t *state, const char *title) {
         printf("Do not print corrupted payload" NL);
         return res;
     }
-    printf("state_t   = %d" NL, sizeof(state_t));
     printf("first     = %d" NL, state->first);
     printf("cnt       = %d" NL, state->cnt);
     printf("clabel    = 0x%04lx" NL, state->clabel.cmd);
@@ -326,7 +339,7 @@ em_msg state_print(const state_t *state, const char *title) {
     }
     printf(NL "State     = ");
     for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {
-        printf("%s ", key2char[state->state[i]]);
+        printf("%s ", idxa2str(&state2str, state->state[i]));
     }
     printf(NL);
     (state->dirty && 0x01) ? printf("Dirty" NL) : printf("Not Dirty" NL);

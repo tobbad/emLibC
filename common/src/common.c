@@ -116,19 +116,6 @@ uint16_t common_crc16(const uint8_t *data_p, uint16_t length) {
     return (crc);
 }
 
-char *idx2str(idx2str_t *map, uint8_t cnt, uint8_t idx) {
-    for (uint8_t i = 0; i < cnt; i++) {
-        if (map[i].idx == idx) {
-            char *ret = map[i].str;
-            return ret;
-        }
-    }
-    return "NA";
-}
-char* idxa2str(idxa2str_t *map, uint8_t idx){
-    return idx2str(map->entry, map->cnt, idx);
-}
-
 /* Int to Hex char*/
 char int2hchar(uint8_t nr) {
     static char ret = '0';
@@ -209,4 +196,18 @@ void print_buffer(const uint8_t *buffer, uint8_t size, const char *header) {
         }
     }
     printf(NL);
+}
+char *idx2str(idx2str_t *map, uint8_t cnt, uint8_t idx) {
+    for (uint8_t i = 0; i < cnt; i++) {
+        if (map[i].idx == idx) {
+            char *ret = map[i].str;
+            return ret;
+        }
+    }
+    return "NA ";
+}
+
+
+char* idxa2str(idxa2str_t *map, uint8_t idx){
+    return idx2str(map->entry, map->cnt, idx);
 }
