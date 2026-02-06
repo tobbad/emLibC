@@ -7,7 +7,6 @@
 #include "_time.h"
 #include "serial.h"
 
-#define MEAS_CNT 10
 #define LINE_CHAR 10
 
 typedef struct time_meas_s {
@@ -25,7 +24,7 @@ typedef struct time_meas_s {
 } time_meas_t;
 
 typedef struct time_single_s {
-    time_meas_t measurement[MEAS_CNT];
+    time_meas_t measurement[TIME_MEAS_CNT];
     int8_t idx;
     uint8_t mode;
 } time_single_t;
@@ -120,7 +119,7 @@ void time_end_tx(time_handle_t hdl) {
         _time.time[hdl].measurement[_time.time[hdl].idx].tick_duration =
             _time.time[hdl].measurement[_time.time[hdl].idx].tick_stop -
             _time.time[hdl].measurement[_time.time[hdl].idx].tick_start;
-        _time.time[hdl].idx = (_time.time[hdl].idx + 1) % MEAS_CNT;
+        _time.time[hdl].idx = (_time.time[hdl].idx + 1) % TIME_MEAS_CNT;
         if ((_time.time[hdl].idx == 0) && (_time.time[hdl].mode & ONE_SHOT)) {
             _time.time[hdl].idx = -1;
             // doLoop = false;
@@ -134,7 +133,7 @@ void time_print(time_handle_t hdl, char *titel) {
     if (titel != NULL)
         printf("%s // Transfer time us, count baud" NL, titel);
     printf("data:[" NL);
-    for (uint8_t i = 0; i < MEAS_CNT; i++) {
+    for (uint8_t i = 0; i < TIME_MEAS_CNT; i++) {
         uint32_t duration_us = _time.time[hdl].measurement[i].duration_tx_us;
         uint32_t count = _time.time[hdl].measurement[i].count;
         uint32_t baud  = _time.time[hdl].measurement[i].baud;
