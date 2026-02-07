@@ -13,7 +13,7 @@
 uint32_t HAL_GetTick() { return 1; };
 #endif
 
-idx2str_t cmd[] = {
+static idx2str_t cmd[] = {
     {.str = "OFF", .idx= OFF},
     {.str = "BLI", .idx= BLINKING},
     {.str = "ON ", .idx= ON },
@@ -364,6 +364,7 @@ em_msg state_set_undirty(state_t *state) {
     if (state_check(state))
         return res;
     state->dirty = false;
+    state->clabel.cmd=0;
     res = EM_OK;
     return res;
 }

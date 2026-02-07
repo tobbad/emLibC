@@ -218,8 +218,7 @@ int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
     if (isio.uart != NULL) {
         if (isio.mode & USE_DMA_RX) {
             rLen = strlen((char *)isio.buffer[SIO_RX]->mem);
-            memcpy(ptr, isio.buffer[SIO_RX]->mem, rLen);
-        } else if (isio.buffer[SIO_RX]->mem == 0) {
+       } else if (isio.buffer[SIO_RX]->mem == 0) {
             isio.buffer[SIO_RX]->state = BUFFER_USED;
             HAL_UART_Receive(isio.uart, isio.buffer[SIO_RX]->mem, len, HAL_MAX_DELAY);
         }
@@ -260,8 +259,7 @@ void serial_apply_change(void) {
         uint8_t ctype = clable2type(&isio.state.clabel);
         if (ctype == ISNUM) {
             if (!state_get_dirty(&isio.state)) {
-                uint8_t nr = clabel2uint8(&isio.state.clabel);
-                state_propagate_by_idx(&isio.state, nr);
+                state_propagate_by_lbl(&isio.state, isio.state.clabel.str[0]);
             }
         }
     }
@@ -294,9 +292,9 @@ bool serial_isdirty(dev_handle_t dev) {
 };
 
 void serial_undirty(dev_handle_t dev) {
-    if (!isio.init)
-        return;
+    if (!isio.init) return;
     state_set_undirty(&isio.state);
+    memset(isio.buffer[SIO_RX]->mem, 0, isio.buffer[SIO_RX]->size);
 };
 
 kybd_t serial_dev = {
