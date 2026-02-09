@@ -206,9 +206,9 @@ int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
     if (!isio.init)
         return EM_ERR;
 #ifdef HAL_PCD_MODULE_ENABLED
-    if (urx_buffer.state == BUFFER_READY) {
-        uint16_t msize = MIN(len, urx_buffer.size);
-        buffer_get(&urx_buffer, ptr, &msize);
+    if (urx_buffer.state == BUFFER_USED) {
+        uint16_t msize = MIN(len, urx_buffer.used);
+        buffer_set(&urx_buffer, ptr, &msize);
         if (msize != len) {
             printf("Only transfer %d of %d" NL, msize, len);
         }
@@ -392,7 +392,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *UartHandle) {
     /* Set transmission flag: transfer complete */
     time_end_tx(shdl);
     memset(isio.buffer[SIO_RX]->mem, 0, isio.buffer[SIO_RX]->size);
-    isio.buffer[SIO_RX]->state = BUFFER_READY;
+    isio.buffer[SIO_RX]->state = BUFFER_USED;
 #ifdef HAL_PCD_MODULE_ENABLED
     // USBD_CDC_ReceivePacket(&hUsbDeviceFS);
 #endif

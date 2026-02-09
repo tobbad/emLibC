@@ -15,8 +15,8 @@ extern "C" {
 #endif
 
 typedef enum {
-  BUFFER_READY, // Buffer can be used
-  BUFFER_USED, // Data in it, can be used (means dirty)
+  BUFFER_EMPTY=0, // Buffer can be used
+  BUFFER_USED,    // Data in it, can be used (means dirty)
   BUFFER_CNT
 } state_e;
 
