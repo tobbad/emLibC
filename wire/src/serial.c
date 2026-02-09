@@ -209,9 +209,6 @@ int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
     if (urx_buffer.state == BUFFER_USED) {
         uint16_t msize = MIN(len, urx_buffer.used);
         buffer_set(&urx_buffer, ptr, &msize);
-        if (msize != len) {
-            printf("Only transfer %d of %d" NL, msize, len);
-        }
         return msize;
     }
 #endif
