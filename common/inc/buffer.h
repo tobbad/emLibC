@@ -15,8 +15,8 @@ extern "C" {
 #endif
 
 typedef enum {
-  BUFFER_EMPTY=0, // Buffer can be used
-  BUFFER_USED,    // Data in it, can be used (means dirty)
+  BUFFER_READY, // Buffer can be used
+  BUFFER_USED, // Data in it, can be used (means dirty)
   BUFFER_CNT
 } state_e;
 
@@ -40,7 +40,7 @@ em_msg buffer_reset(buffer_t *buffer);
 em_msg buffer_set(buffer_t *buffer, uint8_t *data, const uint32_t size);
 em_msg buffer_get(buffer_t *buffer, uint8_t *data, uint16_t *size);
 bool buffer_is_used(buffer_t *buffer);
-void buffer_print(buffer_t *buffer, uint8_t nr);
+void buffer_print(buffer_t *buffer);
 
 #ifdef __cplusplus
 }
