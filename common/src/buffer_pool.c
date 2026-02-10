@@ -75,7 +75,7 @@ em_msg buffer_pool_print(buffer_pool_t *bp) {
     }
     printf("Buffer pool %p with %d buffers and type %d:" NL, bp, bp->buffer_cnt, bp->type);
     for (uint8_t i = 0; i < bp->buffer_cnt; i++) {
-        buffer_print(&bp->buffer[i]);
+        buffer_print(&bp->buffer[i], "bp");
         return EM_OK;
     }
     res = EM_OK;

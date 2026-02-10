@@ -4,34 +4,30 @@
  *  Created on: 16.05.2020
  *      Author: badi
  */
-#include <string.h>
-#include <stdint.h>
 #include "common.h"
+#include <stdint.h>
+#include <string.h>
 
 #define BUFFER_SIZE 87
-#define OFFSET  8
+#define OFFSET 8
 
 #include "gtest/gtest.h"
 class CommonTest : public ::testing::Test {
-    protected:
+  protected:
+    void SetUp() override {}
 
-    void SetUp() override    {
-    }
-
-    void TearDown() {
-    }
+    void TearDown() {}
 };
 
-TEST_F(CommonTest, TestBufferPrint){
+TEST_F(CommonTest, TestBufferPrint) {
     uint8_t buffer[BUFFER_SIZE];
-    memset(buffer,0, BUFFER_SIZE);
-    for (uint8_t i=0;i<BUFFER_SIZE;i++){
-        buffer[i]= i;
+    memset(buffer, 0, BUFFER_SIZE);
+    for (uint8_t i = 0; i < BUFFER_SIZE; i++) {
+        buffer[i] = i;
     }
-    for (int8_t i=OFFSET;i<BUFFER_SIZE;i++){
-        buffer[i]= ' '+i-OFFSET;
+    for (int8_t i = OFFSET; i < BUFFER_SIZE; i++) {
+        buffer[i] = ' ' + i - OFFSET;
     }
     PrintBuffer(buffer, BUFFER_SIZE, NULL);
-    EXPECT_TRUE(1==1);
+    EXPECT_TRUE(1 == 1);
 }
-

@@ -1,5 +1,16 @@
 cmake_minimum_required(VERSION 3.10)
 project(MyLibraryTests)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=address)
+endif()
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_compile_options(
+        $<$<COMPILE_LANGUAGE:C>:-fsanitize=address -fno-omit-frame-pointer>
+        $<$<COMPILE_LANGUAGE:CXX>:-fsanitize=address -fno-omit-frame-pointer>
+    )
+    add_link_options(-fsanitize=address)
+endif()
 
 # Setze C++ Standard
 set(CMAKE_CXX_STANDARD 17)
@@ -59,6 +70,14 @@ list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/state_test.cpp")
 # Erstelle die Bibliothek
 message(STATUS "Erstelle die Bibliothek...")
 add_library(cut ${COMMON_SRC_FILES})
+target_link_options(cut PRIVATE
+    -fsanitize=address
+)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=address)
+endif()
+
 target_compile_definitions(cut PRIVATE $<$<BOOL:UNIT_TEST>:>)
 target_include_directories(cut PUBLIC ${COMMON_INC_DIR})
 

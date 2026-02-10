@@ -23,10 +23,10 @@ typedef enum {
 extern char *state2str[];
 typedef struct buffer_s {
   state_e state;
-  uint16_t size;
+  int16_t size;
   uint8_t *pl;  /* pointer to first byte used in buffer */
   uint8_t *mem; /* Start of memory */
-  uint8_t used; // Count of bytes used in this buffer
+  int16_t used; // Count of bytes used in this buffer
   uint8_t id;   // id of buffer
 } buffer_t;
 /*
@@ -37,11 +37,10 @@ typedef struct buffer_s {
 buffer_t *buffer_new(uint16_t size);
 buffer_t *buffer_new_buffer_t(buffer_t *buffer);
 em_msg buffer_reset(buffer_t *buffer);
-em_msg buffer_set(buffer_t *buffer, uint8_t *data, const uint32_t size);
-em_msg buffer_get(buffer_t *buffer, uint8_t *data, uint16_t *size);
+em_msg buffer_set(buffer_t *buffer, const uint8_t *data, int16_t *size);
+em_msg buffer_get(buffer_t *buffer, uint8_t *data, int16_t *size);
 bool buffer_is_used(buffer_t *buffer);
-void buffer_print(buffer_t *buffer);
-
+void buffer_print(buffer_t *buffer, char *title);
 #ifdef __cplusplus
 }
 #endif
