@@ -92,8 +92,8 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     memset(&isio, 0, sizeof(isio_t));
     isio.uart = init->uart;
     isio.devh = dev_type;
-    isio.buffer[SIO_RX] = buffer_new(init->buffer[SIO_RX]->size);
-    isio.buffer[SIO_TX] = buffer_new(init->buffer[SIO_TX]->size);
+    isio.buffer[SIO_RX] = buffer_new_buffer_t(init->buffer[SIO_RX]);
+    isio.buffer[SIO_TX] = buffer_new_buffer_t(init->buffer[SIO_TX]);
     state_init(&isio.state);
     isio.mode = init->mode | USE_DMA_TX;
     memset(rx_buf, 0, RX_BUFFER_SIZE);
@@ -201,7 +201,7 @@ em_msg serial_read(dev_handle_t hdl, uint8_t *buffer, int16_t *cnt) {
     }
     return res;
 }
-int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
+volatile int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
     uint16_t rLen;
     if (!isio.init)
         return EM_ERR;
@@ -214,6 +214,7 @@ int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
 #endif
     if (isio.uart != NULL) {
         if (isio.mode & USE_DMA_RX) {
+            memcpy(ptr, isio.buffer[SIO_RX]->mem, isio.buffer[SIO_RX]->used);
             rLen = strlen((char *)isio.buffer[SIO_RX]->mem);
        } else if (isio.buffer[SIO_RX]->mem == 0) {
             isio.buffer[SIO_RX]->state = BUFFER_USED;
