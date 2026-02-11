@@ -100,6 +100,9 @@ foreach(TEST_FILE ${TEST_SRC_FILES})
 
     message(STATUS "Erstelle ausführbare Testdatei: ${TEST_NAME}")
     add_executable(${TEST_NAME} ${TEST_FILE} ${ALL_TESTS_FILE})
+    target_compile_options(${TEST_NAME} PRIVATE
+        $<$<COMPILE_LANGUAGE:CXX>:-Wno-literal-suffix>
+    )
 
     target_include_directories(${TEST_NAME}
         PRIVATE ${COMMON_INC_DIR} ${GOOGLETEST_DIR} ${GTEST} )
