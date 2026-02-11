@@ -21,7 +21,6 @@ buffer_t *buffer_new(uint16_t size) {
         free(buffer);
         return NULL;
     }
-    memset(buffer->mem, 0, size);
     buffer->size = size;
     buffer_reset(buffer);
     return buffer;
