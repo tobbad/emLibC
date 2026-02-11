@@ -26,6 +26,15 @@ buffer_t *buffer_new(uint16_t size) {
     buffer_reset(buffer);
     return buffer;
 }
+buffer_t *buffer_free(buffer_t *buffer) {
+    // clang-format off
+    if (!buffer) return NULL;
+    // clang-format on
+    free(buffer->mem);
+    free(buffer);
+    buffer =NULL; 
+    return buffer;
+}
 
 buffer_t *buffer_new_buffer_t(buffer_t *buffer) {
     // clang-format off
@@ -66,9 +75,12 @@ em_msg buffer_set(buffer_t *buffer, const uint8_t *data,  int16_t *size) {
 }
 
 em_msg buffer_get(buffer_t *buffer, uint8_t *data, int16_t *size) {
-    em_msg res = EM_OK;
-    if (!buffer || !buffer->mem || !data || !size) return res;
-    if (buffer->state ==BUFFER_USED) return res;
+    em_msg res = EM_ERR;
+    if (!buffer || !buffer->mem || !data || !size) {
+        printf("Precondition not fullfilled"NL);
+        return res;
+    };
+    if (buffer->state ==BUFFER_READY) return res;
     res = EM_OK;
     int16_t msize = MIN(*size, buffer->size);
     memcpy(data, buffer->mem, msize);

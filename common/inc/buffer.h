@@ -34,6 +34,7 @@ typedef struct buffer_s {
  * the memory is claimed as well, The filled in struct
  * is afterwards returned
  */
+buffer_t *buffer_free(buffer_t *buffer);
 buffer_t *buffer_new(uint16_t size);
 buffer_t *buffer_new_buffer_t(buffer_t *buffer);
 em_msg buffer_reset(buffer_t *buffer);
