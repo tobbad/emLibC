@@ -207,7 +207,7 @@ volatile int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
         return EM_ERR;
 #ifdef HAL_PCD_MODULE_ENABLED
     if (urx_buffer.state == BUFFER_USED) {
-        uint16_t msize = MIN(len, urx_buffer.used);
+        int16_t msize = MIN(len, urx_buffer.used);
         buffer_set(&urx_buffer, ptr, &msize);
         return msize;
     }
