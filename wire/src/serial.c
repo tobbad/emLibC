@@ -109,6 +109,10 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     return EM_OK;
 }
 
+print_e serial_get_mode(){
+    return isio.mode;
+};
+
 em_msg serial_io_open(dev_handle_t devh, void *dev) {
     if (!isio.init)
         return EM_ERR;

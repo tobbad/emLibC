@@ -69,6 +69,7 @@ typedef struct _sio_t {
 extern time_handle_t  shdl;
 
 void serial_set_mode(print_e mode, bool doReset);
+print_e serial_get_mode();
 int8_t serial_waitForNumber(char **key);
 extern kybd_t serial_dev;
 extern device_t serial_io;
