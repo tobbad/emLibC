@@ -38,7 +38,7 @@ class BufferTest : public ::testing::Test {
             abuf[i] = buffer_new(rBufCharCnt);
             ASSERT_NE(abuf[i], nullptr);
         }
-        pool = buffer_pool_new(rBufLine, rBufCharCnt);
+        pool = buffer_pool_new(rBufLine, rBufCharCnt, LINEAR);
     }
 
     void TearDown() {

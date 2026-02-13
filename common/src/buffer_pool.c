@@ -80,7 +80,7 @@ em_msg buffer_pool_return(buffer_pool_t *bp, buffer_t *buffer) {
     }
 
    /* Pointer prüfen (gehört der Buffer wirklich zum Pool?) */
-   if (bp->buffer[buffer->id] != buffer->id) {
+   if (bp->buffer[buffer->id] == buffer) {
        return EM_ERR;
    }
    if (buffer->state != BUFFER_USED){
