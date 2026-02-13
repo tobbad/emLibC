@@ -84,7 +84,6 @@ time_handle_t  shdl;
 static isio_t isio;
 static char *new = NULL;
 
-void serial_set_mode(print_e mode, bool doReset);
 
 em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     if (isio.init) return EM_ERR;
@@ -95,13 +94,14 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     isio.buffer[SIO_RX] = buffer_new_buffer_t(init->buffer[SIO_RX]);
     isio.buffer[SIO_TX] = buffer_new_buffer_t(init->buffer[SIO_TX]);
     state_init(&isio.state);
-    isio.mode = init->mode | USE_DMA_TX;
+    isio.mode = init->mode;
     memset(rx_buf, 0, RX_BUFFER_SIZE);
     memset(tx_buf, 0, TX_BUFFER_SIZE);
-    serial_set_mode(init->mode, true);
-    HAL_UARTEx_ReceiveToIdle_DMA(isio.uart, (uint8_t *)rx_buf, RX_BUFFER_SIZE);
-    shdl = time_new();
     isio.init = true;
+    serial_set_mode(isio.mode | USE_DMA_TX);
+    shdl = time_new();
+    time_reset(shdl);
+    HAL_UARTEx_ReceiveToIdle_DMA(isio.uart, (uint8_t *)rx_buf, RX_BUFFER_SIZE);
     // we could set the output buffer size to 0:
     // setbuf(stdout, NULL);
     // flush buffer:
@@ -109,22 +109,19 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     return EM_OK;
 }
 
-print_e serial_get_mode(){
-    return isio.mode;
-};
-
 em_msg serial_io_open(dev_handle_t devh, void *dev) {
-    if (!isio.init)
-        return EM_ERR;
+    if (!isio.init) return EM_ERR;
     return serial_init(0, 0, dev);
 }
 
-void serial_set_mode(print_e mode, bool doReset) {
-    isio.mode = mode | USE_DMA_RX;
-    if (doReset) {
-        time_reset(shdl);
-    }
-    time_set_mode(shdl, mode);
+print_e serial_get_mode(){
+    if (!isio.init) return EM_ERR;
+    return isio.mode;
+};
+
+void serial_set_mode(print_e mode) {
+    if (!isio.init) return;
+    isio.mode = mode;
 }
 
 em_msg serial_write(dev_handle_t hdl, const uint8_t *buffer, int16_t cnt) {
@@ -144,6 +141,8 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     txLen = MIN(txLen, TX_BUFFER_SIZE - 3);
     uint32_t tick = 0;
     if (isio.buffer[SIO_TX]->mem != NULL) {
+        len=0;
+        buffer_reset(isio.buffer[SIO_TX]);
         if (isio.mode & TIMESTAMP) {
             uint32_t tick = HAL_GetTick();
             len = sprintf((char *)isio.buffer[SIO_TX]->mem, "%010ld: ", tick);
@@ -176,17 +175,19 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
         }
 #endif
     if (isio.uart != NULL) {
+        if (isio.mode | (USE_UART | RAW)) {
+             time_start(shdl, len, ptr);
+             HAL_UART_Transmit(isio.uart, ptr, len, UART_TIMEOUT_MS);
+             time_end_tx(shdl);
+             isio.ready[SIO_TX] = true;
+             return len;
+        }
         if (isio.mode & USE_DMA_TX) {
             while (!ReadModify_write((int8_t *)&isio.buffer[SIO_TX]->state, 1)) { };
             time_start(shdl, len, ptr);
             isio.buffer[SIO_RX]->state = BUFFER_USED;
             HAL_UART_Transmit_DMA(isio.uart, (uint8_t *)ptr, len);
             time_end_su(shdl);
-        } else {
-            time_start(shdl, len, ptr);
-            HAL_UART_Transmit(isio.uart, ptr, len, UART_TIMEOUT_MS);
-            time_end_tx(shdl);
-            isio.ready[SIO_TX] = true;
         }
     } else {
         printf("No UART or USB is given" NL);

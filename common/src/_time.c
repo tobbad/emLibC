@@ -67,14 +67,12 @@ time_handle_t time_new() {
 }
 
 void time_set_mode(time_handle_t hdl, uint8_t mode) {
-    if (time_check_hdl(hdl) == EM_ERR)
-        return;
+    if (time_check_hdl(hdl) == EM_ERR)  return;
     _time.time[hdl].mode = mode;
 }
 
 void time_reset(time_handle_t hdl) {
-    if (time_check_hdl(hdl) == EM_ERR)
-        return;
+    if (time_check_hdl(hdl) == EM_ERR) return;
     memset(&_time.time[hdl].measurement, 0, sizeof(time_single_t));
 }
 

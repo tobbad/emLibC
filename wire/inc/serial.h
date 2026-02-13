@@ -56,9 +56,10 @@ typedef enum {
   TIMESTAMP = 1,
   GAP_DETECT = 2,
   ONE_SHOT = 4,
-  USE_DMA_RX = 0x8,
-  USE_DMA_TX = 0x10, // Does not work
-  USE_USB = 0x20,
+  USE_UART = 0x8,
+  USE_DMA_RX = 0x10,
+  USE_DMA_TX = 0x20, // Does not work
+  USE_USB = 0x40,
 } print_e;
 
 typedef struct _sio_t {
@@ -68,7 +69,7 @@ typedef struct _sio_t {
 } sio_t;
 extern time_handle_t  shdl;
 
-void serial_set_mode(print_e mode, bool doReset);
+void serial_set_mode(print_e mode);
 print_e serial_get_mode();
 int8_t serial_waitForNumber(char **key);
 extern kybd_t serial_dev;
