@@ -59,6 +59,7 @@
 #endif
 #include "_time.h"
 #include "buffer.h"
+#include "buffer_pool.h"
 #include "common.h"
 #include "hal_port.h"
 #include "main.h"
@@ -68,7 +69,7 @@
 
 static char rx_buf[RX_BUFFER_SIZE];
 static char tx_buf[TX_BUFFER_SIZE];
-
+#define POOL_SIZE 10
 
 typedef struct isio_s {
     UART_HandleTypeDef *uart;
@@ -78,12 +79,13 @@ typedef struct isio_s {
     dev_handle_t   devh;
     state_t        state;
     bool           init;
+    buffer_pool_t *pool;
+    buffer_t      *cbuffer;
 } isio_t;
 
 time_handle_t  shdl;
 static isio_t isio;
 static char *new = NULL;
-
 
 em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     if (isio.init) return EM_ERR;
@@ -94,11 +96,13 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     isio.buffer[SIO_RX] = buffer_new_buffer_t(init->buffer[SIO_RX]);
     isio.buffer[SIO_TX] = buffer_new_buffer_t(init->buffer[SIO_TX]);
     state_init(&isio.state);
+    isio.pool =buffer_pool_new(POOL_SIZE, TX_BUFFER_SIZE, LINEAR);
+    isio.cbuffer = NULL;
     isio.mode = init->mode;
     memset(rx_buf, 0, RX_BUFFER_SIZE);
     memset(tx_buf, 0, TX_BUFFER_SIZE);
     isio.init = true;
-    serial_set_mode(isio.mode | USE_DMA_TX);
+    serial_set_mode(isio.mode | USE_DMA_RX);
     shdl = time_new();
     time_reset(shdl);
     HAL_UARTEx_ReceiveToIdle_DMA(isio.uart, (uint8_t *)rx_buf, RX_BUFFER_SIZE);
@@ -136,7 +140,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     // clang-format off
     if (!isio.init) return EM_ERR;
     // clang-format on
-    uint16_t len = 0;
+    int16_t len = 0;
     uint8_t idx = 0;
     txLen = MIN(txLen, TX_BUFFER_SIZE - 3);
     uint32_t tick = 0;
@@ -182,12 +186,19 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
              isio.ready[SIO_TX] = true;
              return len;
         }
-        if (isio.mode & USE_DMA_TX) {
-            while (!ReadModify_write((int8_t *)&isio.buffer[SIO_TX]->state, 1)) { };
+        if (isio.mode & USE_DMA_TX) { // does not work, needs a too large buffer
+            if (isio.cbuffer!=NULL) {
+                printf("UART TX overflow"NL);
+                isio.mode ^= USE_DMA_TX;
+                return;
+            }
+            isio.cbuffer= buffer_pool_get(isio.pool);
+            while (!ReadModify_write((int8_t*)&isio.cbuffer->state, 1)) { };
             time_start(shdl, len, ptr);
-            isio.buffer[SIO_RX]->state = BUFFER_USED;
-            HAL_UART_Transmit_DMA(isio.uart, (uint8_t *)ptr, len);
+            buffer_set(isio.cbuffer, ptr, &len);
+            HAL_UART_Transmit_DMA(isio.uart, isio.cbuffer->mem, len);
             time_end_su(shdl);
+
         }
     } else {
         printf("No UART or USB is given" NL);
@@ -393,10 +404,8 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *UartHandle) {
     /* Set transmission flag: transfer complete */
+    isio.cbuffer->state = BUFFER_READY;
+    buffer_pool_return(isio.pool, isio.cbuffer);
+    isio.cbuffer = NULL;
     time_end_tx(shdl);
-    memset(isio.buffer[SIO_RX]->mem, 0, isio.buffer[SIO_RX]->size);
-    isio.buffer[SIO_RX]->state = BUFFER_USED;
-#ifdef HAL_PCD_MODULE_ENABLED
-    // USBD_CDC_ReceivePacket(&hUsbDeviceFS);
-#endif
 }

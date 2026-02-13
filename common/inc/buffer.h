@@ -22,7 +22,7 @@ typedef enum {
 
 extern char *state2str[];
 typedef struct buffer_s {
-  state_e state;
+  int8_t state;
   int16_t size;
   uint8_t *pl;  /* pointer to first byte used in buffer */
   uint8_t *mem; /* Start of memory */
@@ -34,7 +34,7 @@ typedef struct buffer_s {
  * the memory is claimed as well, The filled in struct
  * is afterwards returned
  */
-buffer_t *buffer_free(buffer_t *buffer);
+em_msg buffer_free(buffer_t *buffer);
 buffer_t *buffer_new(uint16_t size);
 buffer_t *buffer_new_buffer_t(buffer_t *buffer);
 em_msg buffer_reset(buffer_t *buffer);

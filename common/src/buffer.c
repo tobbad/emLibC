@@ -25,14 +25,16 @@ buffer_t *buffer_new(uint16_t size) {
     buffer_reset(buffer);
     return buffer;
 }
-buffer_t *buffer_free(buffer_t *buffer) {
+em_msg buffer_free(buffer_t *buffer) {
+    em_msg res = EM_ERR;
     // clang-format off
-    if (!buffer) return NULL;
+    if (!buffer) return res;
+    if (buffer->state == BUFFER_USED) return res;
     // clang-format on
     free(buffer->mem);
     free(buffer);
     buffer =NULL; 
-    return buffer;
+    return EM_OK;;
 }
 
 buffer_t *buffer_new_buffer_t(buffer_t *buffer) {
