@@ -25,6 +25,7 @@ class BufferTest : public ::testing::Test {
     uint8_t sbuffer[BUFFER_SIZE];
     buffer_t *abuf[ACNT];
     buffer_t *buf;
+    buffer_pool_t *pool=NULL;
 
     void SetUp() override {
         for (uint8_t i = 0; i < BUFFER_SIZE; i++) {
@@ -37,6 +38,7 @@ class BufferTest : public ::testing::Test {
             abuf[i] = buffer_new(rBufCharCnt);
             ASSERT_NE(abuf[i], nullptr);
         }
+        pool = buffer_pool_new(rBufLine, rBufCharCnt);
     }
 
     void TearDown() {
@@ -51,6 +53,7 @@ class BufferTest : public ::testing::Test {
                 abuf[i] = nullptr;
             }
         }
+        buffer_pool_free(pool);
     }
 };
 
@@ -150,13 +153,13 @@ TEST_F(BufferTest, ArraySetDataToBufferAndReadItBack) {
  * Buffer pool does not work
  */
 // TEST_F(BufferTest, DISABLED_CreateBufferPool) {
-TEST_F(BufferTest, DISABLED_CreateBufferPool) {
-    buffer_pool_t *pool = buffer_pool_new(rBufLine, rBufCharCnt);
+TEST_F(BufferTest, CreateBufferPool) {
+
     buffer_pool_print(pool);
     buffer_t *buffer;
     for (uint8_t i = 0; i < rBufLine; i++) {
         buffer = buffer_pool_get(pool);
-        buffer_print(buffer, (char *)"buffer");
+        buffer_print(buffer, (char *)"BoolBuffer");
         EXPECT_NE(buffer, (buffer_t *)NULL);
     }
     buffer = buffer_pool_get(pool);
