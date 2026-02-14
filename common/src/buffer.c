@@ -25,15 +25,17 @@ buffer_t *buffer_new(uint16_t size) {
     buffer_reset(buffer);
     return buffer;
 }
+
 em_msg buffer_free(buffer_t *buffer) {
-    em_msg res = EM_ERR;
+    em_msg res = EM_OK;
+    //printf("buffer_free(%p)"NL, buffer);
     // clang-format off
     if (!buffer) return res;
-    if (buffer->state == BUFFER_USED) return res;
+    if (buffer->state == BUFFER_USED) return EM_ERR;
     // clang-format on
+    //printf("Free buffer mem %p"NL, buffer->mem);
     free(buffer->mem);
     free(buffer);
-    buffer =NULL; 
     return EM_OK;;
 }
 
@@ -52,7 +54,10 @@ buffer_t *buffer_new_buffer_t(buffer_t *buffer) {
 em_msg buffer_reset(buffer_t *buffer) {
     // clang-format off
     em_msg res = EM_ERR;
-    if (!buffer || !buffer->mem)  return res;
+    if (!buffer || !buffer->mem)  {
+        //printf("buffer_reset buffer = %p, buffer-mem = %p"NL);
+        return res;
+    }
    // clang-format on
     memset(buffer->mem, 0, buffer->size);
     buffer->pl = buffer->mem;
@@ -65,6 +70,8 @@ em_msg buffer_reset(buffer_t *buffer) {
 
 em_msg buffer_set(buffer_t *buffer, const uint8_t *data,  int16_t *size) {
     em_msg res = EM_ERR;
+//    print_buffer(data, *size, "Input buffer");
+//    buffer_print(buffer , "In buffer");
     if (!buffer || !buffer->mem || !data || !size)  return res;
     res = EM_OK;
     int16_t msize = MIN(*size, buffer->size);

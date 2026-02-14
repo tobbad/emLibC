@@ -36,22 +36,20 @@ buffer_pool_t *buffer_pool_new(uint8_t lcnt, uint8_t charCnt, bp_type_e type) {
              free(bp->buffer);
              free(bp);
              return NULL;
-        }
-    }
+        } 
+        bp->buffer[i]->id = i;
+   }
     return bp;
 }
 
 void buffer_pool_free(buffer_pool_t *pool){
-    em_msg res = EM_ERR;
-    if (!pool) {
-        return;
-    }
+    //printf("buffer_pool_free(%p)\n", pool);
+    
+    if (!pool) return;
 
     for (uint8_t i = 0; i < pool->buffer_cnt; i++) {
-        res = buffer_free(pool->buffer[i]);
-        if (res == EM_ERR){
-            return;
-        }
+//        printf("  free buffer[%d]=%p\n", i, pool->buffer[i]);
+        buffer_free(pool->buffer[i]);
     }
 
     free(pool->buffer);
@@ -73,29 +71,41 @@ buffer_t *buffer_pool_get(buffer_pool_t *bp) {
 }
 em_msg buffer_pool_return(buffer_pool_t *bp, buffer_t *buffer) {
     em_msg res = EM_ERR;
-    if (!bp)  return res;
-    if (!buffer) return res;
+    if (!bp)  {
+        printf("bp  is NULL" NL);
+        return res;
+    }
+    if (!buffer){
+        printf("buffer is  NULL" NL);
+        return res;
+    }
     if (buffer->id > bp->buffer_cnt-1){
+        printf("buffer is  larger allowed" NL);
         return EM_ERR;
     }
 
    /* Pointer prüfen (gehört der Buffer wirklich zum Pool?) */
-   if (bp->buffer[buffer->id] == buffer) {
+   if (bp->buffer[buffer->id] != buffer) {
+       printf("buffer id do not match"NL);
+       printf("bp->buffer[buffer->id]: %p"NL);
+       printf("buffer                : %p"NL);
        return EM_ERR;
    }
    if (buffer->state != BUFFER_USED){
+       printf("Buffer is not used"NL);
        return EM_ERR;
    }
    return buffer_reset(buffer);
 }
 
-em_msg buffer_pool_print(buffer_pool_t *bp) {
+em_msg buffer_pool_print(buffer_pool_t *bp, char * title) {
     em_msg res = EM_ERR;
+    if (title) printf("%s"NL , title);
     if (bp == NULL) {
         printf("Buffer pool is NULL" NL);
         return res;
     }
-    printf("Buffer pool %p with %d buffers and type %d:" NL, bp, bp->buffer_cnt, bp->type);
+    //printf("Buffer pool %p with %d buffers and type %d:" NL, bp, bp->buffer_cnt, bp->type);
     for (uint8_t i = 0; i < bp->buffer_cnt; i++) {
         buffer_print(bp->buffer[i], "bp");
         return EM_OK;

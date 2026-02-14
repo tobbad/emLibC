@@ -163,6 +163,9 @@ int8_t clabel2uint8(clabel_u *lbl) {
 };
 
 void print_buffer(const uint8_t *buffer, uint8_t size, const char *header) {
+    if (!buffer){
+        printf("Can not print NULL buffer");
+    }
     if (header != NULL) {
         printf("Print %s buffer of size %d", header, size);
     } else {
