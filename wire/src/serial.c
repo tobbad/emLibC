@@ -81,6 +81,7 @@ typedef struct isio_s {
     bool           init;
     buffer_pool_t *pool;
     buffer_t      *cbuffer;
+    uint32_t       cTxBytePerSecond;
 } isio_t;
 
 time_handle_t  shdl;
@@ -98,11 +99,12 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     state_init(&isio.state);
     isio.pool =buffer_pool_new(POOL_SIZE, TX_BUFFER_SIZE, LINEAR);
     isio.cbuffer = NULL;
+    isio.cTxBytePerSecond = 0;
     isio.mode = init->mode;
     memset(rx_buf, 0, RX_BUFFER_SIZE);
     memset(tx_buf, 0, TX_BUFFER_SIZE);
     isio.init = true;
-    serial_set_mode(isio.mode | USE_DMA_RX);
+    serial_mode_set(isio.mode | USE_DMA_RX);
     shdl = time_new();
     time_reset(shdl);
     HAL_UARTEx_ReceiveToIdle_DMA(isio.uart, (uint8_t *)rx_buf, RX_BUFFER_SIZE);
@@ -113,28 +115,48 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     return EM_OK;
 }
 
-em_msg serial_io_open(dev_handle_t devh, void *dev) {
-    if (!isio.init) return EM_ERR;
-    return serial_init(0, 0, dev);
-}
 
-print_e serial_get_mode(){
+print_e serial_mode_get(){
     if (!isio.init) return EM_ERR;
     return isio.mode;
 };
 
-void serial_set_mode(print_e mode) {
+void serial_mode_set(print_e mode) {
     if (!isio.init) return;
     isio.mode = mode;
 }
 
-em_msg serial_write(dev_handle_t hdl, const uint8_t *buffer, int16_t cnt) {
-    // clang-format off
-    if (!isio.init) return EM_ERR;
-    // clang-format on
-    printf("%s", buffer);
-    return EM_OK;
+
+uint32_t serial_get_byte_per_second(){
+    uint32_t ret = isio.cTxBytePerSecond;
+    ret = isio.cTxBytePerSecond =0;
+    return ret;
+};
+
+
+volatile int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
+    uint16_t rLen;
+    if (!isio.init)
+        return EM_ERR;
+#ifdef HAL_PCD_MODULE_ENABLED
+    if (urx_buffer.state == BUFFER_USED) {
+        int16_t msize = MIN(len, urx_buffer.used);
+        buffer_set(&urx_buffer, ptr, &msize);
+        return msize;
+    }
+#endif
+    if (isio.uart != NULL) {
+        if (isio.mode & USE_DMA_RX) {
+            memcpy(ptr, isio.buffer[SIO_RX]->mem, isio.buffer[SIO_RX]->used);
+            rLen = strlen((char *)isio.buffer[SIO_RX]->mem);
+       } else if (isio.buffer[SIO_RX]->mem == 0) {
+            isio.buffer[SIO_RX]->state = BUFFER_USED;
+            HAL_UART_Receive(isio.uart, isio.buffer[SIO_RX]->mem, len, HAL_MAX_DELAY);
+        }
+    }
+    return rLen;
 }
+
 
 int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     // clang-format off
@@ -173,11 +195,16 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
         len += txLen;
         ptr = (uint8_t *)tx_buf;
     }
+    if (isio.mode & MEASURE_BYTE_PER_SECONDS){
+        time_auto(shdl, len, ptr);
+        return len;
+    }
 #ifdef HAL_PCD_MODULE_ENABLED
         if (isio.mode & USE_USB) {
             CDC_Transmit_FS(ptr, len);
         }
 #endif
+
     if (isio.uart != NULL) {
         if (isio.mode | (USE_UART | RAW)) {
              time_start(shdl, len, ptr);
@@ -190,7 +217,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
             if (isio.cbuffer!=NULL) {
                 printf("UART TX overflow"NL);
                 isio.mode ^= USE_DMA_TX;
-                return;
+                return len;
             }
             isio.cbuffer= buffer_pool_get(isio.pool);
             while (!ReadModify_write((int8_t*)&isio.cbuffer->state, 1)) { };
@@ -206,7 +233,12 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     return len;
 }
 
-em_msg serial_read(dev_handle_t hdl, uint8_t *buffer, int16_t *cnt) {
+static em_msg serial_io_open(dev_handle_t devh, void *dev) {
+    if (!isio.init) return EM_ERR;
+    return serial_init(0, 0, dev);
+}
+
+static em_msg serial_read(dev_handle_t hdl, uint8_t *buffer, int16_t *cnt) {
     if (!isio.init)
         return EM_ERR;
     em_msg res = EM_OK;
@@ -217,38 +249,34 @@ em_msg serial_read(dev_handle_t hdl, uint8_t *buffer, int16_t *cnt) {
     }
     return res;
 }
-volatile int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
-    uint16_t rLen;
-    if (!isio.init)
-        return EM_ERR;
-#ifdef HAL_PCD_MODULE_ENABLED
-    if (urx_buffer.state == BUFFER_USED) {
-        int16_t msize = MIN(len, urx_buffer.used);
-        buffer_set(&urx_buffer, ptr, &msize);
-        return msize;
-    }
-#endif
-    if (isio.uart != NULL) {
-        if (isio.mode & USE_DMA_RX) {
-            memcpy(ptr, isio.buffer[SIO_RX]->mem, isio.buffer[SIO_RX]->used);
-            rLen = strlen((char *)isio.buffer[SIO_RX]->mem);
-       } else if (isio.buffer[SIO_RX]->mem == 0) {
-            isio.buffer[SIO_RX]->state = BUFFER_USED;
-            HAL_UART_Receive(isio.uart, isio.buffer[SIO_RX]->mem, len, HAL_MAX_DELAY);
-        }
-    }
-    return rLen;
+
+static em_msg serial_write(dev_handle_t hdl, const uint8_t *buffer, int16_t cnt) {
+    // clang-format off
+    if (!isio.init) return EM_ERR;
+    // clang-format on
+    printf("%s", buffer);
+    return EM_OK;
 }
+
+device_t serial_io = {
+    .open = &serial_io_open,
+    .read = &serial_read,
+    .write = &serial_write,
+    .ioctrl = NULL,
+    .close = NULL,
+    .ready_cb = NULL,
+    .dev_type = DEV_OPEN | DEV_READ | DEV_WRITE,
+};
 
 // If the result >0: number of char in buffers
 // EM_ERR: Serial was not initialized
-int16_t serial_scan(dev_handle_t dev) {
+static int16_t serial_scan(dev_handle_t dev) {
     if (!isio.init)
         return EM_ERR;
     return _read(0, isio.buffer[SIO_RX]->mem, RX_BUFFER_SIZE);
 };
 
-void serial_reset(dev_handle_t dev) {
+static void serial_reset(dev_handle_t dev) {
     buffer_t *buf = isio.buffer[SIO_RX];
     buffer_reset(buf);
     buf = isio.buffer[SIO_TX];
@@ -258,9 +286,17 @@ void serial_reset(dev_handle_t dev) {
     memset(tx_buf, 0, TX_BUFFER_SIZE);
 };
 
-void serial_set_state(dev_handle_t dev, const state_t *state) { state_set_state(state, &isio.state); };
+static void serial_set_state(dev_handle_t dev, const state_t *state) { state_set_state(state, &isio.state); };
 
-void serial_apply_change(void) {
+static void serial_get_state(dev_handle_t dev, state_t *ret) {
+    if (!isio.init)
+        return;
+    isio.state.first = ret->first;
+    isio.state.cnt = ret->cnt;
+    memcpy(ret, &isio.state, sizeof(state_t));
+};
+
+static void serial_apply_change(void) {
     if (!isio.init)
         return;
     uint16_t len = strlen(isio.state.clabel.str);
@@ -279,33 +315,25 @@ void serial_apply_change(void) {
     }
 };
 
-void serial_get_state(dev_handle_t dev, state_t *ret) {
-    if (!isio.init)
-        return;
-    isio.state.first = ret->first;
-    isio.state.cnt = ret->cnt;
-    memcpy(ret, &isio.state, sizeof(state_t));
-};
-
-em_msg serial_diff(dev_handle_t dev, state_t *ref, state_t *diff) {
+static em_msg serial_diff(dev_handle_t dev, state_t *ref, state_t *diff) {
     if (!isio.init)
         return EM_ERR;
     return state_diff(ref, &isio.state, diff);
 };
 
-em_msg serial_add(dev_handle_t dev, state_t *add) {
+static em_msg serial_add(dev_handle_t dev, state_t *add) {
     if (!isio.init)
         return EM_ERR;
     return state_add(&isio.state, add);
 };
 
-bool serial_isdirty(dev_handle_t dev) {
+static bool serial_isdirty(dev_handle_t dev) {
     if (!isio.init)
         return EM_ERR;
     return isio.state.dirty;
 };
 
-void serial_undirty(dev_handle_t dev) {
+static void serial_undirty(dev_handle_t dev) {
     if (!isio.init) return;
     state_set_undirty(&isio.state);
     memset(isio.buffer[SIO_RX]->mem, 0, isio.buffer[SIO_RX]->size);
@@ -324,16 +352,6 @@ kybd_t serial_dev = {
     .dev_type = TERMINAL,
     .cnt = 8,
     .first = 1,
-};
-
-device_t serial_io = {
-    .open = &serial_io_open,
-    .read = &serial_read,
-    .write = &serial_write,
-    .ioctrl = NULL,
-    .close = NULL,
-    .ready_cb = NULL,
-    .dev_type = DEV_OPEN | DEV_READ | DEV_WRITE,
 };
 
 int8_t serial_waitForNumber(char **key) {

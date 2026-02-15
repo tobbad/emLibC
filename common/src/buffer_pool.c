@@ -87,12 +87,12 @@ em_msg buffer_pool_return(buffer_pool_t *bp, buffer_t *buffer) {
    /* Pointer prüfen (gehört der Buffer wirklich zum Pool?) */
    if (bp->buffer[buffer->id] != buffer) {
        printf("buffer id do not match"NL);
-       printf("bp->buffer[buffer->id]: %p"NL);
-       printf("buffer                : %p"NL);
+       printf("bp->buffer[buffer->id]: %p"NL,bp->buffer[buffer->id]);
+       printf("buffer                : %p"NL, buffer);
        return EM_ERR;
    }
-   if (buffer->state != BUFFER_USED){
-       printf("Buffer is not used"NL);
+   if (buffer->state == BUFFER_USED){
+       printf("Buffer is used"NL);
        return EM_ERR;
    }
    return buffer_reset(buffer);

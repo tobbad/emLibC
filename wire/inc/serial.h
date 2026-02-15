@@ -60,6 +60,7 @@ typedef enum {
   USE_DMA_RX = 0x10,
   USE_DMA_TX = 0x20, // Does not work
   USE_USB = 0x40,
+  MEASURE_BYTE_PER_SECONDS= 0x80,
 } print_e;
 
 typedef struct _sio_t {
@@ -69,9 +70,12 @@ typedef struct _sio_t {
 } sio_t;
 extern time_handle_t  shdl;
 
-void serial_set_mode(print_e mode);
-print_e serial_get_mode();
+uint32_t serial_get_byte_per_second();
+void     serial_reset_byte_per_second();
+void    serial_mode_set(print_e mode);
+print_e serial_mode_get();
 int8_t serial_waitForNumber(char **key);
+uint32_t serial_uart_printf(char *line , uint16_t len);
 extern kybd_t serial_dev;
 extern device_t serial_io;
 
