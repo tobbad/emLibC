@@ -10,6 +10,7 @@
 #include "common.h"
 
 #define TIME_MEAS_CNT 10
+#define TIME_MEAS_CHAR_PER_LINE 15
 #define TIME_DEV_CNT 5
 typedef int8_t  time_handle_t;
 

@@ -20,7 +20,7 @@ typedef struct time_meas_s {
     uint32_t duration_tx_cyccnt;
     uint32_t baud;
     int8_t count;
-    char line[10 + 2];
+    char line[TIME_MEAS_CHAR_PER_LINE + 2];
 } time_meas_t;
 
 typedef struct time_single_s {
@@ -93,7 +93,8 @@ void time_start(time_handle_t hdl, uint8_t count, uint8_t *ptr) {
     if (_time.time[hdl].idx >= 0) {
         _time.time[hdl].measurement[_time.time[hdl].idx].count = count;
         _time.time[hdl].measurement[_time.time[hdl].idx].tick_start = HAL_GetTick();
-        memcpy((uint8_t *)_time.time[hdl].measurement[_time.time[hdl].idx].line, ptr, LINE_CHAR);
+        memcpy((uint8_t *)_time.time[hdl].measurement[_time.time[hdl].idx].line, ptr, TIME_MEAS_CHAR_PER_LINE);
+        _time.time[hdl].measurement[_time.time[hdl].idx].line[TIME_MEAS_CHAR_PER_LINE+1]=0;
         _time.time[hdl].measurement[_time.time[hdl].idx].start_cyccnt = _time.time[hdl].last_start_cyccnt;
     }
 }
