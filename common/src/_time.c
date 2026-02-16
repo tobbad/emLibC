@@ -36,6 +36,8 @@ typedef struct timem_s {
     uint32_t clk_Hz;
     float cyccnt2us;
     bool init;
+    bool doLoop;// becomes true when one cyle of times are stored and oneShot is active
+
 } timem_t;
 
 timem_t _time;
@@ -58,6 +60,7 @@ void time_init() {
     float div = 10000000.0/_time.clk_Hz;
     _time.cyccnt2us = div;
     _time.init = true;
+    _time.doLoop = true;
 }
 
 time_handle_t time_new() {
@@ -117,7 +120,6 @@ void time_end_tx(time_handle_t hdl) {
         _time.time[hdl].measurement[_time.time[hdl].idx].duration_tx_cyccnt =
             (_time.time[hdl].measurement[_time.time[hdl].idx].stop_tx_cyccnt -
              _time.time[hdl].measurement[_time.time[hdl].idx].start_cyccnt);
-        assert(_time.time[hdl].measurement[_time.time[hdl].idx].duration_tx_cyccnt!=0);
         _time.time[hdl].measurement[_time.time[hdl].idx].baud =
             1000000 * 10 * _time.time[hdl].measurement[_time.time[hdl].idx].count /
             _time.time[hdl].measurement[_time.time[hdl].idx].duration_tx_cyccnt;
@@ -128,7 +130,7 @@ void time_end_tx(time_handle_t hdl) {
         _time.time[hdl].idx = (_time.time[hdl].idx + 1) % TIME_MEAS_CNT;
         if ((_time.time[hdl].idx == 0) && (_time.time[hdl].mode & ONE_SHOT)) {
             _time.time[hdl].idx = -1;
-            // doLoop = false;
+            _time.doLoop = false;
         }
     }
 }
@@ -140,6 +142,10 @@ void time_auto(time_handle_t hdl, uint8_t count, uint8_t *ptr) {
    _time.time[hdl].last_start_cyccnt=DWT->CYCCNT;
 }
 
+bool time_doLoop_get(){
+    return _time.doLoop;
+};
+
 void time_print(time_handle_t hdl, char *titel, bool python) {
     if (time_check_hdl(hdl) == EM_ERR)
         return;
@@ -150,7 +156,7 @@ void time_print(time_handle_t hdl, char *titel, bool python) {
     if (python){
         save = serial_mode_get();
         serial_mode_set(RAW);
-        printf("# start_us duration_us count " NL);
+        printf("# start_us duration_us count tick " NL);
         printf("data = dict(\"timing\":[" NL);
     } else {
         printf("%s // Transfer time us, count baud " NL, titel);
@@ -161,10 +167,11 @@ void time_print(time_handle_t hdl, char *titel, bool python) {
         uint32_t duration_us = _time.time[hdl].measurement[i].duration_tx_cyccnt*_time.cyccnt2us;
         uint32_t count = _time.time[hdl].measurement[i].count;
         uint32_t baud  = _time.time[hdl].measurement[i].baud;
+        uint32_t tick_start  = _time.time[hdl].measurement[_time.time[hdl].idx].tick_start;
         if (python){
-            printf("    [ %jd, %u, %u ]," NL, start_us, duration_us, count);
+            printf("    [ %" PRId64 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 " ]," NL, start_us, duration_us, count, tick_start);
         }else{
-            printf("    [ %u, %u, %u ]," NL, duration_us, baud, count);
+            printf("    [ %" PRIu32 ", %" PRIu32 ", %" PRIu32 " ]," NL, duration_us, baud, count);
         }
     }
     if (python){
