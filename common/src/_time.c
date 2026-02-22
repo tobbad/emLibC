@@ -158,7 +158,7 @@ void time_print(time_handle_t hdl, char *titel, bool python) {
         save = serial_mode_get();
         serial_mode_set(RAW);
         printf("# start_us duration_us count tick " NL);
-        printf("data = dict(\"timing\":[" NL);
+        printf("data = {\"timing\":[" NL);
     } else {
         printf("%s // Transfer time us, count baud " NL, titel);
     }
@@ -176,7 +176,7 @@ void time_print(time_handle_t hdl, char *titel, bool python) {
         }
     }
     if (python){
-        printf("])" NL);
+        printf("]}" NL);
         serial_mode_set(save);
     } else {
         printf("]" NL);
