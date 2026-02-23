@@ -13,28 +13,32 @@ typedef struct time_meas_s {
     uint32_t tick_start;
     uint32_t tick_stop;
     uint32_t tick_duration;
-    int64_t start_cyccnt;
-    int64_t stop_su_cyccnt;
-    int64_t stop_tx_cyccnt;
-    uint32_t duration_su_cyccnt;
-    uint32_t duration_tx_cyccnt;
-    uint32_t baud;
-    int8_t count;
+    int64_t start_ns;
+    int64_t stop_su_ns;
+    int64_t stop_tx_ns;
+    uint32_t duration_su_ns;
+    uint32_t duration_tx_ns;
+    int64_t baud;
+    uint8_t count;
     char line[TIME_MEAS_CHAR_PER_LINE + 2];
 } time_meas_t;
 
 typedef struct time_single_s {
     time_meas_t measurement[TIME_MEAS_CNT];
     int8_t idx;
-    int64_t last_start_cyccnt;
-    uint8_t mode;
+    int64_t last_start_ns;
+    int64_t first_ns;
+    int64_t last_ns; // This is set, when maximal baudrate was achived
+    float max_baud;
+    int32_t max_cnt;
+    uint8_t  mode;
 } time_single_t;
 
 typedef struct timem_s {
     time_single_t time[TIME_DEV_CNT];
     uint8_t used;
     uint32_t clk_Hz;
-    float cyccnt2us;
+    float ccnt2ns;
     bool init;
     bool doLoop;// becomes true when one cyle of times are stored and oneShot is active
 
@@ -57,8 +61,8 @@ void time_init() {
         time_reset(hdl);
     }
     _time.clk_Hz = HAL_RCC_GetHCLKFreq();
-    float div = 10000000.0/_time.clk_Hz;
-    _time.cyccnt2us = div;
+    float div = _time.clk_Hz;
+    _time.ccnt2ns = 1000000000/div;
     _time.init = true;
     _time.doLoop = true;
 }
@@ -84,46 +88,60 @@ void time_set_mode(time_handle_t hdl, uint8_t mode) {
 void time_reset(time_handle_t hdl) {
     if (time_check_hdl(hdl) == EM_ERR) return;
     memset(&_time.time[hdl].measurement, 0, sizeof(time_single_t));
+    _time.time[hdl].first_ns =-1;
+    _time.time[hdl].last_ns =-1;
+    _time.time[hdl].max_cnt     =0;
+    _time.time[hdl].max_baud    =0;
 }
 
 void time_start(time_handle_t hdl, uint8_t count, uint8_t *ptr) {
     if (time_check_hdl(hdl) == EM_ERR) return;
     if (!_time.init) return;
-    _time.time[hdl].last_start_cyccnt=DWT->CYCCNT;
+    int64_t now_ns = DWT->CYCCNT*_time.ccnt2ns;
+    if (_time.time[hdl].first_ns<0){
+        _time.time[hdl].first_ns = now_ns;
+    }
     if (_time.time[hdl].idx >= 0) {
-        _time.time[hdl].measurement[_time.time[hdl].idx].count = count;
+        _time.time[hdl].last_start_ns = now_ns;
+        _time.time[hdl].measurement[_time.time[hdl].idx].count += count;
         _time.time[hdl].measurement[_time.time[hdl].idx].tick_start = HAL_GetTick();
         memcpy((uint8_t *)_time.time[hdl].measurement[_time.time[hdl].idx].line, ptr, TIME_MEAS_CHAR_PER_LINE);
         _time.time[hdl].measurement[_time.time[hdl].idx].line[TIME_MEAS_CHAR_PER_LINE+1]=0;
-        _time.time[hdl].measurement[_time.time[hdl].idx].start_cyccnt = _time.time[hdl].last_start_cyccnt;
+        _time.time[hdl].measurement[_time.time[hdl].idx].start_ns = now_ns;
+        _time.time[hdl].max_cnt     += count;
+
     }
 }
 void time_end_su(time_handle_t hdl) {
-    if (time_check_hdl(hdl) == EM_ERR)
-        return;
+    if (time_check_hdl(hdl) == EM_ERR) return;
     if (!_time.init) return;
-    _time.time[hdl].last_start_cyccnt=DWT->CYCCNT;
     if (_time.time[hdl].idx >= 0) {
-        _time.time[hdl].measurement[_time.time[hdl].idx].stop_su_cyccnt = _time.time[hdl].last_start_cyccnt;
-        _time.time[hdl].measurement[_time.time[hdl].idx].duration_su_cyccnt =
-            (_time.time[hdl].measurement[_time.time[hdl].idx].stop_su_cyccnt -
-             _time.time[hdl].measurement[_time.time[hdl].idx].start_cyccnt);
+        int64_t now_ns = DWT->CYCCNT*_time.ccnt2ns;
+        _time.time[hdl].measurement[_time.time[hdl].idx].stop_su_ns = now_ns;
+        _time.time[hdl].measurement[_time.time[hdl].idx].duration_su_ns =
+            (_time.time[hdl].measurement[_time.time[hdl].idx].stop_su_ns -
+             _time.time[hdl].measurement[_time.time[hdl].idx].start_ns);
     }
 }
 
 void time_end_tx(time_handle_t hdl) {
-    if (time_check_hdl(hdl) == EM_ERR)
-        return;
+    if (time_check_hdl(hdl) == EM_ERR) return;
     if (!_time.init) return;
-    _time.time[hdl].last_start_cyccnt=DWT->CYCCNT;
     if (_time.time[hdl].idx >= 0) {
-        _time.time[hdl].measurement[_time.time[hdl].idx].stop_tx_cyccnt = _time.time[hdl].last_start_cyccnt;
-        _time.time[hdl].measurement[_time.time[hdl].idx].duration_tx_cyccnt =
-            (_time.time[hdl].measurement[_time.time[hdl].idx].stop_tx_cyccnt -
-             _time.time[hdl].measurement[_time.time[hdl].idx].start_cyccnt);
+        int64_t now_ns = DWT->CYCCNT*_time.ccnt2ns;
+        _time.time[hdl].measurement[_time.time[hdl].idx].stop_tx_ns = now_ns;
+        float max_cnt =_time.time[hdl].max_cnt;
+        float baud = (_time.time[hdl].last_start_ns - _time.time[hdl].first_ns)/(max_cnt);
+        if (baud > _time.time[hdl].max_baud){
+            _time.time[hdl].last_ns =  _time.time[hdl].measurement[_time.time[hdl].idx].stop_tx_ns;
+            _time.time[hdl].max_baud = baud;
+         }
+        _time.time[hdl].measurement[_time.time[hdl].idx].duration_tx_ns =
+            (_time.time[hdl].measurement[_time.time[hdl].idx].stop_tx_ns -
+             _time.time[hdl].measurement[_time.time[hdl].idx].start_ns);
         _time.time[hdl].measurement[_time.time[hdl].idx].baud =
-            1000000 * 10 * _time.time[hdl].measurement[_time.time[hdl].idx].count /
-            _time.time[hdl].measurement[_time.time[hdl].idx].duration_tx_cyccnt;
+        _time.time[hdl].measurement[_time.time[hdl].idx].count*8000000000/
+            _time.time[hdl].measurement[_time.time[hdl].idx].duration_tx_ns;
         _time.time[hdl].measurement[_time.time[hdl].idx].tick_stop = HAL_GetTick();
         _time.time[hdl].measurement[_time.time[hdl].idx].tick_duration =
             _time.time[hdl].measurement[_time.time[hdl].idx].tick_stop -
@@ -140,7 +158,7 @@ void time_auto(time_handle_t hdl, uint8_t count, uint8_t *ptr) {
     if (!_time.init) return;
     time_start(hdl, count, ptr);
     time_end_tx(hdl);
-   _time.time[hdl].last_start_cyccnt=DWT->CYCCNT;
+   _time.time[hdl].last_start_ns=DWT->CYCCNT*_time.ccnt2ns;
 }
 
 bool time_doLoop_get(){
@@ -152,31 +170,43 @@ void time_print(time_handle_t hdl, char *titel, bool python) {
         return;
     print_e save = serial_mode_get();
     if (titel != NULL){
-        printf("%s", titel);
+        printf("%s"NL, titel);
     }
     if (python){
         save = serial_mode_get();
         serial_mode_set(RAW);
-        printf("# start_us duration_us count tick " NL);
+        printf("# tick_start, duration_ns, duration_tick, count, baud " NL);
         printf("data = {\"timing\":[" NL);
     } else {
-        printf("%s // Transfer time us, count baud " NL, titel);
+        printf("// duration_tick, count baud " NL);
     }
+    uint64_t start_ns;
+    uint32_t duration_ns;
+    uint32_t duration_tick;
+    uint32_t count;
+    uint32_t baud;
+    uint32_t tick_start;
 
     for (uint8_t i = 0; i < TIME_MEAS_CNT; i++) {
-        uint64_t start_us    = _time.time[hdl].measurement[i].start_cyccnt*_time.cyccnt2us;
-        uint32_t duration_us = _time.time[hdl].measurement[i].duration_tx_cyccnt*_time.cyccnt2us;
-        uint32_t count = _time.time[hdl].measurement[i].count;
-        uint32_t baud  = _time.time[hdl].measurement[i].baud;
-        uint32_t tick_start  = _time.time[hdl].measurement[_time.time[hdl].idx].tick_start;
+        start_ns    = _time.time[hdl].measurement[i].start_ns;
+        duration_ns = _time.time[hdl].measurement[i].duration_tx_ns;
+        duration_tick = _time.time[hdl].measurement[i].tick_duration;
+        count = _time.time[hdl].measurement[i].count;
+        baud  = _time.time[hdl].measurement[i].baud;
+        tick_start  = _time.time[hdl].measurement[_time.time[hdl].idx].tick_start;
         if (python){
-            printf("    [ %" PRId64 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 " ]," NL, start_us, duration_us, count, tick_start);
+            printf("    [ %4ld, %8ld, %1ld, %3ld, %6ld ]," NL, tick_start, duration_ns, duration_tick, count, baud);
         }else{
-            printf("    [ %" PRIu32 ", %" PRIu32 ", %" PRIu32 " ]," NL, duration_us, baud, count);
+            printf("    [ %3ld, %6ld, %3ld ]," NL, duration_tick, baud, count);
         }
     }
     if (python){
-        printf("]}" NL);
+        uint64_t maxTxTime_ns    = (_time.time[hdl].last_ns -_time.time[hdl].first_ns );
+        printf("]," NL);
+        printf("    maxcnt       : %ld, "NL, _time.time[hdl].max_cnt);
+        printf("    maxTxTime_ns : %ld, "NL,  maxTxTime_ns);
+        printf("    maxbaud      : %f" NL,  _time.time[hdl].max_baud);
+        printf("})" NL);
         serial_mode_set(save);
     } else {
         printf("]" NL);
