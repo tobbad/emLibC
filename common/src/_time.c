@@ -103,7 +103,7 @@ void time_start(time_handle_t hdl, uint8_t count, uint8_t *ptr) {
     }
     if (_time.time[hdl].idx >= 0) {
         _time.time[hdl].last_start_ns = now_ns;
-        _time.time[hdl].measurement[_time.time[hdl].idx].count += count;
+        _time.time[hdl].measurement[_time.time[hdl].idx].count = count;
         _time.time[hdl].measurement[_time.time[hdl].idx].tick_start = HAL_GetTick();
         memcpy((uint8_t *)_time.time[hdl].measurement[_time.time[hdl].idx].line, ptr, TIME_MEAS_CHAR_PER_LINE);
         _time.time[hdl].measurement[_time.time[hdl].idx].line[TIME_MEAS_CHAR_PER_LINE+1]=0;
@@ -197,11 +197,11 @@ void time_print(time_handle_t hdl, char *titel, bool python) {
         if (python){
             printf("    [ %4ld, %8ld, %1ld, %3ld, %6ld ]," NL, tick_start, duration_ns, duration_tick, count, baud);
         }else{
-            printf("    [ %3ld, %6ld, %3ld ]," NL, duration_tick, baud, count);
+            printf("    [ %3ld, %6ld, %3ld ]," NL, duration_tick, count, baud);
         }
     }
     if (python){
-        uint64_t maxTxTime_ns    = (_time.time[hdl].last_ns -_time.time[hdl].first_ns );
+        uint32_t maxTxTime_ns    = (_time.time[hdl].last_ns -_time.time[hdl].first_ns );
         printf("]," NL);
         printf("    \"maxcnt\"       : %ld, "NL, _time.time[hdl].max_cnt);
         printf("    \"maxTxTime_ns\" : %ld, "NL,  maxTxTime_ns);
