@@ -239,11 +239,11 @@ static em_msg serial_io_open(dev_handle_t devh, void *dev) {
 }
 
 static em_msg serial_read(dev_handle_t hdl, uint8_t *buffer, int16_t *cnt) {
-    if (!isio.init)
-        return EM_ERR;
+    if (!isio.init) return EM_ERR;
     em_msg res = EM_OK;
-    int16_t _cnt = *cnt;
-    int16_t rLen = fread(buffer, (size_t)1, (size_t)_cnt, stdin);
+    int16_t _cnt = MIN(*cnt, isio.buffer[SIO_RX]->used);
+    int16_t rLen = memcpy(buffer, isio.buffer[SIO_RX]->mem, _cnt);
+    *cnt = _cnt;
     if (rLen < 0) {
         res = EM_ERR;
     }
