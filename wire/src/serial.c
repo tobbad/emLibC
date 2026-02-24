@@ -135,9 +135,9 @@ uint32_t serial_get_byte_per_second(){
 
 
 volatile int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
-    uint16_t rLen;
+    uint16_t rLen = EM_ERR;
     if (!isio.init)
-        return EM_ERR;
+        return rLen;
 #ifdef HAL_PCD_MODULE_ENABLED
     if (urx_buffer.state == BUFFER_USED) {
         int16_t msize = MIN(len, urx_buffer.used);
@@ -152,6 +152,8 @@ volatile int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
        } else if (isio.buffer[SIO_RX]->mem == 0) {
             isio.buffer[SIO_RX]->state = BUFFER_USED;
             HAL_UART_Receive(isio.uart, isio.buffer[SIO_RX]->mem, len, HAL_MAX_DELAY);
+        } else{
+            rLen = strlen(isio.buffer[SIO_RX]->mem);
         }
     }
     return rLen;
@@ -336,7 +338,6 @@ static bool serial_isdirty(dev_handle_t dev) {
 static void serial_undirty(dev_handle_t dev) {
     if (!isio.init) return;
     state_set_undirty(&isio.state);
-    memset(isio.buffer[SIO_RX]->mem, 0, isio.buffer[SIO_RX]->size);
 };
 
 kybd_t serial_dev = {
