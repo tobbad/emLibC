@@ -203,10 +203,10 @@ void time_print(time_handle_t hdl, char *titel, bool python) {
     if (python){
         uint64_t maxTxTime_ns    = (_time.time[hdl].last_ns -_time.time[hdl].first_ns );
         printf("]," NL);
-        printf("    maxcnt       : %ld, "NL, _time.time[hdl].max_cnt);
-        printf("    maxTxTime_ns : %ld, "NL,  maxTxTime_ns);
-        printf("    maxbaud      : %f" NL,  _time.time[hdl].max_baud);
-        printf("})" NL);
+        printf("    \"maxcnt\"       : %ld, "NL, _time.time[hdl].max_cnt);
+        printf("    \"maxTxTime_ns\" : %ld, "NL,  maxTxTime_ns);
+        printf("    \"maxbaud\"      : %f" NL,  _time.time[hdl].max_baud);
+        printf("}" NL);
         serial_mode_set(save);
     } else {
         printf("]" NL);
