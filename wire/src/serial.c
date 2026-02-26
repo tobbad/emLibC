@@ -57,6 +57,8 @@
 #else
 #error Undefined platform
 #endif
+#include "common.h"
+#include "serial.h"
 #include "_time.h"
 #include "buffer.h"
 #include "buffer_pool.h"
@@ -64,7 +66,6 @@
 #include "hal_port.h"
 #include "main.h"
 #include "mutex.h"
-#include "serial.h"
 #include "state.h"
 
 static char rx_buf[RX_BUFFER_SIZE];
