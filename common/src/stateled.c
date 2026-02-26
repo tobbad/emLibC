@@ -37,7 +37,7 @@ static  gpio_port_t def_port ={
 };
 // clang-format on
 
-void stateled_init(state_t *state, gpio_port_t *port, uint8_t cycle_size) {
+void stateled_init(state_t *state, gpio_port_t *port, uint16_t cycle_size) {
     my_stateled.cycle_size = cycle_size;
     if (state != NULL) {
         my_stateled.state = state;
@@ -82,6 +82,7 @@ void stateled_update() {
         static uint8_t cnt = 0;
         cnt++;
         cnt = ((cnt) % my_stateled.cycle_size);
+
         bool bstate = (cnt < (my_stateled.cycle_size >> 1));
         if (!state_is_same(my_stateled.state, &my_stateled.lstate)) {
             my_stateled.lstate = *my_stateled.state;
@@ -90,8 +91,9 @@ void stateled_update() {
             for (uint8_t i = 0; i < my_stateled.port->cnt; i++) {
                 int8_t stateNr = i + my_stateled.lstate.first;
                 key_state_e tState = my_stateled.lstate.state[stateNr];
-                stateled_on(i);
-                if (tState == OFF) {
+                if (tState == ON){
+                    stateled_on(i);
+                }else if (tState == OFF) {
                     stateled_off(i);
                 } else if (tState == BLINKING) {
                     GpioPinWrite(&my_stateled.port->pin[i], bstate);
