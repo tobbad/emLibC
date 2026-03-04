@@ -152,7 +152,12 @@ uint8_t clable2type(clabel_u *lbl) {
 
 int8_t clabel2uint8(clabel_u *lbl) {
     uint8_t res = -1;
-    char ch = lbl->str[0];
+    return str2uint8((char *)&lbl->str[0]);
+};
+
+int8_t str2uint8(char *str) {
+    uint8_t res = -1;
+    char ch = str[0];
     res = ch - '0';
     if (res < 10)
         return res;

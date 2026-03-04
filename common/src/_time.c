@@ -20,7 +20,7 @@ typedef struct time_meas_s {
     uint32_t duration_tx_ns;
     int64_t baud;
     uint8_t count;
-    char line[TIME_MEAS_CHAR_PER_LINE + 2];
+    char line[TIME_MEAS_CHAR_PER_LINE + 1];
 } time_meas_t;
 
 typedef struct time_single_s {

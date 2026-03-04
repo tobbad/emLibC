@@ -98,7 +98,7 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     isio.buffer[SIO_RX] = buffer_new_buffer_t(init->buffer[SIO_RX]);
     isio.buffer[SIO_TX] = buffer_new_buffer_t(init->buffer[SIO_TX]);
     state_init(&isio.state);
-    isio.pool =buffer_pool_new(POOL_SIZE, TX_BUFFER_SIZE, LINEAR);
+    //isio.pool =buffer_pool_new(POOL_SIZE, TX_BUFFER_SIZE, LINEAR);
     isio.cbuffer = NULL;
     isio.cTxBytePerSecond = 0;
     isio.mode = init->mode;
@@ -166,19 +166,18 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     if (!isio.init) return EM_ERR;
     // clang-format on
     int16_t len = 0;
-    uint8_t idx = 0;
+    static uint8_t gap_idx = 0;
     txLen = MIN(txLen, TX_BUFFER_SIZE - 3);
     uint32_t tick = 0;
     if (isio.buffer[SIO_TX]->mem != NULL) {
-        len=0;
         buffer_reset(isio.buffer[SIO_TX]);
         if (isio.mode & TIMESTAMP) {
             uint32_t tick = HAL_GetTick();
             len = sprintf((char *)isio.buffer[SIO_TX]->mem, "%010ld: ", tick);
         }
         if (isio.mode & GAP_DETECT) {
-            len += sprintf((char *)&isio.buffer[SIO_TX]->mem[len], " %x ", idx);
-            idx = (idx + 1) % USE_DMA_TX;
+            len += sprintf((char *)&isio.buffer[SIO_TX]->mem[len], " %x ", gap_idx);
+            gap_idx = (gap_idx + 1) % USE_DMA_TX;
         }
         memcpy(&isio.buffer[SIO_TX]->mem[len], ptr, txLen);
         len += txLen;
@@ -191,8 +190,8 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
             len = sprintf((char *)&tx_buf, "%010ld: ", tick);
         }
         if (isio.mode & GAP_DETECT) {
-            len += sprintf((char *)&tx_buf, " %x ", idx);
-            idx = (idx + 1) % USE_DMA_TX;
+            gap_idx += sprintf((char *)&tx_buf, " %x ", gap_idx);
+            gap_idx = (gap_idx + 1) % USE_DMA_TX;
         }
         memcpy(&tx_buf[len], ptr, txLen);
         len += txLen;
@@ -358,6 +357,11 @@ int8_t serial_waitForNumber(char **key) {
     if (!isio.init)
         return EM_ERR;
     char *str = NULL;
+    if (urx_buffer.state == BUFFER_USED) {
+        *key =(char *)&urx_buffer.mem[0];
+        return str2uint8((char*)&urx_buffer.mem[0]);
+    }
+
     clabel_u lbl = {.cmd = 0};
     uint8_t len = 0;
     uint8_t i;

@@ -49,7 +49,6 @@ dev_handle_t keyboard_init(kybd_t *kybd, void *device) {
         dev_nr = keyboard_find_dev(kybd);
         if (dev_nr > 0) {
             kybd->init(dev_nr, kybd->dev_type, device);
-            kybd->pcnt = -1;
         }
     } else {
         printf("Cannot find device" NL);
@@ -108,16 +107,4 @@ bool keyboard_isdirty(dev_handle_t dev) {
         return my_kybd[dev]->isdirty(dev);
     }
     return false;
-}
-
-void keyboard_print(state_t *state, char *title) {
-    if (!state) {
-        printf("No input" NL);
-        return;
-    }
-    if (title != NULL) {
-        state_print(state, title);
-    } else {
-        state_print(state, "Keyboard");
-    }
 }
