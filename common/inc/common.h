@@ -70,7 +70,7 @@ typedef enum  {
 
 #define DEV_CNT 1
 typedef union {
-     int32_t cmd;  // Kann ein pointer zu einem Pointer enthalten, das
+     uint32_t cmd;  // Kann ein pointer zu einem Pointer enthalten, das
                     // den anderen Geräten mitgeteilt wird oder NULL
      char str[CMD_LEN]; //CMD_LEN ist 4 ist leer (0) oder ein command
  }clabel_u;
