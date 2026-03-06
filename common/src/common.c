@@ -131,19 +131,20 @@ char int2hchar(uint8_t nr) {
     return ret;
 }
 
-uint8_t clable2type(clabel_u *lbl) {
-    uint8_t res = NAN;
+type_e clable2type(clabel_u *lbl) {
+    type_e res = nonasci;
 #define ASCIHEX_LEN 22
     char ascihex[ASCIHEX_LEN] = {'0', '1', '2', '3','4', '5','6', '7','8', '9', 'A', 'B','C', 'D','E', 'F', 'a', 'b', 'c', 'd', 'e', 'f'};
     char *stopstring = NULL;
     lbl->str[CMD_LEN - 1] = 0;
     res = strtol(lbl->str, &stopstring, 10);
     if (strlen(stopstring) == 0) {
-        return ISNUM;
+        return hexnum;
     }
-/*
+
     bool isNot = true;
     uint8_t len = strlen(lbl->str);
+/*
     for (uint8_t i = 0; i < len; i++) {
         for (j=0;j<ASCIHEX_LEN;j++){
             isNot &= ascihex[j]!=lbl->str[i];
@@ -156,13 +157,12 @@ uint8_t clable2type(clabel_u *lbl) {
         itIs &= isascii(lbl->str[i]);
     }
     if (itIs) {
-        res = ISASCISTR;
+        res = ascii;
     }
     return res;
 }
 
 int8_t clabel2uint8(clabel_u *lbl) {
-    uint8_t res = -1;
     return str2uint8((char *)&lbl->str[0]);
 };
 

@@ -306,8 +306,8 @@ static void serial_apply_change(void) {
         }
     }
     if (len > 0) {
-        uint8_t ctype = clable2type(&isio.state.clabel);
-        if (ctype == ISNUM) {
+        type_e ctype = clable2type(&isio.state.clabel);
+        if (ctype == hexnum) {
             if (!state_get_dirty(&isio.state)) {
                 state_propagate_by_lbl(&isio.state, isio.state.clabel.str[0]);
             }
@@ -378,11 +378,11 @@ int8_t serial_waitForNumber(char **key) {
     if (strlen(str) == 0)
         return -1;
     uint8_t ctype = clable2type(&lbl);
-    if (ctype == ISNUM) {
+    if (ctype == hexnum) {
         *key = (char *)&str[0];
         return clabel2uint8(&lbl);
     }
-    if (ctype == ISASCISTR) {
+    if (ctype == ascii) {
         *key = (char *)&str[0];
         return -1;
     }
