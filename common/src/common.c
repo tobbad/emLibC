@@ -133,14 +133,25 @@ char int2hchar(uint8_t nr) {
 
 uint8_t clable2type(clabel_u *lbl) {
     uint8_t res = NAN;
+#define ASCIHEX_LEN 22
+    char ascihex[ASCIHEX_LEN] = {'0', '1', '2', '3','4', '5','6', '7','8', '9', 'A', 'B','C', 'D','E', 'F', 'a', 'b', 'c', 'd', 'e', 'f'};
     char *stopstring = NULL;
     lbl->str[CMD_LEN - 1] = 0;
     res = strtol(lbl->str, &stopstring, 10);
     if (strlen(stopstring) == 0) {
         return ISNUM;
     }
-    bool itIs = true;
+/*
+    bool isNot = true;
     uint8_t len = strlen(lbl->str);
+    for (uint8_t i = 0; i < len; i++) {
+        for (j=0;j<ASCIHEX_LEN;j++){
+            isNot &= ascihex[j]!=lbl->str[i];
+        }
+    }
+*/
+    bool itIs = true;
+
     for (uint8_t i = 0; i < len; i++) {
         itIs &= isascii(lbl->str[i]);
     }

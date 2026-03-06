@@ -60,9 +60,12 @@ typedef union {
   uint8_t *ptr;
 } cPtrAway_u;
 
-#define ISNUM 0x80
-#define ISASCISTR 0x40
-#define NAN 0x20
+typedef enum  {
+    hexnum  = 0x10,
+    ascii   = 0x20,
+    nonasci = 0x80
+}type_e;
+
 #define CMD_LEN 4
 
 #define DEV_CNT 1
@@ -95,7 +98,7 @@ uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer,
                 uint16_t buffer_size, bool write_asci);
 uint16_t common_crc16(const uint8_t *data_p, uint16_t length);
 void print_buffer(const uint8_t *buffer, uint8_t size, const char *header);
-uint8_t clable2type(clabel_u *lbl);
+type_e clable2type(clabel_u *lbl);
 int8_t str2uint8(char *str);
 int8_t clabel2uint8(clabel_u *lbl);
 char* idxa2str(idxa2str_t *map, uint8_t idx);
