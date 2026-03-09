@@ -162,14 +162,9 @@ type_e clable2type(clabel_u *lbl) {
     return res;
 }
 
-<<<<<<< HEAD
-int8_t clabel2uint8(clabel_u *lbl) {
-    return str2uint8((char *)&lbl->str[0]);
-=======
 int8_t clabel2uint(clabel_u *lbl) {
     int res = str2uint((char*)&lbl->str);
     return res;
->>>>>>> a06a77a (Allow to enter value >9)
 };
 
 int8_t str2uint(char *str) {
