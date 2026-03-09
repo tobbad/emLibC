@@ -167,7 +167,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     // clang-format on
     int16_t len = 0;
     static uint8_t gap_idx = 0;
-    txLen = MIN(txLen, TX_BUFFER_SIZE - 3);
+    txLen = MIN(txLen, TX_BUFFER_SIZE - 2);
     uint32_t tick = 0;
     if (isio.buffer[SIO_TX]->mem != NULL) {
         buffer_reset(isio.buffer[SIO_TX]);
@@ -359,7 +359,7 @@ int8_t serial_waitForNumber(char **key) {
     char *str = NULL;
     if (urx_buffer.state == BUFFER_USED) {
         *key =(char *)&urx_buffer.mem[0];
-        return str2uint8((char*)&urx_buffer.mem[0]);
+        return str2uint((char*)&urx_buffer.mem[0]);
     }
 
     clabel_u lbl = {.cmd = 0};
@@ -380,7 +380,7 @@ int8_t serial_waitForNumber(char **key) {
     uint8_t ctype = clable2type(&lbl);
     if (ctype == hexnum) {
         *key = (char *)&str[0];
-        return clabel2uint8(&lbl);
+        return clabel2uint(&lbl);
     }
     if (ctype == ascii) {
         *key = (char *)&str[0];

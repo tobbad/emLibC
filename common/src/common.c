@@ -162,20 +162,19 @@ type_e clable2type(clabel_u *lbl) {
     return res;
 }
 
+<<<<<<< HEAD
 int8_t clabel2uint8(clabel_u *lbl) {
     return str2uint8((char *)&lbl->str[0]);
+=======
+int8_t clabel2uint(clabel_u *lbl) {
+    int res = str2uint((char*)&lbl->str);
+    return res;
+>>>>>>> a06a77a (Allow to enter value >9)
 };
 
-int8_t str2uint8(char *str) {
-    uint8_t res = -1;
-    char ch = str[0];
-    res = ch - '0';
-    if (res < 10)
-        return res;
-    res = ch - 'A' - 10;
-    if (res < 16)
-        return res;
-    return -1;
+int8_t str2uint(char *str) {
+    uint8_t res = atoi(str);
+    return res;
 };
 
 void print_buffer(const uint8_t *buffer, uint8_t size, const char *header) {
