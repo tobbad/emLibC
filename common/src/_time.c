@@ -41,14 +41,13 @@ typedef struct timem_s {
     float ccnt2ns;
     bool init;
     bool doLoop;// becomes true when one cyle of times are stored and oneShot is active
-
 } timem_t;
 
 timem_t _time;
 
 em_msg time_check_hdl(time_handle_t hdl) {
     em_msg res = EM_ERR;
-    if ((hdl >= 0) | (hdl < TIME_DEV_CNT))
+    if ((hdl >= 0) && (hdl < TIME_DEV_CNT))
         return EM_OK;
     return res;
 }
@@ -88,16 +87,21 @@ void time_set_mode(time_handle_t hdl, uint8_t mode) {
 void time_reset(time_handle_t hdl) {
     if (time_check_hdl(hdl) == EM_ERR) return;
     memset(&_time.time[hdl].measurement, 0, sizeof(time_single_t));
-    _time.time[hdl].first_ns =-1;
-    _time.time[hdl].last_ns =-1;
+    _time.time[hdl].first_ns    =-1;
+    _time.time[hdl].last_ns     =-1;
     _time.time[hdl].max_cnt     =0;
     _time.time[hdl].max_baud    =0;
 }
+
+
 
 void time_start(time_handle_t hdl, uint8_t count, uint8_t *ptr) {
     if (time_check_hdl(hdl) == EM_ERR) return;
     if (!_time.init) return;
     int64_t now_ns = DWT->CYCCNT*_time.ccnt2ns;
+    if ((_time.time[hdl].measurement[_time.time[hdl].idx].start_ns -_time.time[hdl].measurement[_time.time[hdl].idx].stop_tx_ns)<0 ){
+        return;
+    }
     if (_time.time[hdl].first_ns<0){
         _time.time[hdl].first_ns = now_ns;
     }
@@ -168,36 +172,34 @@ bool time_doLoop_get(){
 void time_print(time_handle_t hdl, char *titel, bool python) {
     if (time_check_hdl(hdl) == EM_ERR)
         return;
-    print_e save = serial_mode_get();
+    print_e save;
     if (titel != NULL){
         printf("%s"NL, titel);
     }
     if (python){
         save = serial_mode_get();
         serial_mode_set(RAW);
-        printf("# tick_start, duration_ns, duration_tick, count, baud " NL);
+        printf("# duration_tick, duration_ns, count, baud " NL);
         printf("data = {\"timing\":[" NL);
     } else {
-        printf("// duration_tick, count baud " NL);
+        printf("// duration_tick, duration_ns, count baud " NL);
     }
-    uint64_t start_ns;
-    uint32_t duration_ns;
-    uint32_t duration_tick;
-    uint32_t count;
-    uint32_t baud;
-    uint32_t tick_start;
+    uint32_t duration_ns=0;
+    uint32_t duration_tick=0;
+    uint32_t count=0;
+    uint32_t baud=0;
+    uint32_t tick_start=0;
 
     for (uint8_t i = 0; i < TIME_MEAS_CNT; i++) {
-        start_ns    = _time.time[hdl].measurement[i].start_ns;
         duration_ns = _time.time[hdl].measurement[i].duration_tx_ns;
         duration_tick = _time.time[hdl].measurement[i].tick_duration;
         count = _time.time[hdl].measurement[i].count;
         baud  = _time.time[hdl].measurement[i].baud;
         tick_start  = _time.time[hdl].measurement[_time.time[hdl].idx].tick_start;
         if (python){
-            printf("    [ %4ld, %8ld, %1ld, %3ld, %6ld ]," NL, tick_start, duration_ns, duration_tick, count, baud);
+            printf("    [ %2d, %8ld, %1ld, %3ld ]," NL, duration_tick, duration_ns, count, baud);
         }else{
-            printf("    [ %3ld, %6ld, %3ld ]," NL, duration_tick, count, baud);
+            printf("    [ %2d, %8ld, %3ld, %6ld ]," NL, duration_tick, duration_ns, count, baud);
         }
     }
     if (python){
