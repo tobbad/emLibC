@@ -14,15 +14,12 @@ uint32_t HAL_GetTick() { return 1; };
 #endif
 
 static idx2str_t cmd[] = {
-    {.str = "OFF", .idx= OFF},
-    {.str = "BLI", .idx= BLINKING},
-    {.str = "ON ", .idx= ON },
-    {.str = "NA ", .idx= 0xff},
+    {.str = "OFF", .idx = OFF},
+    {.str = "BLI", .idx = BLINKING},
+    {.str = "ON ", .idx = ON},
+    {.str = "NA ", .idx = 0xff},
 };
-idxa2str_t state2str={
-    .cnt = 4,
-    .entry= (idx2str_t*)&cmd
-};
+idxa2str_t state2str = {.cnt = 4, .entry = (idx2str_t *)&cmd};
 
 em_msg state_init(state_t *state) {
     em_msg res = EM_ERR;
@@ -31,8 +28,8 @@ em_msg state_init(state_t *state) {
     memset(state, -1, sizeof(state_t));
     state->dirty = false;
     state->first = 0;
-    state->cnt   = MAX_STATE_CNT;
-    state->id    = 0xFF;
+    state->cnt = MAX_STATE_CNT;
+    state->id = 0xFF;
     state->clabel.cmd = 0;
     memcpy(&state->label, &"0123456789ABCDEF", MAX_STATE_CNT);
     state_reset(state);
@@ -42,7 +39,8 @@ em_msg state_init(state_t *state) {
 
 em_msg state_reset(state_t *state) {
     em_msg res = EM_ERR;
-    if (state_check(state)) return res;
+    if (state_check(state))
+        return res;
     for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {
         state_set_key_by_idx(state, i, OFF);
     }
@@ -56,7 +54,9 @@ em_msg state_set(state_t *state, uint8_t nr, key_state_e ns) {
     em_msg res = EM_ERR;
     if (state_check(state))
         return res;
-    state_set(state, nr, ns);
+    if (nr >= MAX_STATE_CNT)
+        return res;
+    state->state[nr] = ns;
     return EM_OK;
 }
 em_msg state_set_state(const state_t *from, state_t *to) {
@@ -108,8 +108,10 @@ em_msg state_set_key_by_idx(state_t *state, uint8_t nr, key_state_e new_state) {
 #ifdef UNIT_TEST
 em_msg state_set_key_by_idx_unchecked(state_t *state, uint8_t nr, uint8_t new_state) {
     em_msg res = EM_ERR;
-    if (state_check(state))    return res;
-    if ((nr < state->first) || (nr >= (state->first + state->cnt))) return res;
+    if (state_check(state))
+        return res;
+    if ((nr < state->first) || (nr >= (state->first + state->cnt)))
+        return res;
     state->state[nr] = new_state;
     res = EM_OK;
     return res;
@@ -121,8 +123,9 @@ em_msg state_set_key_by_lbl(state_t *state, char lbl, key_state_e new_state) {
     if (state_check(state))
         return res;
     uint8_t nr = state_ch2idx(state, lbl);
-    printf("Map %c -> %d"NL, lbl, nr);
-    if (nr < 0) return res;
+    printf("Map %c -> %d" NL, lbl, nr);
+    if (nr < 0)
+        return res;
     if ((nr >= state->first) && (nr <= state->cnt)) {
         if (state->state[nr] != new_state) {
             state->state[nr] = new_state;
@@ -136,9 +139,11 @@ em_msg state_set_key_by_lbl(state_t *state, char lbl, key_state_e new_state) {
 
 key_state_e state_get_key_by_lbl(state_t *state, char ch) {
     em_msg res = EM_ERR;
-    if (state_check(state)) return res;
+    if (state_check(state))
+        return res;
     int8_t idx = state_ch2idx(state, ch);
-    if (idx < 0)  return res;
+    if (idx < 0)
+        return res;
     res = (state->state[idx] & (0x03));
     return res;
 }
@@ -364,7 +369,7 @@ em_msg state_set_undirty(state_t *state) {
     if (state_check(state))
         return res;
     state->dirty = false;
-    state->clabel.cmd=0;
+    state->clabel.cmd = 0;
     res = EM_OK;
     return res;
 }
