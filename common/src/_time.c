@@ -197,9 +197,9 @@ void time_print(time_handle_t hdl, char *titel, bool python) {
         baud  = _time.time[hdl].measurement[i].baud;
         tick_start  = _time.time[hdl].measurement[_time.time[hdl].idx].tick_start;
         if (python){
-            printf("    [ %2d, %8ld, %1ld, %3ld ]," NL, duration_tick, duration_ns, count, baud);
+            printf("    [ %2ld, %8ld, %1ld, %3ld ]," NL, duration_tick, duration_ns, count, baud);
         }else{
-            printf("    [ %2d, %8ld, %3ld, %6ld ]," NL, duration_tick, duration_ns, count, baud);
+            printf("    [ %2ld, %8ld, %3ld, %6ld ]," NL, duration_tick, duration_ns, count, baud);
         }
     }
     if (python){

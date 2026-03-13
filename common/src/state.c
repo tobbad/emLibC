@@ -56,9 +56,19 @@ em_msg state_set(state_t *state, uint8_t nr, key_state_e ns) {
         return res;
     if (nr >= MAX_STATE_CNT)
         return res;
-    state->state[nr] = ns;
+    state->state[nr] = ns&&STATE_MASK;
     return EM_OK;
 }
+
+key_state_e state_get(const state_t *state, uint8_t nr) {
+    em_msg res = MAX_STATE_CNT;
+    if (state_check(state))
+        return res;
+    if (nr >= MAX_STATE_CNT)
+        return res;
+    return state->state[nr]&&STATE_MASK;
+}
+
 em_msg state_set_state(const state_t *from, state_t *to) {
     em_msg res = EM_ERR;
     if (state_check(to))
@@ -66,7 +76,8 @@ em_msg state_set_state(const state_t *from, state_t *to) {
     if (state_check(from))
         return res;
     for (uint8_t oi = from->first, ii = to->first; oi <= from->first + from->cnt; oi++, ii++) {
-        to->state[ii] = from->state[oi];
+        key_state_e fstate = state_get(from, oi);
+        state_set(to, ii, fstate);
     }
     state_set_undirty(to);
     return EM_OK;
@@ -74,9 +85,9 @@ em_msg state_set_state(const state_t *from, state_t *to) {
 
 em_msg state_check(const state_t *state) {
     em_msg res = EM_ERR;
-    if (state->first > MAX_STATE_CNT)
+    if (state->first >= MAX_STATE_CNT)
         return res;
-    if (state->cnt > MAX_STATE_CNT)
+    if (state->cnt >= MAX_STATE_CNT)
         return res;
     if (state->first > state->cnt)
         return res;
@@ -98,9 +109,7 @@ em_msg state_set_key_by_idx(state_t *state, uint8_t nr, key_state_e new_state) {
         return res;
     if (new_state >= STATE_CNT)
         return res;
-    if ((nr < state->first) || (nr >= (state->first + state->cnt)))
-        return res;
-    state->state[nr] = new_state;
+    state_set(state, nr, new_state);
     res = EM_OK;
     return res;
 }
@@ -124,39 +133,25 @@ em_msg state_set_key_by_lbl(state_t *state, char lbl, key_state_e new_state) {
         return res;
     uint8_t nr = state_ch2idx(state, lbl);
     printf("Map %c -> %d" NL, lbl, nr);
-    if (nr < 0)
-        return res;
-    if ((nr >= state->first) && (nr <= state->cnt)) {
-        if (state->state[nr] != new_state) {
-            state->state[nr] = new_state;
-            state->dirty = true;
-            printf("Set %c to %d\n", lbl, new_state);
-        }
-    }
-    res = EM_OK;
+    if (nr < 0) return res;
+    res = state_set(state, nr, new_state);
     return res;
 }
 
 key_state_e state_get_key_by_lbl(state_t *state, char ch) {
-    em_msg res = EM_ERR;
+    em_msg res = STATE_CNT;
     if (state_check(state))
         return res;
     int8_t idx = state_ch2idx(state, ch);
-    if (idx < 0)
-        return res;
-    res = (state->state[idx] & (0x03));
+    if (idx < 0) return res;
+    res = state_get(state, idx);
     return res;
 }
 
 key_state_e state_get_key_by_idx(state_t *state, uint8_t idx) {
-    em_msg res = EM_ERR;
-    if (state_check(state))
-        return res;
-    if ((idx < state->first) || (idx > (state->first + state->cnt))) {
-        return res;
-    }
-
-    res = (state->state[idx] & (0x03));
+    key_state_e res = STATE_CNT;
+    if (state_check(state))  return res;
+    res = state_get(state, idx);
     return res;
 }
 
@@ -212,7 +207,7 @@ em_msg state_set_u32(state_t *state, uint32_t u32) {
             mask = (0x3 << shift);
             uint32_t x = (u32 & mask);
             x >>= shift;
-            state->state[i] = x;
+            state_set(state, i, x);
         }
     }
     res = EM_OK;
@@ -224,11 +219,10 @@ uint32_t state_get_u32(state_t *state) {
     if (state_check(state))
         return res;
     res = 0;
-    uint32_t keystate = 0;
     for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {
         if ((i >= state->first) && (i <= state->first + state->cnt)) {
-            keystate = (state->state[i] & 0x3);
-            res |= ((keystate) << (2 * i));
+            key_state_e btn = state_get(state, i);
+            res |= ((btn) << (2 * i));
         }
         // printf("nr %02d, state= %s), res= 0x%08x\n", i, key2char[keystate], res);
     }
@@ -332,7 +326,7 @@ em_msg state_print(const state_t *state, const char *title) {
     }
     printf("first     = %d" NL, state->first);
     printf("cnt       = %d" NL, state->cnt);
-    printf("clabel    = 0x%04x" NL, state->clabel.cmd);
+    printf("clabel    = 0x%04lx" NL, state->clabel.cmd);
     printf("label     = ");
     for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
         char c = state->label[i];

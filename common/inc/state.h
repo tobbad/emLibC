@@ -18,6 +18,7 @@ typedef enum __attribute__((packed)) { OFF, BLINKING, ON, STATE_CNT } key_state_
 extern char key2char[][4];
 
 #define MAX_STATE_CNT MAX_BUTTON_CNT
+#define STATE_MASK   0x03
 
 // #define MODDIFF( ref_i, state_i)
 // {ref_i==state_i?0?ref_i>state_i?ref_i-state_i:state_i+STATE_CNT-ref_i};
@@ -52,6 +53,7 @@ int8_t state_nr2idx(state_t *state, uint8_t nr);
 em_msg state_init(state_t *state);
 em_msg state_reset(state_t *state);
 em_msg state_set(state_t *state, uint8_t nr, key_state_e);
+key_state_e state_get(const state_t *state, uint8_t nr);
 em_msg state_set_state(const state_t *from, state_t *to);
 em_msg state_check(const state_t *state);
 em_msg state_undirty(state_t *state);
