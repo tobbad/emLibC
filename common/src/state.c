@@ -332,7 +332,7 @@ em_msg state_print(const state_t *state, const char *title) {
     }
     printf("first     = %d" NL, state->first);
     printf("cnt       = %d" NL, state->cnt);
-    printf("clabel    = 0x%04lx" NL, state->clabel.cmd);
+    printf("clabel    = 0x%04x" NL, state->clabel.cmd);
     printf("label     = ");
     for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
         char c = state->label[i];
