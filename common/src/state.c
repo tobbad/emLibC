@@ -85,9 +85,9 @@ em_msg state_set_state(const state_t *from, state_t *to) {
 
 em_msg state_check(const state_t *state) {
     em_msg res = EM_ERR;
-    if (state->first >= MAX_STATE_CNT)
+    if (state->first > MAX_STATE_CNT)
         return res;
-    if (state->cnt >= MAX_STATE_CNT)
+    if (state->cnt > MAX_STATE_CNT)
         return res;
     if (state->first > state->cnt)
         return res;
@@ -155,6 +155,19 @@ key_state_e state_get_key_by_idx(state_t *state, uint8_t idx) {
     return res;
 }
 
+em_msg state_propagate(state_t *state, uint8_t idx) {
+    em_msg res = EM_ERR;
+    if (state_check(state))
+        return res;
+    if ((idx > (state->first + state->cnt))) {
+        // printf("idx (%d)  > %d"NL, idx,  state->first + state->cnt);
+        return res;
+    }
+    state->state[idx] = (state->state[idx] + 1) % STATE_CNT;
+    state->dirty = true;
+    res = EM_OK;
+    return res;
+}
 em_msg state_propagate_by_lbl(state_t *state, char ch) {
     em_msg res = EM_ERR;
     if (state_check(state))
@@ -162,10 +175,7 @@ em_msg state_propagate_by_lbl(state_t *state, char ch) {
     uint8_t idx = state_ch2idx(state, ch);
     if (idx == EM_ERR)
         return res;
-    state->state[idx] = (state->state[idx] + 1) % STATE_CNT;
-    state->dirty = true;
-    res = state->dirty;
-    return res;
+    return state_propagate(state, idx);
 }
 em_msg state_propagate_by_idx(state_t *state, uint8_t idx) {
     em_msg res = EM_ERR;
@@ -175,11 +185,7 @@ em_msg state_propagate_by_idx(state_t *state, uint8_t idx) {
         // printf("idx (%d)  > %d"NL, idx,  state->first + state->cnt);
         return res;
     }
-
-    state->state[idx] = (state->state[idx] + 1) % STATE_CNT;
-    state->dirty = true;
-    res = state->dirty;
-    return res;
+    return state_propagate(state, idx);
 }
 
 int8_t state_ch2idx(const state_t *state, char ch) {

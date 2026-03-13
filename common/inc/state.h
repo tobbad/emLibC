@@ -60,6 +60,7 @@ em_msg state_undirty(state_t *state);
 key_state_e state_key_diff(key_state_e state1, key_state_e state2);
 key_state_e state_get_key_by_lbl(state_t *state, char ch);
 key_state_e state_get_key_by_idx(state_t *state, uint8_t idx);
+em_msg state_propagate(state_t *state, uint8_t idx);
 em_msg state_set_key_by_idx(state_t *state, uint8_t nr, key_state_e new_state);
 em_msg state_set_key_by_lbl(state_t *state, char ch, key_state_e new_state);
 em_msg state_propagate_by_lbl(state_t *state, char ch);
