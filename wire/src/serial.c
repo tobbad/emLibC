@@ -309,7 +309,11 @@ static void serial_apply_change(void) {
         type_e ctype = clable2type(&isio.state.clabel);
         if (ctype == hexnum) {
             if (!state_get_dirty(&isio.state)) {
-                state_propagate_by_lbl(&isio.state, isio.state.clabel.str[0]);
+                char *stopstring = NULL;
+                uint8_t res = strtol(isio.state.clabel.str, &stopstring, 10);
+                if (strlen(stopstring) == 0) {
+                    state_propagate_by_idx(&isio.state, res);
+                }
             }
         }
     }
