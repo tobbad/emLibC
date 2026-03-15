@@ -13,11 +13,11 @@ buffer_t *buffer_new(uint16_t size) {
     buffer_t *buffer = NULL;
     // clang-format off
     if (size == 0) return buffer;
-    // clang-format on
     buffer = (buffer_t *)calloc(1, sizeof(buffer_t));
-    if (!buffer) return NULL ;
+    if (!buffer) return NULL;
+    // clang-format on
     buffer->mem = calloc(1, size);
-    if (!buffer->mem){
+    if (!buffer->mem) {
         free(buffer);
         return NULL;
     }
@@ -28,25 +28,25 @@ buffer_t *buffer_new(uint16_t size) {
 
 em_msg buffer_free(buffer_t *buffer) {
     em_msg res = EM_OK;
-    //printf("buffer_free(%p)"NL, buffer);
+    // printf("buffer_free(%p)"NL, buffer);
     // clang-format off
     if (!buffer) return res;
     if (buffer->state == BUFFER_USED) return EM_ERR;
     // clang-format on
-    //printf("Free buffer mem %p"NL, buffer->mem);
     free(buffer->mem);
     free(buffer);
-    return EM_OK;;
+    return EM_OK;
 }
 
 buffer_t *buffer_new_buffer_t(buffer_t *buffer) {
     // clang-format off
+    if (buffer == 0) return NULL
     if (buffer->size == 0) return NULL;
-    // clang-format on
     size_t size = buffer->size;
     memset(buffer, 0, sizeof(buffer_t));
     buffer->mem = calloc(1, size);
     if (!buffer->mem) return NULL;
+    // clang-format on
     buffer->size = size;
     buffer_reset(buffer);
     return buffer;
@@ -58,20 +58,22 @@ em_msg buffer_reset(buffer_t *buffer) {
         //printf("buffer_reset buffer = %p, buffer-mem = %p"NL);
         return res;
     }
-   // clang-format on
+    if (buffer->size==0) return res;
+    // clang-format on
     memset(buffer->mem, 0, buffer->size);
     buffer->pl = buffer->mem;
     buffer->state = BUFFER_READY;
     buffer->used = 0;
+    buffer->id = 0;
     res = EM_OK;
     return res;
 }
 
-em_msg buffer_set(buffer_t *buffer, const uint8_t *data,  int16_t *size) {
+em_msg buffer_set(buffer_t *buffer, const uint8_t *data, int16_t *size) {
     em_msg res = EM_ERR;
-//    print_buffer(data, *size, "Input buffer");
-//    buffer_print(buffer , "In buffer");
-    if (!buffer || !buffer->mem || !data || !size)  return res;
+    // clang-format off
+    if (!buffer || !buffer->mem || !data || !*size) return res;
+    // clang-format on
     res = EM_OK;
     int16_t msize = MIN(*size, buffer->size);
     memcpy(buffer->mem, data, msize);
@@ -84,10 +86,12 @@ em_msg buffer_set(buffer_t *buffer, const uint8_t *data,  int16_t *size) {
 em_msg buffer_get(buffer_t *buffer, uint8_t *data, int16_t *size) {
     em_msg res = EM_ERR;
     if (!buffer || !buffer->mem || !data || !size) {
-        printf("Precondition not fullfilled"NL);
+        printf("Precondition not fullfilled" NL);
         return res;
     };
-    if (buffer->state ==BUFFER_READY) return res;
+    // clang-format off
+    if (buffer->state == BUFFER_READY) return res;
+    // clang-format on
     res = EM_OK;
     int16_t msize = MIN(*size, buffer->size);
     memcpy(data, buffer->mem, msize);
@@ -104,8 +108,10 @@ void buffer_print(buffer_t *buffer, char *title) {
         printf("buffer is NULL" NL);
         return;
     }
-    if (title!=NULL) printf("%s"NL, title);
-    printf("Info of buffer        = 0x%p"NL, buffer);
+    // clang-format off
+    if (title != NULL) printf("%s" NL, title);
+    // clang-format on
+    printf("Info of buffer        = 0x%p" NL, buffer);
     printf("id                    = %d" NL, buffer->id);
     printf("Data                  = 0x%p" NL, buffer->mem);
     print_buffer(buffer->mem, buffer->size, "Buffer content");
