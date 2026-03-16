@@ -71,8 +71,7 @@ void time_init() {
 
 time_handle_t time_new() {
     // clang-format off
-    if (time_check_hdl(hdl) == EM_ERR) return;
-    if (!_time.init) return;
+    if (!_time.init) return -1;
     // clang-format on
     for (uint8_t hdl = 0; hdl < TIME_DEV_CNT; hdl++) {
         if ((_time.used & (1 << hdl)) == 0) {
@@ -81,7 +80,7 @@ time_handle_t time_new() {
             return hdl;
         }
     }
-    return res;
+    return -1;
 }
 
 void time_set_mode(time_handle_t hdl, uint8_t mode) {
