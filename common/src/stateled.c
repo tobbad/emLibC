@@ -58,31 +58,39 @@ void stateled_init(state_t *state, gpio_port_t *port, uint16_t cycle_size) {
 }
 
 void stateled_toggle() {
-    if (!my_stateled.init)
-        return;
+    // clang-format off
+    if (!my_stateled.init) return;
+    // clang-format on
     GpioPortToggle(my_stateled.port);
 };
 void stateled_on(uint8_t led_nr) {
-    if (!my_stateled.init)
-        return;
+    // clang-format off
+    if (!my_stateled.init) return;
+    // clang-format on
     GpioPinWrite(&my_stateled.port->pin[led_nr], true);
 };
 void stateled_off(uint8_t led_nr) {
-    if (!my_stateled.init)
-        return;
+    // clang-format off
+    if (!my_stateled.init) return;
+    // clang-format on
     GpioPinWrite(&my_stateled.port->pin[led_nr], false);
 };
 
-void stateled_update() {
-    if (my_stateled.init) {
-        //      static uint32_t d;
-        //    	static uint32_t ltick=0;
-        //    	uint32_t ctick = HAL_GetTick();
-        //    	d = ctick-ltick;
-        static uint8_t cnt = 0;
-        cnt++;
-        cnt = ((cnt) % my_stateled.cycle_size);
-
+void stateled_update(stated_state_e state) {
+    // clang-format off
+    if (!my_stateled.init) return;
+    // clang-format on
+    static uint8_t cnt = 0;
+    cnt++;
+    cnt = ((cnt) % my_stateled.cycle_size);
+    // clang-format off
+    if (state == SYNC_RESET) {
+        return;
+    }  else if (state == SYNC_DOING){
+        if (cnt == 0){
+            stateled_toggle();
+        }
+    } else {
         bool bstate = (cnt < (my_stateled.cycle_size >> 1));
         if (!state_is_same(my_stateled.state, &my_stateled.lstate)) {
             my_stateled.lstate = *my_stateled.state;
@@ -100,6 +108,6 @@ void stateled_update() {
                 }
             }
         }
-        // ltick=ctick;
     }
+    // ltick=ctick;
 }

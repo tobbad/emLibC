@@ -9,10 +9,18 @@
 #define INC_D_LEDLINE_H_
 #include "gpio_port.h"
 #include "state.h"
+
+typedef enum {
+  SYNC_RESET,
+  SYNC_DOING,
+  SYNC_READY,
+  SYNC_CNT
+} stated_state_e;
+
 void stateled_init(state_t *state, gpio_port_t *port, uint16_t cycle_size);
 void stateled_toggle();
 void stateled_on(uint8_t led_nr);
 void stateled_off(uint8_t led_nr);
-void stateled_update();
+void stateled_update(stated_state_e state);
 
 #endif /* INC_D_LEDLINE_H_ */

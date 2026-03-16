@@ -40,7 +40,7 @@ em_msg buffer_free(buffer_t *buffer) {
 
 buffer_t *buffer_new_buffer_t(buffer_t *buffer) {
     // clang-format off
-    if (buffer == 0) return NULL
+    if (buffer == 0) return NULL;
     if (buffer->size == 0) return NULL;
     size_t size = buffer->size;
     memset(buffer, 0, sizeof(buffer_t));
