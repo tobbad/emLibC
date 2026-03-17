@@ -63,6 +63,18 @@ void stateled_toggle() {
     // clang-format on
     GpioPortToggle(my_stateled.port);
 };
+
+void stateled_iterate() {
+    static uint8_t idx = 0;
+    uint8_t last = idx;
+    idx = (idx+1)% my_stateled.state->cnt;
+    // clang-format off
+    if (!my_stateled.init) return;
+    // clang-format on
+    stateled_off(last+my_stateled.state->first);
+    stateled_on(idx+my_stateled.state->first);
+};
+
 void stateled_on(uint8_t led_nr) {
     // clang-format off
     if (!my_stateled.init) return;
@@ -86,7 +98,11 @@ void stateled_update(stated_state_e state) {
     // clang-format off
     if (state == SYNC_RESET) {
         return;
-    }  else if (state == SYNC_DOING){
+    }  else if (state == SYNC_ITERATE){
+        if (cnt == 0){
+            stateled_iterate();
+        }
+    } else if (state == SYNC_ERROR){
         if (cnt == 0){
             stateled_toggle();
         }
