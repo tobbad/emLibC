@@ -18,11 +18,14 @@ typedef enum {
   SYNC_CNT
 } stated_state_e;
 
-void stateled_init(state_t *state, gpio_port_t *port, uint16_t cycle_size);
-void stateled_toggle();
+
+void stateled_init(state_t *state, gpio_port_t *port, uint16_t cycle_size, uint8_t bli_cnt);
+void stateled_toggle_port();
+void stateled_toggle_pin(uint8_t pinNr);
 void stateled_iterate();
 void stateled_on(uint8_t led_nr);
 void stateled_off(uint8_t led_nr);
-void stateled_update(stated_state_e state);
+void stateled_all_off();
+bool stateled_update(stated_state_e state);
 
 #endif /* INC_D_LEDLINE_H_ */
