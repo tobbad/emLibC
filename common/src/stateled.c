@@ -142,6 +142,8 @@ bool stateled_update(stated_state_e state) {
     }  else if (state == SYNC_ITERATE){
         if (cnt == 0){
             stateled_iterate();
+            printf(".");
+            fflush(stdout);
             bli_cnt++;
         }
         if  (bli_cnt==my_stateled.bli_cnt){
