@@ -179,6 +179,14 @@ em_msg buffer_get(buffer_t *buffer, uint8_t *data, int16_t *size) {
     return EM_OK;
 }
 
+buffer_t * buffer_get_till_end(buffer_t *buffer) {
+    static buffer_t _buffer;
+    int16_t data_to_end = buffer->size - buffer->first;
+    _buffer.used = data_to_end;
+    _buffer.mem  = &buffer->mem[buffer->first];
+    return &_buffer;
+}
+
 bool buffer_is_used(buffer_t *buffer) { 
     return buffer->state == BUFFER_USED; 
     

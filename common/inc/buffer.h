@@ -50,6 +50,7 @@ buffer_t *buffer_new_buffer_t(buffer_t *buffer);
 em_msg buffer_reset(buffer_t *buffer);
 em_msg buffer_set(buffer_t *buffer, const uint8_t *data, int16_t size);
 em_msg buffer_get(buffer_t *buffer, uint8_t *data, int16_t *size);
+buffer_t * buffer_get_till_end(buffer_t *buffer);
 bool buffer_is_used(buffer_t *buffer);
 void buffer_print(const buffer_t *buffer, char *title);
 #ifdef __cplusplus

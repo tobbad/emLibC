@@ -142,7 +142,7 @@ volatile int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
 #ifdef HAL_PCD_MODULE_ENABLED
     if (urx_buffer.state == BUFFER_USED) {
         int16_t msize = MIN(len, urx_buffer.used);
-        buffer_set(&urx_buffer, ptr, &msize);
+        buffer_set(&urx_buffer, ptr, msize);
         return msize;
     }
 #endif
@@ -203,7 +203,8 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     }
 #ifdef HAL_PCD_MODULE_ENABLED
         if (isio.mode & USE_USB) {
-            CDC_Transmit_FS(ptr, len);
+            time_start(utxhdl, len, ptr);
+            CDC_Write(ptr, len);
         }
 #endif
 
@@ -224,7 +225,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
             isio.cbuffer= buffer_pool_get(isio.pool);
             while (!ReadModify_write((int8_t*)&isio.cbuffer->state, 1)) { };
             time_start(shdl, len, ptr);
-            buffer_set(isio.cbuffer, ptr, &len);
+            buffer_set(isio.cbuffer, ptr, len);
             HAL_UART_Transmit_DMA(isio.uart, isio.cbuffer->mem, len);
             time_end_su(shdl);
 
