@@ -6,10 +6,39 @@
  */
 #include "buffer.h"
 #include "state.h"
+#define TALKING
 
 char *state2Str[BUFFER_CNT] = {(char *)&"BUFFER_READY", (char *)&"BUFFER_USED"};
+char *type2Str[BUFFER_CNT] = {(char *)&"LINEAR", (char *)&"RING"};
+#ifndef TALKING
+em_msg buffer_check(const buffer_t *buffer) {
+    // clang-format off
+    int16_t res = EM_ERR;
+    if (!buffer || !buffer->mem) return res;
+    if (buffer->size==0) return res;
+    // clang-format on
+    return EM_OK;
+}
+#else
+em_msg buffer_check(const buffer_t *buffer) {
+    int16_t res = EM_ERR;
+    if (!buffer){
+        printf("buffer is NULL"NL);
+        return res;
+    } 
+    if (!buffer->mem){
+        printf("buffer->mem is NULL"NL);
+        return res;
+    }  
+    if (buffer->size==0){
+        printf("buffer->size is 0"NL);
+        return res;
+    } 
+    return EM_OK;
+}
+#endif
 
-buffer_t *buffer_new(uint16_t size) {
+buffer_t *buffer_new(uint16_t size, b_type_e type) {
     buffer_t *buffer = NULL;
     // clang-format off
     if (size == 0) return buffer;
@@ -21,15 +50,19 @@ buffer_t *buffer_new(uint16_t size) {
         free(buffer);
         return NULL;
     }
-    buffer->size = size;
+    buffer->type  = type;
+    buffer->size  = size;
+    buffer->first = 0;
     buffer_reset(buffer);
     return buffer;
 }
 
 em_msg buffer_free(buffer_t *buffer) {
-    em_msg res = EM_OK;
-    // printf("buffer_free(%p)"NL, buffer);
     // clang-format off
+    em_msg res = buffer_check(buffer);
+    if (res == EM_ERR) return res;
+    // clang-format off
+    // printf("buffer_free(%p)"NL, buffer);
     if (!buffer) return res;
     if (buffer->state == BUFFER_USED) return EM_ERR;
     // clang-format on
@@ -40,83 +73,132 @@ em_msg buffer_free(buffer_t *buffer) {
 
 buffer_t *buffer_new_buffer_t(buffer_t *buffer) {
     // clang-format off
-    if (buffer == 0) return NULL;
-    if (buffer->size == 0) return NULL;
+    em_msg res = buffer_check(buffer);
+    if (res == EM_ERR) return NULL;
     size_t size = buffer->size;
+    b_type_e type = buffer->type;
     memset(buffer, 0, sizeof(buffer_t));
     buffer->mem = calloc(1, size);
     if (!buffer->mem) return NULL;
     // clang-format on
-    buffer->size = size;
+    buffer->type  = type;
+    buffer->size  = size;
+    buffer->first = 0;
     buffer_reset(buffer);
     return buffer;
 }
+
 em_msg buffer_reset(buffer_t *buffer) {
     // clang-format off
-    em_msg res = EM_ERR;
-    if (!buffer || !buffer->mem)  {
-        //printf("buffer_reset buffer = %p, buffer-mem = %p"NL);
-        return res;
-    }
-    if (buffer->size==0) return res;
+    em_msg res = buffer_check(buffer);
+    if (res == EM_ERR) return res;
     // clang-format on
     memset(buffer->mem, 0, buffer->size);
     buffer->pl = buffer->mem;
     buffer->state = BUFFER_READY;
-    buffer->used = 0;
+    buffer->first = 0;
     buffer->id = 0;
     res = EM_OK;
     return res;
 }
 
-em_msg buffer_set(buffer_t *buffer, const uint8_t *data, int16_t *size) {
-    em_msg res = EM_ERR;
-    // clang-format off
-    if (!buffer || !buffer->mem || !data || !*size) return res;
-    // clang-format on
-    res = EM_OK;
-    int16_t msize = MIN(*size, buffer->size);
-    memcpy(buffer->mem, data, msize);
-    buffer->used = msize;
-    *size = msize;
+int16_t buffer_used(const buffer_t *buffer) {
+    return buffer->used;
+}
+
+int16_t buffer_writeable(const buffer_t *buffer) {
+    return buffer->size - buffer->used;
+}
+
+em_msg buffer_set(buffer_t *buffer, const uint8_t *data, int16_t size) {
+    em_msg res = buffer_check(buffer);
+    if (res == EM_ERR) return res;
+
+    if (size <= 0) return EM_ERR;
+
+    int16_t writable = buffer_writeable(buffer);
+    if (size > writable) return EM_ERR;
+
+    if (buffer->type == LINEAR) {
+        memcpy(buffer->mem, data, size);
+        buffer->first = 0;
+        buffer->used  = size;
+    } else {
+        int16_t write_pos = (buffer->first + buffer->used) % buffer->size;
+        int16_t space_to_end = buffer->size - write_pos;
+
+        if (size <= space_to_end) {
+            memcpy(&buffer->mem[write_pos], data, size);
+        } else {
+            memcpy(&buffer->mem[write_pos], data, space_to_end);
+            memcpy(&buffer->mem[0], data + space_to_end, size - space_to_end);
+        }
+
+        buffer->used += size;
+    }
+
     buffer->state = BUFFER_USED;
-    return res;
+    return EM_OK;
 }
 
 em_msg buffer_get(buffer_t *buffer, uint8_t *data, int16_t *size) {
-    em_msg res = EM_ERR;
-    if (!buffer || !buffer->mem || !data || !size) {
-        printf("Precondition not fullfilled" NL);
-        return res;
-    };
-    // clang-format off
-    if (buffer->state == BUFFER_READY) return res;
-    // clang-format on
-    res = EM_OK;
-    int16_t msize = MIN(*size, buffer->size);
-    memcpy(data, buffer->mem, msize);
-    buffer->state = BUFFER_READY;
-    buffer->used = 0;
-    *size = msize;
-    return res;
+    em_msg res = buffer_check(buffer);
+    if (res == EM_ERR) return res;
+
+    if (*size <= 0) return EM_ERR;
+
+    int16_t readable = buffer_used(buffer);
+    if (readable == 0) {
+        *size = 0;
+        return EM_OK;
+    }
+
+    *size = MIN(*size, readable);
+
+    if (buffer->type == LINEAR) {
+        memcpy(data, buffer->mem, *size);
+        buffer->used = 0;
+    } else {
+        int16_t data_to_end = buffer->size - buffer->first;
+
+        if (*size <= data_to_end) {
+            memcpy(data, &buffer->mem[buffer->first], *size);
+        } else {
+            memcpy(data, &buffer->mem[buffer->first], data_to_end);
+            memcpy(data + data_to_end, &buffer->mem[0], *size - data_to_end);
+        }
+
+        buffer->first = (buffer->first + *size) % buffer->size;
+        buffer->used -= *size;
+    }
+
+    if (buffer->used == 0) {
+        buffer->state = BUFFER_READY;
+    }
+
+    return EM_OK;
 }
 
-bool buffer_is_used(buffer_t *buffer) { return buffer->state == BUFFER_USED; }
+bool buffer_is_used(buffer_t *buffer) { 
+    return buffer->state == BUFFER_USED; 
+    
+}
 
-void buffer_print(buffer_t *buffer, char *title) {
-    if (buffer == NULL) {
-        printf("buffer is NULL" NL);
-        return;
-    }
+void buffer_print(const buffer_t *buffer, char *title) {
     // clang-format off
+    em_msg res = buffer_check(buffer);
+    if (res == EM_ERR) return;
     if (title != NULL) printf("%s" NL, title);
     // clang-format on
-    printf("Info of buffer        = 0x%p" NL, buffer);
-    printf("id                    = %d" NL, buffer->id);
-    printf("Data                  = 0x%p" NL, buffer->mem);
-    print_buffer(buffer->mem, buffer->size, "Buffer content");
-    printf("buffer size           = %1d" NL, buffer->size);
-    printf("buffer used           = %d" NL, buffer->used);
-    printf("buffei id             = %d" NL, buffer->id);
-    printf("Buffer state is       = %s" NL, state2Str[buffer->state]);
+    printf("Info of buffer      = 0x%p" NL, buffer);
+    printf("size                = %d" NL, buffer->size);
+    printf("id                  = %d" NL, buffer->id);
+    printf("Data                = 0x%p" NL, buffer->mem);
+    printf("buffer first        = %1d" NL, buffer->first);
+    printf("buffer used         = %d" NL, buffer_used(buffer));
+    printf("buffer writable     = %d" NL, buffer_writeable(buffer));
+    printf("buffei id           = %d" NL, buffer->id);
+    printf("Buffer state is     = %s" NL, state2Str[buffer->state]);
+    printf("Buffer type is      = %s" NL, type2Str[buffer->type]);
+    print_buffer(buffer->mem, buffer->size, "Full content");
 }

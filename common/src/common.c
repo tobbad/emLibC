@@ -177,7 +177,7 @@ void print_buffer(const uint8_t *buffer, uint8_t size, const char *header) {
         printf("Can not print NULL buffer");
     }
     if (header != NULL) {
-        printf("Print %s buffer of size %d", header, size);
+        printf("%s size = %d", header, size);
     } else {
         printf("Print buffer of size %d", size);
     }
