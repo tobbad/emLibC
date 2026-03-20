@@ -204,7 +204,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
 #ifdef HAL_PCD_MODULE_ENABLED
         if (isio.mode & USE_USB) {
             time_start(utxhdl, len, ptr);
-            CDC_Write(ptr, len);
+            CDC_Transmit_FS(ptr, len);
         }
 #endif
 
