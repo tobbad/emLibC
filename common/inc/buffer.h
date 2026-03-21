@@ -30,9 +30,9 @@ typedef struct buffer_s {
     int8_t state;
     uint8_t *pl;   /* pointer to first byte used in buffer */
     uint8_t *mem;  /* Start of memory */
-    int16_t size;  // Size of buffer
-    int16_t used; // How much is used
     int16_t first; // First byte used
+    int16_t used;  // How much is used
+    int16_t size;  // Size of buffer
     uint8_t id;    // id of buffer
     b_type_e type; // LINEAR oder RING
 } buffer_t;
