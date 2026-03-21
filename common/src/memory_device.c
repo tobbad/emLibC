@@ -18,7 +18,7 @@ static memory_device_t mDev[DEVICE_CNT];
 em_msg memory_device_open(dev_handle_t hdl, void *user_data) {
     if (mDev[hdl].buffer != NULL) {
         mDev[hdl].buffer = (buffer_t *)user_data;
-        memset(mDev[hdl].buffer->mem, 0, mDev[hdl].buffer->size);
+        mDev[hdl].buffer = buffer_new_buffer_t(mDev[hdl].buffer);
         return EM_OK;
     }
     return EM_ERR;
@@ -26,7 +26,7 @@ em_msg memory_device_open(dev_handle_t hdl, void *user_data) {
 
 em_msg memory_device_write(dev_handle_t hdl, const uint8_t *data, int16_t count) {
     // clang-format off
-    em_msg res = buffer_check(mDev[hdl].buffer);
+    em_msg res = buffer_check(mDev[hdl].buffer, false);
     if (res == EM_ERR) return res;
     int16_t used = buffer_used(mDev[hdl].buffer);
     uint16_t cnt = MIN(used, count);
@@ -40,7 +40,7 @@ em_msg memory_device_write(dev_handle_t hdl, const uint8_t *data, int16_t count)
 
 em_msg memory_device_read(dev_handle_t hdl, uint8_t *data, int16_t *count) {
     // clang-format off
-    em_msg res = buffer_check(mDev[hdl].buffer);
+    em_msg res = buffer_check(mDev[hdl].buffer, false);
     if (res == EM_ERR) return res;
     int16_t used = buffer_used(mDev[hdl].buffer);
     uint16_t cnt = MIN(*count, used);

@@ -433,7 +433,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *UartHandle) {
     /* Set transmission flag: transfer complete */
     isio.cbuffer->state = BUFFER_READY;
-    buffer_pool_return(isio.pool, isio.cbuffer);
+    //buffer_pool_return(isio.pool, isio.cbuffer);
     isio.cbuffer = NULL;
     time_end_tx(shdl);
 }

@@ -20,20 +20,22 @@ em_msg buffer_check(const buffer_t *buffer) {
     return EM_OK;
 }
 #else
-em_msg buffer_check(const buffer_t *buffer) {
+em_msg buffer_check(const buffer_t *buffer, bool reduced) {
     int16_t res = EM_ERR;
     if (!buffer){
         printf("buffer is NULL"NL);
         return res;
     } 
-    if (!buffer->mem){
-        printf("buffer->mem is NULL"NL);
-        return res;
-    }  
     if (buffer->size==0){
         printf("buffer->size is 0"NL);
         return res;
     } 
+    if (!reduced){
+        if (!buffer->mem){
+            printf("buffer->mem is NULL"NL);
+            return res;
+        }
+    }
     return EM_OK;
 }
 #endif
@@ -59,7 +61,7 @@ buffer_t *buffer_new(uint16_t size, b_type_e type) {
 
 em_msg buffer_free(buffer_t *buffer) {
     // clang-format off
-    em_msg res = buffer_check(buffer);
+    em_msg res = buffer_check(buffer, false);
     if (res == EM_ERR) return res;
     // clang-format off
     // printf("buffer_free(%p)"NL, buffer);
@@ -73,7 +75,7 @@ em_msg buffer_free(buffer_t *buffer) {
 
 buffer_t *buffer_new_buffer_t(buffer_t *buffer) {
     // clang-format off
-    em_msg res = buffer_check(buffer);
+    em_msg res = buffer_check(buffer, true);
     if (res == EM_ERR) return NULL;
     size_t size = buffer->size;
     b_type_e type = buffer->type;
@@ -90,7 +92,7 @@ buffer_t *buffer_new_buffer_t(buffer_t *buffer) {
 
 em_msg buffer_reset(buffer_t *buffer) {
     // clang-format off
-    em_msg res = buffer_check(buffer);
+    em_msg res = buffer_check(buffer, false);
     if (res == EM_ERR) return res;
     // clang-format on
     memset(buffer->mem, 0, buffer->size);
@@ -111,7 +113,7 @@ int16_t buffer_writeable(const buffer_t *buffer) {
 }
 
 em_msg buffer_set(buffer_t *buffer, const uint8_t *data, int16_t size) {
-    em_msg res = buffer_check(buffer);
+    em_msg res = buffer_check(buffer, false);
     if (res == EM_ERR) return res;
 
     if (size <= 0) return EM_ERR;
@@ -142,7 +144,7 @@ em_msg buffer_set(buffer_t *buffer, const uint8_t *data, int16_t size) {
 }
 
 em_msg buffer_get(buffer_t *buffer, uint8_t *data, int16_t *size) {
-    em_msg res = buffer_check(buffer);
+    em_msg res = buffer_check(buffer, false);
     if (res == EM_ERR) return res;
 
     if (*size <= 0) return EM_ERR;
@@ -182,19 +184,19 @@ em_msg buffer_get(buffer_t *buffer, uint8_t *data, int16_t *size) {
 buffer_t * buffer_get_till_end(buffer_t *buffer) {
     static buffer_t _buffer;
     int16_t data_to_end = buffer->size - buffer->first;
-    _buffer.used = data_to_end;
+    _buffer.size = buffer->size;
+    _buffer.used = buffer->used;
     _buffer.mem  = &buffer->mem[buffer->first];
     return &_buffer;
 }
 
 bool buffer_is_used(buffer_t *buffer) { 
-    return buffer->state == BUFFER_USED; 
-    
+    return buffer->state == BUFFER_USED;
 }
 
 void buffer_print(const buffer_t *buffer, char *title) {
     // clang-format off
-    em_msg res = buffer_check(buffer);
+    em_msg res = buffer_check(buffer, false);
     if (res == EM_ERR) return;
     if (title != NULL) printf("%s" NL, title);
     // clang-format on
