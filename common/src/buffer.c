@@ -96,6 +96,7 @@ em_msg buffer_reset(buffer_t *buffer) {
     if (res == EM_ERR) return res;
     // clang-format on
     memset(buffer->mem, 0, buffer->size);
+    memset(buffer->lbl.str,0, CMD_LEN);
     buffer->pl = buffer->mem;
     buffer->state = BUFFER_READY;
     buffer->first = 0;
@@ -109,9 +110,10 @@ em_msg buffer_clear(buffer_t *buffer){
     em_msg res = buffer_check(buffer, false);
     if (res == EM_ERR) return res;
     // clang-format on
-    buffer->first = (buffer->first+buffer->use)%buffer->size;
+    buffer->first = (buffer->first+buffer->used)%buffer->size;
     buffer->used = 0;
     buffer->state = BUFFER_READY;
+    memset(buffer->lbl.str,0, CMD_LEN);
     return res;
 };
 
@@ -142,6 +144,7 @@ em_msg buffer_set(buffer_t *buffer, const uint8_t *data, int16_t size) {
 
         if (size <= space_to_end) {
             memcpy(&buffer->mem[write_pos], data, size);
+            memcpy(buffer->lbl.str, data, MIN(CMD_LEN-1, size));
         } else {
             memcpy(&buffer->mem[write_pos], data, space_to_end);
             memcpy(&buffer->mem[0], data + space_to_end, size - space_to_end);
@@ -176,8 +179,10 @@ em_msg buffer_get(buffer_t *buffer, uint8_t *data, int16_t *size) {
 
         if (*size <= data_to_end) {
             memcpy(data, &buffer->mem[buffer->first], *size);
+            memcpy(buffer->lbl.str, data, MIN(CMD_LEN-1, *size));
         } else {
             memcpy(data, &buffer->mem[buffer->first], data_to_end);
+            memcpy(buffer->lbl.str, data, MIN(CMD_LEN-1, data_to_end));
             memcpy(data + data_to_end, &buffer->mem[0], *size - data_to_end);
         }
 
@@ -193,43 +198,11 @@ em_msg buffer_get(buffer_t *buffer, uint8_t *data, int16_t *size) {
 }
 
 
-char *buffer_get_last_str(buffer_t *buffer) {
+clabel_u *buffer_get_clabel(buffer_t *buffer) {
     // clang-format off
     em_msg res = buffer_check(buffer, false);
-    if (res == EM_ERR) return res;
-    if (*size <= 0) return EM_ERR;
-    int16_t readable = buffer_used(buffer);
-    // clang-format on
-    if (readable == 0) {
-        *size = 0;
-        return EM_OK;
-    }
-
-    *size = MIN(buffer->size + 1, readable);
-
-    if (buffer->type == LINEAR) {
-        memcpy(buffer->last_str, buffer->mem, *size);
-        buffer->last_str[*size + 1] = 0;
-    } else {
-        int16_t data_to_end = buffer->size - buffer->first;
-
-        if (*size <= data_to_end) {
-            memcpy(buffer->last_str, buffer->mem, *size);
-            buffer->last_str[*size + 1] = 0;
-        } else {
-            memcpy(buffer->last_str, &buffer->mem[buffer->first], data_to_end);
-            memcpy(buffer->last_str + data_to_end, &buffer->mem[0], *size - data_to_end);
-            buffer->last_str[*size + 1] = 0;
-        }
-        buffer->first = (buffer->first + *size) % buffer->size;
-        buffer->used -= *size;
-    }
-
-    if (buffer->used == 0) {
-        buffer->state = BUFFER_READY;
-    }
-
-    return buffer->last_str;
+    if (res == EM_ERR) return NULL;
+    return &buffer->lbl;
 }
 
 buffer_t * buffer_get_till_end(buffer_t *buffer) {

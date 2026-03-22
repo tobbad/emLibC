@@ -30,6 +30,7 @@ typedef struct buffer_s {
     state_e state;
     uint8_t *pl;   /* pointer to first byte used in buffer */
     uint8_t *mem;  /* Start of memory */
+    clabel_u lbl;  /* first 3 chars of input string */
     int16_t first; // First byte used
     int16_t used;  // How much is used
     int16_t size;  // Size of buffer
@@ -51,6 +52,7 @@ em_msg buffer_reset(buffer_t *buffer);
 em_msg buffer_clear(buffer_t *buffer);
 em_msg buffer_set(buffer_t *buffer, const uint8_t *data, int16_t size);
 em_msg buffer_get(buffer_t *buffer, uint8_t *data, int16_t *size);
+clabel_u *buffer_get_clabel(buffer_t *buffer);
 buffer_t * buffer_get_till_end(buffer_t *buffer);
 bool buffer_is_used(buffer_t *buffer);
 void buffer_print(const buffer_t *buffer, char *title);

@@ -88,6 +88,9 @@ typedef struct isio_s {
 time_handle_t  shdl;
 static isio_t isio;
 static char *new = NULL;
+static void serial_apply_change(clabel_u *lbl);
+
+
 
 em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     if (isio.init) return EM_ERR;
@@ -141,10 +144,10 @@ volatile int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
         return rLen;
 #ifdef HAL_PCD_MODULE_ENABLED
     if (urx_buffer.state == BUFFER_USED) {
-        char * buffer_get_last_str(&urx_buffer);
-        serial_apply_change(ptr);
+        clabel_u * lbl= buffer_get_clabel(&urx_buffer);
+        serial_apply_change(lbl);
         //buffer_clear(&urx_buffer);
-        return msize;
+        return urx_buffer.used;
     }
 #endif
     if (isio.uart != NULL) {
@@ -299,16 +302,15 @@ static void serial_get_state(dev_handle_t dev, state_t *ret) {
     memcpy(ret, &isio.state, sizeof(state_t));
 };
 
-static void serial_apply_change(char *str) {
-    if (!isio.init)
-        return;
-    uint16_t len = strlen(str);
+static void serial_apply_change(clabel_u *lbl) {
+    if (!isio.init) return;
+    uint16_t len = strlen(lbl->str);
     if (len > 0) {
-        type_e ctype = clable2type(str);
+        type_e ctype = clable2type(lbl);
         if (ctype == hexnum) {
             if (!state_get_dirty(&isio.state)) {
                 char *stopstring = NULL;
-                uint8_t res = strtol(str, &stopstring, 10);
+                uint8_t res = strtol(lbl->str, &stopstring, 10);
                 if (strlen(stopstring) == 0) {
                     state_propagate_by_idx(&isio.state, res);
                 }
