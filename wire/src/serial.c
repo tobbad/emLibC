@@ -141,8 +141,9 @@ volatile int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
         return rLen;
 #ifdef HAL_PCD_MODULE_ENABLED
     if (urx_buffer.state == BUFFER_USED) {
-        int16_t msize = MIN(len, urx_buffer.used);
-        buffer_set(&urx_buffer, ptr, msize);
+        char * buffer_get_last_str(&urx_buffer);
+        serial_apply_change(ptr);
+        //buffer_clear(&urx_buffer);
         return msize;
     }
 #endif
@@ -298,21 +299,16 @@ static void serial_get_state(dev_handle_t dev, state_t *ret) {
     memcpy(ret, &isio.state, sizeof(state_t));
 };
 
-static void serial_apply_change(void) {
+static void serial_apply_change(char *str) {
     if (!isio.init)
         return;
-    uint16_t len = strlen(isio.state.clabel.str);
-    for (uint8_t i = 0; i < CMD_LEN; i++) {
-        if (isalpha((int)isio.state.clabel.str[i])) {
-            isio.state.clabel.str[i] &= 0xdf;
-        }
-    }
+    uint16_t len = strlen(str);
     if (len > 0) {
-        type_e ctype = clable2type(&isio.state.clabel);
+        type_e ctype = clable2type(str);
         if (ctype == hexnum) {
             if (!state_get_dirty(&isio.state)) {
                 char *stopstring = NULL;
-                uint8_t res = strtol(isio.state.clabel.str, &stopstring, 10);
+                uint8_t res = strtol(str, &stopstring, 10);
                 if (strlen(stopstring) == 0) {
                     state_propagate_by_idx(&isio.state, res);
                 }
@@ -425,7 +421,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
         new = (char *)isio.buffer[SIO_RX]->mem;
         memset((uint8_t *)&isio.state.clabel, 0, CMD_LEN);
         memcpy((uint8_t *)&isio.state.clabel, new, strlen(new));
-        serial_apply_change();
+        serial_apply_change(&isio.state.clabel);
         HAL_UARTEx_ReceiveToIdle_DMA(isio.uart, (uint8_t *)rx_buf, RX_BUFFER_SIZE);
     }
 }
