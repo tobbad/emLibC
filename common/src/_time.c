@@ -211,9 +211,9 @@ void time_print(time_handle_t hdl, char *titel, bool python) {
         baud = _time.time[hdl].measurement[i].baud;
         tick_start = _time.time[hdl].measurement[_time.time[hdl].idx].tick_start;
         if (python) {
-            printf("    [ %2ld, %"PRId64", %3ld, %"PRId64" ]," NL, duration_tick, duration_ns, count, baud);
+            printf("    [ %2ld, %7"PRId64", %3ld, %7"PRId64" ]," NL, duration_tick, duration_ns, count, baud);
         } else {
-            printf("    [ %2ld, %"PRId64", %3ld, %"PRId64" ]," NL, duration_tick, duration_ns, count, baud);
+            printf("    [ %2ld, %7"PRId64", %3ld, %7"PRId64" ]," NL, duration_tick, duration_ns, count, baud);
         }
     }
     if (python) {

@@ -146,7 +146,7 @@ volatile int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
     if (urx_buffer.state == BUFFER_USED) {
         clabel_u * lbl= buffer_get_clabel(&urx_buffer);
         serial_apply_change(lbl);
-        //buffer_clear(&urx_buffer);
+        buffer_set(isio.buffer[SIO_RX], urx_buffer.mem, urx_buffer.used);
         return urx_buffer.used;
     }
 #endif
@@ -288,6 +288,7 @@ static void serial_reset(dev_handle_t dev) {
     buf = isio.buffer[SIO_TX];
     buffer_reset(buf);
     state_reset(&isio.state);
+    buffer_clear(&urx_buffer);
     memset(rx_buf, 0, RX_BUFFER_SIZE);
     memset(tx_buf, 0, TX_BUFFER_SIZE);
 };

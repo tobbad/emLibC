@@ -99,6 +99,7 @@ em_msg buffer_reset(buffer_t *buffer) {
     memset(buffer->lbl.str,0, CMD_LEN);
     buffer->pl = buffer->mem;
     buffer->state = BUFFER_READY;
+    buffer->used = 0;
     buffer->first = 0;
     buffer->id = 0;
     res = EM_OK;
