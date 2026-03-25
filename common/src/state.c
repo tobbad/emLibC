@@ -159,10 +159,11 @@ em_msg state_propagate(state_t *state, uint8_t idx) {
     em_msg res = EM_ERR;
     if (state_check(state))
         return res;
-    if ((idx > (state->first + state->cnt))) {
+    if (((idx <state->first) &&(idx< state->first+ state->cnt))) {
         // printf("idx (%d)  > %d"NL, idx,  state->first + state->cnt);
         return res;
     }
+    printf("Propagate state %d"NL, idx);
     state->state[idx] = (state->state[idx] + 1) % STATE_CNT;
     state->dirty = true;
     res = EM_OK;
@@ -181,10 +182,6 @@ em_msg state_propagate_by_idx(state_t *state, uint8_t idx) {
     em_msg res = EM_ERR;
     if (state_check(state))
         return res;
-    if ((idx > (state->first + state->cnt))) {
-        // printf("idx (%d)  > %d"NL, idx,  state->first + state->cnt);
-        return res;
-    }
     return state_propagate(state, idx);
 }
 
