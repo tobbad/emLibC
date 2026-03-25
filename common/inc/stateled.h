@@ -26,6 +26,6 @@ void stateled_iterate();
 void stateled_on(uint8_t led_nr);
 void stateled_off(uint8_t led_nr);
 void stateled_all_off();
-bool stateled_update(stated_state_e state);
+bool stateled_update(stated_state_e state, bool doDot);
 
 #endif /* INC_D_LEDLINE_H_ */

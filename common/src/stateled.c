@@ -128,7 +128,7 @@ void stateled_show(uint8_t cnt) {
     }
 };
 
-bool stateled_update(stated_state_e state) {
+bool stateled_update(stated_state_e state, bool doDot) {
     // clang-format off
     if (!my_stateled.init) return false;
     // clang-format on
@@ -142,8 +142,10 @@ bool stateled_update(stated_state_e state) {
     }  else if (state == SYNC_ITERATE){
         if (cnt == 0){
             stateled_iterate();
-            printf(".");
-            fflush(stdout);
+            if (doDot){
+                printf(".");
+                fflush(stdout);
+            }
             bli_cnt++;
         }
         if  (bli_cnt==my_stateled.bli_cnt){
