@@ -140,7 +140,7 @@ bool stateled_update(system_state_e state, bool doDot) {
     // clang-format off
     if (state == SYNC_RESET) {
         return false;
-    }  else if (state == SYNCHRONIZE){
+    }  else if ((state == SYNCHRONIZE) ||(state=SYNCHRONIZED_PARTLY)){
         if (cnt == 0){
             stateled_iterate();
             if (doDot){

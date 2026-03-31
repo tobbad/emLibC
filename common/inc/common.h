@@ -64,6 +64,7 @@ typedef enum {
   FREQBAND,
   FREQUENCY_OFFSET,
   SYNCHRONIZE,
+  SYNCHRONIZED_PARTLY,
   SYNC_ERROR,
   SYNC_READY,
   SYNC_CNT
@@ -111,6 +112,7 @@ typedef union {
 uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer,
                 uint16_t buffer_size, bool write_asci);
 uint16_t common_crc16(const uint8_t *data_p, uint16_t length);
+uint8_t modulo_sub(int8_t slot, int8_t oSlot, uint8_t modulo);
 void print_buffer(const uint8_t *buffer, uint8_t size, const char *header);
 type_e clable2type(clabel_u *lbl);
 int8_t str2uint(char *str);

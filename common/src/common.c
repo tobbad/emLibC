@@ -172,6 +172,15 @@ int8_t str2uint(char *str) {
     return res;
 };
 
+// Not tested yet!!
+uint8_t modulo_sub(int8_t slot, int8_t oSlot, uint8_t modulo){
+    if (slot>oSlot){
+        return (oSlot-slot);
+    } else {
+        return (oSlot+modulo- slot)%modulo;
+    }
+}
+
 void print_buffer(const uint8_t *buffer, uint8_t size, const char *header) {
     if (!buffer){
         printf("Can not print NULL buffer");
