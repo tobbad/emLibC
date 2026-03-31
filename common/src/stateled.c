@@ -1,9 +1,10 @@
 /*
- * d_ledline.c
+ * stateled.c
  *
  *  Created on: Feb 19, 2025
  *      Author: TBA
  */
+#include "rb_system.h"
 #include "stateled.h"
 #include "_gpio.h"
 #include "common.h"
@@ -128,7 +129,7 @@ void stateled_show(uint8_t cnt) {
     }
 };
 
-bool stateled_update(stated_state_e state, bool doDot) {
+bool stateled_update(system_state_e state, bool doDot) {
     // clang-format off
     if (!my_stateled.init) return false;
     // clang-format on
@@ -139,7 +140,7 @@ bool stateled_update(stated_state_e state, bool doDot) {
     // clang-format off
     if (state == SYNC_RESET) {
         return false;
-    }  else if (state == SYNC_ITERATE){
+    }  else if (state == SYNCHRONIZE){
         if (cnt == 0){
             stateled_iterate();
             if (doDot){

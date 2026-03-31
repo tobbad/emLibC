@@ -56,6 +56,19 @@ typedef enum {
   EM_TRUE,
 } em_msg;
 
+typedef enum {
+  SYNC_RESET,
+  BOOT_UP,
+  SLOT,
+  CHANNEL,
+  FREQBAND,
+  FREQUENCY_OFFSET,
+  SYNCHRONIZE,
+  SYNC_ERROR,
+  SYNC_READY,
+  SYNC_CNT
+} system_state_e;
+
 typedef union {
   const uint8_t *cptr;
   uint8_t *ptr;
