@@ -44,7 +44,11 @@
 #include <time.h>
 #include "stm32l4xx_hal_conf.h"
 #ifdef HAL_PCD_MODULE_ENABLED
+#ifdef USE_TINY_USB
+#include "tusb.h"
+#else
 #include "usbd_cdc_if.h"
+#endif
 #endif
 #if defined(STM32F303xC)
 #include "stm32f3xx.h"
@@ -206,10 +210,14 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
         return len;
     }
 #ifdef HAL_PCD_MODULE_ENABLED
-        if (isio.mode & USE_USB) {
+    if (isio.mode & USE_USB) {
             time_start(utxhdl, len, ptr);
             // usb_write(ptr, len)
+#ifdef USE_TINY_USB
+            tud_cdc_write(ptr, len);
+#else
             CDC_Transmit_FS(ptr, len);
+#endif
         }
 #endif
 
