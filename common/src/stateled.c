@@ -141,7 +141,7 @@ bool stateled_update(system_state_e state, bool doDot) {
     if (state == SYNC_RESET) {
         return false;
     }  else if ((state == SYNCHRONIZE) ||(state=SYNCHRONIZED_PARTLY)){
-        if (cnt == 0){
+         if (cnt == 0){
             stateled_iterate();
             if (doDot){
                 printf(".");
