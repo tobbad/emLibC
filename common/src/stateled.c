@@ -82,9 +82,6 @@ void stateled_on(uint8_t led_nr) {
     // clang-format off
     if (!my_stateled.init) return;
     // clang-format on
-    if (led_nr>SLOT_CNT){
-        led_nr -= OFFSET;
-    }
     GpioPinWrite(&my_stateled.port->pin[led_nr], true);
 };
 void stateled_off(uint8_t led_nr) {

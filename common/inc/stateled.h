@@ -13,7 +13,7 @@
 
 #define OFFSET 8
 typedef enum {
-    FEHLER = OFFSET,
+    FEHLER = OFFSET-1,
     NORMAL
 } stateled_e;
 void stateled_init(state_t *state, gpio_port_t *port, uint16_t cycle_size, uint8_t bli_cnt);
