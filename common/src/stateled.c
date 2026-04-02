@@ -82,6 +82,9 @@ void stateled_on(uint8_t led_nr) {
     // clang-format off
     if (!my_stateled.init) return;
     // clang-format on
+    if (led_nr>SLOT_CNT){
+        led_nr -= OFFSET;
+    }
     GpioPinWrite(&my_stateled.port->pin[led_nr], true);
 };
 void stateled_off(uint8_t led_nr) {
@@ -140,7 +143,7 @@ bool stateled_update(system_state_e state, bool doDot) {
     // clang-format off
     if (state == SYNC_RESET) {
         return false;
-    }  else if ((state == SYNCHRONIZE) ||(state=SYNCHRONIZED_PARTLY)){
+    }  else if ((state == SYNCHRONIZE) || (state == SYNCHRONIZED_PARTLY)){
          if (cnt == 0){
             stateled_iterate();
             if (doDot){
@@ -150,6 +153,7 @@ bool stateled_update(system_state_e state, bool doDot) {
             bli_cnt++;
         }
         if  (bli_cnt==my_stateled.bli_cnt){
+            stateled_off(0);
             bli_cnt  = 0;
             return true;
         }

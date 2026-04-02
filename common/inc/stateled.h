@@ -11,6 +11,11 @@
 #include "gpio_port.h"
 #include "state.h"
 
+#define OFFSET 8
+typedef enum {
+    FEHLER = OFFSET,
+    NORMAL
+} stateled_e;
 void stateled_init(state_t *state, gpio_port_t *port, uint16_t cycle_size, uint8_t bli_cnt);
 void stateled_toggle_port();
 void stateled_toggle_pin(uint8_t pinNr);
