@@ -22,8 +22,8 @@ bool time_doLoop_get();
 void time_set_mode(time_handle_t hdl, uint8_t mode);
 void time_reset(time_handle_t hdl);
 void time_start(time_handle_t hdl,uint8_t count, uint8_t *ptr);
-void time_end_su(time_handle_t hdl);
-void time_end_tx(time_handle_t hdl);
+void time_stop_su(time_handle_t hdl);
+void time_stop(time_handle_t hdl, uint8_t *ptr);
 void time_auto(time_handle_t hdl, uint8_t count, uint8_t *ptr);
 void time_print(time_handle_t hdl, char *titel, bool python);
 

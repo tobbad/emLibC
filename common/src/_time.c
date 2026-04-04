@@ -32,6 +32,7 @@ typedef struct time_single_s {
     float max_baud;
     int32_t max_cnt;
     uint8_t mode;
+    uint8_t name[LINE_CHAR];
 } time_single_t;
 
 typedef struct timem_s {
@@ -68,7 +69,7 @@ void time_init() {
     _time.doLoop = true;
 }
 
-time_handle_t time_new() {
+time_handle_t time_new(char *name) {
     // clang-format off
     if (!_time.init) return -1;
     // clang-format on
@@ -107,6 +108,8 @@ void time_start(time_handle_t hdl, uint8_t count, uint8_t *ptr) {
     if (time_check_hdl(hdl) == EM_ERR) return;
     if (!_time.init) return;
     // clang-format on
+    uint8_t len =strlen((char*)ptr);
+    len = MIN(len, TIME_MEAS_CHAR_PER_LINE);
     int64_t now_ns = DWT->CYCCNT * _time.ccnt2ns ;
     if (_time.time[hdl].first_ns < 0) {
         _time.time[hdl].first_ns = now_ns;
@@ -116,13 +119,13 @@ void time_start(time_handle_t hdl, uint8_t count, uint8_t *ptr) {
         _time.time[hdl].last_ns = now_ns;
         _time.time[hdl].measurement[_time.time[hdl].idx].count = count;
         _time.time[hdl].measurement[_time.time[hdl].idx].tick_start = HAL_GetTick();
-        memcpy((uint8_t *)_time.time[hdl].measurement[_time.time[hdl].idx].line, ptr, TIME_MEAS_CHAR_PER_LINE);
-        _time.time[hdl].measurement[_time.time[hdl].idx].line[TIME_MEAS_CHAR_PER_LINE + 1] = 0;
+        memcpy((uint8_t *)_time.time[hdl].measurement[_time.time[hdl].idx].line, ptr, len);
+        _time.time[hdl].measurement[_time.time[hdl].idx].line[len + 1] = 0;
         _time.time[hdl].measurement[_time.time[hdl].idx].start_ns = now_ns;
         _time.time[hdl].max_cnt += count;
     }
 }
-void time_end_su(time_handle_t hdl) {
+void time_stop_su(time_handle_t hdl) {
     // clang-format off
     if (time_check_hdl(hdl) == EM_ERR) return;
     if (!_time.init) return;
@@ -138,12 +141,18 @@ void time_end_su(time_handle_t hdl) {
     }
 }
 
-void time_end_tx(time_handle_t hdl) {
+void time_stop(time_handle_t hdl, uint8_t *ptr) {
     // clang-format off
     if (time_check_hdl(hdl) == EM_ERR) return;
     if (!_time.init) return;
     // clang-format on
     if (_time.time[hdl].idx >= 0) {
+        uint8_t len =strlen((char*)ptr);
+        len = MIN(len, TIME_MEAS_CHAR_PER_LINE);
+        if (ptr!=NULL){
+            memcpy((uint8_t *)_time.time[hdl].measurement[_time.time[hdl].idx].line, ptr, len);
+            _time.time[hdl].measurement[_time.time[hdl].idx].line[len + 1] = 0;
+        }
         int64_t now_ns = DWT->CYCCNT * _time.ccnt2ns;
         _time.time[hdl].measurement[_time.time[hdl].idx].stop_tx_ns = now_ns;
         float max_cnt = _time.time[hdl].max_cnt;
@@ -175,7 +184,7 @@ void time_auto(time_handle_t hdl, uint8_t count, uint8_t *ptr) {
     if (!_time.init) return;
     // clang-format on
     time_start(hdl, count, ptr);
-    time_end_tx(hdl);
+    time_stop(hdl, NULL);
     _time.time[hdl].last_start_ns = DWT->CYCCNT * _time.ccnt2ns;
 }
 
@@ -190,6 +199,7 @@ void time_print(time_handle_t hdl, char *titel, bool python) {
     if (titel != NULL) {
         printf("%s" NL, titel);
     }
+    printf("%s"NL, _time.time[hdl].name);
     if (python) {
         save = serial_mode_get();
         serial_mode_set(RAW);

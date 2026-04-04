@@ -68,7 +68,8 @@ typedef struct _sio_t {
   buffer_t *buffer[SIO_RXTX_CNT];
   print_e mode;
 } sio_t;
-extern time_handle_t  shdl;
+extern time_handle_t  srxhdl;
+extern time_handle_t  stxhdl;
 
 uint32_t serial_get_byte_per_second();
 void     serial_reset_byte_per_second();
