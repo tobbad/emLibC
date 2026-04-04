@@ -61,6 +61,7 @@
 #else
 #error Undefined platform
 #endif
+#include "rb_system.h"
 #include "common.h"
 #include "serial.h"
 #include "_time.h"
