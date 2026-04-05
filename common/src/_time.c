@@ -73,10 +73,13 @@ time_handle_t time_new(char *name) {
     // clang-format off
     if (!_time.init) return -1;
     // clang-format on
+    uint8_t len =strlen((char*)name);
+    len = MIN(len, TIME_MEAS_CHAR_PER_LINE);
     for (uint8_t hdl = 0; hdl < TIME_DEV_CNT; hdl++) {
         if ((_time.used & (1 << hdl)) == 0) {
             _time.used |= (1 << hdl);
             time_reset(hdl);
+            memcpy(_time.time[hdl].name, name, len);
             return hdl;
         }
     }
@@ -199,7 +202,7 @@ void time_print(time_handle_t hdl, char *titel, bool python) {
     if (titel != NULL) {
         printf("%s" NL, titel);
     }
-    printf("%s"NL, _time.time[hdl].name);
+    printf("Handle %s"NL, _time.time[hdl].name);
     if (python) {
         save = serial_mode_get();
         serial_mode_set(RAW);

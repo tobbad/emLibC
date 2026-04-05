@@ -116,9 +116,7 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     isio.init = true;
     serial_mode_set(isio.mode | USE_DMA_RX);
     srxhdl = time_new("srxhdl");
-    time_reset(srxhdl);
     stxhdl = time_new("stxhdl");
-    time_reset(stxhdl);
     HAL_UARTEx_ReceiveToIdle_DMA(isio.uart, (uint8_t *)rx_buf, RX_BUFFER_SIZE);
     // we could set the output buffer size to 0:
     // setbuf(stdout, NULL);
