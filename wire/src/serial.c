@@ -151,6 +151,7 @@ volatile int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
 #ifdef HAL_PCD_MODULE_ENABLED
     if (urx_buffer.state == BUFFER_USED) {
         clabel_u * lbl= buffer_get_clabel(&urx_buffer);
+        time_stop(urxhdl, NULL);
         serial_apply_change(lbl);
         buffer_set(isio.buffer[SIO_RX], urx_buffer.mem, urx_buffer.used);
         return isio.buffer[SIO_RX]->used;

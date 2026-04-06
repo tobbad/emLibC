@@ -35,6 +35,7 @@ size_t board_get_unique_id(uint8_t id[], size_t max_len) {
     }
     return max_len;
 }
+
 uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer, uint16_t buffer_size, bool write_asci) {
     // hex data (without addr/asci) contains in maximum:
     // 2*16(databytes)+15(normal spaces)+1 (extraspace byte  7->8)
