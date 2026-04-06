@@ -11,7 +11,30 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include "stm32l4xx_hal.h"
 
+/**
+ * @brief  Liefert die 96-bit eindeutige Chip-ID des STM32L476.
+ *         Adresse laut Reference Manual RM0351, Kapitel 49.1: 0x1FFF7590
+ *
+ * @param  id       Ausgabepuffer
+ * @param  max_len  Maximale Anzahl Bytes die geschrieben werden (tinyUSB gibt 16 vor)
+ */
+size_t board_get_unique_id(uint8_t id[], size_t max_len) {
+    // STM32L476 UID Register: drei 32-bit Worte = 12 Bytes
+    // RM0351 Rev.9, Section 49.1: "Unique device ID register (96 bits)"
+    const uint8_t *uid = (const uint8_t *)UID_BASE;  // UID_BASE = 0x1FFF7590 (definiert in stm32l476xx.h)
+
+    for (uint32_t i = 0; i < max_len && i < 12U; i++) {
+        id[i] = uid[i];
+    }
+
+    // Falls der Puffer größer als 12 Bytes ist: Rest mit 0 auffüllen
+    for (uint32_t i = 12U; i < max_len; i++) {
+        id[i] = 0x00U;
+    }
+    return max_len;
+}
 uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer, uint16_t buffer_size, bool write_asci) {
     // hex data (without addr/asci) contains in maximum:
     // 2*16(databytes)+15(normal spaces)+1 (extraspace byte  7->8)

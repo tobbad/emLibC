@@ -109,6 +109,7 @@ typedef union {
  * xx   = Hex encoded data byte
  * a    = printable asci otherwise "."
  */
+size_t board_get_unique_id(uint8_t id[], size_t max_len);
 uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer,
                 uint16_t buffer_size, bool write_asci);
 uint16_t common_crc16(const uint8_t *data_p, uint16_t length);
