@@ -7,7 +7,6 @@
 
 #ifndef INC_D_LEDLINE_H_
 #define INC_D_LEDLINE_H_
-#include "rb_system.h"
 #include "gpio_port.h"
 #include "state.h"
 

@@ -30,7 +30,7 @@
  *      Author: badi
  */
 #undef USE_USB
-#include "main.h"
+#include "hal_port.h"
 #include <errno.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -61,7 +61,7 @@
 #else
 #error Undefined platform
 #endif
-#include "rb_system.h"
+//gi#include "rb_system.h"
 #include "common.h"
 #include "serial.h"
 #include "_time.h"
