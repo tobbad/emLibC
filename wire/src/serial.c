@@ -30,6 +30,7 @@
  *      Author: badi
  */
 #undef USE_USB
+#include "main.h"
 #include "hal_port.h"
 #include <errno.h>
 #include <signal.h>
