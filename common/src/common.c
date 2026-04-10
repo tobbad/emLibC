@@ -13,6 +13,25 @@
 #include <string.h>
 #include "stm32l4xx_hal.h"
 
+
+static idx2str_t sync2str[] = {
+    { .str = (char*)&"SYNC_RESET,          ", .idx = 0x00 }, /*!< SYNC_RESET */
+    { .str = (char*)&"BOOT_UP,             ", .idx = 0x01 }, /*!< BOOT_UP */
+    { .str = (char*)&"SLOT,                ", .idx = 0x02 }, /*!< Ask for SLOT */
+    { .str = (char*)&"CHANNEL,             ", .idx = 0x03 }, /*!< Ask for CHANNEL */
+    { .str = (char*)&"FREQBAND,            ", .idx = 0x04 }, /*!< Ask for FREQBAND */
+    { .str = (char*)&"FREQUENCY_OFFSET,    ", .idx = 0x05 }, /*!< Ask for FREQUENCY_OFFSET */
+    { .str = (char*)&"SYNCHRONIZE,         ", .idx = 0x06 }, /*!< Start synchronize */
+    { .str = (char*)&"SYNCHRONIZED_PARTLY, ", .idx = 0x07 }, /*!< Partly synchronized */
+    { .str = (char*)&"SYNC_ERROR,          ", .idx = 0x08 }, /*!< Synchronizion error */
+    { .str = (char*)&"SYNC_READY,          ", .idx = 0x09 }, /*!< Synchronized */
+};
+
+idxa2str_t synca2str = {
+    .cnt = ELCNT(sync2str),
+    .entry = (idx2str_t*)&sync2str
+};
+
 /**
  * @brief  Liefert die 96-bit eindeutige Chip-ID des STM32L476.
  *         Adresse laut Reference Manual RM0351, Kapitel 49.1: 0x1FFF7590
@@ -24,11 +43,9 @@ size_t board_get_unique_id(uint8_t id[], size_t max_len) {
     // STM32L476 UID Register: drei 32-bit Worte = 12 Bytes
     // RM0351 Rev.9, Section 49.1: "Unique device ID register (96 bits)"
     const uint8_t *uid = (const uint8_t *)UID_BASE;  // UID_BASE = 0x1FFF7590 (definiert in stm32l476xx.h)
-
     for (uint32_t i = 0; i < max_len && i < 12U; i++) {
         id[i] = uid[i];
     }
-
     // Falls der Puffer größer als 12 Bytes ist: Rest mit 0 auffüllen
     for (uint32_t i = 12U; i < max_len; i++) {
         id[i] = 0x00U;

@@ -92,7 +92,7 @@ typedef union {
 #define ZERO4 ((32<<24)+(32<<16)+(32<<8)+32) // is "     " as str
 
  typedef struct idx2str_s {
-     char    str[26];
+     char    *str;
      uint8_t idx;
  } idx2str_t;
 
@@ -101,6 +101,8 @@ typedef union {
      idx2str_t *entry;
  } idxa2str_t;
 
+
+extern idxa2str_t synca2str;
 /*
  * Function to serialize the content of buffer as neaty formated
  * string in out. Format is:
