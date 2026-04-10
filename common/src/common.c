@@ -15,16 +15,16 @@
 
 
 static idx2str_t sync2str[] = {
-    { .str = (char*)&"SYNC_RESET,          ", .idx = 0x00 }, /*!< SYNC_RESET */
-    { .str = (char*)&"BOOT_UP,             ", .idx = 0x01 }, /*!< BOOT_UP */
-    { .str = (char*)&"SLOT,                ", .idx = 0x02 }, /*!< Ask for SLOT */
-    { .str = (char*)&"CHANNEL,             ", .idx = 0x03 }, /*!< Ask for CHANNEL */
-    { .str = (char*)&"FREQBAND,            ", .idx = 0x04 }, /*!< Ask for FREQBAND */
-    { .str = (char*)&"FREQUENCY_OFFSET,    ", .idx = 0x05 }, /*!< Ask for FREQUENCY_OFFSET */
-    { .str = (char*)&"SYNCHRONIZE,         ", .idx = 0x06 }, /*!< Start synchronize */
-    { .str = (char*)&"SYNCHRONIZED_PARTLY, ", .idx = 0x07 }, /*!< Partly synchronized */
-    { .str = (char*)&"SYNC_ERROR,          ", .idx = 0x08 }, /*!< Synchronizion error */
-    { .str = (char*)&"SYNC_READY,          ", .idx = 0x09 }, /*!< Synchronized */
+    { .str = (char*)&"SYNC_RESET,          ", .idx = SYNC_RESET }, /*!< SYNC_RESET */
+    { .str = (char*)&"BOOT_UP,             ", .idx = BOOT_UP },    /*!< BOOT_UP */
+    { .str = (char*)&"SLOT,                ", .idx = SLOT },       /*!< Ask for SLOT */
+    { .str = (char*)&"CHANNEL,             ", .idx = CHANNEL },    /*!< Ask for CHANNEL */
+    { .str = (char*)&"FREQBAND,            ", .idx = FREQBAND },   /*!< Ask for FREQBAND */
+    { .str = (char*)&"FREQUENCY_OFFSET,    ", .idx = FREQUENCY_OFFSET }, /*!< Ask for FREQUENCY_OFFSET */
+    { .str = (char*)&"SYNCHRONIZE,         ", .idx = SYNCHRONIZE }, /*!< Start synchronize */
+    { .str = (char*)&"SYNCHRONIZED_PARTLY, ", .idx = SYNCHRONIZED_PARTLY }, /*!< Partly synchronized */
+    { .str = (char*)&"SYNC_ERROR,          ", .idx = SYNC_ERROR }, /*!< Synchronizion error */
+    { .str = (char*)&"SYNC_READY,          ", .idx = SYNC_READY }, /*!< Synchronized */
 };
 
 idxa2str_t synca2str = {
