@@ -22,9 +22,10 @@ static idx2str_t sync2str[] = {
     { .str = (char*)&"FREQBAND,            ", .idx = FREQBAND },   /*!< Ask for FREQBAND */
     { .str = (char*)&"FREQUENCY_OFFSET,    ", .idx = FREQUENCY_OFFSET }, /*!< Ask for FREQUENCY_OFFSET */
     { .str = (char*)&"SYNCHRONIZE,         ", .idx = SYNCHRONIZE }, /*!< Start synchronize */
-    { .str = (char*)&"SYNCHRONIZED_PARTLY, ", .idx = SYNCHRONIZED_PARTLY }, /*!< Partly synchronized */
-    { .str = (char*)&"SYNC_ERROR,          ", .idx = SYNC_ERROR }, /*!< Synchronizion error */
-    { .str = (char*)&"SYNC_READY,          ", .idx = SYNC_READY }, /*!< Synchronized */
+    { .str = (char*)&"SYNCHRONIZE_READY,   ", .idx = SYNCHRONIZE_READY }, /*!< Partly synchronized */
+    { .str = (char*)&"SYNCHRONIZE_DOING,   ", .idx = SYNCHRONIZE_DOING }, /*!< Partly synchronized */
+    { .str = (char*)&"SYNCHRONIZE_ERROR,   ", .idx = SYNCHRONIZE_ERROR }, /*!< Synchronizion error */
+    { .str = (char*)&"SYNCHRONIZE_OK,      ", .idx = SYNCHRONIZE_OK }, /*!< Synchronized */
 };
 
 idxa2str_t synca2str = {

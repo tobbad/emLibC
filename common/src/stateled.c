@@ -139,7 +139,7 @@ bool stateled_update(system_state_e state, bool doDot) {
     // clang-format off
     if (state == SYNC_RESET) {
         return false;
-    }  else if ((state == SYNCHRONIZE) || (state == SYNCHRONIZED_PARTLY)){
+    }  else if ((state == SYNCHRONIZE_READY) || (state == SYNCHRONIZE_DOING)){
          if (cnt == 0){
             stateled_iterate();
             if (doDot){
@@ -153,11 +153,11 @@ bool stateled_update(system_state_e state, bool doDot) {
             bli_cnt  = 0;
             return true;
         }
-   } else if (state == SYNC_ERROR){
+   } else if (state == SYNCHRONIZE_ERROR){
         if (cnt == 0){
             stateled_toggle_port();
         }
-    } else if (state == SYNC_READY) {
+    } else if (state == SYNCHRONIZE_ERROR) {
         stateled_show(cnt);
     }
     return false;
