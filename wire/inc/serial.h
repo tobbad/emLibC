@@ -29,6 +29,7 @@
 
 #ifndef INC_SERIAL_IO_H_
 #define INC_SERIAL_IO_H_
+#include "main.h"
 #include "buffer.h"
 #include "common.h"
 #include "device.h"
@@ -42,6 +43,9 @@
 #endif
 #ifndef RX_BUFFER_SIZE
 #define RX_BUFFER_SIZE 20
+#endif
+#ifndef TX_BUFFER_SIZE
+#define USB_TX_BUFFER_SIZE 1024
 #endif
 
 typedef enum {

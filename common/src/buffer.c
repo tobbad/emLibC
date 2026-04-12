@@ -6,12 +6,16 @@
  */
 #include "buffer.h"
 #include "state.h"
-#define TALKING
+#include "options.h"
 
 char *state2Str[BUFFER_CNT] = {(char *)&"BUFFER_READY", (char *)&"BUFFER_USED"};
-char *type2Str[BUFFER_CNT] = {(char *)&"LINEAR", (char *)&"RING"};
-#ifndef TALKING
-em_msg buffer_check(const buffer_t *buffer) {
+char *type2Str[BUFFER_CNT] =  {(char *)&"LINEAR", (char *)&"RING"};
+#define BUF_SIZ 1024
+int16_t size = BUF_SIZ;
+uint8_t buffer[BUF_SIZ];
+
+#ifndef OPTION_VERBOSE
+em_msg buffer_check(const buffer_t *buffer, bool reduced) {
     // clang-format off
     int16_t res = EM_ERR;
     if (!buffer || !buffer->mem) return res;
@@ -97,27 +101,23 @@ int16_t buffer_transfer(buffer_t *from, buffer_t *to){
     res = buffer_check(to, false);
     if (res == EM_ERR) return res;
     // clang-format on
+    to->lbl.cmd = from->lbl.cmd;
     if (from->type==LINEAR){
         if (to->type==LINEAR){
             memcpy(to->mem, from->mem, from->used);
             to->used = from->used;
             from->used = 0;
-            from->state = BUFFER_READY;
         } else if (to->type==RING){
             buffer_set(to, from->mem, from->used);
-            from->state = BUFFER_READY;
         }
-    } else {
-        if (to->type==LINEAR){
-            memcpy(to->mem, from->mem, from->used);
-            to->used = from->used;
-            from->used = 0;
-            from->state = BUFFER_READY;
-        } else if (to->type==RING){
-            buffer_set(to, from->mem, from->used);
-            from->state = BUFFER_READY;
-        }
+    } else { //from->type == RING
+        buffer_get(from , buffer, &size);
+        buffer_set(to, buffer, size);
+        to->used = size;
+        from->used = 0;
     }
+    to->state = BUFFER_USED;
+    from->state = BUFFER_READY;
     return from->used;
 }
 
