@@ -152,9 +152,9 @@ volatile int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
 #ifdef HAL_PCD_MODULE_ENABLED
     if (urx_buffer.state == BUFFER_USED) {
         clabel_u * lbl= buffer_get_clabel(&urx_buffer);
-        time_stop(urxhdl, NULL);
         serial_apply_change(lbl);
-        buffer_set(isio.buffer[SIO_RX], urx_buffer.mem, urx_buffer.used);
+        buffer_transfer(&urx_buffer, isio.buffer[SIO_RX]);
+        time_stop(urxhdl, NULL);
         return isio.buffer[SIO_RX]->used;
     }
 #endif
@@ -328,6 +328,7 @@ static void serial_apply_change(clabel_u *lbl) {
                 if (strlen(stopstring) == 0) {
                     state_propagate_by_idx(&isio.state, res);
                 }
+                isio.state.clabel.cmd = lbl->cmd;
             }
         }
     }
@@ -435,7 +436,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
         *isio.buffer[SIO_RX]->pl = 0; // End string
         isio.buffer[SIO_RX]->state = BUFFER_USED;
         new = (char *)isio.buffer[SIO_RX]->mem;
-        memset((uint8_t *)&isio.state.clabel, 0, CMD_LEN);
+        isio.state.clabel.cmd=0;
         memcpy((uint8_t *)&isio.state.clabel, new, strlen(new));
         serial_apply_change(&isio.state.clabel);
         HAL_UARTEx_ReceiveToIdle_DMA(isio.uart, (uint8_t *)rx_buf, RX_BUFFER_SIZE);

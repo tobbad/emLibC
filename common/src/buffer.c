@@ -90,6 +90,37 @@ buffer_t *buffer_new_buffer_t(buffer_t *buffer) {
     return buffer;
 }
 
+int16_t buffer_transfer(buffer_t *from, buffer_t *to){
+    // clang-format off
+    em_msg res = buffer_check(from, false);
+    if (res == EM_ERR) return res;
+    res = buffer_check(to, false);
+    if (res == EM_ERR) return res;
+    // clang-format on
+    if (from->type==LINEAR){
+        if (to->type==LINEAR){
+            memcpy(to->mem, from->mem, from->used);
+            to->used = from->used;
+            from->used = 0;
+            from->state = BUFFER_READY;
+        } else if (to->type==RING){
+            buffer_set(to, from->mem, from->used);
+            from->state = BUFFER_READY;
+        }
+    } else {
+        if (to->type==LINEAR){
+            memcpy(to->mem, from->mem, from->used);
+            to->used = from->used;
+            from->used = 0;
+            from->state = BUFFER_READY;
+        } else if (to->type==RING){
+            buffer_set(to, from->mem, from->used);
+            from->state = BUFFER_READY;
+        }
+    }
+    return from->used;
+}
+
 em_msg buffer_reset(buffer_t *buffer) {
     // clang-format off
     em_msg res = buffer_check(buffer, false);
@@ -145,10 +176,13 @@ em_msg buffer_set(buffer_t *buffer, const uint8_t *data, int16_t size) {
 
         if (size <= space_to_end) {
             memcpy(&buffer->mem[write_pos], data, size);
+            buffer->lbl.cmd=0;
             memcpy(buffer->lbl.str, data, MIN(CMD_LEN-1, size));
         } else {
             memcpy(&buffer->mem[write_pos], data, space_to_end);
             memcpy(&buffer->mem[0], data + space_to_end, size - space_to_end);
+            buffer->lbl.cmd=0;
+            memcpy(buffer->lbl.str, data, MIN(CMD_LEN-1, size));
         }
 
         buffer->used += size;
