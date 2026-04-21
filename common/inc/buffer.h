@@ -25,7 +25,6 @@ typedef enum {
     RING,   // Ringbuffer
 } b_type_e;
 
-extern char *state2str[];
 typedef struct buffer_s {
     state_e state;
     uint8_t *pl;   /* pointer to first byte used in buffer */
