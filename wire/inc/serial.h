@@ -56,14 +56,14 @@ typedef enum {
 typedef enum { SIO_RX = 0, SIO_TX, SIO_RXTX_CNT } sio_channel_e;
 
 typedef enum {
-  RAW = 0,
-  TIMESTAMP = 1,
-  GAP_DETECT = 2,
-  ONE_SHOT = 4,
-  USE_UART = 0x8,
-  USE_DMA_RX = 0x10,
-  USE_DMA_TX = 0x20, // Does not work
-  USE_USB = 0x40,
+  RAW        = 1,
+  TIMESTAMP  = 2,
+  GAP_DETECT = 4,
+  ONE_SHOT   = 0x8,
+  USE_UART   = 010,
+  USE_DMA_RX = 0x20,
+  USE_DMA_TX = 0x40, // Does not work
+  USE_USB    = 0x80,
   MEASURE_BYTE_PER_SECONDS= 0x80,
 } print_e;
 
