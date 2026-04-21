@@ -18,7 +18,9 @@ uint8_t buffer[BUF_SIZ];
 em_msg buffer_check(const buffer_t *buffer, bool reduced) {
     // clang-format off
     int16_t res = EM_ERR;
-    if (!buffer || !buffer->mem) return res;
+    if (!reduced){
+        if (!buffer || !buffer->mem) return res;
+    }
     if (buffer->size==0) return res;
     // clang-format on
     return EM_OK;
