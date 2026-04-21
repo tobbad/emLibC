@@ -60,11 +60,11 @@ typedef enum {
   TIMESTAMP  = 2,
   GAP_DETECT = 4,
   ONE_SHOT   = 0x8,
-  USE_UART   = 010,
+  USE_UART   = 0x10,
   USE_DMA_RX = 0x20,
   USE_DMA_TX = 0x40, // Does not work
   USE_USB    = 0x80,
-  MEASURE_BYTE_PER_SECONDS= 0x80,
+  MEASURE_BYTE_PER_SECONDS= 0x100,
 } print_e;
 
 typedef struct _sio_t {
