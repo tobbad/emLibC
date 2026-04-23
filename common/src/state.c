@@ -318,21 +318,23 @@ em_msg state_merge(state_t *inState, state_t *outState) {
     return outState->dirty;
 }
 
-em_msg state_print(const state_t *state, const char *title) {
+em_msg state_print(const state_t *state, const char *title, bool doLong) {
     em_msg res = EM_ERR;
     if (state_check(state))
         return res;
-    if (title != NULL) {
+    if ((title != NULL) &&(doLong)) {
         printf("%s" NL, title);
     }
     if ((state->first > 16) || (state->cnt > 16)) {
         printf("Do not print corrupted payload" NL);
         return res;
     }
-    printf("first     = %d" NL, state->first);
-    printf("cnt       = %d" NL, state->cnt);
-    printf("clabel    = 0x%04lx" NL, state->clabel.cmd);
-    printf("label     = ");
+    if (doLong){
+        printf("first      = %d" NL, state->first);
+        printf("cnt        = %d" NL, state->cnt);
+        printf("clabel     = 0x%04lx" NL, state->clabel.cmd);
+    }
+    printf("label      = ");
     for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
         char c = state->label[i];
         if (isprint(c)) {
@@ -341,11 +343,12 @@ em_msg state_print(const state_t *state, const char *title) {
             printf("....");
         }
     }
-    printf(NL "State     = ");
+    printf(NL "State      = ");
     for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {
         printf("%s ", idxa2str(&state2str, state->state[i]));
     }
     printf(NL);
+
     (state->dirty && 0x01) ? printf("Dirty" NL) : printf("Not Dirty" NL);
     if ((state->dirty >> 6) == 1) {
         printf("clable is cmd" NL);

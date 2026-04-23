@@ -73,7 +73,7 @@ em_msg state_diff(state_t *ref, state_t *state, state_t *diff);
 em_msg state_add(state_t *inState, state_t *add);
 em_msg state_merge(state_t *inState, state_t *outState);
 em_msg state_check(const state_t *state);
-em_msg state_print(const state_t *state, const char *title);
+em_msg state_print(const state_t *state, const char *title, bool doLong);
 em_msg state_get_dirty(state_t *state);
 em_msg state_set_dirty(state_t *state);
 em_msg state_set_undirty(state_t *state);
