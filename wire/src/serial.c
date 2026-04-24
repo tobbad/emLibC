@@ -220,7 +220,17 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     if (isio.mode & USE_USB) {
             time_start(utxhdl, len, ptr);
 #ifdef USE_TINY_USB
-            tud_cdc_write(ptr, len);
+            bool con = tud_cdc_connected();
+            if (con){
+                uint8_t ulen = tud_cdc_write(ptr, len);
+                time_stop_su(utxhdl);
+                if (ulen!=len){
+                    static uint16_t cnt=0;
+                    cnt++;
+                }
+            } else {
+                time_stop(utxhdl, NULL);
+            }
 #else
             CDC_Transmit_FS(ptr, len);
 #endif
