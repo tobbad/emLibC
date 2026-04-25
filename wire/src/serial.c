@@ -227,9 +227,12 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
                 if (ulen!=len){
                     static uint16_t cnt=0;
                     cnt++;
+                    time_stop(utxhdl, NULL);
                 }
             } else {
-                time_stop(utxhdl, NULL);
+                static uint32_t drop_cnt=0;
+                drop_cnt++;
+                //printf("Drop"NL);
             }
 #else
             CDC_Transmit_FS(ptr, len);
