@@ -151,11 +151,11 @@ bool stateled_update(system_state_e state) {
     }  else if ((state == SYNCHRONIZE_READY) || (state == SYNCHRONIZE_DOING)){
         if (my_stateled.cnt == 0){
             stateled_iterate();
-            bli_cnt++;
+            my_stateled.bli_cnt++;
         }
-        if  (bli_cnt==my_stateled.bli_cnt){
+        if  (my_stateled.bli_cnt==my_stateled.bli_cnt){
             stateled_off(0);
-            bli_cnt  = 0;
+            my_stateled.bli_cnt  = 0;
             return true;
         }
    } else if (state == SYNCHRONIZE_ERROR){
