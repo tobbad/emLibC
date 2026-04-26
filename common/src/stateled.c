@@ -17,6 +17,7 @@ typedef struct led_line_s {
     gpio_port_t *port;
     uint8_t cycle_size;
     uint8_t bli_cnt;
+    uint8_t cnt;
 } led_line_t;
 
 static led_line_t my_stateled;
@@ -50,6 +51,7 @@ void stateled_init(state_t *state, gpio_port_t *port, uint16_t cycle_size, uint8
         my_stateled.port = &def_port;
     }
     my_stateled.bli_cnt = bli_cnt*my_stateled.port->cnt;
+    my_stateled.cnt = 0;
     GpioPortInit(my_stateled.port);
     my_stateled.init = true;
     for (uint8_t i = 0; i < my_stateled.port->cnt; i++) {
@@ -105,47 +107,50 @@ void stateled_all_off() {
        stateled_off(i);
     }
 };
-void stateled_show(uint8_t cnt) {
+void stateled_show(system_state_e state) {
     // clang-format off
     if (!my_stateled.init) return;
     // clang-format on
-    bool bstate = (cnt < (my_stateled.cycle_size >> 1));
-    if (!state_is_same(my_stateled.state, &my_stateled.lstate)) {
-        my_stateled.lstate = *my_stateled.state;
-        // printf("Ledline Update"NL);
-    } else {
-        for (uint8_t i = 0; i < my_stateled.port->cnt; i++) {
-            int8_t stateNr = i + my_stateled.lstate.first;
-            key_state_e tState = my_stateled.lstate.state[stateNr];
-            if (tState == ON){
-                stateled_on(i);
-            }else if (tState == OFF) {
-                stateled_off(i);
-            } else if (tState == BLINKING) {
-                GpioPinWrite(&my_stateled.port->pin[i], bstate);
+    my_stateled.cnt++;
+    my_stateled.cnt = ((my_stateled.cnt) % my_stateled.cycle_size);
+    bool bstate = (my_stateled.cnt < (my_stateled.cycle_size >> 1));
+    if (state == SYNCHRONIZE_ERROR){
+        if (my_stateled.cnt == 0){
+            stateled_toggle_port();
+        }
+    } else if (((state == SYNCHRONIZE_READY) || (state == SYNCHRONIZE_DOING))){
+        if (!state_is_same(my_stateled.state, &my_stateled.lstate)) {
+            my_stateled.lstate = *my_stateled.state;
+            // printf("Ledline Update"NL);
+        } else {
+            for (uint8_t i = 0; i < my_stateled.port->cnt; i++) {
+                int8_t stateNr = i + my_stateled.lstate.first;
+                key_state_e tState = my_stateled.lstate.state[stateNr];
+                if (tState == ON){
+                    stateled_on(i);
+                }else if (tState == OFF) {
+                    stateled_off(i);
+                } else if (tState == BLINKING) {
+                    GpioPinWrite(&my_stateled.port->pin[i], bstate);
+                }
             }
         }
     }
 };
 
-bool stateled_update(system_state_e state, bool doDot) {
+bool stateled_update(system_state_e state) {
     // clang-format off
     if (!my_stateled.init) return false;
     // clang-format on
-    static uint8_t cnt = 0;
     static uint8_t bli_cnt=0;
-    cnt++;
-    cnt = ((cnt) % my_stateled.cycle_size);
+    my_stateled.cnt++;
+    my_stateled.cnt = ((my_stateled.cnt) % my_stateled.cycle_size);
     // clang-format off
     if (state == SYNC_RESET) {
         return false;
     }  else if ((state == SYNCHRONIZE_READY) || (state == SYNCHRONIZE_DOING)){
-         if (cnt == 0){
+        if (my_stateled.cnt == 0){
             stateled_iterate();
-            if (doDot){
-                printf(".");
-                fflush(stdout);
-            }
             bli_cnt++;
         }
         if  (bli_cnt==my_stateled.bli_cnt){
@@ -154,11 +159,9 @@ bool stateled_update(system_state_e state, bool doDot) {
             return true;
         }
    } else if (state == SYNCHRONIZE_ERROR){
-        if (cnt == 0){
+        if (my_stateled.cnt == 0){
             stateled_toggle_port();
         }
-    } else if (state == SYNCHRONIZE_ERROR) {
-        stateled_show(cnt);
     }
     return false;
 }
