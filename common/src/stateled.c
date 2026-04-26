@@ -142,7 +142,7 @@ bool stateled_update(system_state_e state) {
     // clang-format off
     if (!my_stateled.init) return false;
     // clang-format on
-    static uint8_t bli_cnt=0;
+    my_stateled.bli_cnt=0;
     my_stateled.cnt++;
     my_stateled.cnt = ((my_stateled.cnt) % my_stateled.cycle_size);
     // clang-format off
