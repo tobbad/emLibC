@@ -215,14 +215,14 @@ void time_print(time_handle_t hdl, char *titel, bool python) {
     uint32_t duration_tick = 0;
     uint32_t count = 0;
     int64_t baud = 0;
-    uint32_t tick_start = 0;
+    //uint32_t tick_start = 0;
 
     for (uint8_t i = 0; i < TIME_MEAS_CNT; i++) {
         duration_ns = _time.time[hdl].measurement[i].duration_tx_ns;
         duration_tick = _time.time[hdl].measurement[i].tick_duration;
         count = _time.time[hdl].measurement[i].count;
         baud = _time.time[hdl].measurement[i].baud;
-        tick_start = _time.time[hdl].measurement[_time.time[hdl].idx].tick_start;
+        //tick_start = _time.time[hdl].measurement[_time.time[hdl].idx].tick_start;
         if (python) {
             printf("    [ %3ld, %9"PRId64", %3ld, %8"PRId64" ]," NL, duration_tick, duration_ns, count, baud);
         } else {
