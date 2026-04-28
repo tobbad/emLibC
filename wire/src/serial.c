@@ -67,8 +67,6 @@
 #include "common.h"
 #include "serial.h"
 #include "_time.h"
-#include "buffer.h"
-#include "buffer_pool.h"
 #include "common.h"
 #include "hal_port.h"
 #include "main.h"
@@ -79,22 +77,9 @@ static char rx_buf[RX_BUFFER_SIZE];
 static char tx_buf[TX_BUFFER_SIZE];
 #define POOL_SIZE 10
 
-typedef struct isio_s {
-    UART_HandleTypeDef *uart;
-    buffer_t       *buffer[SIO_RXTX_CNT];
-    print_e        mode;
-    int8_t         ready[SIO_RXTX_CNT];
-    dev_handle_t   devh;
-    state_t        state;
-    bool           init;
-    buffer_pool_t *pool;
-    buffer_t      *cbuffer;
-    uint32_t       cTxBytePerSecond;
-} isio_t;
-
 time_handle_t  srxhdl;
 time_handle_t  stxhdl;
-static isio_t isio;
+isio_t isio;
 static char *new = NULL;
 static void serial_apply_change(clabel_u *lbl);
 
@@ -113,6 +98,7 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     isio.cbuffer = NULL;
     isio.cTxBytePerSecond = 0;
     isio.mode = init->mode;
+    isio.usb_drop_cnt =0;
     memset(rx_buf, 0, RX_BUFFER_SIZE);
     memset(tx_buf, 0, TX_BUFFER_SIZE);
     isio.init = true;
@@ -220,20 +206,20 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     if (isio.mode & USE_USB) {
             time_start(utxhdl, len, ptr);
 #ifdef USE_TINY_USB
+            static uint32_t drop_cnt=0;
             bool con = tud_cdc_connected();
             if (con){
                 uint8_t ulen = tud_cdc_write(ptr, len);
                 time_stop_su(utxhdl);
                 if (ulen!=len){
-                    static uint16_t cnt=0;
-                    cnt++;
+                    isio.usb_drop_cnt += len;
                     time_stop(utxhdl, NULL);
                 }
             } else {
-                static uint32_t drop_cnt=0;
-                drop_cnt++;
+                isio.usb_drop_cnt += len;
                 //printf("Drop"NL);
             }
+            tud_task();
 #else
             CDC_Transmit_FS(ptr, len);
 #endif

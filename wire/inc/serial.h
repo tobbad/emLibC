@@ -31,6 +31,7 @@
 #define INC_SERIAL_IO_H_
 #include "main.h"
 #include "buffer.h"
+#include "buffer_pool.h"
 #include "common.h"
 #include "device.h"
 #include "keyboard.h"
@@ -73,6 +74,21 @@ typedef struct _sio_t {
   print_e mode;
 } sio_t;
 
+
+typedef struct isio_s {
+    UART_HandleTypeDef *uart;
+    buffer_t       *buffer[SIO_RXTX_CNT];
+    print_e        mode;
+    int8_t         ready[SIO_RXTX_CNT];
+    dev_handle_t   devh;
+    state_t        state;
+    bool           init;
+    buffer_pool_t *pool;
+    uint32_t      usb_drop_cnt;
+    buffer_t      *cbuffer;
+    uint32_t       cTxBytePerSecond;
+} isio_t;
+
 uint32_t serial_get_byte_per_second();
 void     serial_reset_byte_per_second();
 void     serial_mode_set(print_e mode);
@@ -84,5 +100,6 @@ extern kybd_t serial_dev;
 extern device_t serial_io;
 extern time_handle_t  srxhdl;
 extern time_handle_t  stxhdl;
+extern isio_t isio;
 
 #endif /* INC_SERIAL_IO_H_ */
