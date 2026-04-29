@@ -325,10 +325,6 @@ em_msg state_print(const state_t *state, const char *title, bool doLong) {
     if ((title != NULL) &&(doLong)) {
         printf("%s" NL, title);
     }
-    if ((state->first > 16) || (state->cnt > 16)) {
-        printf("Do not print corrupted payload" NL);
-        return res;
-    }
     if (doLong){
         printf("first      = %d" NL, state->first);
         printf("cnt        = %d" NL, state->cnt);
@@ -343,7 +339,8 @@ em_msg state_print(const state_t *state, const char *title, bool doLong) {
             printf("....");
         }
     }
-    printf(NL "State      = ");
+    printf(NL);
+    printf("State      = ");
     for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {
         printf("%s ", idxa2str(&state2str, state->state[i]));
     }
