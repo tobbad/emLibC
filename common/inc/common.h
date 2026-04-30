@@ -18,6 +18,7 @@ extern "C" {
 #include <string.h>
 #include <errno.h>
 #include <inttypes.h>
+#include "options.h"
 #ifndef UNIT_TEST
 #include "hal_port.h"
 #endif
@@ -82,8 +83,8 @@ typedef enum  {
     nonasci = 0x80
 }type_e;
 
-#define CMD_LEN 4
 
+#define CMD_LEN 4
 #define DEV_CNT 1
 typedef union {
      uint32_t cmd;  // Kann ein pointer zu einem Pointer enthalten, das

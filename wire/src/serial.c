@@ -209,16 +209,16 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
             static uint32_t drop_cnt=0;
             bool con = tud_cdc_connected();
             if (con){
-                uint8_t ulen = tud_cdc_write(ptr, len);
+                uint8_t written = tud_cdc_write(ptr, len);
                 time_stop_su(utxhdl);
-                if (ulen!=len){
+                if (written!=len){
                     isio.usb_drop_cnt += len;
                     time_stop(utxhdl, NULL);
                 }
             } else {
                 isio.usb_drop_cnt += len;
-                //printf("Drop"NL);
             }
+            tud_cdc_write_flush();
             tud_task();
 #else
             CDC_Transmit_FS(ptr, len);
