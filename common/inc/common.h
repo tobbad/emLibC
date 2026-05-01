@@ -114,8 +114,7 @@ extern idxa2str_t synca2str;
  * a    = printable asci otherwise "."
  */
 size_t board_get_unique_id(uint8_t id[], size_t max_len);
-uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer,
-                uint16_t buffer_size, bool write_asci);
+uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer, uint16_t buffer_size, bool write_asci);
 uint16_t common_crc16(const uint8_t *data_p, uint16_t length);
 uint8_t modulo_sub(int8_t slot, int8_t oSlot, uint8_t modulo);
 void print_buffer(const uint8_t *buffer, uint8_t size, const char *header);
@@ -124,6 +123,7 @@ int8_t str2uint(char *str);
 int8_t clabel2uint(clabel_u *lbl);
 char* idxa2str(idxa2str_t *map, uint8_t idx);
 //char* idx2str(idx2str_t *map, uint8_t cnt, uint8_t idx);
+int in_interrupt(void);
 char int2hchar(uint8_t idx);
 
 #ifdef __cplusplus

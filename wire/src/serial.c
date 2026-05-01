@@ -43,6 +43,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/times.h>
+#include "common.h"
 #include <time.h>
 #include "stm32l4xx_hal_conf.h"
 #ifdef HAL_PCD_MODULE_ENABLED
@@ -166,6 +167,11 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     // clang-format off
     if (!isio.init) return EM_ERR;
     // clang-format on
+    if (in_interrupt()){
+        // Save ptr, len
+        return 0;
+    }
+
     int16_t len = 0;
     static uint8_t gap_idx = 0;
     txLen = MIN(txLen, TX_BUFFER_SIZE - 2);

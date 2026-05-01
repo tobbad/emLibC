@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "stm32l4xx_hal.h"
+#include "core_cm4.h"
 
 
 static idx2str_t sync2str[] = {
@@ -171,6 +172,11 @@ char int2hchar(uint8_t nr) {
         ret = ' ';
     }
     return ret;
+}
+
+
+int in_interrupt(void){
+    return (__get_IPSR() != 0);
 }
 
 type_e clable2type(clabel_u *lbl) {
