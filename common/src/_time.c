@@ -218,7 +218,11 @@ void time_print(time_handle_t hdl, char *titel, bool python, bool timing) {
         printf("# duration_tick, duration_ns, count, baud " NL);
         printf("data = {\"timing\":[" NL);
     } else {
-        printf("// Start_text duration_tick, duration_ns, count baud " NL);
+        if (timing){
+            printf("// Start_text duration_tick, duration_ns, count baud " NL);
+        } else {
+            printf("// duration_tick, duration_ns, count baud " NL);
+        }
     }
     int64_t duration_ns = 0;
     uint32_t duration_tick = 0;
