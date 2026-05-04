@@ -8,6 +8,8 @@
 #include "serial.h"
 #include <inttypes.h>
 #define LINE_CHAR 10
+#define NOW (DWT->CYCCNT * _time.ccnt2ns)
+
 
 typedef struct time_meas_s {
     uint32_t tick_start;
@@ -26,6 +28,8 @@ typedef struct time_meas_s {
 typedef struct time_single_s {
     time_meas_t measurement[TIME_MEAS_CNT];
     int8_t idx;
+    int8_t keep;
+    int64_t init_ns;
     int64_t last_start_ns;
     int64_t first_ns;
     int64_t last_ns; // This is set, when maximal baudrate was achived
@@ -40,6 +44,7 @@ typedef struct timem_s {
     uint8_t used;
     uint32_t clk_Hz;
     float ccnt2ns;
+    int64_t init_ns;
     bool init;
     bool doLoop; // becomes true when one cyle of times are stored and oneShot is active
 } timem_t;
@@ -67,9 +72,10 @@ void time_init() {
     _time.ccnt2ns = 1000000000 / div;
     _time.init = true;
     _time.doLoop = true;
+    _time.init_ns = NOW;
 }
 
-time_handle_t time_new(char *name) {
+time_handle_t time_new(char *name, uint8_t keep) {
     // clang-format off
     if (!_time.init) return -1;
     // clang-format on
@@ -79,10 +85,13 @@ time_handle_t time_new(char *name) {
         if ((_time.used & (1 << hdl)) == 0) {
             _time.used |= (1 << hdl);
             time_reset(hdl);
+            _time.time[hdl].init_ns = NOW;
+            _time.time[hdl].keep = keep;
             memcpy(_time.time[hdl].name, name, len);
             return hdl;
         }
     }
+    printf("*** No more timing handles ***"NL);
     return -1;
 }
 
@@ -99,11 +108,11 @@ void time_reset(time_handle_t hdl) {
     if (time_check_hdl(hdl) == EM_ERR) return;
     if (!_time.init) return;
     // clang-format on
+    int64_t init_ns = _time.time[hdl].init_ns;
     memset(&_time.time[hdl].measurement, 0, sizeof(time_single_t));
+    _time.time[hdl].init_ns = init_ns;
     _time.time[hdl].first_ns = -1;
     _time.time[hdl].last_ns = -1;
-    _time.time[hdl].max_cnt = 0;
-    _time.time[hdl].max_baud = 0;
 }
 
 void time_start(time_handle_t hdl, uint8_t count, uint8_t *ptr) {
@@ -113,7 +122,7 @@ void time_start(time_handle_t hdl, uint8_t count, uint8_t *ptr) {
     // clang-format on
     uint8_t len =strlen((char*)ptr);
     len = MIN(len, TIME_MEAS_CHAR_PER_LINE);
-    int64_t now_ns = DWT->CYCCNT * _time.ccnt2ns ;
+    int64_t now_ns = NOW;
     if (_time.time[hdl].first_ns < 0) {
         _time.time[hdl].first_ns = now_ns;
     }
@@ -136,7 +145,7 @@ void time_stop_su(time_handle_t hdl) {
     if (!_time.init)
         return;
     if (_time.time[hdl].idx >= 0) {
-        int64_t now_ns = DWT->CYCCNT * _time.ccnt2ns;
+        int64_t now_ns = NOW;
         _time.time[hdl].measurement[_time.time[hdl].idx].stop_su_ns = now_ns;
         _time.time[hdl].measurement[_time.time[hdl].idx].duration_su_ns =
             (_time.time[hdl].measurement[_time.time[hdl].idx].stop_su_ns -
@@ -156,7 +165,7 @@ void time_stop(time_handle_t hdl, uint8_t *ptr) {
             memcpy((uint8_t *)_time.time[hdl].measurement[_time.time[hdl].idx].line, ptr, len);
             _time.time[hdl].measurement[_time.time[hdl].idx].line[len + 1] = 0;
         }
-        int64_t now_ns = DWT->CYCCNT * _time.ccnt2ns;
+        int64_t now_ns = NOW;
         _time.time[hdl].measurement[_time.time[hdl].idx].stop_tx_ns = now_ns;
         float max_cnt = _time.time[hdl].max_cnt;
         float baud = (_time.time[hdl].last_start_ns - _time.time[hdl].first_ns) / (max_cnt);
@@ -174,7 +183,7 @@ void time_stop(time_handle_t hdl, uint8_t *ptr) {
         _time.time[hdl].measurement[_time.time[hdl].idx].tick_duration =
             _time.time[hdl].measurement[_time.time[hdl].idx].tick_stop -
             _time.time[hdl].measurement[_time.time[hdl].idx].tick_start;
-        _time.time[hdl].idx = (_time.time[hdl].idx + 1) % TIME_MEAS_CNT;
+        _time.time[hdl].idx = _time.time[hdl].keep + (_time.time[hdl].idx + 1-_time.time[hdl].keep) % (TIME_MEAS_CNT- _time.time[hdl].keep);
         if ((_time.time[hdl].idx == 0) && (_time.time[hdl].mode & ONE_SHOT)) {
             _time.time[hdl].idx = -1;
             _time.doLoop = false;
@@ -188,12 +197,12 @@ void time_auto(time_handle_t hdl, uint8_t count, uint8_t *ptr) {
     // clang-format on
     time_start(hdl, count, ptr);
     time_stop(hdl, NULL);
-    _time.time[hdl].last_start_ns = DWT->CYCCNT * _time.ccnt2ns;
+    _time.time[hdl].last_start_ns = NOW;
 }
 
 bool time_doLoop_get() { return _time.doLoop; };
 
-void time_print(time_handle_t hdl, char *titel, bool python) {
+void time_print(time_handle_t hdl, char *titel, bool python, bool timing) {
     // clang-format off
     if (time_check_hdl(hdl) == EM_ERR) return;
     if (!_time.init) return;
@@ -209,7 +218,7 @@ void time_print(time_handle_t hdl, char *titel, bool python) {
         printf("# duration_tick, duration_ns, count, baud " NL);
         printf("data = {\"timing\":[" NL);
     } else {
-        printf("// duration_tick, duration_ns, count baud " NL);
+        printf("// Start_text duration_tick, duration_ns, count baud " NL);
     }
     int64_t duration_ns = 0;
     uint32_t duration_tick = 0;
@@ -224,9 +233,14 @@ void time_print(time_handle_t hdl, char *titel, bool python) {
         baud = _time.time[hdl].measurement[i].baud;
         //tick_start = _time.time[hdl].measurement[_time.time[hdl].idx].tick_start;
         if (python) {
-            printf("    [ %3ld, %9"PRId64", %3ld, %8"PRId64" ]," NL, duration_tick, duration_ns, count, baud);
+            printf("    [ %4ld, %9"PRId64", %3ld, %8"PRId64" ]," NL, duration_tick, duration_ns, count, baud);
         } else {
-            printf("    [ %3ld, %9"PRId64", %3ld, %8"PRId64" ]," NL, duration_tick, duration_ns, count, baud);
+            if (timing){
+                char *txt =  _time.time[hdl].measurement[i].line;
+                printf("    [ %6s , %4ld, %9"PRId64", %3ld, %8"PRId64" ]," NL, txt , duration_tick, duration_ns, count, baud);
+            } else {
+                printf("    [ %4ld, %9"PRId64", %4ld, %8"PRId64" ]," NL , duration_tick, duration_ns, count, baud);
+            }
         }
     }
     if (python) {
