@@ -28,7 +28,7 @@ typedef struct time_meas_s {
 typedef struct time_single_s {
     time_meas_t measurement[TIME_MEAS_CNT];
     int8_t idx;
-    uint8_t min;
+    uint8_t max;
     int64_t init_ns;
     int64_t last_start_ns;
     int64_t first_ns;
@@ -86,7 +86,7 @@ time_handle_t time_new(char *name) {
             _time.used |= (1 << hdl);
             time_reset(hdl);
             _time.time[hdl].init_ns = NOW;
-            _time.time[hdl].min = 0;
+            _time.time[hdl].max = 0;
             memcpy(_time.time[hdl].name, name, len);
             return hdl;
         }
@@ -115,16 +115,16 @@ mode_e time_get_mode(time_handle_t hdl) {
 }
 
 
-em_msg time_min_get(time_handle_t hdl){
+int8_t time_get_max(time_handle_t hdl){
 	em_msg res = EM_ERR;
     if (time_check_hdl(hdl) == EM_ERR) return res;
-	return _time.time[hdl].min;
+	return _time.time[hdl].max;
 }
 
-int8_t time_min_set(time_handle_t hdl, uint8_t min){
+em_msg time_set_max(time_handle_t hdl, int8_t max){
 	em_msg res = EM_ERR;
-	if ((min<TIME_MEAS_CNT-1)&&(min>=0)) {
-		_time.time[hdl].min = min;
+	if ((max<TIME_MEAS_CNT-1)&&(max>=0)) {
+		_time.time[hdl].max = max;
 	}
 	return res;
 
@@ -210,7 +210,7 @@ void time_stop(time_handle_t hdl, uint8_t *ptr) {
         _time.time[hdl].measurement[_time.time[hdl].idx].tick_duration =
             _time.time[hdl].measurement[_time.time[hdl].idx].tick_stop -
             _time.time[hdl].measurement[_time.time[hdl].idx].tick_start;
-        _time.time[hdl].idx = _time.time[hdl].min + (_time.time[hdl].idx + 1-_time.time[hdl].min) % (TIME_MEAS_CNT- _time.time[hdl].min);
+        _time.time[hdl].idx = _time.time[hdl].max + (_time.time[hdl].idx + 1-_time.time[hdl].max) % (TIME_MEAS_CNT- _time.time[hdl].max);
         if ((_time.time[hdl].idx == 0) && (_time.time[hdl].mode & ONE_SHOT)) {
             _time.time[hdl].idx = -1;
             _time.doLoop = false;
@@ -277,9 +277,9 @@ void time_print(time_handle_t hdl, char *titel, bool python, bool timing) {
     if (python) {
         uint32_t maxTxTime_ns = (_time.time[hdl].last_ns - _time.time[hdl].first_ns);
         printf("]," NL);
-        printf("    \"maxcnt\"       : %ld, " NL, _time.time[hdl].max_cnt);
+        printf("    \"max_cnt\"       : %ld, " NL, _time.time[hdl].max_cnt);
         printf("    \"maxTxTime_ns\" : %ld, " NL, maxTxTime_ns);
-        printf("    \"maxbaud\"      : %f" NL, _time.time[hdl].max_baud);
+        printf("    \"max_baud\"      : %f" NL, _time.time[hdl].max_baud);
         printf("}" NL);
         serial_mode_set(save);
     } else {
