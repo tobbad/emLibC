@@ -28,7 +28,7 @@ typedef struct time_meas_s {
 typedef struct time_single_s {
     time_meas_t measurement[TIME_MEAS_CNT];
     int8_t idx;
-    int8_t keep;
+    uint8_t min;
     int64_t init_ns;
     int64_t last_start_ns;
     int64_t first_ns;
@@ -75,7 +75,7 @@ void time_init() {
     _time.init_ns = NOW;
 }
 
-time_handle_t time_new(char *name, uint8_t keep) {
+time_handle_t time_new(char *name) {
     // clang-format off
     if (!_time.init) return -1;
     // clang-format on
@@ -86,7 +86,7 @@ time_handle_t time_new(char *name, uint8_t keep) {
             _time.used |= (1 << hdl);
             time_reset(hdl);
             _time.time[hdl].init_ns = NOW;
-            _time.time[hdl].keep = keep;
+            _time.time[hdl].min = 0;
             memcpy(_time.time[hdl].name, name, len);
             return hdl;
         }
@@ -95,12 +95,39 @@ time_handle_t time_new(char *name, uint8_t keep) {
     return -1;
 }
 
-void time_set_mode(time_handle_t hdl, uint8_t mode) {
+em_msg time_set_mode(time_handle_t hdl, mode_e mode) {
+	em_msg res = EM_ERR;
     // clang-format off
-    if (time_check_hdl(hdl) == EM_ERR) return;
-    if (!_time.init) return;
+    if (time_check_hdl(hdl) == EM_ERR) return res;
+    if (!_time.init) return res;
     // clang-format on
+    res = EM_OK;
     _time.time[hdl].mode = mode;
+    return res;
+}
+
+mode_e time_get_mode(time_handle_t hdl) {
+    // clang-format off
+    if (time_check_hdl(hdl) == EM_ERR) return EM_ERR;
+    if (!_time.init) return EM_ERR;
+    // clang-format on
+    return _time.time[hdl].mode;
+}
+
+
+em_msg time_min_get(time_handle_t hdl){
+	em_msg res = EM_ERR;
+    if (time_check_hdl(hdl) == EM_ERR) return res;
+	return _time.time[hdl].min;
+}
+
+int8_t time_min_set(time_handle_t hdl, uint8_t min){
+	em_msg res = EM_ERR;
+	if ((min<TIME_MEAS_CNT-1)&&(min>=0)) {
+		_time.time[hdl].min = min;
+	}
+	return res;
+
 }
 
 void time_reset(time_handle_t hdl) {
@@ -183,7 +210,7 @@ void time_stop(time_handle_t hdl, uint8_t *ptr) {
         _time.time[hdl].measurement[_time.time[hdl].idx].tick_duration =
             _time.time[hdl].measurement[_time.time[hdl].idx].tick_stop -
             _time.time[hdl].measurement[_time.time[hdl].idx].tick_start;
-        _time.time[hdl].idx = _time.time[hdl].keep + (_time.time[hdl].idx + 1-_time.time[hdl].keep) % (TIME_MEAS_CNT- _time.time[hdl].keep);
+        _time.time[hdl].idx = _time.time[hdl].min + (_time.time[hdl].idx + 1-_time.time[hdl].min) % (TIME_MEAS_CNT- _time.time[hdl].min);
         if ((_time.time[hdl].idx == 0) && (_time.time[hdl].mode & ONE_SHOT)) {
             _time.time[hdl].idx = -1;
             _time.doLoop = false;

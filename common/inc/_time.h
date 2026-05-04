@@ -15,12 +15,19 @@
 #define TIME_DEV_CNT 6
 typedef int8_t  time_handle_t;
 
-
+typedef enum {
+	ONESHOT = 1,
+	MAX_HOLD = 2,
+} mode_e;
 
 void time_init();
-time_handle_t time_new(char *name, uint8_t keep);
+time_handle_t time_new(char *name);
 bool time_doLoop_get();
-void time_set_mode(time_handle_t hdl, uint8_t mode);
+em_msg time_minimum_set(time_handle_t hdl, int8_t min);
+int8_t time_minimum_get(time_handle_t hdl);
+bool   time_doLoop_get();
+em_msg time_set_mode(time_handle_t hdl, mode_e mode);
+mode_e time_get_mode(time_handle_t hdl);
 void time_reset(time_handle_t hdl);
 void time_start(time_handle_t hdl, uint8_t count, uint8_t *ptr);
 void time_stop_su(time_handle_t hdl);
