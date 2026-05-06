@@ -174,7 +174,6 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     }
 
     int16_t len = 0;
-    static uint8_t overflow = 0;
     static uint8_t gap_idx = 0;
     uint32_t tick = 0;
     if (isio.buffer[SIO_TX]->mem != NULL) {
