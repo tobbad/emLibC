@@ -35,7 +35,10 @@ extern "C" {
 //#endif
 
 #define NEWLINE "\r\n"
+#define NEW_LINE_LEN strlen(NEWLINE)
 #define NL NEWLINE
+#define TRUNCT_NL "*"NL
+#define TRUCT_NL_LEN strlen(TRUNCT_NL)
 #define LINE_LENGTH 96 // FIXME -> CHAR_PER_LINE
 #define MAX_BUTTON_CNT 16
 

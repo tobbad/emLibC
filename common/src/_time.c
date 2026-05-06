@@ -268,7 +268,7 @@ void time_print(time_handle_t hdl, char *titel, bool python, bool timing) {
         } else {
             if (timing){
                 char *txt =  _time.time[hdl].measurement[i].line;
-                printf("    [ %6s , %4ld, %9"PRId64", %3ld, %8"PRId64" ]," NL, txt , duration_tick, duration_ns, count, baud);
+                printf("    [ %7s , %4ld, %9"PRId64", %3ld, %8"PRId64" ]," NL, txt , duration_tick, duration_ns, count, baud);
             } else {
                 printf("    [ %4ld, %9"PRId64", %4ld, %8"PRId64" ]," NL , duration_tick, duration_ns, count, baud);
             }

@@ -97,6 +97,7 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     state_init(&isio.state);
     //isio.pool =buffer_pool_new(POOL_SIZE, TX_BUFFER_SIZE, LINEAR);
     isio.cbuffer = NULL;
+    isio.ser_overflow = 0;
     isio.cTxBytePerSecond = 0;
     isio.mode = init->mode;
     isio.usb_drop_cnt =0;
@@ -173,8 +174,8 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     }
 
     int16_t len = 0;
+    static uint8_t overflow = 0;
     static uint8_t gap_idx = 0;
-    txLen = MIN(txLen, TX_BUFFER_SIZE - 2);
     uint32_t tick = 0;
     if (isio.buffer[SIO_TX]->mem != NULL) {
         buffer_reset(isio.buffer[SIO_TX]);
@@ -186,8 +187,15 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
             len += sprintf((char *)&isio.buffer[SIO_TX]->mem[len], " %x ", gap_idx);
             gap_idx = (gap_idx + 1) % USE_DMA_TX;
         }
-        memcpy(&isio.buffer[SIO_TX]->mem[len], ptr, txLen);
-        len += txLen;
+        uint16_t txLenAct = MIN(isio.buffer[SIO_TX]->size-len-TRUCT_NL_LEN , txLen);
+        memcpy(&isio.buffer[SIO_TX]->mem[len], ptr, txLenAct);
+        len += txLenAct;
+        if (txLen != txLenAct){
+            // Trucate line
+            len += TRUCT_NL_LEN;
+            isio.ser_overflow++ ;
+            memcpy(&isio.buffer[SIO_TX]->mem[isio.buffer[SIO_TX]->size-TRUCT_NL_LEN], &TRUNCT_NL, TRUCT_NL_LEN);
+        }
         isio.buffer[SIO_TX]->mem[len] = 0;
         isio.buffer[SIO_TX]->used = len;
         ptr = isio.buffer[SIO_TX]->mem;
@@ -200,8 +208,15 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
             gap_idx += sprintf((char *)&tx_buf, " %x ", gap_idx);
             gap_idx = (gap_idx + 1) % USE_DMA_TX;
         }
-        memcpy(&tx_buf[len], ptr, txLen);
-        len += txLen;
+        uint16_t txLenAct = MIN(TX_BUFFER_SIZE-len-TRUCT_NL_LEN , txLen);
+        memcpy(&isio.buffer[SIO_TX]->mem[len], ptr, txLenAct);
+        len += txLenAct;
+        if (txLen != txLenAct){
+            // Add Line end at last position
+            isio.ser_overflow++ ;
+            len += TRUCT_NL_LEN;
+            memcpy(&isio.buffer[SIO_TX]->mem[isio.buffer[SIO_TX]->size-TRUCT_NL_LEN], &TRUNCT_NL, TRUCT_NL_LEN);
+        }
         ptr = (uint8_t *)tx_buf;
     }
     if (isio.mode & MEASURE_BYTE_PER_SECONDS){
@@ -257,7 +272,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     } else {
         printf("No UART or USB is given" NL);
     }
-    return len;
+    return txLen;
 }
 
 static em_msg serial_io_open(dev_handle_t devh, void *dev) {

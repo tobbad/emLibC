@@ -84,7 +84,8 @@ typedef struct isio_s {
     state_t        state;
     bool           init;
     buffer_pool_t *pool;
-    uint32_t      usb_drop_cnt;
+    uint32_t       ser_overflow;
+    uint32_t       usb_drop_cnt;
     buffer_t      *cbuffer;
     uint32_t       cTxBytePerSecond;
 } isio_t;
