@@ -11,8 +11,10 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#ifndef UNIT_TEST
 #include "stm32l4xx_hal.h"
 #include "core_cm4.h"
+#endif
 
 
 static idx2str_t sync2str[] = {
@@ -33,7 +35,7 @@ idxa2str_t synca2str = {
     .cnt = ELCNT(sync2str),
     .entry = (idx2str_t*)&sync2str
 };
-
+#ifndef UNIT_TEST
 /**
  * @brief  Liefert die 96-bit eindeutige Chip-ID des STM32L476.
  *         Adresse laut Reference Manual RM0351, Kapitel 49.1: 0x1FFF7590
@@ -54,6 +56,29 @@ size_t board_get_unique_id(uint8_t id[], size_t max_len) {
     }
     return max_len;
 }
+
+
+int in_interrupt(void){
+    return (__get_IPSR() != 0);
+}
+
+#else
+size_t board_get_unique_id(uint8_t id[], size_t max_len) {
+    // STM32L476 UID Register: drei 32-bit Worte = 12 Bytes
+    // RM0351 Rev.9, Section 49.1: "Unique device ID register (96 bits)"
+    for (uint32_t i = 0; i < max_len && i < 12U; i++) {
+        id[i] = i;
+    }
+    // Falls der Puffer größer als 12 Bytes ist: Rest mit 0 auffüllen
+    for (uint32_t i = 12U; i < max_len; i++) {
+        id[i] = 0x00U;
+    }
+    return max_len;
+}
+int in_interrupt(void){
+    return false;
+}
+#endif
 
 uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer, uint16_t buffer_size, bool write_asci) {
     // hex data (without addr/asci) contains in maximum:
@@ -172,11 +197,6 @@ char int2hchar(uint8_t nr) {
         ret = ' ';
     }
     return ret;
-}
-
-
-int in_interrupt(void){
-    return (__get_IPSR() != 0);
 }
 
 type_e clable2type(clabel_u *lbl) {

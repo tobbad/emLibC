@@ -6,7 +6,6 @@
  */
 #include "buffer.h"
 #include "state.h"
-#include "options.h"
 
 char *state2Str[BUFFER_CNT] = {(char *)&"BUFFER_READY", (char *)&"BUFFER_USED"};
 char *type2Str[BUFFER_CNT] =  {(char *)&"LINEAR", (char *)&"RING"};

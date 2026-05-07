@@ -18,8 +18,8 @@ extern "C" {
 #include <string.h>
 #include <errno.h>
 #include <inttypes.h>
-#include "options.h"
 #ifndef UNIT_TEST
+#include "options.h"
 #include "hal_port.h"
 #endif
 #ifdef UNIT_TEST
@@ -125,7 +125,7 @@ type_e clable2type(clabel_u *lbl);
 int8_t str2uint(char *str);
 int8_t clabel2uint(clabel_u *lbl);
 char* idxa2str(idxa2str_t *map, uint8_t idx);
-//char* idx2str(idx2str_t *map, uint8_t cnt, uint8_t idx);
+char* idx2str(idx2str_t *map, uint8_t cnt, uint8_t idx);
 int in_interrupt(void);
 char int2hchar(uint8_t idx);
 

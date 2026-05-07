@@ -20,10 +20,13 @@ TEST_F(Crc16Test, LengthZeroReturnsZero) {
 }
 
 TEST_F(Crc16Test, SingleByte0xFF) {
-    // For 0xFF all data bits match CRC LSB every iteration → pure right-shifts.
-    // crc after loop = 0x00FF, ~crc = 0xFFFFFF00, byte-swap yields 0x00FF.
     uint8_t data = 0xFF;
     EXPECT_EQ(common_crc16(&data, 1), 0x00FFu);
+}
+
+TEST_F(Crc16Test, SingleByte0x00DiffersFromLengthZero) {
+    uint8_t data = 0x00;
+    EXPECT_NE(common_crc16(&data, 1), 0x0000u);
 }
 
 TEST_F(Crc16Test, KnownVector123456789) {
@@ -45,27 +48,28 @@ TEST_F(Crc16Test, DifferentInputsDifferentCRC) {
     EXPECT_NE(common_crc16(&a, 1), common_crc16(&b, 1));
 }
 
+TEST_F(Crc16Test, LengthSensitive) {
+    // One zero byte vs two zero bytes must produce different CRCs.
+    uint8_t buf[2] = {0x00, 0x00};
+    EXPECT_NE(common_crc16(buf, 1), common_crc16(buf, 2));
+}
+
 // ---------------------------------------------------------------------------
 // int2hchar
 // ---------------------------------------------------------------------------
 class Int2HcharTest : public ::testing::Test {};
 
-TEST_F(Int2HcharTest, Digits0to9) {
-    EXPECT_EQ(int2hchar(0), '0');
-    EXPECT_EQ(int2hchar(5), '5');
-    EXPECT_EQ(int2hchar(9), '9');
-}
-
-TEST_F(Int2HcharTest, HexLettersAtoF) {
-    EXPECT_EQ(int2hchar(10), 'A');
-    EXPECT_EQ(int2hchar(11), 'B');
-    EXPECT_EQ(int2hchar(15), 'F');
+TEST_F(Int2HcharTest, AllValidHexDigits) {
+    const char expected[] = "0123456789ABCDEF";
+    for (uint8_t i = 0; i < 16; i++) {
+        EXPECT_EQ(int2hchar(i), expected[i]) << "for i=" << (int)i;
+    }
 }
 
 TEST_F(Int2HcharTest, OutOfRangeReturnsSpace) {
     // MAX_STATE_CNT == MAX_BUTTON_CNT == 16; values >= 16 return ' '
-    EXPECT_EQ(int2hchar(16), ' ');
-    EXPECT_EQ(int2hchar(20), ' ');
+    EXPECT_EQ(int2hchar(16),  ' ');
+    EXPECT_EQ(int2hchar(20),  ' ');
     EXPECT_EQ(int2hchar(255), ' ');
 }
 
@@ -79,7 +83,7 @@ TEST_F(Str2UintTest, Zero) {
 }
 
 TEST_F(Str2UintTest, PositiveValue) {
-    EXPECT_EQ(str2uint((char *)"42"), 42);
+    EXPECT_EQ(str2uint((char *)"42"),  42);
     EXPECT_EQ(str2uint((char *)"127"), 127);
 }
 
@@ -117,6 +121,12 @@ TEST_F(Clable2TypeTest, NegativeDecimalIsHexnum) {
     EXPECT_EQ(clable2type(&lbl), hexnum);
 }
 
+TEST_F(Clable2TypeTest, EmptyStringIsHexnum) {
+    // strtol("", &stop, 10) → stop zeigt auf str[0], strlen(stop)==0 → hexnum
+    fill("");
+    EXPECT_EQ(clable2type(&lbl), hexnum);
+}
+
 TEST_F(Clable2TypeTest, AlphanumNonDecimalIsAscii) {
     fill("AB1");
     EXPECT_EQ(clable2type(&lbl), ascii);
@@ -128,7 +138,7 @@ TEST_F(Clable2TypeTest, PureAlphaIsAscii) {
 }
 
 TEST_F(Clable2TypeTest, NonAsciiBytesIsNonasci) {
-    lbl.str[0] = (char)0x80; // not in ASCII range
+    lbl.str[0] = (char)0x80;
     lbl.str[1] = '\0';
     lbl.str[2] = '\0';
     lbl.str[3] = '\0';
@@ -137,18 +147,17 @@ TEST_F(Clable2TypeTest, NonAsciiBytesIsNonasci) {
 
 // ---------------------------------------------------------------------------
 // to_hex
+// Row layout (16 bytes, no ASCII):
+//   "0xXXXX " (7) + 16 * "XX " (48) + SP78 nach Byte 7 (2) + SP78 nach Byte 15 (2) + "\n" (1) = 60
+// Mit ASCII: + 16 Zeichen = 76
 // ---------------------------------------------------------------------------
-// Line layout (16 bytes per row, write_asci=false):
-//   "0xXXXX " (7) + 16 * "XX " (48) + 2 SP78 after byte 7 + 2 SP78 after byte 15 + "\n" (1) = 60
-// With write_asci=true: + 16 ASCII chars = 76
-static const uint16_t LINE_NO_ASCII  = 60;
+static const uint16_t LINE_NO_ASCII   = 60;
 static const uint16_t LINE_WITH_ASCII = 76;
 
 class ToHexTest : public ::testing::Test {
   protected:
     static const size_t OUT_SIZE = 512;
     char out[OUT_SIZE];
-
     void SetUp() override { memset(out, 0, OUT_SIZE); }
 };
 
@@ -165,7 +174,7 @@ TEST_F(ToHexTest, SingleByteReturnsCorrectLength) {
 
 TEST_F(ToHexTest, AsciiModeAdds16Chars) {
     uint8_t buf[1] = {0x41};
-    char out2[OUT_SIZE] = {0};
+    char out2[OUT_SIZE] = {};
     uint16_t len_no  = to_hex(out,  OUT_SIZE, buf, 1, false);
     uint16_t len_yes = to_hex(out2, OUT_SIZE, buf, 1, true);
     EXPECT_EQ(len_yes - len_no, 16u);
@@ -193,18 +202,15 @@ TEST_F(ToHexTest, NonPrintableByteShowsAsDot) {
 TEST_F(ToHexTest, PrintableByteShowsAsItselfInAsciiMode) {
     uint8_t buf[1] = {'A'};
     to_hex(out, OUT_SIZE, buf, 1, true);
-    // The ASCII column should contain 'A'
-    // ASCII part is appended after the hex dump, before '\n'
     char *nl = strchr(out, '\n');
     ASSERT_NE(nl, nullptr);
-    // Search only in the ASCII tail (last 17 chars before \n)
     char *ascii_start = nl - 16;
     ASSERT_GE(ascii_start, out);
     EXPECT_EQ(ascii_start[0], 'A');
 }
 
 TEST_F(ToHexTest, TwoRowsFor32Bytes) {
-    uint8_t buf[32] = {0};
+    uint8_t buf[32] = {};
     uint16_t len = to_hex(out, OUT_SIZE, buf, sizeof(buf), false);
     EXPECT_EQ(len, 2 * LINE_NO_ASCII);
     EXPECT_NE(strstr(out, "0x0000"), nullptr);
@@ -212,10 +218,92 @@ TEST_F(ToHexTest, TwoRowsFor32Bytes) {
 }
 
 TEST_F(ToHexTest, ReturnedLengthMatchesStrlen) {
-    uint8_t buf[48] = {0};
+    uint8_t buf[48] = {};
     for (uint8_t i = 0; i < sizeof(buf); i++) buf[i] = i;
     uint16_t len = to_hex(out, OUT_SIZE, buf, sizeof(buf), true);
     EXPECT_EQ(len, (uint16_t)strlen(out));
+}
+
+TEST_F(ToHexTest, ExactRowStructure) {
+    // Prüft die genauen Byte-Positionen einer vollständigen 16-Byte-Zeile.
+    // [0..6]   "0x0000 "  — Adresse
+    // [7..9]   "00 "      — Byte 0
+    // [28..30] "07 "      — Byte 7  (7 + 7*3 = 28)
+    // [31..32] "  "       — SP78 nach Byte 7
+    // [33..35] "08 "      — Byte 8
+    // [54..56] "0F "      — Byte 15 (33 + 7*3 = 54)
+    // [57..58] "  "       — SP78 nach Byte 15
+    // [59]     '\n'
+    uint8_t buf[16];
+    for (int i = 0; i < 16; i++) buf[i] = (uint8_t)i;
+    to_hex(out, OUT_SIZE, buf, 16, false);
+
+    EXPECT_EQ(strncmp(out,      "0x0000 ", 7), 0);
+    EXPECT_EQ(strncmp(out +  7, "00 ",     3), 0);
+    EXPECT_EQ(strncmp(out + 28, "07 ",     3), 0);
+    EXPECT_EQ(strncmp(out + 31, "  ",      2), 0);
+    EXPECT_EQ(strncmp(out + 33, "08 ",     3), 0);
+    EXPECT_EQ(strncmp(out + 54, "0F ",     3), 0);
+    EXPECT_EQ(strncmp(out + 57, "  ",      2), 0);
+    EXPECT_EQ(out[59], '\n');
+}
+
+// ---------------------------------------------------------------------------
+// board_get_unique_id (UNIT_TEST-Stub: id[i] = i für i < 12)
+// ---------------------------------------------------------------------------
+class BoardGetUniqueIdTest : public ::testing::Test {};
+
+TEST_F(BoardGetUniqueIdTest, ReturnsMaxLen) {
+    uint8_t id[16] = {};
+    EXPECT_EQ(board_get_unique_id(id, 16), 16u);
+}
+
+TEST_F(BoardGetUniqueIdTest, First12BytesAreIndex) {
+    uint8_t id[12] = {};
+    board_get_unique_id(id, 12);
+    for (uint8_t i = 0; i < 12; i++) {
+        EXPECT_EQ(id[i], i) << "at index " << (int)i;
+    }
+}
+
+TEST_F(BoardGetUniqueIdTest, PaddingBeyond12IsZero) {
+    uint8_t id[16] = {};
+    board_get_unique_id(id, 16);
+    for (uint8_t i = 12; i < 16; i++) {
+        EXPECT_EQ(id[i], 0u) << "at index " << (int)i;
+    }
+}
+
+TEST_F(BoardGetUniqueIdTest, SmallerThan12BytesClipped) {
+    uint8_t id[4] = {};
+    board_get_unique_id(id, 4);
+    for (uint8_t i = 0; i < 4; i++) {
+        EXPECT_EQ(id[i], i);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// modulo_sub
+// ---------------------------------------------------------------------------
+class ModuloSubTest : public ::testing::Test {};
+
+TEST_F(ModuloSubTest, EqualSlotsReturnsZero) {
+    EXPECT_EQ(modulo_sub(3, 3, 10), 0u);
+    EXPECT_EQ(modulo_sub(0, 0,  8), 0u);
+}
+
+TEST_F(ModuloSubTest, SlotBeforeOSlot) {
+    // slot < oSlot → else-Zweig: (oSlot + modulo - slot) % modulo = oSlot - slot
+    EXPECT_EQ(modulo_sub(2, 5, 10), 3u);
+    EXPECT_EQ(modulo_sub(0, 7,  8), 7u);
+}
+
+TEST_F(ModuloSubTest, SlotAfterOSlotWrapsAsUint8) {
+    // slot > oSlot → if-Zweig: liefert (uint8_t)(oSlot - slot), NICHT den
+    // korrekten zirkulären Abstand (oSlot - slot + modulo) % modulo.
+    // Dokumentiert das bekannte Verhalten des if-Zweigs.
+    // modulo_sub(5, 3, 10): 3-5 = -2 → (uint8_t)254, erwartet wären 8.
+    EXPECT_EQ(modulo_sub(5, 3, 10), (uint8_t)(3 - 5));
 }
 
 // ---------------------------------------------------------------------------
@@ -225,9 +313,10 @@ class Idx2StrTest : public ::testing::Test {
   protected:
     idx2str_t map[3];
     void SetUp() override {
-        strncpy(map[0].str, "zero",  sizeof(map[0].str)); map[0].idx = 0;
-        strncpy(map[1].str, "one",   sizeof(map[1].str)); map[1].idx = 1;
-        strncpy(map[2].str, "two",   sizeof(map[2].str)); map[2].idx = 2;
+        // String-Literale direkt zuweisen — kein strncpy auf uninitialisierten char*.
+        map[0] = { (char *)"zero", 0 };
+        map[1] = { (char *)"one",  1 };
+        map[2] = { (char *)"two",  2 };
     }
 };
 
@@ -250,4 +339,29 @@ TEST_F(Idx2StrTest, Idxa2StrWrapper) {
     EXPECT_STREQ(idxa2str(&amap, 0), "zero");
     EXPECT_STREQ(idxa2str(&amap, 2), "two");
     EXPECT_STREQ(idxa2str(&amap, 9), "NA ");
+}
+
+// ---------------------------------------------------------------------------
+// synca2str — globale Lookup-Tabelle für system_state_e
+// ---------------------------------------------------------------------------
+class SyncA2StrTest : public ::testing::Test {};
+
+TEST_F(SyncA2StrTest, AllStatesResolvable) {
+    // Jeder Zustand in [SYNC_RESET, SYNC_CNT) muss einen Eintrag haben.
+    for (int s = SYNC_RESET; s < SYNC_CNT; s++) {
+        EXPECT_STRNE(idxa2str(&synca2str, (uint8_t)s), "NA ")
+            << "state " << s << " fehlt in synca2str";
+    }
+}
+
+TEST_F(SyncA2StrTest, BootUpContainsName) {
+    EXPECT_NE(strstr(idxa2str(&synca2str, BOOT_UP), "BOOT_UP"), nullptr);
+}
+
+TEST_F(SyncA2StrTest, SynchronizeOkContainsName) {
+    EXPECT_NE(strstr(idxa2str(&synca2str, SYNCHRONIZE_OK), "SYNCHRONIZE_OK"), nullptr);
+}
+
+TEST_F(SyncA2StrTest, OutOfRangeReturnsNA) {
+    EXPECT_STREQ(idxa2str(&synca2str, SYNC_CNT), "NA ");
 }
