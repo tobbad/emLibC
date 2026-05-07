@@ -64,7 +64,7 @@ list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/packet_test.cpp")
 list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/ringbuffer_test.cpp")
 list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/slip_test.cpp")
 list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/simple_test.cpp")
-list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/state_test.cpp")
+#list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/state_test.cpp")
 
 
 # Erstelle die Bibliothek

@@ -56,7 +56,10 @@ em_msg state_set(state_t *state, uint8_t nr, key_state_e ns) {
         return res;
     if (nr >= MAX_STATE_CNT)
         return res;
-    state->state[nr] = ns&&STATE_MASK;
+    if (state->state[nr] != ns){
+    	state->state[nr] = ns & STATE_MASK;
+    	state->dirty = true;
+    }
     return EM_OK;
 }
 
@@ -66,7 +69,7 @@ key_state_e state_get(const state_t *state, uint8_t nr) {
         return res;
     if (nr >= MAX_STATE_CNT)
         return res;
-    return state->state[nr]&&STATE_MASK;
+    return state->state[nr] & STATE_MASK;
 }
 
 em_msg state_set_state(const state_t *from, state_t *to) {
@@ -138,7 +141,26 @@ em_msg state_set_key_by_lbl(state_t *state, char lbl, key_state_e new_state) {
     return res;
 }
 
-key_state_e state_get_key_by_lbl(state_t *state, char ch) {
+em_msg state_propagate_by_state(const state_t *inState, state_t *outState){
+    em_msg res = EM_ERR;
+    if (state_check(inState))
+        return res;
+    if (state_check(outState))
+        return res;
+    for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {
+    	key_state_e s = state_get_key_by_idx(inState, i);
+    	switch(s){
+    		case BLINKING:
+    		    res = state_propagate_by_idx(outState, i);
+    		case ON:
+    	        res = state_propagate_by_idx(outState, i);
+    	        res = state_propagate_by_idx(outState, i);
+     	}
+    }
+    return res;
+}
+
+key_state_e state_get_key_by_lbl(const state_t *state, char ch) {
     em_msg res = STATE_CNT;
     if (state_check(state))
         return res;
@@ -148,7 +170,7 @@ key_state_e state_get_key_by_lbl(state_t *state, char ch) {
     return res;
 }
 
-key_state_e state_get_key_by_idx(state_t *state, uint8_t idx) {
+key_state_e state_get_key_by_idx(const state_t *state, uint8_t idx) {
     key_state_e res = STATE_CNT;
     if (state_check(state))  return res;
     res = state_get(state, idx);
@@ -168,9 +190,10 @@ em_msg state_propagate(state_t *state, uint8_t idx) {
 #endif
     state->state[idx] = (state->state[idx] + 1) % STATE_CNT;
     state->dirty = true;
-    res = EM_OK;
+    res = EM_TRUE;
     return res;
 }
+
 em_msg state_propagate_by_lbl(state_t *state, char ch) {
     em_msg res = EM_ERR;
     if (state_check(state))
@@ -235,8 +258,15 @@ uint32_t state_get_u32(state_t *state) {
 }
 em_msg state_copy(const state_t *from, state_t *to) {
     em_msg res = EM_ERR;
-    memcpy(to, from, sizeof(state_t));
-    res = EM_OK;
+    if (state_check(from))
+        return res;
+    if (state_check(to))
+        return res;
+    if (from->cnt != to->cnt) return res;
+    for (uint8_t f = from->first, t = to->first; f < from->first + from->cnt; f++, t++) {
+    	key_state_e s =state_get_key_by_idx(from, f);
+    	res = state_set_key_by_idx(to, t, s);
+    }
     return res;
 }
 
@@ -269,6 +299,11 @@ em_msg state_is_same(state_t *last, state_t *this) {
     for (uint8_t i1 = last->first, i2 = this->first; i1 < last->first + last->cnt; i1++, i2++) {
         res &= (last->state[i1] == this->state[i2]);
     }
+    if (res){
+    	res = EM_OK;
+    } else{
+    	res = EM_ERR;
+    }
     return res;
 }
 
@@ -297,10 +332,11 @@ em_msg state_diff(state_t *ref, state_t *state, state_t *diff) {
 }
 
 /*
- * This function
- *
+ * If something change in this function the result is true
+ * If input state is not equal to the output state
+ * the output state is set to dirty
  */
-em_msg state_merge(state_t *inState, state_t *outState) {
+bool state_merge(state_t *inState, state_t *outState) {
     em_msg res = EM_ERR;
     if (state_check(inState))
         return res;
@@ -322,7 +358,7 @@ em_msg state_print(const state_t *state, const char *title, bool doLong) {
     em_msg res = EM_ERR;
     if (state_check(state))
         return res;
-    if ((title != NULL) &&(doLong)) {
+    if ((title != NULL)) {
         printf("%s" NL, title);
     }
     if (doLong){
