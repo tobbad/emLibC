@@ -278,7 +278,7 @@ void time_print(time_handle_t hdl, char *titel, bool python, bool timing) {
         uint32_t maxTxTime_ns = (_time.time[hdl].last_ns - _time.time[hdl].first_ns);
         printf("]," NL);
         printf("    \"max_cnt\"       : %ld, " NL, _time.time[hdl].max_cnt);
-        printf("    \"maxTxTime_ns\" : %ld, " NL, maxTxTime_ns);
+        printf("    \"maxTxTime_ns\"  : %ld, " NL, maxTxTime_ns);
         printf("    \"max_baud\"      : %f" NL, _time.time[hdl].max_baud);
         printf("}" NL);
         serial_mode_set(save);
