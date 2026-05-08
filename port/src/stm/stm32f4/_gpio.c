@@ -7,6 +7,17 @@
 #include "_gpio.h"
 #include "common.h"
 
+em_msg GpioCheckPort(GPIO_TypeDef * port){
+    em_msg res = EM_OK;
+    if (port==GPIOA) return res;
+    if (port==GPIOB) return res;
+    if (port==GPIOC) return res;
+    if (port==GPIOD) return res;
+    if (port==GPIOH) return res;
+    return EM_ERR;
+}
+
+
 em_msg GpioPinInit(gpio_pin_t *pin) {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
     uint8_t res = EM_ERR;
@@ -46,21 +57,22 @@ em_msg GpioPinInit(gpio_pin_t *pin) {
 
 em_msg GpioPinWrite(gpio_pin_t *pin, bool value) {
     uint8_t res = EM_ERR;
-    if (pin->port != NULL) {
+    if (!pin) return res;
+    if (GpioCheckPort(pin->port) == EM_OK) {
         /* Following check consumes 20ms on 384000 (5*240x320) calls BSSR*/
+        res = EM_OK;
         GPIO_PinState state = value ? GPIO_PIN_SET : GPIO_PIN_RESET;
         state = pin->inv ^ state;
         HAL_GPIO_WritePin(pin->port, pin->pin, state);
-
-        res = EM_OK;
     }
     return res;
 }
 
 em_msg GpioPinRead(gpio_pin_t *pin, bool *value) {
     uint8_t res = EM_ERR;
-    if (pin->port != NULL) {
-        GPIO_PinState state = HAL_GPIO_ReadPin(pin->port, pin->pin);
+    if (!pin) return res;
+    if (GpioCheckPort(pin->port) == EM_OK) {
+         GPIO_PinState state = HAL_GPIO_ReadPin(pin->port, pin->pin);
         state = pin->inv ^ state;
         *value = state == GPIO_PIN_SET ? true : false;
         res = EM_OK;
@@ -69,9 +81,11 @@ em_msg GpioPinRead(gpio_pin_t *pin, bool *value) {
 }
 
 em_msg GpioPinToggle(gpio_pin_t *pin) {
-    uint8_t res = EM_OK;
-    if (pin->port != NULL) {
+    uint8_t res = EM_ERR;
+    if (!pin) return res;
+    if (GpioCheckPort(pin->port) == EM_OK) {
         HAL_GPIO_TogglePin(pin->port, pin->pin);
+        res  = EM_OK;
     }
     return res;
 }
