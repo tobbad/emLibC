@@ -19,7 +19,6 @@ extern "C" {
 #include <errno.h>
 #include <inttypes.h>
 #ifndef UNIT_TEST
-#include "options.h"
 #include "hal_port.h"
 #endif
 #ifdef UNIT_TEST
