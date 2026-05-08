@@ -68,8 +68,9 @@ size_t board_get_unique_id(uint8_t id[], size_t max_len) {
     }
     return max_len;
 }
-int in_interrupt(void) { return false; }
 #endif
+
+int in_interrupt(void) { return false; }
 
 uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer, uint16_t buffer_size, bool write_asci) {
     // hex data (without addr/asci) contains in maximum:
@@ -190,13 +191,6 @@ char int2hchar(uint8_t nr) {
     return ret;
 }
 
-<<<<<<< HEAD
-int in_interrupt(void) { return (__get_IPSR() != 0); }
-=======
-int in_interrupt(void){
-    return (__get_IPSR() != 0);
-}
->>>>>>> 94bb257 (Merge)
 
 type_e clable2type(clabel_u *lbl) {
     type_e res = nonasci;
