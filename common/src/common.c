@@ -12,29 +12,25 @@
 #include <stdio.h>
 #include <string.h>
 #ifndef UNIT_TEST
-#include "stm32l4xx_hal.h"
 #include "core_cm4.h"
+#include "stm32l4xx_hal.h"
 #endif
 
-
 static idx2str_t sync2str[] = {
-    { .str = (char*)&"SYNC_RESET,          ", .idx = SYNC_RESET }, /*!< SYNC_RESET */
-    { .str = (char*)&"BOOT_UP,             ", .idx = BOOT_UP },    /*!< BOOT_UP */
-    { .str = (char*)&"SLOT,                ", .idx = SLOT },       /*!< Ask for SLOT */
-    { .str = (char*)&"CHANNEL,             ", .idx = CHANNEL },    /*!< Ask for CHANNEL */
-    { .str = (char*)&"FREQBAND,            ", .idx = FREQBAND },   /*!< Ask for FREQBAND */
-    { .str = (char*)&"FREQUENCY_OFFSET,    ", .idx = FREQUENCY_OFFSET }, /*!< Ask for FREQUENCY_OFFSET */
-    { .str = (char*)&"SYNCHRONIZE,         ", .idx = SYNCHRONIZE }, /*!< Start synchronize */
-    { .str = (char*)&"SYNCHRONIZE_READY,   ", .idx = SYNCHRONIZE_READY }, /*!< Partly synchronized */
-    { .str = (char*)&"SYNCHRONIZE_DOING,   ", .idx = SYNCHRONIZE_DOING }, /*!< Partly synchronized */
-    { .str = (char*)&"SYNCHRONIZE_ERROR,   ", .idx = SYNCHRONIZE_ERROR }, /*!< Synchronizion error */
-    { .str = (char*)&"SYNCHRONIZE_OK,      ", .idx = SYNCHRONIZE_OK }, /*!< Synchronized */
+    {.str = (char *)&"SYNC_RESET,          ", .idx = SYNC_RESET},        /*!< SYNC_RESET */
+    {.str = (char *)&"BOOT_UP,             ", .idx = BOOT_UP},           /*!< BOOT_UP */
+    {.str = (char *)&"SLOT,                ", .idx = SLOT},              /*!< Ask for SLOT */
+    {.str = (char *)&"CHANNEL,             ", .idx = CHANNEL},           /*!< Ask for CHANNEL */
+    {.str = (char *)&"FREQBAND,            ", .idx = FREQBAND},          /*!< Ask for FREQBAND */
+    {.str = (char *)&"FREQUENCY_OFFSET,    ", .idx = FREQUENCY_OFFSET},  /*!< Ask for FREQUENCY_OFFSET */
+    {.str = (char *)&"SYNCHRONIZE,         ", .idx = SYNCHRONIZE},       /*!< Start synchronize */
+    {.str = (char *)&"SYNCHRONIZE_READY,   ", .idx = SYNCHRONIZE_READY}, /*!< Partly synchronized */
+    {.str = (char *)&"SYNCHRONIZE_DOING,   ", .idx = SYNCHRONIZE_DOING}, /*!< Partly synchronized */
+    {.str = (char *)&"SYNCHRONIZE_ERROR,   ", .idx = SYNCHRONIZE_ERROR}, /*!< Synchronizion error */
+    {.str = (char *)&"SYNCHRONIZE_OK,      ", .idx = SYNCHRONIZE_OK},    /*!< Synchronized */
 };
 
-idxa2str_t synca2str = {
-    .cnt = ELCNT(sync2str),
-    .entry = (idx2str_t*)&sync2str
-};
+idxa2str_t synca2str = {.cnt = ELCNT(sync2str), .entry = (idx2str_t *)&sync2str};
 #ifndef UNIT_TEST
 /**
  * @brief  Liefert die 96-bit eindeutige Chip-ID des STM32L476.
@@ -46,7 +42,7 @@ idxa2str_t synca2str = {
 size_t board_get_unique_id(uint8_t id[], size_t max_len) {
     // STM32L476 UID Register: drei 32-bit Worte = 12 Bytes
     // RM0351 Rev.9, Section 49.1: "Unique device ID register (96 bits)"
-    const uint8_t *uid = (const uint8_t *)UID_BASE;  // UID_BASE = 0x1FFF7590 (definiert in stm32l476xx.h)
+    const uint8_t *uid = (const uint8_t *)UID_BASE; // UID_BASE = 0x1FFF7590 (definiert in stm32l476xx.h)
     for (uint32_t i = 0; i < max_len && i < 12U; i++) {
         id[i] = uid[i];
     }
@@ -57,10 +53,7 @@ size_t board_get_unique_id(uint8_t id[], size_t max_len) {
     return max_len;
 }
 
-
-int in_interrupt(void){
-    return (__get_IPSR() != 0);
-}
+int in_interrupt(void) { return (__get_IPSR() != 0); }
 
 #else
 size_t board_get_unique_id(uint8_t id[], size_t max_len) {
@@ -75,9 +68,7 @@ size_t board_get_unique_id(uint8_t id[], size_t max_len) {
     }
     return max_len;
 }
-int in_interrupt(void){
-    return false;
-}
+int in_interrupt(void) { return false; }
 #endif
 
 uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer, uint16_t buffer_size, bool write_asci) {
@@ -199,10 +190,13 @@ char int2hchar(uint8_t nr) {
     return ret;
 }
 
+int in_interrupt(void) { return (__get_IPSR() != 0); }
+
 type_e clable2type(clabel_u *lbl) {
     type_e res = nonasci;
 #define ASCIHEX_LEN 22
-    char ascihex[ASCIHEX_LEN] = {'0', '1', '2', '3','4', '5','6', '7','8', '9', 'A', 'B','C', 'D','E', 'F', 'a', 'b', 'c', 'd', 'e', 'f'};
+    char ascihex[ASCIHEX_LEN] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A',
+                                 'B', 'C', 'D', 'E', 'F', 'a', 'b', 'c', 'd', 'e', 'f'};
     char *stopstring = NULL;
     lbl->str[CMD_LEN - 1] = 0;
     strtol(lbl->str, &stopstring, 10);
@@ -212,13 +206,13 @@ type_e clable2type(clabel_u *lbl) {
 
     bool isNot = true;
     uint8_t len = strlen(lbl->str);
-/*
-    for (uint8_t i = 0; i < len; i++) {
-        for (j=0;j<ASCIHEX_LEN;j++){
-            isNot &= ascihex[j]!=lbl->str[i];
+    /*
+        for (uint8_t i = 0; i < len; i++) {
+            for (j=0;j<ASCIHEX_LEN;j++){
+                isNot &= ascihex[j]!=lbl->str[i];
+            }
         }
-    }
-*/
+    */
     bool itIs = true;
 
     for (uint8_t i = 0; i < len; i++) {
@@ -231,7 +225,7 @@ type_e clable2type(clabel_u *lbl) {
 }
 
 int8_t clabel2uint(clabel_u *lbl) {
-    int res = str2uint((char*)&lbl->str);
+    int res = str2uint((char *)&lbl->str);
     return res;
 };
 
@@ -241,16 +235,16 @@ int8_t str2uint(char *str) {
 };
 
 // Not tested yet!!
-uint8_t modulo_sub(int8_t slot, int8_t oSlot, uint8_t modulo){
-    if (slot>oSlot){
-        return (oSlot-slot);
+uint8_t modulo_sub(int8_t slot, int8_t oSlot, uint8_t modulo) {
+    if (slot > oSlot) {
+        return (oSlot - slot);
     } else {
-        return (oSlot+modulo- slot)%modulo;
+        return (oSlot + modulo - slot) % modulo;
     }
 }
 
 void print_buffer(const uint8_t *buffer, uint8_t size, const char *header) {
-    if (!buffer){
+    if (!buffer) {
         printf("Can not print NULL buffer");
     }
     if (header != NULL) {
@@ -297,7 +291,4 @@ char *idx2str(idx2str_t *map, uint8_t cnt, uint8_t idx) {
     return "NA ";
 }
 
-
-char* idxa2str(idxa2str_t *map, uint8_t idx){
-    return idx2str(map->entry, map->cnt, idx);
-}
+char *idxa2str(idxa2str_t *map, uint8_t idx) { return idx2str(map->entry, map->cnt, idx); }

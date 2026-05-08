@@ -141,6 +141,7 @@ em_msg state_set_key_by_lbl(state_t *state, char lbl, key_state_e new_state) {
     return res;
 }
 
+<<<<<<< HEAD
 em_msg state_propagate_by_state(const state_t *inState, state_t *outState){
     em_msg res = EM_ERR;
     if (state_check(inState))
@@ -159,6 +160,8 @@ em_msg state_propagate_by_state(const state_t *inState, state_t *outState){
     }
     return res;
 }
+=======
+>>>>>>> b4aac2e (WIP)
 
 key_state_e state_get_key_by_lbl(const state_t *state, char ch) {
     em_msg res = STATE_CNT;
