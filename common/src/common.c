@@ -53,8 +53,6 @@ size_t board_get_unique_id(uint8_t id[], size_t max_len) {
     return max_len;
 }
 
-int in_interrupt(void) { return (__get_IPSR() != 0); }
-
 #else
 size_t board_get_unique_id(uint8_t id[], size_t max_len) {
     // STM32L476 UID Register: drei 32-bit Worte = 12 Bytes

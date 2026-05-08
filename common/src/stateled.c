@@ -153,7 +153,7 @@ bool stateled_update(system_state_e state) {
             stateled_iterate();
             my_stateled.bli_cnt++;
         }
-        if  (my_stateled.bli_cnt==my_stateled.bli_cnt){
+        if  (my_stateled.bli_cnt == my_stateled.cycle_size){
             stateled_off(0);
             my_stateled.bli_cnt  = 0;
             return true;

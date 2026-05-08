@@ -66,6 +66,7 @@
 #endif
 //gi#include "rb_system.h"
 #include "common.h"
+#include "main.h"
 #include "serial.h"
 #include "_time.h"
 #include "common.h"
