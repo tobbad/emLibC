@@ -17,7 +17,6 @@ void stateled_toggle_port();
 void stateled_toggle_pin(stateled_e pinNr);
 void stateled_iterate();
 void stateled_show(system_state_e state);
-void stateled_toggle_pin(stateled_e pinNr);
 void stateled_on(uint8_t led_nr);
 void stateled_off(uint8_t led_nr);
 void stateled_all_off();

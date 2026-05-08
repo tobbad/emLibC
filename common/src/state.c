@@ -56,9 +56,9 @@ em_msg state_set(state_t *state, uint8_t nr, key_state_e ns) {
         return res;
     if (nr >= MAX_STATE_CNT)
         return res;
-    if (state->state[nr] != ns){
-    	state->state[nr] = ns & STATE_MASK;
-    	state->dirty = true;
+    if (state->state[nr] != ns) {
+        state->state[nr] = ns & STATE_MASK;
+        state->dirty = true;
     }
     return EM_OK;
 }
@@ -136,46 +136,27 @@ em_msg state_set_key_by_lbl(state_t *state, char lbl, key_state_e new_state) {
         return res;
     uint8_t nr = state_ch2idx(state, lbl);
     printf("Map %c -> %d" NL, lbl, nr);
-    if (nr < 0) return res;
+    if (nr < 0)
+        return res;
     res = state_set(state, nr, new_state);
     return res;
 }
-
-<<<<<<< HEAD
-em_msg state_propagate_by_state(const state_t *inState, state_t *outState){
-    em_msg res = EM_ERR;
-    if (state_check(inState))
-        return res;
-    if (state_check(outState))
-        return res;
-    for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {
-    	key_state_e s = state_get_key_by_idx(inState, i);
-    	switch(s){
-    		case BLINKING:
-    		    res = state_propagate_by_idx(outState, i);
-    		case ON:
-    	        res = state_propagate_by_idx(outState, i);
-    	        res = state_propagate_by_idx(outState, i);
-     	}
-    }
-    return res;
-}
-=======
->>>>>>> b4aac2e (WIP)
 
 key_state_e state_get_key_by_lbl(const state_t *state, char ch) {
     em_msg res = STATE_CNT;
     if (state_check(state))
         return res;
     int8_t idx = state_ch2idx(state, ch);
-    if (idx < 0) return res;
+    if (idx < 0)
+        return res;
     res = state_get(state, idx);
     return res;
 }
 
 key_state_e state_get_key_by_idx(const state_t *state, uint8_t idx) {
     key_state_e res = STATE_CNT;
-    if (state_check(state))  return res;
+    if (state_check(state))
+        return res;
     res = state_get(state, idx);
     return res;
 }
@@ -184,16 +165,16 @@ em_msg state_propagate(state_t *state, uint8_t idx) {
     em_msg res = EM_ERR;
     if (state_check(state))
         return res;
-    if (((idx <state->first) &&(idx< state->first+ state->cnt))) {
+    if (((idx < state->first) && (idx < state->first + state->cnt))) {
         // printf("idx (%d)  > %d"NL, idx,  state->first + state->cnt);
         return res;
     }
 #ifdef OPTION_VERBOSe
-    printf("Propagate state %d"NL, idx);
+    printf("Propagate state %d" NL, idx);
 #endif
     state->state[idx] = (state->state[idx] + 1) % STATE_CNT;
     state->dirty = true;
-    res = EM_TRUE;
+    res = EM_OK;
     return res;
 }
 
@@ -265,10 +246,11 @@ em_msg state_copy(const state_t *from, state_t *to) {
         return res;
     if (state_check(to))
         return res;
-    if (from->cnt != to->cnt) return res;
+    if (from->cnt != to->cnt)
+        return res;
     for (uint8_t f = from->first, t = to->first; f < from->first + from->cnt; f++, t++) {
-    	key_state_e s =state_get_key_by_idx(from, f);
-    	res = state_set_key_by_idx(to, t, s);
+        key_state_e s = state_get_key_by_idx(from, f);
+        res = state_set_key_by_idx(to, t, s);
     }
     return res;
 }
@@ -302,10 +284,10 @@ em_msg state_is_same(state_t *last, state_t *this) {
     for (uint8_t i1 = last->first, i2 = this->first; i1 < last->first + last->cnt; i1++, i2++) {
         res &= (last->state[i1] == this->state[i2]);
     }
-    if (res){
-    	res = EM_OK;
-    } else{
-    	res = EM_ERR;
+    if (res) {
+        res = EM_OK;
+    } else {
+        res = EM_ERR;
     }
     return res;
 }
@@ -364,7 +346,7 @@ em_msg state_print(const state_t *state, const char *title, bool doLong) {
     if ((title != NULL)) {
         printf("%s" NL, title);
     }
-    if (doLong){
+    if (doLong) {
         printf("first      = %d" NL, state->first);
         printf("cnt        = %d" NL, state->cnt);
         printf("clabel     = 0x%04lx" NL, state->clabel.cmd);

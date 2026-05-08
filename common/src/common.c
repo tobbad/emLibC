@@ -190,7 +190,13 @@ char int2hchar(uint8_t nr) {
     return ret;
 }
 
+<<<<<<< HEAD
 int in_interrupt(void) { return (__get_IPSR() != 0); }
+=======
+int in_interrupt(void){
+    return (__get_IPSR() != 0);
+}
+>>>>>>> 94bb257 (Merge)
 
 type_e clable2type(clabel_u *lbl) {
     type_e res = nonasci;
