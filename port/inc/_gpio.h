@@ -14,6 +14,7 @@ typedef struct gpio_pin_s {
   uint16_t pin;
   bool def;
   bool inv;
+  bool state;
   GPIO_InitTypeDef conf;
 } gpio_pin_t;
 

@@ -95,6 +95,7 @@ time_handle_t time_new(char *name) {
     return -1;
 }
 
+
 em_msg time_set_mode(time_handle_t hdl, mode_e mode) {
 	em_msg res = EM_ERR;
     // clang-format off
@@ -130,6 +131,10 @@ em_msg time_set_max(time_handle_t hdl, int8_t max){
 
 }
 
+
+int64_t time_now_ns(void){
+	return NOW;
+}
 void time_reset(time_handle_t hdl) {
     // clang-format off
     if (time_check_hdl(hdl) == EM_ERR) return;

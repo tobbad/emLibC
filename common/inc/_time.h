@@ -23,6 +23,7 @@ typedef enum {
 void time_init();
 time_handle_t time_new(char *name);
 bool time_doLoop_get();
+int64_t time_now_ns(void);
 em_msg time_set_max(time_handle_t hdl, int8_t max);
 int8_t time_get_max(time_handle_t hdl);
 bool   time_doLoop_get();

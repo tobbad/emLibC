@@ -227,7 +227,6 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     if (isio.mode & USE_USB) {
             time_start(utxhdl, len, ptr);
 #ifdef USE_TINY_USB
-            static uint32_t drop_cnt=0;
             bool con = tud_cdc_connected();
             if (con){
                 uint8_t written = tud_cdc_write(ptr, len);
