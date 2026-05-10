@@ -189,7 +189,6 @@ char int2hchar(uint8_t nr) {
     return ret;
 }
 
-
 type_e clable2type(clabel_u *lbl) {
     type_e res = nonasci;
 #define ASCIHEX_LEN 22
