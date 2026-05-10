@@ -92,6 +92,7 @@ typedef struct isio_s {
 
 uint32_t serial_get_byte_per_second();
 void     serial_reset_byte_per_second();
+void     serial_reset(dev_handle_t dev);
 void     serial_mode_set(print_e mode);
 print_e  serial_mode_get();
 int8_t   serial_waitForNumber(char **key);

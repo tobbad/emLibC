@@ -313,13 +313,15 @@ static int16_t serial_scan(dev_handle_t dev) {
     return _read(0, isio.buffer[SIO_RX]->mem, RX_BUFFER_SIZE);
 };
 
-static void serial_reset(dev_handle_t dev) {
+void serial_reset(dev_handle_t dev) {
     buffer_t *buf = isio.buffer[SIO_RX];
     buffer_reset(buf);
     buf = isio.buffer[SIO_TX];
     buffer_reset(buf);
     state_reset(&isio.state);
+#ifdef HAL_PCD_MODULE_ENABLED
     buffer_clear(&urx_buffer);
+#endif
     memset(rx_buf, 0, RX_BUFFER_SIZE);
     memset(tx_buf, 0, TX_BUFFER_SIZE);
 };
