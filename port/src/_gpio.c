@@ -66,7 +66,6 @@ em_msg GpioPinWrite(gpio_pin_t *pin, bool value) {
     if (!pin)
         return res;
     if (GpioCheckPort(pin->port) == EM_OK) {
-        /* Following check consumes 20ms on 384000 (5*240x320) calls BSSR*/
         res = EM_OK;
         GPIO_PinState state = value ? GPIO_PIN_SET : GPIO_PIN_RESET;
         pin->state = pin->inv ^ state;
@@ -91,7 +90,7 @@ em_msg GpioPinRead(gpio_pin_t *pin, bool *value) {
         state = HAL_GPIO_ReadPin(pin->port, pin->pin);
         __enable_irq();
 #endif
-        state = pin->inv ^ state;
+        pin->state = pin->inv ^ pin->state;
         *value = pin->state == GPIO_PIN_SET ? true : false;
         res = EM_OK;
     }
