@@ -13,7 +13,7 @@ char *type2Str[BUFFER_CNT] = {(char *)&"LINEAR", (char *)&"RING"};
 int16_t size = BUF_SIZ;
 uint8_t buffer[BUF_SIZ];
 
-#ifndef OPTION_VERBOSE
+#if OPTION_VERBOSE == 1
 em_msg buffer_check(const buffer_t *buffer, bool reduced) {
     // clang-format off
     int16_t res = EM_ERR;

@@ -5,7 +5,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#define USE_HAL_LL 1
+
+#define ATOMIC    1
 
 #ifdef __cplusplus
 }
