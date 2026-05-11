@@ -46,15 +46,14 @@ em_msg GpioPinInit(gpio_pin_t *pin) {
             return res;
         }
 
+        pin->state  = pin->inv ^ pin->def;
         GPIO_InitStruct.Pin = pin->pin;
         GPIO_InitStruct.Mode = pin->conf.Mode;
         GPIO_InitStruct.Pull = pin->conf.Pull;
         GPIO_InitStruct.Speed = pin->conf.Speed;
         HAL_GPIO_Init(pin->port, &GPIO_InitStruct);
         if (pin->conf.Mode == GPIO_MODE_OUTPUT_PP) {
-            GPIO_PinState state = pin->inv ^ pin->def;
-            pin->state = state;
-            HAL_GPIO_WritePin(pin->port, pin->pin, state);
+            HAL_GPIO_WritePin(pin->port, pin->pin, pin->state);
         }
         res = EM_OK;
     }
