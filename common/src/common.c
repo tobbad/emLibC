@@ -52,6 +52,13 @@ size_t board_get_unique_id(uint8_t id[], size_t max_len) {
     }
     return max_len;
 }
+uint32_t csss2uint32(uint32_t cycle, uint8_t slot, uint8_t sSlot ){
+    uint32_t res=0;
+    res = cycle&(0xFFFF);
+    res |= slot<<16;
+    res |= sSlot<<24;
+    return res;
+};
 
 #else
 size_t board_get_unique_id(uint8_t id[], size_t max_len) {
