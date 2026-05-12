@@ -104,7 +104,7 @@ em_msg GpioPinToggle(gpio_pin_t *pin) {
         pin->state = pin->state ^= 1u;
 #if ATOMIC == 1
         if (pin->state) {
-            pin->port->BSR = pin->pin; // SET — atomar
+            pin->port->BSRR = pin->pin; // SET — atomar
         } else {
             pin->port->BRR = pin->pin; // RESET — atomar
         }

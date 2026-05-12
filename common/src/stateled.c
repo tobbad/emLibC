@@ -53,14 +53,18 @@ void stateled_init(state_t *state, gpio_port_t *port, uint16_t cycle_size, uint8
     my_stateled.bli_cnt = bli_cnt * my_stateled.port->cnt;
     my_stateled.cnt = 0;
     GpioPortInit(my_stateled.port);
-    my_stateled.init = true;
     for (uint8_t i = 0; i < my_stateled.port->cnt; i++) {
         stateled_on(i);
         HAL_Delay(INIT_LED_TIME);
         stateled_off(i);
     }
+    my_stateled.init = true;
 }
 
+void stateled_deinit(){
+    my_stateled.init = false;
+
+};
 void stateled_toggle_port() {
     // clang-format off
     if (!my_stateled.init) return;

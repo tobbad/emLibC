@@ -18,6 +18,7 @@ typedef int8_t  time_handle_t;
 typedef enum {
 	ONESHOT = 1,
 	MAX_HOLD = 2,
+	SSSC = 4, // Store subslot , slot, cycle data in data field
 } mode_e;
 
 void time_init();

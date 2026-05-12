@@ -157,7 +157,11 @@ void time_start(time_handle_t hdl, uint8_t count, uint8_t *ptr) {
         _time.time[hdl].last_ns = now_ns;
         _time.time[hdl].measurement[_time.time[hdl].idx].count = count;
         _time.time[hdl].measurement[_time.time[hdl].idx].tick_start = HAL_GetTick();
-        memcpy((uint8_t *)_time.time[hdl].measurement[_time.time[hdl].idx].line, ptr, len);
+        if (_time.time[hdl].mode &SSSC){
+            snprintf(_time.time[hdl].measurement[_time.time[hdl].idx].line, TIME_MEAS_CHAR_PER_LINE, SLOT_PRINT_FMT NL,  rb_system.cycle,rb_system.sSlot,rb_system.actSlot );
+        } else {
+            memcpy((uint8_t *)_time.time[hdl].measurement[_time.time[hdl].idx].line, ptr, len);
+        }
         _time.time[hdl].measurement[_time.time[hdl].idx].line[len + 1] = 0;
         _time.time[hdl].measurement[_time.time[hdl].idx].start_ns = now_ns;
         _time.time[hdl].max_cnt += count;
@@ -246,7 +250,7 @@ void time_print(time_handle_t hdl, char *titel, bool python, bool timing) {
         printf("data = {\"timing\":[" NL);
     } else {
         if (timing) {
-            printf("// Start_text duration_tick, duration_ns, count baud " NL);
+            printf("// Text duration_tick, duration_ns, count baud " NL);
         } else {
             printf("// duration_tick, duration_ns, count baud " NL);
         }
@@ -266,10 +270,9 @@ void time_print(time_handle_t hdl, char *titel, bool python, bool timing) {
         if (python) {
             printf("    [ %4ld, %9" PRId64 ", %3ld, %8" PRId64 " ]," NL, duration_tick, duration_ns, count, baud);
         } else {
-            if (timing) {
+            if ((timing) | (_time.time[hdl].mode&SSSC)) {
                 char *txt = _time.time[hdl].measurement[i].line;
-                printf("    [ %7s , %4ld, %9" PRId64 ", %3ld, %8" PRId64 " ]," NL, txt, duration_tick, duration_ns, count,
-                       baud);
+                printf("    [ %20s , %4ld, %9" PRId64 ", %3ld, %8" PRId64 " ]," NL, txt, duration_tick, duration_ns, count, baud);
             } else {
                 printf("    [ %4ld, %9" PRId64 ", %4ld, %8" PRId64 " ]," NL, duration_tick, duration_ns, count, baud);
             }
