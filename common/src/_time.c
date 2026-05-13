@@ -158,7 +158,7 @@ void time_start(time_handle_t hdl, uint8_t count, uint8_t *ptr) {
         _time.time[hdl].measurement[_time.time[hdl].idx].count = count;
         _time.time[hdl].measurement[_time.time[hdl].idx].tick_start = HAL_GetTick();
         if (_time.time[hdl].mode &SSSC){
-            snprintf(_time.time[hdl].measurement[_time.time[hdl].idx].line, TIME_MEAS_CHAR_PER_LINE, SLOT_PRINT_FMT NL,  rb_system.cycle,rb_system.sSlot,rb_system.actSlot );
+            len = snprintf(_time.time[hdl].measurement[_time.time[hdl].idx].line, TIME_MEAS_CHAR_PER_LINE, SLOT_PRINT_FMT,  rb_system.cycle, rb_system.sSlot, rb_system.actSlot );
         } else {
             memcpy((uint8_t *)_time.time[hdl].measurement[_time.time[hdl].idx].line, ptr, len);
         }
@@ -272,7 +272,7 @@ void time_print(time_handle_t hdl, char *titel, bool python, bool timing) {
         } else {
             if ((timing) | (_time.time[hdl].mode&SSSC)) {
                 char *txt = _time.time[hdl].measurement[i].line;
-                printf("    [ %20s , %4ld, %9" PRId64 ", %3ld, %8" PRId64 " ]," NL, txt, duration_tick, duration_ns, count, baud);
+                printf("    [ %-20s , %4ld, %9" PRId64 ", %3ld, %8" PRId64 " ]," NL, txt, duration_tick, duration_ns, count, baud);
             } else {
                 printf("    [ %4ld, %9" PRId64 ", %4ld, %8" PRId64 " ]," NL, duration_tick, duration_ns, count, baud);
             }
