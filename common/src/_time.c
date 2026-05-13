@@ -189,9 +189,9 @@ void time_stop(time_handle_t hdl, uint8_t *ptr) {
     if (!_time.init) return;
     // clang-format on
     if (_time.time[hdl].idx >= 0) {
-        uint8_t len = strlen((char *)ptr);
-        len = MIN(len, TIME_MEAS_CHAR_PER_LINE);
         if (ptr != NULL) {
+            uint8_t len = strlen((char *)ptr);
+            len = MIN(len, TIME_MEAS_CHAR_PER_LINE);
             memcpy((uint8_t *)_time.time[hdl].measurement[_time.time[hdl].idx].line, ptr, len);
             _time.time[hdl].measurement[_time.time[hdl].idx].line[len + 1] = 0;
         }
@@ -250,9 +250,13 @@ void time_print(time_handle_t hdl, char *titel, bool python, bool timing) {
         printf("data = {\"timing\":[" NL);
     } else {
         if (timing) {
-            printf("// Text duration_tick, duration_ns, count baud " NL);
+            printf("//    Text                   tick  duration_ns  count     baud " NL);
         } else {
-            printf("// duration_tick, duration_ns, count baud " NL);
+            if (_time.time[hdl].mode&SSSC) {
+                printf("//      ( c s  ss)          tick , duration_ns count   baud " NL);
+            } else {
+                printf("//     tick, duration_ns count  baud " NL);
+            }
         }
     }
     int64_t duration_ns = 0;
@@ -272,9 +276,9 @@ void time_print(time_handle_t hdl, char *titel, bool python, bool timing) {
         } else {
             if ((timing) | (_time.time[hdl].mode&SSSC)) {
                 char *txt = _time.time[hdl].measurement[i].line;
-                printf("    [ %-20s , %4ld, %9" PRId64 ", %3ld, %8" PRId64 " ]," NL, txt, duration_tick, duration_ns, count, baud);
+                printf("    [ %-20s , %4ld, %10" PRId64 ", %3ld, %8" PRId64 " ]," NL, txt, duration_tick, duration_ns, count, baud);
             } else {
-                printf("    [ %4ld, %9" PRId64 ", %4ld, %8" PRId64 " ]," NL, duration_tick, duration_ns, count, baud);
+                printf("    [ %4ld, %10" PRId64 ", %4ld, %8" PRId64 " ]," NL, duration_tick, duration_ns, count, baud);
             }
         }
     }
