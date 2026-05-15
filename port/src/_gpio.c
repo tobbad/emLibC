@@ -76,7 +76,6 @@ em_msg GpioPinRead(gpio_pin_t *pin, bool *value) {
     uint8_t res = EM_ERR;
     if (!pin)
         return res;
-    GPIO_PinState state;
     if (GpioCheckPort(pin->port) == EM_OK) {
 #if ATOMIC == 1
         if ((pin->port->IDR & pin->pin) != 0x00u) {
@@ -101,7 +100,7 @@ em_msg GpioPinToggle(gpio_pin_t *pin) {
     if (!pin)
         return res;
     if (GpioCheckPort(pin->port) == EM_OK) {
-        pin->state = pin->state ^= 1u;
+        pin->state = !pin->state;
 #if ATOMIC == 1
         if (pin->state) {
             pin->port->BSRR = pin->pin; // SET — atomar
