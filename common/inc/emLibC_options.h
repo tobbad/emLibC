@@ -6,7 +6,7 @@
 extern "C" {
 #endif
 
-#define ATOMIC    1
+#define ATOMIC   0
 
 #ifdef __cplusplus
 }

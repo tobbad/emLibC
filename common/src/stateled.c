@@ -12,6 +12,8 @@
 #define INIT_LED_TIME 100
 typedef struct led_line_s {
     bool init;
+    bool state_init;
+    uint16_t mask;
     state_t lstate;
     state_t *state;
     gpio_port_t *port;
@@ -23,6 +25,7 @@ typedef struct led_line_s {
 static led_line_t my_stateled;
 // clang-format off
 static  gpio_port_t def_port ={
+    .mask = 0x03FF,
 	.cnt =10,
 	.pin = {
         { .port = GPIOC, .pin = GPIO_PIN_8,  .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led 0
@@ -44,6 +47,9 @@ void stateled_init(state_t *state, gpio_port_t *port, uint16_t cycle_size, uint8
     if (state != NULL) {
         my_stateled.state = state;
         my_stateled.lstate = *state;
+        my_stateled.state_init = true;
+    } else{
+        my_stateled.state_init = false;
     }
     if (port != NULL) {
         my_stateled.port = port;
@@ -53,23 +59,36 @@ void stateled_init(state_t *state, gpio_port_t *port, uint16_t cycle_size, uint8
     my_stateled.bli_cnt = bli_cnt * my_stateled.port->cnt;
     my_stateled.cnt = 0;
     GpioPortInit(my_stateled.port);
+    my_stateled.init = true;
     for (uint8_t i = 0; i < my_stateled.port->cnt; i++) {
         stateled_on(i);
         HAL_Delay(INIT_LED_TIME);
         stateled_off(i);
     }
-    my_stateled.init = true;
 }
 
 void stateled_deinit(){
     my_stateled.init = false;
 
 };
-void stateled_toggle_port() {
+
+em_msg stateled_set_mask(uint16_t mask){
+    return GpioPort_setMask(my_stateled.port, mask);
+}
+
+em_msg stateled_set(uint16_t val){
     // clang-format off
-    if (!my_stateled.init) return;
+    if (!my_stateled.init) return EM_ERR;
+    if (my_stateled.state_init) return EM_ERR;
     // clang-format on
-    GpioPortToggle(my_stateled.port);
+    return GpioPortSet(my_stateled.port, val);
+}
+
+em_msg stateled_toggle_port() {
+    // clang-format off
+    if (!my_stateled.init) return EM_ERR;
+    // clang-format on
+    return GpioPortToggle(my_stateled.port);
 };
 
 void stateled_iterate() {
@@ -83,29 +102,32 @@ void stateled_iterate() {
     stateled_toggle_pin(idx);
 };
 
-void stateled_on(uint8_t led_nr) {
+em_msg stateled_on(uint8_t led_nr) {
     // clang-format off
-    if (!my_stateled.init) return;
+    if (!my_stateled.init) return EM_ERR;
+    if (my_stateled.init) return EM_ERR;
     // clang-format on
-    GpioPinWrite(&my_stateled.port->pin[led_nr], true);
-};
-void stateled_off(uint8_t led_nr) {
-    // clang-format off
-    if (!my_stateled.init) return;
-    // clang-format on
-    GpioPinWrite(&my_stateled.port->pin[led_nr], false);
+    return GpioPinWrite(&my_stateled.port->pin[led_nr], true);
 };
 
-void stateled_toggle_pin(stateled_e led_nr) {
+em_msg stateled_off(uint8_t led_nr) {
     // clang-format off
-    if (!my_stateled.init) return;
+    if (!my_stateled.init) return EM_ERR;
+    if (my_stateled.init) return EM_ERR;
     // clang-format on
-    GpioPinToggle(&my_stateled.port->pin[led_nr]);
+    return GpioPinWrite(&my_stateled.port->pin[led_nr], false);
 };
 
-void stateled_all_off() {
+em_msg stateled_toggle_pin(stateled_e led_nr) {
     // clang-format off
-    if (!my_stateled.init) return;
+    if (!my_stateled.init) return EM_ERR;
+    // clang-format on
+    return GpioPinToggle(&my_stateled.port->pin[led_nr]);
+};
+
+em_msg stateled_all_off() {
+    // clang-format off
+    if (!my_stateled.init) return EM_ERR;
     // clang-format on
     for (uint8_t i = 0; i < my_stateled.port->cnt; i++) {
         stateled_off(i);
@@ -114,6 +136,7 @@ void stateled_all_off() {
 void stateled_show(system_state_e state) {
     // clang-format off
     if (!my_stateled.init) return;
+    if (my_stateled.state_init) return;
     // clang-format on
     my_stateled.cnt++;
     my_stateled.cnt = ((my_stateled.cnt) % my_stateled.cycle_size);
@@ -145,6 +168,7 @@ void stateled_show(system_state_e state) {
 bool stateled_update(system_state_e state) {
     // clang-format off
     if (!my_stateled.init) return false;
+    if (!my_stateled.state_init) return false;
     // clang-format on
     my_stateled.bli_cnt = 0;
     my_stateled.cnt++;

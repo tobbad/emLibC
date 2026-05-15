@@ -89,7 +89,7 @@ em_msg GpioPinRead(gpio_pin_t *pin, bool *value) {
         }
 #else
         __disable_irq();
-        state = HAL_GPIO_ReadPin(pin->port, pin->pin);
+        pin->state = HAL_GPIO_ReadPin(pin->port, pin->pin);
         __enable_irq();
 #endif
         pin->state = pin->inv ^ pin->state;
@@ -112,9 +112,9 @@ em_msg GpioPinToggle(gpio_pin_t *pin) {
             pin->port->BRR = pin->pin; // RESET — atomar
         }
 #else
-        __disable_irq();
-        HAL_GPIO_WritePin(pin->port, pin->pin, pin->state);
-        __enable_irq();
+      //  __disable_irq();
+        HAL_GPIO_TogglePin(pin->port, pin->pin);
+     //   __enable_irq();
 #endif
         //
         res = EM_OK;

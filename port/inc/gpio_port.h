@@ -10,12 +10,15 @@
 #include "_gpio.h"
 
 typedef struct gpio_port_s {
-  gpio_pin_t pin[10];
-  uint8_t cnt;
+    uint16_t mask;
+    uint16_t mask_size;
+    gpio_pin_t pin[10];
+    uint8_t cnt;
 } gpio_port_t;
 
 em_msg GpioPortInit(gpio_port_t *port);
-void GpioPortToggle(gpio_port_t *port);
+em_msg GpioPort_setMask(gpio_port_t *port, uint16_t mask);
+em_msg GpioPortToggle(gpio_port_t *port);
 em_msg GpioPortSet(gpio_port_t *port, uint8_t val);
 em_msg GpioPortGet(gpio_port_t *port, uint16_t *val);
 
