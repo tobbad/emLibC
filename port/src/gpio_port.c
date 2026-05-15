@@ -22,3 +22,25 @@ void GpioPortToggle(gpio_port_t *port) {
     }
     return;
 }
+em_msg GpioPortSet(gpio_port_t *port, uint8_t val){
+    em_msg res=EM_OK;
+    for (uint8_t i = 0; i < sizeof(val); i++) {
+        if (val & (1<<i)){
+           res |= GpioPinWrite(&port->pin[i], 1);
+        } else {
+            res |= GpioPinWrite(&port->pin[i], 0);
+
+        }
+    }
+    return res;
+}
+
+em_msg GpioPortGet(gpio_port_t *port, uint16_t *val){
+    em_msg res=EM_OK;
+    bool pinValue;
+    for (uint8_t i = 0; i < port->cnt; i++) {
+        res |= GpioPinRead(&port->pin[i], &pinValue);
+        *val |= pinValue<<i;
+    }
+    return res;
+}

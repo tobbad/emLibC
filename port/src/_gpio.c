@@ -22,6 +22,9 @@ em_msg GpioCheckPort(GPIO_TypeDef *port) {
         return res;
     return EM_ERR;
 }
+em_msg GpioCheckPin_isIn(gpio_pin_t *pin) {
+    return pin->conf.Mode == GPIO_MODE_INPUT;
+}
 
 em_msg GpioPinInit(gpio_pin_t *pin) {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -62,9 +65,9 @@ em_msg GpioPinInit(gpio_pin_t *pin) {
 
 em_msg GpioPinWrite(gpio_pin_t *pin, bool value) {
     uint8_t res = EM_ERR;
-    if (!pin)
-        return res;
+    if (!pin) return res;
     if (GpioCheckPort(pin->port) == EM_OK) {
+        if (GpioCheckPin_isIn(pin)) return res;
         res = EM_OK;
         GPIO_PinState state = value ? GPIO_PIN_SET : GPIO_PIN_RESET;
         pin->state = pin->inv ^ state;
@@ -77,6 +80,7 @@ em_msg GpioPinRead(gpio_pin_t *pin, bool *value) {
     if (!pin)
         return res;
     if (GpioCheckPort(pin->port) == EM_OK) {
+        if (!GpioCheckPin_isIn(pin)) return res;
 #if ATOMIC == 1
         if ((pin->port->IDR & pin->pin) != 0x00u) {
             pin->state = GPIO_PIN_SET;

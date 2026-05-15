@@ -16,5 +16,7 @@ typedef struct gpio_port_s {
 
 em_msg GpioPortInit(gpio_port_t *port);
 void GpioPortToggle(gpio_port_t *port);
+em_msg GpioPortSet(gpio_port_t *port, uint8_t val);
+em_msg GpioPortGet(gpio_port_t *port, uint16_t *val);
 
 #endif /* GPIO_PORT_H_ */

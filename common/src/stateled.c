@@ -96,7 +96,7 @@ void stateled_off(uint8_t led_nr) {
     GpioPinWrite(&my_stateled.port->pin[led_nr], false);
 };
 
-void stateled_toggle_pin(uint8_t led_nr) {
+void stateled_toggle_pin(stateled_e led_nr) {
     // clang-format off
     if (!my_stateled.init) return;
     // clang-format on
