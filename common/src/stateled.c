@@ -9,6 +9,7 @@
 #include "common.h"
 #include "gpio_port.h"
 #include "state.h"
+#include "emLibC_options.h"
 #define INIT_LED_TIME 100
 typedef struct led_line_s {
     bool init;
@@ -24,6 +25,7 @@ typedef struct led_line_s {
 
 static led_line_t my_stateled;
 // clang-format off
+#if REGUAL_STATELD == 1
 static  gpio_port_t def_port ={
     .mask = 0x03FF,
 	.cnt =10,
@@ -33,13 +35,32 @@ static  gpio_port_t def_port ={
         { .port = GPIOB, .pin = GPIO_PIN_15, .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led 2
         { .port = GPIOB, .pin = GPIO_PIN_14, .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led 3
         { .port = GPIOB, .pin = GPIO_PIN_13, .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led 4
-        { .port = GPIOB, .pin = GPIO_PIN_12, .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led 5
+        { .port = GPIOB, .pin = GPIO_PIN_12, .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led 5
         { .port = GPIOB, .pin = GPIO_PIN_2,  .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led 6
         { .port = GPIOC, .pin = GPIO_PIN_14, .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led 7
         { .port = GPIOB, .pin = GPIO_PIN_5,  .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led fehler
         { .port = GPIOB, .pin = GPIO_PIN_6,  .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led normal
 	},
 };
+#else
+static  gpio_port_t def_port ={
+    .mask = 0x03FF,
+    .cnt =10,
+    .pin = {
+        { .port = GPIOC, .pin = GPIO_PIN_8,  .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led 0
+        { .port = GPIOC, .pin = GPIO_PIN_6,  .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led 1
+        { .port = GPIOB, .pin = GPIO_PIN_15, .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led 2
+        { .port = GPIOB, .pin = GPIO_PIN_14, .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led 3
+        { .port = GPIOB, .pin = GPIO_PIN_13, .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led 4
+        { .port = GPIOB, .pin = GPIO_PIN_12, .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led 5
+        { .port = GPIOB, .pin = GPIO_PIN_2,  .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led 6
+        { .port = GPIOC, .pin = GPIO_PIN_14, .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led 7
+        { .port = GPIOB, .pin = GPIO_PIN_5,  .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led fehler
+        { .port = GPIOB, .pin = GPIO_PIN_6,  .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led normal
+    },
+};
+#endif
+
 // clang-format on
 
 void stateled_init(state_t *state, gpio_port_t *port, uint16_t cycle_size, uint8_t bli_cnt) {
