@@ -158,7 +158,7 @@ void time_start(time_handle_t hdl, uint8_t count, uint8_t *ptr) {
         _time.time[hdl].measurement[_time.time[hdl].idx].count = count;
         _time.time[hdl].measurement[_time.time[hdl].idx].tick_start = HAL_GetTick();
         if (_time.time[hdl].mode &SSSC){
-            len = snprintf(_time.time[hdl].measurement[_time.time[hdl].idx].line, TIME_MEAS_CHAR_PER_LINE, SLOT_PRINT_FMT,  rb_system.cycle, rb_system.sSlot, rb_system.actSlot );
+            len = snprintf(_time.time[hdl].measurement[_time.time[hdl].idx].line, TIME_MEAS_CHAR_PER_LINE, SLOT_PRINT_FMT,  rb_system.cycle, ACT_SUB_SLOT(rb_system.subSlot), ACT_SLOT(rb_system.subSlot) );
         } else {
             memcpy((uint8_t *)_time.time[hdl].measurement[_time.time[hdl].idx].line, ptr, len);
         }
