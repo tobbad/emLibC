@@ -14,4 +14,4 @@ extern "C" {
 }
 #endif
 
-#endif /* __MAIN_H */
+#endif /* __EMLIBC_OPTIONS_H */
