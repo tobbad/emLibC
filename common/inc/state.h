@@ -22,7 +22,7 @@ extern char key2char[][4];
 
 // #define MODDIFF( ref_i, state_i)
 // {ref_i==state_i?0?ref_i>state_i?ref_i-state_i:state_i+STATE_CNT-ref_i};
-
+#if REDUCED_PAYLOAD == 0
 typedef struct state_s {
     uint8_t first;
     uint8_t cnt;
@@ -35,8 +35,8 @@ typedef struct state_s {
     key_state_e state[MAX_STATE_CNT]; // 16 bytes
     char label[MAX_STATE_CNT];        // 16 bytes
 } state_t;                            // Size is 2*MAX_BUTTON_CNT + 8=  40 Byte (MAX_BUTTON_CNT = 16)
-
-typedef struct statea_s {
+#else
+typedef struct state_s {
     uint8_t range;   // Unteres Nibble: tiefstes gültiges Labele (0-15):
                      // Oberes Nibble: letzes gültiges Label (0-15)
                      // und daher hat ein Label nur 2 Bit in den 16 Bit state Variable
@@ -45,9 +45,9 @@ typedef struct statea_s {
     uint32_t state;  // Jedes label hat eine  state: 00=OFF, 01: BLINKING, 11 ON
                      // 16*2 =32 Bit
     clabel_u clabel; // 4 Bytes
-} statea_t;          // Size is 10 Bytes, Label gibt es nicht da es owiso MAX_BUTTON_CNT
+} state_t;          // Size is 10 Bytes, Label gibt es nicht da es sowiso MAX_BUTTON_CNT
                      // (0..MAX_BUTTON_CNT-1) Labels gibt
-
+#endif
 int8_t state_ch2idx(const state_t *state, char ch);
 int8_t state_nr2idx(state_t *state, uint8_t nr);
 em_msg state_init(state_t *state);

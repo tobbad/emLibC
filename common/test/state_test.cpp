@@ -45,7 +45,8 @@ TEST(StateInitTest, AllKeysOffAfterInit) {
     state_t s;
     state_init(&s);
     for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {
-        EXPECT_EQ(s.state[i], OFF) << "index " << (int)i;
+        key_state_e state = state_get_key_by_idx(i);
+        EXPECT_EQ(state, OFF) << "index " << (int)i;
     }
 }
 
