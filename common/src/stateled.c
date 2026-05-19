@@ -165,9 +165,9 @@ void stateled_show(system_state_e state) {
             stateled_toggle_port();
         }
     } else if (((state == SYNCHRONIZE_READY) || (state == SYNCHRONIZE_DOING))) {
-        if (!state_is_same(my_stateled.state, &my_stateled.lstate)) {
+        if (state_is_same(my_stateled.state, &my_stateled.lstate)==EM_ERR) {
             my_stateled.lstate = *my_stateled.state;
-            // printf("Ledline Update"NL);
+            //printf("Ledline Update"NL);
         } else {
             for (uint8_t i = 0; i < my_stateled.port->cnt; i++) {
                 int8_t stateNr = i + my_stateled.lstate.first;

@@ -297,7 +297,9 @@ static int16_t xpad_eight_scan(dev_handle_t devh) {
     index = key2value(res);
     char ch = my_xpad[devh].state.label[index];
     index = label2int8(ch);
+#if EMLIB_VERBOSE == 1
     printf("Got Keyscan 0x%04x, index %d, label %c" NL, res, index, ch);
+#endif
     return index;
 }
 

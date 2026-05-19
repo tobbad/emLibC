@@ -165,10 +165,6 @@ em_msg state_propagate(state_t *state, uint8_t idx) {
     em_msg res = EM_ERR;
     if (state_check(state))
         return res;
-    if (((idx < state->first) && (idx < state->first + state->cnt))) {
-        // printf("idx (%d)  > %d"NL, idx,  state->first + state->cnt);
-        return res;
-    }
 #ifdef OPTION_VERBOSe
     printf("Propagate state %d" NL, idx);
 #endif
