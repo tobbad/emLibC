@@ -179,9 +179,8 @@ TEST_F(StateTest, SetDirtyAndUndirty) {
 // ---------------------------------------------------------------------------
 TEST_F(StateTest, LimitedRangePropagate) {
     const uint8_t low = 2, up = 6;
-    state_set_first(&state, low);
+    STATE_SET_RANGE(state, low, up);
     EXPECT_EQ(state_get_first(&state), low);
-    state_set_cnt(&state, up);
     EXPECT_EQ(state_get_cnt(&state), up);
 
     for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {

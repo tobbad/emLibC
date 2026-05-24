@@ -26,32 +26,87 @@ extern char key2char[][4];
 typedef struct state_s {
     uint8_t first;
     uint8_t cnt;
-    uint8_t dirty;                    // bitfield??
-                                      //  Evtl. können in den obersten 2 bit der Inhalt des clabel
-                                      //  fields encodiert werden (01: cmd, 11:str))
+    uint8_t dirty;
     uint8_t id;                       // 8 Bitcounter, der bei jedem Senden in diesem Slots
                                       // inkrementiert mitgesendet wird
     clabel_u clabel;                  // is 4 bytes
     key_state_e state[MAX_STATE_CNT]; // 16 bytes
     char label[MAX_STATE_CNT];        // 16 bytes
 } state_t;                            // Size is 2*MAX_BUTTON_CNT + 8=  40 Byte (MAX_BUTTON_CNT = 16)
+
+#define STATE_SET_RANGE(_s, _first, _cnt)                  \
+    do {                                                    \
+        (_s).first = _first) & 0x0F;   \
+        (_s).cnt   = _cnt;              \
+    } while (0)
+#define STATE_SET_RANGEP(_s, _first, _cnt)                  \
+    do {                                                    \
+        (_s)->first = _first;            \
+        (_s)->cnt   = _cnt;              \
+    } while (0)
+#define STATE_SET_FIRSTP(_s, _first)                  \
+    do {                                                    \
+        (_s)->first = _first;            \
+    } while (0)
+
+#define STATE_SET_CNTP(_s, cnt)                  \
+    do {                                                    \
+        (_s)->cnt = cnt;            \
+    } while (0)
+
 #else
 typedef struct state_s {
-    uint8_t range;   // Unteres Nibble: tiefstes gültiges Labele (0-15):
-                     // Oberes Nibble: letzes gültiges Label (0-15)
-                     // und daher hat ein Label nur 2 Bit in den 16 Bit state Variable
-    bool dirty;      // Das zwei Topbit indizieren die Art der clabel (01: *cmd, 11;
-                     // str[CMD_LEN])
-    uint32_t state;  // Jedes label hat eine  state: 00=OFF, 01: BLINKING, 11 ON
-                     // 16*2 =32 Bit
-    clabel_u clabel; // 4 Bytes
-} state_t;          // Size is 10 Bytes, Label gibt es nicht da es sowiso MAX_BUTTON_CNT
-                     // (0..MAX_BUTTON_CNT-1) Labels gibt
+uint8_t range;   // Unteres Nibble: tiefstes gültiges Labele (0-15):
+                 // Oberes Nibble: letzes gültiges Label (0-15)
+                 // und daher hat ein Label nur 2 Bit in den 16 Bit state Variable
+bool dirty;      // Das zwei Topbit indizieren die Art der clabel (01: *cmd, 11;
+                 // str[CMD_LEN])
+uint8_t id;      // 8 Bitcounter, der bei jedem Senden in diesem Slots
+uint32_t state;  // Jedes label hat eine  state: 00=OFF, 01: BLINKING, 11 ON
+                 // 16*2 =32 Bit
+clabel_u clabel; // 4 Bytes
+} state_t;          // Size is 10 Bytes oder mit id 11 Bytes, Label gibt es nicht da es sowiso MAX_BUTTON_CNT
+                 // (0..MAX_BUTTON_CNT-1) Labels gibt
+
+#define STATE_SET_RANGE(_s, _first, _cnt)                  \
+    do {                                                    \
+        (_s).range = (((_first) & 0x0F) |                  \
+                     (((_cnt) & 0x0F) << 4));              \
+    } while (0)
+#define STATE_SET_RANGEP(_s, _first, _cnt)                  \
+    do {                                                    \
+        (_s)->range = (((_first) & 0x0F) |                  \
+                      (((_cnt) & 0x0F) << 4));              \
+    } while (0)
+
+#define STATE_SET_FIRST(_s, _first)                  \
+    do {                                                    \
+        (_s)->range = ((s->range&0xF0|(_first) & 0x0F);              \
+    } while (0)
+
+#define STATE_FIRSTP(_s)                  \
+    do {                                                    \
+        (_s)->range& 0x0F ;              \
+    } while (0)
+#define STATE_FIRST(_s)                  \
+    do {                                                    \
+        (_s).range& 0x0F;              \
+    } while (0)
+
+#define STATE_CNTP(_s)                  \
+    do {                                                    \
+        ((_s)->range& 0xF0)>>4;              \
+    } while (0)
+#define STATE_CNT(_s)                   \
+    do {                                                    \
+        ((_s).range& 0xF0)>>4;              \
+    } while (0)
 #endif
 int8_t state_ch2idx(const state_t *state, char ch);
 int8_t state_nr2idx(state_t *state, uint8_t nr);
 em_msg state_init(state_t *state);
 em_msg state_reset(state_t *state);
+em_msg state_set_first(state_t *state, uint8_t cnt);
 em_msg state_set(state_t *state, uint8_t nr, key_state_e);
 key_state_e state_get(const state_t *state, uint8_t nr);
 em_msg state_set_state(const state_t *from, state_t *to);
@@ -81,7 +136,6 @@ em_msg state_set_undirty(state_t *state);
 uint8_t state_get_cnt(state_t *state);
 uint8_t state_get_first(state_t *state);
 em_msg state_set_cnt(state_t *state, uint8_t nr);
-em_msg state_set_first(state_t *state, uint8_t nr);
 // only for Debug
 #ifdef UNIT_TEST
 em_msg state_set_key_by_idx_unchecked(state_t *state, uint8_t nr, uint8_t new_state);

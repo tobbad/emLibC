@@ -27,8 +27,7 @@ em_msg state_init(state_t *state) {
         return res;
     memset(state, -1, sizeof(state_t));
     state->dirty = false;
-    state->first = 0;
-    state->cnt = MAX_STATE_CNT;
+    STATE_SET_RANGEP(state, 0, MAX_STATE_CNT);
     state->id = 0xFF;
     state->clabel.cmd = 0;
     memcpy(&state->label, &"0123456789ABCDEF", MAX_STATE_CNT);
@@ -50,16 +49,33 @@ em_msg state_reset(state_t *state) {
     return res;
 }
 
+em_msg state_set_first(state_t *state, uint8_t first) {
+    em_msg res = EM_ERR;
+    if (state_check(state))
+        return res;
+    for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {
+        state_set_key_by_idx(state, i, OFF);
+    }
+    state->clabel.cmd = 0;
+    state->dirty = false;
+    res = EM_OK;
+    return res;
+}
+
 em_msg state_set(state_t *state, uint8_t nr, key_state_e ns) {
     em_msg res = EM_ERR;
     if (state_check(state))
         return res;
     if (nr >= MAX_STATE_CNT)
         return res;
+#if REDUCED_PAYLOAD == 1
+
+#else
     if (state->state[nr] != ns) {
         state->state[nr] = ns & STATE_MASK;
         state->dirty = true;
     }
+#endif
     return EM_OK;
 }
 
@@ -74,10 +90,10 @@ key_state_e state_get(const state_t *state, uint8_t nr) {
 
 em_msg state_set_state(const state_t *from, state_t *to) {
     em_msg res = EM_ERR;
-    if (state_check(to))
-        return res;
-    if (state_check(from))
-        return res;
+    // clang-format off
+    if (state_check(to)) return res;
+    if (state_check(from)) return res;
+    // clang-format on
     for (uint8_t oi = from->first, ii = to->first; oi <= from->first + from->cnt; oi++, ii++) {
         key_state_e fstate = state_get(from, oi);
         state_set(to, ii, fstate);
@@ -87,31 +103,32 @@ em_msg state_set_state(const state_t *from, state_t *to) {
 }
 
 em_msg state_check(const state_t *state) {
-    em_msg res = EM_ERR;
-    if (state->first > MAX_STATE_CNT)
-        return res;
-    if (state->cnt > MAX_STATE_CNT)
-        return res;
-    if (state->first > state->cnt)
-        return res;
+    // clang-format off
+	em_msg res = EM_ERR;
+    if (state_check(to)) return res;
+    if (state_check(from)) return res;
+    if (STATE_FIRSTP(state) > MAX_STATE_CNT) return res;
+    if (STATE_CNTP(state) > MAX_STATE_CNT) return res;
+    if (STATE_FIRSTP(state) > STATE_CNTP(state))  return res;
+    // clang-format on
     res = EM_OK;
     return res;
 }
 
 key_state_e state_key_diff(key_state_e state1, key_state_e state2) {
-    if (state1 == state2)
-        return OFF;
-    if (state2 > state1)
-        return (state2 - state1);
+    // clang-format off
+    if (state1 == state2) return OFF;
+    if (state2 > state1) return (state2 - state1);
+    // clang-format on
     return (state2 + STATE_CNT - state1); // state2 < state1
 }
 
 em_msg state_set_key_by_idx(state_t *state, uint8_t nr, key_state_e new_state) {
+    // clang-format off
     em_msg res = EM_ERR;
-    if (state_check(state))
-        return res;
-    if (new_state >= STATE_CNT)
-        return res;
+    if (state_check(state)) return res;
+    if (new_state >= STATE_CNT) return res;
+    // clang-format on
     state_set(state, nr, new_state);
     res = EM_OK;
     return res;
@@ -122,7 +139,7 @@ em_msg state_set_key_by_idx_unchecked(state_t *state, uint8_t nr, uint8_t new_st
     em_msg res = EM_ERR;
     if (state_check(state))
         return res;
-    if ((nr < state->first) || (nr >= (state->first + state->cnt)))
+    if ((nr < STATE_FIRSTP(state)) || (nr >= (STATE_FIRSTP(state) + STATE_CNTP(state))))
         return res;
     state->state[nr] = new_state;
     res = EM_OK;
@@ -131,40 +148,44 @@ em_msg state_set_key_by_idx_unchecked(state_t *state, uint8_t nr, uint8_t new_st
 #endif
 
 em_msg state_set_key_by_lbl(state_t *state, char lbl, key_state_e new_state) {
+    // clang-format off
     em_msg res = EM_ERR;
-    if (state_check(state))
-        return res;
+    if (state_check(state)) return res;
     uint8_t nr = state_ch2idx(state, lbl);
     printf("Map %c -> %d" NL, lbl, nr);
-    if (nr < 0)
-        return res;
+    if (nr < 0) return res;
+    // clang-format on
     res = state_set(state, nr, new_state);
     return res;
 }
 
 key_state_e state_get_key_by_lbl(const state_t *state, char ch) {
-    em_msg res = STATE_CNT;
-    if (state_check(state))
-        return res;
+    // clang-format off
+   em_msg res = STATE_CNT;
+    if (state_check(state))  return res;
     int8_t idx = state_ch2idx(state, ch);
-    if (idx < 0)
-        return res;
+    if (idx < 0) return res;
+    // clang-format on
+
     res = state_get(state, idx);
     return res;
 }
 
 key_state_e state_get_key_by_idx(const state_t *state, uint8_t idx) {
+    // clang-format off
     key_state_e res = STATE_CNT;
-    if (state_check(state))
-        return res;
+    if (state_check(state)) return res;
+    // clang-format on
     res = state_get(state, idx);
     return res;
 }
 
 em_msg state_propagate(state_t *state, uint8_t idx) {
+    // clang-format off
     em_msg res = EM_ERR;
-    if (state_check(state))
-        return res;
+    if (state_check(state)) return res;
+    if (((idx < STATE_FIRSTP(state)) && (idx < STATE_FIRSTP(state) + STATE_CNTP(state)))) return res;
+    // clang-format on
 #ifdef OPTION_VERBOSe
     printf("Propagate state %d" NL, idx);
 #endif
@@ -175,26 +196,29 @@ em_msg state_propagate(state_t *state, uint8_t idx) {
 }
 
 em_msg state_propagate_by_lbl(state_t *state, char ch) {
+    // clang-format off
     em_msg res = EM_ERR;
-    if (state_check(state))
-        return res;
+    if (state_check(state))return res;
     uint8_t idx = state_ch2idx(state, ch);
-    if (idx == EM_ERR)
-        return res;
+    if (idx == EM_ERR) return res;
+    // clang-format on
     return (state_propagate(state, idx));
 }
+
 em_msg state_propagate_by_idx(state_t *state, uint8_t idx) {
+    // clang-format off
     em_msg res = EM_ERR;
-    if (state_check(state))
-        return res;
+    if (state_check(state)) return res;
+    // clang-format on
     return state_propagate(state, idx);
 }
 
 int8_t state_ch2idx(const state_t *state, char ch) {
+    // clang-format off
     em_msg res = EM_ERR;
-    if (state_check(state))
-        return res;
-    for (uint8_t idx = state->first; idx < state->first + state->cnt; idx++) {
+    if (state_check(state)) return res;
+    // clang-format on
+    for (uint8_t idx = STATE_FIRSTP(state); idx < STATE_FIRSTP(state) + STATE_CNTP(state); idx++) {
         if (ch == state->label[idx]) {
             return idx;
         }
@@ -204,13 +228,14 @@ int8_t state_ch2idx(const state_t *state, char ch) {
 }
 
 em_msg state_set_u32(state_t *state, uint32_t u32) {
+    // clang-format off
     em_msg res = EM_ERR;
-    if (state_check(state))
-        return res;
+    if (state_check(state)) return res;
+    // clang-format on
     uint32_t mask;
     state_init(state);
     for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {
-        if ((i > state->first) && (i <= state->first + state->cnt)) {
+        if ((i > STATE_FIRSTP(state)) && (i <= STATE_FIRSTP(state) + STATE_CNTP(state))) {
             uint8_t shift = 2 * i;
             mask = (0x3 << shift);
             uint32_t x = (u32 & mask);
@@ -223,12 +248,13 @@ em_msg state_set_u32(state_t *state, uint32_t u32) {
 }
 
 uint32_t state_get_u32(state_t *state) {
+    // clang-format off
     em_msg res = EM_ERR;
-    if (state_check(state))
-        return res;
+    if (state_check(state)) return res;
+    // clang-format on
     res = 0;
     for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {
-        if ((i >= state->first) && (i <= state->first + state->cnt)) {
+        if ((i >= STATE_FIRSTP(state)) && (i <= STATE_FIRSTP(state) + STATE_CNTP(state))) {
             key_state_e btn = state_get(state, i);
             res |= ((btn) << (2 * i));
         }
@@ -237,13 +263,12 @@ uint32_t state_get_u32(state_t *state) {
     return res;
 }
 em_msg state_copy(const state_t *from, state_t *to) {
+    // clang-format off
     em_msg res = EM_ERR;
-    if (state_check(from))
-        return res;
-    if (state_check(to))
-        return res;
-    if (from->cnt != to->cnt)
-        return res;
+    if (state_check(from))return res;
+    if (state_check(to))return res;
+    if (from->cnt != to->cnt) return res;
+    // clang-format on
     for (uint8_t f = from->first, t = to->first; f < from->first + from->cnt; f++, t++) {
         key_state_e s = state_get_key_by_idx(from, f);
         res = state_set_key_by_idx(to, t, s);
@@ -252,11 +277,11 @@ em_msg state_copy(const state_t *from, state_t *to) {
 }
 
 em_msg state_add(state_t *ref, state_t *add) {
+    // clang-format off
     em_msg res = EM_ERR;
-    if (state_check(ref))
-        return res;
-    if (state_check(add))
-        return res;
+    if (state_check(ref)) return res;
+    if (state_check(add)) return res;
+    // clang-format on
     ref->dirty = false;
     add->clabel.cmd = ref->clabel.cmd;
     for (uint8_t r = ref->first, a = add->first; r < ref->first + ref->cnt; r++, a++) {
@@ -271,11 +296,11 @@ em_msg state_add(state_t *ref, state_t *add) {
 }
 
 em_msg state_is_same(state_t *last, state_t *this) {
+    // clang-format off
     em_msg res = EM_ERR;
-    if (state_check(last))
-        return res;
-    if (state_check(this))
-        return res;
+    if (state_check(last)) return res;
+    if (state_check(this)) return res;
+    // clang-format on
     res = true;
     for (uint8_t i1 = last->first, i2 = this->first; i1 < last->first + last->cnt; i1++, i2++) {
         res &= (last->state[i1] == this->state[i2]);
@@ -289,21 +314,20 @@ em_msg state_is_same(state_t *last, state_t *this) {
 }
 
 em_msg state_diff(state_t *ref, state_t *state, state_t *diff) {
+    // clang-format off
     em_msg res = EM_ERR;
-    if (state_check(ref))
-        return res;
-    if (state_check(state))
-        return res;
-    if (state_check(diff))
-        return res;
-    // printf("inState.cnt: %d, outState.cnt: %d"NL, inState->cnt,outState->cnt);
+    if (state_check(ref)) return res;
+    if (state_check(state)) return res;
+    if (state_check(diff)) return res;
+    // clang-format on
+    // printf("inState.cnt: %d, outState.cnt: %d"NL, inSTATE_CNTP(state),outSTATE_CNTP(state));
     diff->dirty = false;
     if (ref->clabel.cmd != state->clabel.cmd) {
         ref->clabel.cmd = state->clabel.cmd;
         diff->clabel.cmd = state->clabel.cmd;
         diff->dirty = true;
     }
-    for (uint8_t ri = ref->first, si = state->first; ri < ref->first + ref->cnt; ri++, si++) {
+    for (uint8_t ri = ref->first, si = STATE_FIRSTP(state); ri < ref->first + ref->cnt; ri++, si++) {
         if (ref->state[ri] != state->state[si]) {
             diff->dirty = true;
             diff->state[ri] = state_key_diff(ref->state[ri], state->state[si]);
@@ -318,15 +342,16 @@ em_msg state_diff(state_t *ref, state_t *state, state_t *diff) {
  * the output state is set to dirty
  */
 bool state_merge(state_t *inState, state_t *outState) {
+    // clang-format off
     em_msg res = EM_ERR;
-    if (state_check(inState))
-        return res;
-    if (state_check(outState))
-        return res;
-    // printf("inState.cnt: %d, outState.cnt: %d"NL, inState->cnt,outState->cnt);
+    if (state_check(inState)) return res;
+    if (state_check(outState)) return res;
+    // clang-format on
+    // printf("inState.cnt: %d, outState.cnt: %d"NL, inSTATE_CNTP(state),outSTATE_CNTP(state));
     outState->dirty = false;
     outState->clabel.cmd = inState->clabel.cmd;
-    for (uint8_t ri = inState->first, oi = outState->first; ri < inState->first + inState->cnt; ri++, oi++) {
+    for (uint8_t ri = STATE_FIRSTP(inState), oi = STATE_FIRSTP(outState); ri < STATE_FIRSTP(inState) + STATE_CNTP(inState);
+         ri++, oi++) {
         if (inState->state[ri] != outState->state[oi]) {
             outState->dirty = true;
             outState->state[oi] = inState->state[ri];
@@ -336,15 +361,16 @@ bool state_merge(state_t *inState, state_t *outState) {
 }
 
 em_msg state_print(const state_t *state, const char *title, bool doLong) {
+    // clang-format off
     em_msg res = EM_ERR;
-    if (state_check(state))
-        return res;
+    if (state_check(state)) return res;
+    // clang-format on
     if ((title != NULL)) {
         printf("%s" NL, title);
     }
     if (doLong) {
-        printf("first      = %d" NL, state->first);
-        printf("cnt        = %d" NL, state->cnt);
+        printf("first      = %d" NL, STATE_FIRSTP(state));
+        printf("cnt        = %d" NL, STATE_CNTP(state));
         printf("clabel     = 0x%04lx" NL, state->clabel.cmd);
     }
     printf("label      = ");
@@ -374,16 +400,18 @@ em_msg state_print(const state_t *state, const char *title, bool doLong) {
 }
 
 em_msg state_get_dirty(state_t *state) {
+    // clang-format off
     em_msg res = EM_ERR;
-    if (state_check(state))
-        return res;
+    if (state_check(state))  return res;
+    // clang-format on
     return state->dirty;
 }
 
 em_msg state_set_undirty(state_t *state) {
+    // clang-format off
     em_msg res = EM_ERR;
-    if (state_check(state))
-        return res;
+    if (state_check(state)) return res;
+    // clang-format on
     state->dirty = false;
     state->clabel.cmd = 0;
     res = EM_OK;
@@ -391,41 +419,46 @@ em_msg state_set_undirty(state_t *state) {
 }
 
 em_msg state_set_dirty(state_t *state) {
+    // clang-format off
     em_msg res = EM_ERR;
-    if (state_check(state))
-        return res;
+    if (state_check(state)) return res;
+    if (state_check(state)) return res;
     state->dirty = true;
     res = EM_OK;
     return res;
 }
 
 uint8_t state_get_cnt(state_t *state) {
+    // clang-format off
     em_msg res = EM_ERR;
-    if (state_check(state))
-        return res;
-    return state->cnt;
+    if (state_check(state)) return res;
+    if (state_check(state)) return res;
+    return STATE_CNTP(state);
 };
 uint8_t state_get_first(state_t *state) {
+    // clang-format off
     em_msg res = EM_ERR;
-    if (state_check(state))
-        return res;
-    res = state->first;
+    if (state_check(state))  return res;
+    if (state_check(state)) return res;
+    res = STATE_FIRSTP(state);
     return res;
 };
 em_msg state_set_cnt(state_t *state, uint8_t nr) {
+    // clang-format off
     em_msg res = EM_ERR;
-    if (state_check(state))
-        return res;
-    state->cnt = nr;
+    if (state_check(state)) return res;
+    if (state_check(state)) return res;
+    STATE_SET_CNTP(state, nr);
     res = EM_OK;
     return res;
 }
 
 em_msg state_set_first(state_t *state, uint8_t nr) {
+    // clang-format off
     em_msg res = EM_ERR;
-    if (state_check(state))
-        return res;
-    state->first = nr;
+    if (state_check(state)) return res;
+    if (state_check(state)) return res;
+    STATE_SET_FIRSTP(state, nr);
     res = EM_OK;
     return res;
 }
