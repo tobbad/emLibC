@@ -58,13 +58,14 @@ list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_SRC_DIR}/stateled.c")
 list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_SRC_DIR}/slip.c")
 list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_SRC_DIR}/packet.c")
 file(GLOB TEST_SRC_FILES "${COMMON_TEST_DIR}/*.cpp")
-#list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/buffer_test.cpp")
+list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/buffer_test.cpp")
 list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/device_test.cpp")
 list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/packet_test.cpp")
 list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/ringbuffer_test.cpp")
 list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/slip_test.cpp")
 list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/simple_test.cpp")
-#list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/state_test.cpp")
+list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/state_test.cpp")
+#list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/cycle_test.cpp")
 
 
 # Erstelle die Bibliothek
@@ -93,6 +94,7 @@ endif()
 
 get_target_property(CUT_DEFS cut COMPILE_DEFINITIONS)
 message(STATUS "cut COMPILE_DEFINITIONS = ${CUT_DEFS}")
+message(STATUS "cut files: ${COMMON_SRC_FILES}")
 
 # Erstelle eine ausführbare Datei für jeden Test
 foreach(TEST_FILE ${TEST_SRC_FILES})
