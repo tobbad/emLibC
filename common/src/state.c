@@ -42,8 +42,9 @@ em_msg state_check(const state_t *state) {
     em_msg res = EM_ERR;
     // clang-format off
     if (state->first > MAX_STATE_CNT) return res;
-    if (state->cnt >= MAX_STATE_CNT) return res;
+    if (state->cnt > MAX_STATE_CNT) return res;
     if (state->first > state->cnt)  return res;
+    res = EM_OK;
     return res;
  }
 
@@ -62,15 +63,15 @@ em_msg state_reset(state_t *state) {
 
 em_msg state_set(state_t *state, uint8_t nr, key_state_e ns) {
     em_msg res = EM_ERR;
-    if (state_check(state))
-        return res;
-    if (nr >= MAX_STATE_CNT)
-        return res;
+    // clang-format off
+    if (state_check(state)) return res;
+    if (nr>= state->cnt) return res;
+    // clang-format on
 #if REDUCED_PAYLOAD == 1
-
+    return EM_ERR;
 #else
     if (state->state[nr] != ns) {
-        state->state[nr] = ns & STATE_MASK;
+        state->state[nr] = ns;
         state->dirty = true;
     }
 #endif
@@ -78,11 +79,11 @@ em_msg state_set(state_t *state, uint8_t nr, key_state_e ns) {
 }
 
 key_state_e state_get(const state_t *state, uint8_t nr) {
-    em_msg res = MAX_STATE_CNT;
-    if (state_check(state))
-        return res;
-    if (nr >= MAX_STATE_CNT)
-        return res;
+    em_msg res = EM_ERR;
+    // clang-format off
+    if (state_check(state)) return res;
+    if (nr >= MAX_STATE_CNT)return res;
+    // clang-format on
     return state->state[nr] & STATE_MASK;
 }
 
@@ -190,7 +191,7 @@ em_msg state_propagate_by_lbl(state_t *state, char ch) {
     return (state_propagate(state, idx));
 }
 
-em_msg state_propagate_by_idx(state_t *state, uint8_t idx) {
+em_msg state_propagate_by_idx(state_t *state, const int8_t idx) {
     // clang-format off
     em_msg res = EM_ERR;
     if (state_check(state)) return res;

@@ -39,21 +39,19 @@ TEST(StateInitTest, DefaultFieldsAfterInit) {
     EXPECT_EQ(s.cnt,        MAX_STATE_CNT);
     EXPECT_EQ(s.dirty,      false);
     EXPECT_EQ(s.clabel.cmd, 0u);
-}
-
-TEST(StateInitTest, AllKeysOffAfterInit) {
-    state_t s;
-    state_init(&s);
-    for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {
-        key_state_e state = state_get_key_by_idx(i);
+    EXPECT_EQ(state_check(&s), EM_OK);
+    state_print(&s, "State", true);
+    for (int8_t i = 0; i < MAX_STATE_CNT; i++) {
+        key_state_e state = state_get_key_by_idx(&s, i);
         EXPECT_EQ(state, OFF) << "index " << (int)i;
     }
+
 }
 
 TEST(StateInitTest, LabelsAreHexDigits) {
     state_t s;
     state_init(&s);
-    for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {
+    for (int8_t i = 0; i < MAX_STATE_CNT; i++) {
         EXPECT_EQ(s.label[i], int2hchar(i)) << "index " << (int)i;
     }
 }
@@ -108,7 +106,9 @@ TEST_F(StateTest, SetAndGetON) {
 }
 
 TEST_F(StateTest, SetOutOfRangeReturnsError) {
-    EXPECT_EQ(state_set(&state, MAX_STATE_CNT, ON), EM_ERR);
+    EXPECT_EQ(state_set(&state, MAX_STATE_CNT-1, ON), EM_OK);
+    EXPECT_EQ(state_set(&state, MAX_STATE_CNT,   ON), EM_ERR);
+    EXPECT_EQ(state_set(&state, MAX_STATE_CNT+1, ON), EM_ERR);
 }
 
 // ---------------------------------------------------------------------------
@@ -117,9 +117,9 @@ TEST_F(StateTest, SetOutOfRangeReturnsError) {
 TEST_F(StateTest, PropagateByIdxCyclesOFF_BLINKING_ON) {
     for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {
         EXPECT_EQ(state_get_key_by_idx(&state, i), OFF);
-        EXPECT_EQ(state_propagate_by_idx(&state, i), EM_TRUE);
+        EXPECT_EQ(state_propagate_by_idx(&state, i), EM_OK);
         EXPECT_EQ(state_get_key_by_idx(&state, i), BLINKING);
-        EXPECT_EQ(state_propagate_by_idx(&state, i), EM_TRUE);
+        EXPECT_EQ(state_propagate_by_idx(&state, i), EM_OK);
         EXPECT_EQ(state_get_key_by_idx(&state, i), ON);
     }
     EXPECT_EQ(state_get_u32(&state), 0xAAAAAAAAu);
@@ -179,7 +179,8 @@ TEST_F(StateTest, SetDirtyAndUndirty) {
 // ---------------------------------------------------------------------------
 TEST_F(StateTest, LimitedRangePropagate) {
     const uint8_t low = 2, up = 6;
-    STATE_SET_RANGE(state, low, up);
+    state.first = low;
+    state.cnt = up;
     EXPECT_EQ(state_get_first(&state), low);
     EXPECT_EQ(state_get_cnt(&state), up);
 

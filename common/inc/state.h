@@ -122,7 +122,7 @@ em_msg state_propagate_by_state(const state_t *inState, state_t *outState);
 em_msg state_set_key_by_idx(state_t *state, uint8_t nr, key_state_e new_state);
 em_msg state_set_key_by_lbl(state_t *state, char ch, key_state_e new_state);
 em_msg state_propagate_by_lbl(state_t *state, char ch);
-em_msg state_propagate_by_idx(state_t *state, uint8_t nr);
+em_msg state_propagate_by_idx(state_t *state, const int8_t nr);
 em_msg state_propagate(state_t *inState, uint8_t idx);
 em_msg state_set_u32(state_t *state, uint32_t u32);
 uint32_t state_get_u32(state_t *state);
