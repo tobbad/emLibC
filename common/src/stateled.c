@@ -151,7 +151,9 @@ em_msg stateled_all_off() {
     for (uint8_t i = 0; i < my_stateled.port->cnt; i++) {
         stateled_off(i);
     }
+    return EM_OK;
 };
+
 void stateled_show(system_state_e state) {
     // clang-format off
     if (!my_stateled.init) return;

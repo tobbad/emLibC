@@ -5,14 +5,16 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "options.h"
-#define ATOMIC   0
+// #include "options.h"
+#define ATOMIC 0
 #if OPTION_SHOW_TIMING == 0
-#define REGUAL_STATELD  1  // Otherwise inverse flag to support 1 Active logic on pins
+#define REGUAL_STATELD  1 // Otherwise inverse flag to support 1 Active logic on pins
 #else
 #define REGUAL_STATELD  0 // Otherwise inverse flag to support 1 Active logic on pins
 #endif
+
 #define EMLIB_VERBOSE   0 // Otherwise inverse flag to support 1 Active logic on pins
+#define REDUCED_PAYLOAD 0
 
 #ifdef __cplusplus
 }

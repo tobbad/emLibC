@@ -64,8 +64,8 @@ list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/packet_test.cpp")
 list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/ringbuffer_test.cpp")
 list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/slip_test.cpp")
 list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/simple_test.cpp")
-list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/state_test.cpp")
-#list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/cycle_test.cpp")
+#list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/state_test.cpp")
+list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/cycle_test.cpp")
 
 
 # Erstelle die Bibliothek
@@ -89,7 +89,7 @@ endif()
 
 #add_compile_options(-H)
 if(TARGET state_test)
-    message(FATAL_ERROR "state_test target already exists!") 
+    message(FATAL_ERROR "state_test target already exists!")
 endif()
 
 get_target_property(CUT_DEFS cut COMPILE_DEFINITIONS)

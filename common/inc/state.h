@@ -8,7 +8,7 @@
 #ifndef INC_STATE_H_
 #define INC_STATE_H_
 #include "common.h"
-
+#include "emLibC_options.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -20,8 +20,7 @@ extern char key2char[][4];
 #define MAX_STATE_CNT MAX_BUTTON_CNT
 #define STATE_MASK   0x03
 
-// #define MODDIFF( ref_i, state_i)
-// {ref_i==state_i?0?ref_i>state_i?ref_i-state_i:state_i+STATE_CNT-ref_i};
+//
 #if REDUCED_PAYLOAD == 0
 typedef struct state_s {
     uint8_t first;
@@ -33,27 +32,31 @@ typedef struct state_s {
     key_state_e state[MAX_STATE_CNT]; // 16 bytes
     char label[MAX_STATE_CNT];        // 16 bytes
 } state_t;                            // Size is 2*MAX_BUTTON_CNT + 8=  40 Byte (MAX_BUTTON_CNT = 16)
-
+#ifdef blabla
 #define STATE_SET_RANGE(_s, _first, _cnt)                  \
     do {                                                    \
-        (_s).first = _first) & 0x0F;   \
+        (_s).first = _first;   \
         (_s).cnt   = _cnt;              \
-    } while (0)
+    } while (0);
+
 #define STATE_SET_RANGEP(_s, _first, _cnt)                  \
     do {                                                    \
-        (_s)->first = _first;            \
+        (_s)->first = _first;   \
         (_s)->cnt   = _cnt;              \
-    } while (0)
+    } while (0);
+
 #define STATE_SET_FIRSTP(_s, _first)                  \
     do {                                                    \
         (_s)->first = _first;            \
-    } while (0)
+    } while (0);
 
-#define STATE_SET_CNTP(_s, cnt)                  \
-    do {                                                    \
-        (_s)->cnt = cnt;            \
-    } while (0)
+#define STATE_SET_CNTP(_s, _cnt)     (_s)->_cnt = _cnt;
 
+#define STATE_GET_FIRSTP(_s)     (_s->first)
+
+#define STATE_GET_CNTP(_s)       (_s->cnt)
+
+#endif
 #else
 typedef struct state_s {
 uint8_t range;   // Unteres Nibble: tiefstes gültiges Labele (0-15):
@@ -84,7 +87,7 @@ clabel_u clabel; // 4 Bytes
         (_s)->range = ((s->range&0xF0|(_first) & 0x0F);              \
     } while (0)
 
-#define STATE_FIRSTP(_s)                  \
+#define STATE_GET_FIRSTP(_s)                  \
     do {                                                    \
         (_s)->range& 0x0F ;              \
     } while (0)
