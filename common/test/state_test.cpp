@@ -243,8 +243,6 @@ class StateCopyMergeTest : public ::testing::Test {
     }
 };
 
-
-
 TEST_F(StateCopyMergeTest, MergeResult) {
     state_t check;
     em_msg res;
@@ -283,11 +281,8 @@ TEST_F(StateCopyMergeTest, PropagateResult) {
     bool resb;
     state_init(&prop);
     res = state_copy(&s2, &prop);
-    state_print(&prop, "ref", false);
     EXPECT_EQ(res, EM_OK);
-    state_print(&s1, "add", false);
     resb = state_add(&prop, &s1);
-    state_print(&prop, "outState_a", false);
     EXPECT_EQ(resb, 1);
 
     state_set_key_by_idx(&ref, 0, OFF);
@@ -299,7 +294,6 @@ TEST_F(StateCopyMergeTest, PropagateResult) {
     state_set_key_by_idx(&ref, 6, ON);
     state_set_key_by_idx(&ref, 7, OFF);
     state_set_key_by_idx(&ref, 8, BLINKING);
-    state_print(&ref, "ref", false);
     EXPECT_EQ(state_is_same(&prop, &ref), EM_OK);
 }
 
@@ -307,7 +301,6 @@ TEST_F(StateCopyMergeTest, DiffVec) {
     state_t diff;
     state_init(&diff);
     state_diff(&s1, &s2, &diff);
-
     state_set_key_by_idx(&ref, 0, OFF);
     state_set_key_by_idx(&ref, 1, BLINKING);
     state_set_key_by_idx(&ref, 2, ON);
@@ -317,7 +310,8 @@ TEST_F(StateCopyMergeTest, DiffVec) {
     state_set_key_by_idx(&ref, 6, BLINKING);
     state_set_key_by_idx(&ref, 7, ON);
     state_set_key_by_idx(&ref, 8, OFF);
-    EXPECT_EQ(state_is_same(&ref, &diff), true);
+
+    EXPECT_EQ(state_is_same(&ref, &diff), EM_OK);
 }
 
 TEST_F(StateCopyMergeTest, AddDiffConverges) {
@@ -326,7 +320,8 @@ TEST_F(StateCopyMergeTest, AddDiffConverges) {
     state_init(&diff);
     state_diff(&s1, &s2, &diff);
     state_add(&s1, &diff);
-    EXPECT_EQ(state_is_same(&s1, &s2), true);
+
+    EXPECT_EQ(state_is_same(&s1, &s2), EM_OK);
 }
 
 TEST_F(StateCopyMergeTest, IsSameDetectsOneDifference) {
