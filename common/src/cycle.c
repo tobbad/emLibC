@@ -11,6 +11,8 @@
 #include "stateled.h"
 #endif
 
+#define SLOT_PRINT_FMT "(c:%5d, %2d, %2d)" //length is 19
+#define STRLEN 22
 em_msg cycle_init(cycle_t *cycle) {
     em_msg res = EM_ERR;
     // clang-format off
@@ -22,6 +24,13 @@ em_msg cycle_init(cycle_t *cycle) {
     res = EM_OK;
     return res;
 };
+
+
+char * cycle_string(cycle_t *cycle){
+    static char rStr[STRLEN];
+    snprintf(rStr, STRLEN, SLOT_PRINT_FMT, cycle->cycle , ACT_SLOT(cycle), ACT_SUB_SLOT(cycle));
+    return rStr;
+}
 
 int8_t cycle_check_slot(int8_t slot){
     if (((slot > 0) && (slot <= SYSTEM_SLOT_CNT))&&(slot%2==1)){

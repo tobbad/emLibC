@@ -58,11 +58,11 @@ em_msg GpioPortSet(gpio_port_t *port, uint8_t val){
 em_msg GpioPortGet(gpio_port_t *port, uint16_t *val){
     em_msg res= GpioPortCheck_mask(port, port->mask);
     if (res==EM_OK) {
-        bool pinValue;
+        bool pinValue=0;
         for (uint8_t i = 0; i < port->cnt; i++) {
             res |= GpioPinRead(&port->pin[i], &pinValue);
             if (i <= port->mask_size){
-                *val |= (pinValue<<i)&&(port->mask & (i<<i));
+                *val |= ((pinValue<<i)&(port->mask & (i<<i)));
             } else {
                 *val |= (pinValue<<i);
             }

@@ -89,7 +89,9 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     sio_t *init = dev;
     memset(&isio, 0, sizeof(isio_t));
     isio.uart = init->uart;
-    isio.devh = dev_type;
+    isio.cycle = init->cycle;
+    isio.mode  = init->mode;
+    isio.devh  = dev_type;
     isio.buffer[SIO_RX] = buffer_new_buffer_t(init->buffer[SIO_RX]);
     isio.buffer[SIO_TX] = buffer_new_buffer_t(init->buffer[SIO_TX]);
     state_init(&isio.state);
@@ -97,7 +99,6 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     isio.cbuffer = NULL;
     isio.ser_overflow = 0;
     isio.cTxBytePerSecond = 0;
-    isio.mode = init->mode;
     isio.usb_drop_cnt = 0;
     memset(rx_buf, 0, RX_BUFFER_SIZE);
     memset(tx_buf, 0, TX_BUFFER_SIZE);
@@ -150,7 +151,7 @@ volatile int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
             rLen = strlen((char *)isio.buffer[SIO_RX]->mem);
         } else if (isio.buffer[SIO_RX]->mem == 0) {
             isio.buffer[SIO_RX]->state = BUFFER_USED;
-            time_start(stxhdl, len, isio.buffer[SIO_RX]->mem);
+            time_start(stxhdl, len, isio.buffer[SIO_RX]->mem, isio.cycle);
             HAL_UART_Receive(isio.uart, isio.buffer[SIO_RX]->mem, len, HAL_MAX_DELAY);
             time_stop(stxhdl, isio.buffer[SIO_RX]->mem);
         } else {
@@ -215,12 +216,12 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
         ptr = (uint8_t *)tx_buf;
     }
     if (isio.mode & MEASURE_BYTE_PER_SECONDS) {
-        time_auto(stxhdl, len, ptr);
+        time_auto(stxhdl, len, ptr, isio.cycle);
         return len;
     }
 #ifdef HAL_PCD_MODULE_ENABLED
     if (isio.mode & USE_USB) {
-        time_start(utxhdl, len, ptr);
+        time_start(utxhdl, len, ptr, isio.cycle);
 #ifdef USE_TINY_USB
         bool con = tud_cdc_connected();
         if (con) {
@@ -243,7 +244,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
 
     if (isio.uart != NULL) {
         if (isio.mode | (USE_UART | RAW)) {
-            time_start(stxhdl, len, ptr);
+            time_start(stxhdl, len, ptr, isio.cycle);
             HAL_UART_Transmit(isio.uart, ptr, len, UART_TIMEOUT_MS);
             time_stop(stxhdl, NULL);
             isio.ready[SIO_TX] = true;
@@ -258,7 +259,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
             isio.cbuffer = buffer_pool_get(isio.pool);
             while (!ReadModify_write((int8_t *)&isio.cbuffer->state, 1)) {
             };
-            time_start(stxhdl, len, ptr);
+            time_start(stxhdl, len, ptr, isio.cycle);
             buffer_set(isio.cbuffer, ptr, len);
             HAL_UART_Transmit_DMA(isio.uart, isio.cbuffer->mem, len);
             time_stop_su(stxhdl);

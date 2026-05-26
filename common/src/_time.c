@@ -6,6 +6,7 @@
  */
 #include "_time.h"
 #include "serial.h"
+#include "cycle.h"
 #include <inttypes.h>
 #define LINE_CHAR 10
 #define NOW (DWT->CYCCNT * _time.ccnt2ns)
@@ -141,7 +142,7 @@ void time_reset(time_handle_t hdl) {
     _time.time[hdl].last_ns = -1;
 }
 
-void time_start(time_handle_t hdl, uint8_t count, uint8_t *ptr) {
+void time_start(time_handle_t hdl, uint8_t count, uint8_t *ptr, cycle_t *cycle) {
     // clang-format off
     if (time_check_hdl(hdl) == EM_ERR) return;
     if (!_time.init) return;
@@ -158,7 +159,9 @@ void time_start(time_handle_t hdl, uint8_t count, uint8_t *ptr) {
         _time.time[hdl].measurement[_time.time[hdl].idx].count = count;
         _time.time[hdl].measurement[_time.time[hdl].idx].tick_start = HAL_GetTick();
         if (_time.time[hdl].mode &SSSC){
-            len = snprintf(_time.time[hdl].measurement[_time.time[hdl].idx].line, TIME_MEAS_CHAR_PER_LINE, SLOT_PRINT_FMT,  msystem.cycle.cycle, ACT_SUB_SLOT(&msystem.cycle), ACT_SLOT(&msystem.cycle) );
+            char * str =cycle_string(cycle);
+            size_t len = strlen(str);
+            memcpy((void*)_time.time[hdl].measurement[_time.time[hdl].idx].line, (void*)cycle_string(cycle), len);
         } else {
             memcpy((uint8_t *)_time.time[hdl].measurement[_time.time[hdl].idx].line, ptr, len);
         }
@@ -221,12 +224,12 @@ void time_stop(time_handle_t hdl, uint8_t *ptr) {
         }
     }
 }
-void time_auto(time_handle_t hdl, uint8_t count, uint8_t *ptr) {
+void time_auto(time_handle_t hdl, uint8_t count, uint8_t *ptr, cycle_t *cycle) {
     // clang-format off
     if (time_check_hdl(hdl) == EM_ERR) return;
     if (!_time.init) return;
     // clang-format on
-    time_start(hdl, count, ptr);
+    time_start(hdl, count, ptr, cycle);
     time_stop(hdl, NULL);
     _time.time[hdl].last_start_ns = NOW;
 }
