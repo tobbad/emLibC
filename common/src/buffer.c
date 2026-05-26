@@ -154,6 +154,20 @@ int16_t buffer_used(const buffer_t *buffer) { return buffer->used; }
 
 int16_t buffer_writeable(const buffer_t *buffer) { return buffer->size - buffer->used; }
 
+em_msg buffer_tolower(buffer_t *buffer){
+    em_msg res = EM_ERR;
+    // clang-format off
+    if (!buffer) return res;
+    // clang-format on
+    for (uint8_t i = 0; i < buffer->used ;i++){
+        if ((buffer->mem[i]>='A')||(buffer->mem[i]<='Z')){
+            buffer->mem[i] |= 0x20;
+        }
+    }
+    res = EM_OK;
+    return res;
+}
+
 em_msg buffer_set(buffer_t *buffer, const uint8_t *data, int16_t size) {
     em_msg res = buffer_check(buffer, false);
     if (res == EM_ERR)

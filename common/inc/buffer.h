@@ -50,6 +50,7 @@ buffer_t *buffer_new_buffer_t(buffer_t *buffer);
 int16_t buffer_transfer(buffer_t *from, buffer_t *to);
 em_msg buffer_reset(buffer_t *buffer);
 em_msg buffer_clear(buffer_t *buffer);
+em_msg buffer_tolower(buffer_t *buffer);
 em_msg buffer_set(buffer_t *buffer, const uint8_t *data, int16_t size);
 em_msg buffer_get(buffer_t *buffer, uint8_t *data, int16_t *size);
 clabel_u *buffer_get_clabel(buffer_t *buffer);

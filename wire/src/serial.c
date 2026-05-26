@@ -45,7 +45,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/times.h>
-#include <time.h>
+#include "_time.h"
 #ifdef HAL_PCD_MODULE_ENABLED
 #ifdef USE_TINY_USB
 #include "tusb.h"
@@ -64,7 +64,6 @@
 #else
 #error Undefined platform
 #endif
-// gi#include "rb_system.h"
 #include "_time.h"
 #include "common.h"
 #include "hal_port.h"
@@ -456,8 +455,10 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
                 isio.buffer[SIO_RX]->pl = isio.buffer[SIO_RX]->mem;
             }
         }
+        isio.buffer[SIO_RX]->used = size;
         *isio.buffer[SIO_RX]->pl = 0; // End string
         isio.buffer[SIO_RX]->state = BUFFER_USED;
+        buffer_tolower(isio.buffer[SIO_RX]);
         new = (char *)isio.buffer[SIO_RX]->mem;
         isio.state.clabel.cmd = 0;
         memcpy((uint8_t *)&isio.state.clabel, new, strlen(new));
