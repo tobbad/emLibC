@@ -58,6 +58,8 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot){
 void cycle_increment(cycle_t *cycle, system_state_e *sync_state) {
     // clang-format off
     if (!cycle) return;
+    if (!cycle->init) return;
+    if (!sync_state) return;
     // clang-format on
     static uint8_t lastActSlot;
     static bool is_set = false;
@@ -100,8 +102,10 @@ void cycle_increment(cycle_t *cycle, system_state_e *sync_state) {
 
 em_msg cycle_print(cycle_t *cycle, char *title) {
     em_msg res = EM_ERR;
-    if (!cycle)
-        return res;
+    // clang-format off
+    if (!cycle) return res;
+    if (!cycle->init) return res;
+    // clang-format on
     if ((title != NULL)) {
         printf("%s" NL, title);
     }

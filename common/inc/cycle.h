@@ -24,8 +24,8 @@ extern "C" {
 
 typedef struct cycle_s {
     volatile int8_t subSlot; // actual sub slot
-    uint16_t cycle;
-    bool init;
+    uint16_t        cycle;
+    bool            init;
 } cycle_t;
 
 em_msg cycle_init(cycle_t *cycle);
