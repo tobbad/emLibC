@@ -6,7 +6,6 @@
  */
 
 #include "cycle.h"
-#include "common.h"
 #ifndef UNIT_TEST
 #include "stateled.h"
 #endif
