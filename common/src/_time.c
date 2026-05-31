@@ -5,8 +5,8 @@
  *      Author: badi
  */
 #include "_time.h"
-#include "serial.h"
 #include "cycle.h"
+#include "serial.h"
 #include <inttypes.h>
 #define LINE_CHAR 10
 #define NOW (DWT->CYCCNT * _time.ccnt2ns)
@@ -158,10 +158,10 @@ void time_start(time_handle_t hdl, uint8_t count, uint8_t *ptr, cycle_t *cycle) 
         _time.time[hdl].last_ns = now_ns;
         _time.time[hdl].measurement[_time.time[hdl].idx].count = count;
         _time.time[hdl].measurement[_time.time[hdl].idx].tick_start = HAL_GetTick();
-        if (_time.time[hdl].mode &SSSC){
-            char * str =cycle_string(cycle);
+        if (_time.time[hdl].mode & SSSC) {
+            char *str = cycle_string(cycle);
             size_t len = strlen(str);
-            memcpy((void*)_time.time[hdl].measurement[_time.time[hdl].idx].line, (void*)cycle_string(cycle), len);
+            memcpy((void *)_time.time[hdl].measurement[_time.time[hdl].idx].line, (void *)cycle_string(cycle), len);
         } else {
             memcpy((uint8_t *)_time.time[hdl].measurement[_time.time[hdl].idx].line, ptr, len);
         }
@@ -255,7 +255,7 @@ void time_print(time_handle_t hdl, char *titel, bool python, bool timing) {
         if (timing) {
             printf("//    Text                   tick  duration_ns  count     baud " NL);
         } else {
-            if (_time.time[hdl].mode&SSSC) {
+            if (_time.time[hdl].mode & SSSC) {
                 printf("//      ( c s  ss)          tick , duration_ns count   baud " NL);
             } else {
                 printf("//     tick, duration_ns count  baud " NL);
@@ -277,9 +277,10 @@ void time_print(time_handle_t hdl, char *titel, bool python, bool timing) {
         if (python) {
             printf("    [ %4ld, %9" PRId64 ", %3ld, %8" PRId64 " ]," NL, duration_tick, duration_ns, count, baud);
         } else {
-            if ((timing) | (_time.time[hdl].mode&SSSC)) {
+            if ((timing) | (_time.time[hdl].mode & SSSC)) {
                 char *txt = _time.time[hdl].measurement[i].line;
-                printf("    [ %-20s , %4ld, %10" PRId64 ", %3ld, %8" PRId64 " ]," NL, txt, duration_tick, duration_ns, count, baud);
+                printf("    [ %-20s , %4ld, %10" PRId64 ", %3ld, %8" PRId64 " ]," NL, txt, duration_tick, duration_ns, count,
+                       baud);
             } else {
                 printf("    [ %4ld, %10" PRId64 ", %4ld, %8" PRId64 " ]," NL, duration_tick, duration_ns, count, baud);
             }

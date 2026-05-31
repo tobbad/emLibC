@@ -7,9 +7,9 @@
 #include "stateled.h"
 #include "_gpio.h"
 #include "common.h"
+#include "emLibC_options.h"
 #include "gpio_port.h"
 #include "state.h"
-#include "emLibC_options.h"
 #define INIT_LED_TIME 100
 typedef struct led_line_s {
     bool init;
@@ -86,19 +86,16 @@ void stateled_init(state_t *state, gpio_port_t *port, uint16_t cycle_size, uint8
     }
 }
 
-void stateled_deinit(){
-    my_stateled.init = false;
+void stateled_deinit() { my_stateled.init = false; };
 
-};
-
-em_msg stateled_set_mask(uint16_t mask){
+em_msg stateled_set_mask(uint16_t mask) {
     // clang-format off
     if (!my_stateled.init) return EM_ERR;
     // clang-format on
     return GpioPort_setMask(my_stateled.port, mask);
 }
 
-em_msg stateled_set(uint16_t val){
+em_msg stateled_set(uint16_t val) {
     // clang-format off
     if (!my_stateled.init) return EM_ERR;
     // clang-format on
@@ -167,9 +164,9 @@ void stateled_show(system_state_e state) {
             stateled_toggle_port();
         }
     } else if (((state == SYNCHRONIZE_READY) || (state == SYNCHRONIZE_DOING))) {
-        if (state_is_same(my_stateled.state, &my_stateled.lstate)==EM_ERR) {
+        if (state_is_same(my_stateled.state, &my_stateled.lstate) == EM_ERR) {
             my_stateled.lstate = *my_stateled.state;
-            //printf("Ledline Update"NL);
+            // printf("Ledline Update"NL);
         } else {
             for (uint8_t i = 0; i < my_stateled.port->cnt; i++) {
                 int8_t stateNr = i + my_stateled.lstate.first;

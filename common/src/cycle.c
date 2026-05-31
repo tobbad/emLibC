@@ -10,7 +10,7 @@
 #include "stateled.h"
 #endif
 
-#define SLOT_PRINT_FMT "(c:%5d, %2d, %2d)" //length is 19
+#define SLOT_PRINT_FMT "(c:%5d, %2d, %2d)" // length is 19
 #define STRLEN 22
 em_msg cycle_init(cycle_t *cycle) {
     em_msg res = EM_ERR;

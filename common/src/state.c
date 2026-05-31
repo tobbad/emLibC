@@ -28,7 +28,7 @@ em_msg state_init(state_t *state) {
     memset(state, -1, sizeof(state_t));
     state->dirty = false;
     state->first = 0;
-    state->cnt =MAX_STATE_CNT;
+    state->cnt = MAX_STATE_CNT;
     state->id = 0xFF;
     state->clabel.cmd = 0;
     memcpy(&state->label, &"0123456789ABCDEF", MAX_STATE_CNT);
@@ -36,7 +36,6 @@ em_msg state_init(state_t *state) {
     res = EM_OK;
     return res;
 }
-
 
 em_msg state_check(const state_t *state) {
     em_msg res = EM_ERR;
@@ -335,8 +334,7 @@ bool state_merge(state_t *inState, state_t *outState) {
     // clang-format on
     outState->dirty = false;
     outState->clabel.cmd = inState->clabel.cmd;
-    for (uint8_t ri = inState->first, oi = outState->first; ri < inState->first +inState->cnt;
-         ri++, oi++) {
+    for (uint8_t ri = inState->first, oi = outState->first; ri < inState->first + inState->cnt; ri++, oi++) {
         if (inState->state[ri] != outState->state[oi]) {
             outState->dirty = true;
             outState->state[oi] = inState->state[ri];

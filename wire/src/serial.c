@@ -30,6 +30,7 @@
  *      Author: badi
  */
 #undef USE_USB
+#include "_time.h"
 #include "common.h"
 #include "hal_port.h"
 #include "main.h"
@@ -45,7 +46,6 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/times.h>
-#include "_time.h"
 #ifdef HAL_PCD_MODULE_ENABLED
 #ifdef USE_TINY_USB
 #include "tusb.h"
@@ -89,8 +89,8 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     memset(&isio, 0, sizeof(isio_t));
     isio.uart = init->uart;
     isio.cycle = init->cycle;
-    isio.mode  = init->mode;
-    isio.devh  = dev_type;
+    isio.mode = init->mode;
+    isio.devh = dev_type;
     isio.buffer[SIO_RX] = buffer_new_buffer_t(init->buffer[SIO_RX]);
     isio.buffer[SIO_TX] = buffer_new_buffer_t(init->buffer[SIO_TX]);
     state_init(&isio.state);
