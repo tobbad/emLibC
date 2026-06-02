@@ -90,6 +90,8 @@ TEST(CycleTest, CheckCycleIncrement) {
             }
         }
     }
+    // The loop above left the cycle counter at its uint16_t maximum; one more
+    // wrap of subSlot drives cycle past 65535 and overflows it back to 0.
     cycle_increment(&c, &sync_state);
     ASSERT_EQ(sync_state, SYNCHRONIZE_READY);
     ASSERT_EQ(c.subSlot,0);
