@@ -17,15 +17,27 @@ em_msg cycle_init(cycle_t *cycle) {
     // clang-format off
     if (!cycle) return res;
     if (cycle->init) return EM_OK;
-    cycle->subSlot      = 0;
-    cycle->cycle        = 0;
     cycle->init         = true;
     res = EM_OK;
     return res;
 };
 
 
+em_msg cycle_reset(cycle_t *cycle){
+    em_msg res = EM_ERR;
+    // clang-format off
+    if (!cycle) return res;
+    // clang-format on
+    cycle->subSlot      = 0;
+    cycle->cycle        = 0;
+    res = EM_OK;
+    return res;
+};
+
 char * cycle_string(cycle_t *cycle){
+    // clang-format off
+    if (!cycle) return NULL;
+    // clang-format on
     static char rStr[STRLEN];
     snprintf(rStr, STRLEN, SLOT_PRINT_FMT, cycle->cycle , ACT_SLOT(cycle), ACT_SUB_SLOT(cycle));
     return rStr;
@@ -63,7 +75,6 @@ void cycle_increment(cycle_t *cycle, system_state_e *sync_state) {
     static uint8_t lastActSlot;
     static bool is_set = false;
     static uint8_t cycle_once = false;
-    uint8_t actSlot;
     if (*sync_state == SYNCHRONIZE) {
         *sync_state = SYNCHRONIZE_READY;
         is_set = true;
@@ -79,17 +90,17 @@ void cycle_increment(cycle_t *cycle, system_state_e *sync_state) {
     }
     if ((*sync_state == SYNCHRONIZE_DOING) || (*sync_state == SYNCHRONIZE_READY) || (*sync_state == SYNCHRONIZE_ERROR)) {
         cycle->actSlot =  ACT_SLOT(cycle);
-        cycle->ssSlot =  ACT_SUB_SLOT(cycle);
+        cycle->sSlot   =  ACT_SUB_SLOT(cycle);
 
         if (cycle->actSlot != lastActSlot) {
             cycle_once = false;
 #if OPTION_SHOW_TIMING == 1
-            stateled_set(actSlot);
+            stateled_set(cycle->actSlot);
             stateled_toggle_pin(led_4);
 #endif
-            lastActSlot = actSlot;
+            lastActSlot = cycle->actSlot;
             // stateled_set(rb_system.actSlot);
-            if (((actSlot == 0) && (is_set) && (!cycle_once))) {
+            if (((cycle->actSlot == 0) && (is_set) && (!cycle_once))) {
 #if OPTION_SHOW_TIMING == 1
                 rb_system.subSlot = 0;
                 em_msg res = stateled_toggle_pin(led_5);
