@@ -32,7 +32,7 @@ char * cycle_string(cycle_t *cycle){
 }
 
 int8_t cycle_check_slot(int8_t slot){
-    if (((slot > 0) && (slot <= SYSTEM_SLOT_CNT))&&(slot%2==1)){
+    if (((slot > 0) && (slot <= SLOT_CNT))&&(slot%2==1)){
         return slot;
     }
     return -1;
@@ -71,15 +71,17 @@ void cycle_increment(cycle_t *cycle, system_state_e *sync_state) {
     }
     if (is_set) {
         cycle->subSlot++;
+        cycle->subSlot = (cycle->subSlot%(SUB_SLOT_CNT*SLOT_CNT));
 #if OPTION_SHOW_TIMING == 1
         em_msg res = stateled_toggle_pin(led_3);
 #endif
-        actSlot = ACT_SLOT(cycle);
+        cycle->actSlot = ACT_SLOT(cycle);
     }
     if ((*sync_state == SYNCHRONIZE_DOING) || (*sync_state == SYNCHRONIZE_READY) || (*sync_state == SYNCHRONIZE_ERROR)) {
-        actSlot = ACT_SLOT(cycle);
+        cycle->actSlot =  ACT_SLOT(cycle);
+        cycle->ssSlot =  ACT_SUB_SLOT(cycle);
 
-        if (actSlot != lastActSlot) {
+        if (cycle->actSlot != lastActSlot) {
             cycle_once = false;
 #if OPTION_SHOW_TIMING == 1
             stateled_set(actSlot);

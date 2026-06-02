@@ -14,16 +14,18 @@ extern "C" {
 #include "system_definitions.h"
 
 #define SUB_SLOT_MASK (SUB_SLOT_CNT-1)
-#define SYSTEM_SLOT_MASK (SYSTEM_SLOT_CNT-1)
+#define SYSTEM_SLOT_MASK (SLOT_CNT-1)
 
 #define ACT_SUB_SLOT(_cycle) \
         (((_cycle)->subSlot) & SUB_SLOT_MASK)
 
 #define ACT_SLOT(_cycle) \
-        (((_cycle)->subSlot >> SYSTEM_SLOT_SHIFT) & SYSTEM_SLOT_MASK)
+        (((_cycle)->subSlot >> SLOT_SHIFT) & SLOT_MASK)
 
 typedef struct cycle_s {
     volatile int8_t subSlot; // actual sub slot
+    int8_t          actSlot;
+    int8_t          ssSlot;
     uint16_t        cycle;
     bool            init;
 } cycle_t;
