@@ -78,7 +78,7 @@ TEST(CycleTest, CheckCycleIncrement) {
     // below the wrap: the first call then lands on subSlot 0 (slot 0, sub slot
     // 0) and the loop variables match the reported values 1:1.
     c.subSlot = SUB_SLOT_CNT * SLOT_CNT - 1;
-    for (cycle = 0; cycle < UINT16_MAX; cycle++) {
+    for (cycle = 0; cycle <= UINT16_MAX; cycle++) {
         for (slot = 0; slot < SLOT_CNT; slot++) {
             for (uint8_t ss = 0; ss < SUB_SLOT_CNT; ss++) {
                 cycle_increment(&c, &sync_state);
@@ -90,4 +90,11 @@ TEST(CycleTest, CheckCycleIncrement) {
             }
         }
     }
+    cycle_increment(&c, &sync_state);
+    ASSERT_EQ(sync_state, SYNCHRONIZE_READY);
+    ASSERT_EQ(c.subSlot,0);
+    ASSERT_EQ(c.actSlot, 0);
+    ASSERT_EQ(c.sSlot, 0);
+    ASSERT_EQ(c.cycle, 0);
+
 }
