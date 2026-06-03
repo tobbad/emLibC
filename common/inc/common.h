@@ -115,7 +115,7 @@ extern idxa2str_t synca2str;
  * xx   = Hex encoded data byte
  * a    = printable asci otherwise "."
  */
-size_t board_get_unique_id(uint8_t id[], size_t max_len);
+size_t board_get_unique_id(uint16_t id[], size_t max_len);
 uint32_t csss2uint32(uint32_t cycle, uint8_t slot, uint8_t sSlot);
 uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer, uint16_t buffer_size, bool write_asci);
 uint16_t common_crc16(const uint8_t *data_p, uint16_t length);

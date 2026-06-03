@@ -99,10 +99,9 @@ void cycle_increment(cycle_t *cycle, system_state_e *sync_state) {
             stateled_toggle_pin(led_4);
 #endif
             lastActSlot = cycle->actSlot;
-            // stateled_set(rb_system.actSlot);
+            // stateled_set(msystem.actSlot);
             if (((cycle->actSlot == 0) && (is_set) && (!cycle_once))) {
 #if OPTION_SHOW_TIMING == 1
-                rb_system.subSlot = 0;
                 em_msg res = stateled_toggle_pin(led_5);
 #endif
                 cycle_once = true;
