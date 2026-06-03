@@ -31,6 +31,7 @@ static idx2str_t sync2str[] = {
 };
 
 idxa2str_t synca2str = {.cnt = ELCNT(sync2str), .entry = (idx2str_t *)&sync2str};
+
 #ifndef UNIT_TEST
 /**
  * @brief  Liefert die 96-bit eindeutige Chip-ID des STM32L476.
@@ -61,7 +62,7 @@ uint32_t csss2uint32(uint32_t cycle, uint8_t slot, uint8_t sSlot) {
 };
 
 #else
-size_t board_get_unique_id(uint8_t id[], size_t max_len) {
+size_t board_get_unique_id(uint16_t id[], size_t max_len) {
     // STM32L476 UID Register: drei 32-bit Worte = 12 Bytes
     // RM0351 Rev.9, Section 49.1: "Unique device ID register (96 bits)"
     for (uint32_t i = 0; i < max_len && i < 12U; i++) {
