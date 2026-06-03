@@ -25,8 +25,17 @@ typedef enum {
     RING,   // Ringbuffer
 } b_type_e;
 
+typedef enum {
+    BYTE,     // Byte size at mem
+    UINT16,   // uint16_t size at mem
+    UINT32,   // uint32_t at mem
+    UINT64,   // uint64_t at mem
+    EL_TYPE_CNT,   // Ringbuffer
+} el_type_e;
+
 typedef struct buffer_s {
     state_e state;
+    el_type_e dtype;
     uint8_t *pl;   /* pointer to first byte used in buffer */
     uint8_t *mem;  /* Start of memory */
     clabel_u lbl;  /* first 3 chars of input string */
