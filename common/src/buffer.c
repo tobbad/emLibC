@@ -71,11 +71,13 @@ em_msg buffer_free(buffer_t *buffer) {
     // clang-format off
     // printf("buffer_free(%p)"NL, buffer);
     if (!buffer) return res;
-    if (buffer->state == BUFFER_USED) return EM_ERR;
+    if (buffer->state == BUFFER_USED){
+        res = EM_ERR;
+    }
     // clang-format on
     free(buffer->mem);
     free(buffer);
-    return EM_OK;
+    return res;
 }
 
 buffer_t *buffer_new_buffer_t(buffer_t *buffer) {
@@ -96,30 +98,57 @@ buffer_t *buffer_new_buffer_t(buffer_t *buffer) {
 }
 
 int16_t buffer_transfer(buffer_t *from, buffer_t *to) {
-    // clang-format off
     em_msg res = buffer_check(from, false);
-    if (res == EM_ERR) return res;
+    if (res == EM_ERR)
+        return res;
     res = buffer_check(to, false);
-    if (res == EM_ERR) return res;
-    // clang-format on
+    if (res == EM_ERR)
+        return res;
+
+    int16_t len = from->used;
     to->lbl.cmd = from->lbl.cmd;
+
+    if (len == 0) { /* nichts zu übertragen */
+        from->state = BUFFER_READY;
+        return EM_OK;
+    }
+
+    /* Kapazität VOR dem Lesen prüfen — sonst würde 'from' bei zu kleinem
+    Ziel geleert, obwohl die Daten nirgends ankommen (transaktional). */
+    int16_t capacity = (to->type == LINEAR) ? to->size : buffer_writeable(to);
+    if (len > capacity) {
+        return EM_ERR;
+    } /* Bug 4: Überlauf/Datenverlust verhindert */
+
     if (from->type == LINEAR) {
         if (to->type == LINEAR) {
-            memcpy(to->mem, from->mem, from->used);
-            to->used = from->used;
-            from->used = 0;
-        } else if (to->type == RING) {
-            buffer_set(to, from->mem, from->used);
+            memcpy(to->mem, from->mem, len);
+            to->first = 0;
+            to->used = len;
+            to->state = BUFFER_USED;
+        } else {                            /* LINEAR -> RING */
+            buffer_set(to, from->mem, len); /* kann nach der Prüfung nicht scheitern;
+                                      setzt to->used/state selbst (Bug 3) */
         }
-    } else { // from->type == RING
-        buffer_get(from, buffer, &size);
-        buffer_set(to, buffer, size);
-        to->used = size;
-        from->used = 0;
+    } else { /* from == RING */
+        if (to->type == LINEAR) {
+            int16_t n = len;
+            buffer_get(from, to->mem, &n); /* de-wrapt direkt nach to->mem, kein Scratch */
+            to->first = 0;
+            to->used = n;
+            to->state = BUFFER_USED;
+        } else {                  /* RING -> RING */
+            uint8_t scratch[len]; /* lokal statt globalem size/buffer (Bug 1) */
+            int16_t n = len;
+            buffer_get(from, scratch, &n);
+            buffer_set(to, scratch, n);
+        }
     }
-    to->state = BUFFER_USED;
+
+    from->used = 0; /* Quelle in ALLEN Pfaden konsistent leeren (Bug 2) */
+    from->first = 0;
     from->state = BUFFER_READY;
-    return from->used;
+    return EM_OK;
 }
 
 em_msg buffer_reset(buffer_t *buffer) {
@@ -160,7 +189,7 @@ em_msg buffer_tolower(buffer_t *buffer) {
     if (!buffer) return res;
     // clang-format on
     for (uint8_t i = 0; i < buffer->used; i++) {
-        if ((buffer->mem[i] >= 'A') || (buffer->mem[i] <= 'Z')) {
+        if ((buffer->mem[i] >= 'A') && (buffer->mem[i] <= 'Z')) {
             buffer->mem[i] |= 0x20;
         }
     }
@@ -224,7 +253,7 @@ em_msg buffer_get(buffer_t *buffer, uint8_t *data, int16_t *size) {
 
     if (buffer->type == LINEAR) {
         memcpy(data, buffer->mem, *size);
-        buffer->used = 0;
+        buffer->used -= *size;
     } else {
         int16_t data_to_end = buffer->size - buffer->first;
 
@@ -264,7 +293,7 @@ buffer_t * buffer_get_till_end(buffer_t *buffer) {
     return &_buffer;
 }
 
-bool buffer_is_used(buffer_t *buffer) { 
+bool buffer_is_used(buffer_t *buffer) {
     return buffer->state == BUFFER_USED;
 }
 

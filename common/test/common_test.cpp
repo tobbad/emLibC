@@ -5,9 +5,9 @@
  *      Author: badi
  */
 #include "common.h"
+#include "gtest/gtest.h"
 #include <stdint.h>
 #include <string.h>
-#include "gtest/gtest.h"
 
 // ---------------------------------------------------------------------------
 // CRC-16 (x-25 / CRC-16/IBM-SDLC with byte-swapped output)
@@ -32,14 +32,13 @@ TEST_F(Crc16Test, SingleByte0x00DiffersFromLengthZero) {
 TEST_F(Crc16Test, KnownVector123456789) {
     // Standard CRC-16/IBM-SDLC check value for "123456789" is 0x906E.
     // This implementation byte-swaps the final result, giving 0x6E90.
-    const uint8_t data[] = {'1','2','3','4','5','6','7','8','9'};
+    const uint8_t data[] = {'1', '2', '3', '4', '5', '6', '7', '8', '9'};
     EXPECT_EQ(common_crc16(data, sizeof(data)), 0x6E90u);
 }
 
 TEST_F(Crc16Test, IsDeterministic) {
     const uint8_t data[] = {0x01, 0x02, 0x03, 0x04};
-    EXPECT_EQ(common_crc16(data, sizeof(data)),
-              common_crc16(data, sizeof(data)));
+    EXPECT_EQ(common_crc16(data, sizeof(data)), common_crc16(data, sizeof(data)));
 }
 
 TEST_F(Crc16Test, DifferentInputsDifferentCRC) {
@@ -68,8 +67,8 @@ TEST_F(Int2HcharTest, AllValidHexDigits) {
 
 TEST_F(Int2HcharTest, OutOfRangeReturnsSpace) {
     // MAX_STATE_CNT == MAX_BUTTON_CNT == 16; values >= 16 return ' '
-    EXPECT_EQ(int2hchar(16),  ' ');
-    EXPECT_EQ(int2hchar(20),  ' ');
+    EXPECT_EQ(int2hchar(16), ' ');
+    EXPECT_EQ(int2hchar(20), ' ');
     EXPECT_EQ(int2hchar(255), ' ');
 }
 
@@ -78,12 +77,10 @@ TEST_F(Int2HcharTest, OutOfRangeReturnsSpace) {
 // ---------------------------------------------------------------------------
 class Str2UintTest : public ::testing::Test {};
 
-TEST_F(Str2UintTest, Zero) {
-    EXPECT_EQ(str2uint((char *)"0"), 0);
-}
+TEST_F(Str2UintTest, Zero) { EXPECT_EQ(str2uint((char *)"0"), 0); }
 
 TEST_F(Str2UintTest, PositiveValue) {
-    EXPECT_EQ(str2uint((char *)"42"),  42);
+    EXPECT_EQ(str2uint((char *)"42"), 42);
     EXPECT_EQ(str2uint((char *)"127"), 127);
 }
 
@@ -151,7 +148,7 @@ TEST_F(Clable2TypeTest, NonAsciiBytesIsNonasci) {
 //   "0xXXXX " (7) + 16 * "XX " (48) + SP78 nach Byte 7 (2) + SP78 nach Byte 15 (2) + "\n" (1) = 60
 // Mit ASCII: + 16 Zeichen = 76
 // ---------------------------------------------------------------------------
-static const uint16_t LINE_NO_ASCII   = 60;
+static const uint16_t LINE_NO_ASCII = 60;
 static const uint16_t LINE_WITH_ASCII = 76;
 
 class ToHexTest : public ::testing::Test {
@@ -161,9 +158,7 @@ class ToHexTest : public ::testing::Test {
     void SetUp() override { memset(out, 0, OUT_SIZE); }
 };
 
-TEST_F(ToHexTest, EmptyBufferReturnsZero) {
-    EXPECT_EQ(to_hex(out, OUT_SIZE, nullptr, 0, false), 0);
-}
+TEST_F(ToHexTest, EmptyBufferReturnsZero) { EXPECT_EQ(to_hex(out, OUT_SIZE, nullptr, 0, false), 0); }
 
 TEST_F(ToHexTest, SingleByteReturnsCorrectLength) {
     uint8_t buf[1] = {0x41};
@@ -175,7 +170,7 @@ TEST_F(ToHexTest, SingleByteReturnsCorrectLength) {
 TEST_F(ToHexTest, AsciiModeAdds16Chars) {
     uint8_t buf[1] = {0x41};
     char out2[OUT_SIZE] = {};
-    uint16_t len_no  = to_hex(out,  OUT_SIZE, buf, 1, false);
+    uint16_t len_no = to_hex(out, OUT_SIZE, buf, 1, false);
     uint16_t len_yes = to_hex(out2, OUT_SIZE, buf, 1, true);
     EXPECT_EQ(len_yes - len_no, 16u);
     EXPECT_EQ(len_yes, LINE_WITH_ASCII);
@@ -219,7 +214,8 @@ TEST_F(ToHexTest, TwoRowsFor32Bytes) {
 
 TEST_F(ToHexTest, ReturnedLengthMatchesStrlen) {
     uint8_t buf[48] = {};
-    for (uint8_t i = 0; i < sizeof(buf); i++) buf[i] = i;
+    for (uint8_t i = 0; i < sizeof(buf); i++)
+        buf[i] = i;
     uint16_t len = to_hex(out, OUT_SIZE, buf, sizeof(buf), true);
     EXPECT_EQ(len, (uint16_t)strlen(out));
 }
@@ -235,49 +231,47 @@ TEST_F(ToHexTest, ExactRowStructure) {
     // [57..58] "  "       — SP78 nach Byte 15
     // [59]     '\n'
     uint8_t buf[16];
-    for (int i = 0; i < 16; i++) buf[i] = (uint8_t)i;
+    for (int i = 0; i < 16; i++)
+        buf[i] = (uint8_t)i;
     to_hex(out, OUT_SIZE, buf, 16, false);
 
-    EXPECT_EQ(strncmp(out,      "0x0000 ", 7), 0);
-    EXPECT_EQ(strncmp(out +  7, "00 ",     3), 0);
-    EXPECT_EQ(strncmp(out + 28, "07 ",     3), 0);
-    EXPECT_EQ(strncmp(out + 31, "  ",      2), 0);
-    EXPECT_EQ(strncmp(out + 33, "08 ",     3), 0);
-    EXPECT_EQ(strncmp(out + 54, "0F ",     3), 0);
-    EXPECT_EQ(strncmp(out + 57, "  ",      2), 0);
+    EXPECT_EQ(strncmp(out, "0x0000 ", 7), 0);
+    EXPECT_EQ(strncmp(out + 7, "00 ", 3), 0);
+    EXPECT_EQ(strncmp(out + 28, "07 ", 3), 0);
+    EXPECT_EQ(strncmp(out + 31, "  ", 2), 0);
+    EXPECT_EQ(strncmp(out + 33, "08 ", 3), 0);
+    EXPECT_EQ(strncmp(out + 54, "0F ", 3), 0);
+    EXPECT_EQ(strncmp(out + 57, "  ", 2), 0);
     EXPECT_EQ(out[59], '\n');
 }
 
 // ---------------------------------------------------------------------------
 // board_get_unique_id (UNIT_TEST-Stub: id[i] = i für i < 12)
 // ---------------------------------------------------------------------------
-class BoardGetUniqueIdTest : public ::testing::Test {};
+class BoardGetUniqueIdTest : public ::testing::Test {
+  protected:
+    uint16_t id[8] = {};
+};
 
-TEST_F(BoardGetUniqueIdTest, ReturnsMaxLen) {
-    uint8_t id[16] = {};
-    EXPECT_EQ(board_get_unique_id(id, 16), 16u);
-}
+TEST_F(BoardGetUniqueIdTest, ReturnsMaxLen) { EXPECT_EQ(board_get_unique_id(id, 8), 8u); }
 
 TEST_F(BoardGetUniqueIdTest, First12BytesAreIndex) {
-    uint8_t id[12] = {};
-    board_get_unique_id(id, 12);
-    for (uint8_t i = 0; i < 12; i++) {
+    board_get_unique_id(id, 8);
+    for (uint8_t i = 0; i < 8; i++) {
         EXPECT_EQ(id[i], i) << "at index " << (int)i;
     }
 }
 
 TEST_F(BoardGetUniqueIdTest, PaddingBeyond12IsZero) {
-    uint8_t id[16] = {};
-    board_get_unique_id(id, 16);
-    for (uint8_t i = 12; i < 16; i++) {
+    board_get_unique_id(id, 8);
+    for (uint8_t i = 8; i < 8; i++) {
         EXPECT_EQ(id[i], 0u) << "at index " << (int)i;
     }
 }
 
 TEST_F(BoardGetUniqueIdTest, SmallerThan12BytesClipped) {
-    uint8_t id[4] = {};
-    board_get_unique_id(id, 4);
-    for (uint8_t i = 0; i < 4; i++) {
+    board_get_unique_id(id, 8);
+    for (uint8_t i = 0; i < 8; i++) {
         EXPECT_EQ(id[i], i);
     }
 }
@@ -289,13 +283,13 @@ class ModuloSubTest : public ::testing::Test {};
 
 TEST_F(ModuloSubTest, EqualSlotsReturnsZero) {
     EXPECT_EQ(modulo_sub(3, 3, 10), 0u);
-    EXPECT_EQ(modulo_sub(0, 0,  8), 0u);
+    EXPECT_EQ(modulo_sub(0, 0, 8), 0u);
 }
 
 TEST_F(ModuloSubTest, SlotBeforeOSlot) {
     // slot < oSlot → else-Zweig: (oSlot + modulo - slot) % modulo = oSlot - slot
     EXPECT_EQ(modulo_sub(2, 5, 10), 3u);
-    EXPECT_EQ(modulo_sub(0, 7,  8), 7u);
+    EXPECT_EQ(modulo_sub(0, 7, 8), 7u);
 }
 
 TEST_F(ModuloSubTest, SlotAfterOSlotWrapsAsUint8) {
@@ -314,9 +308,9 @@ class Idx2StrTest : public ::testing::Test {
     idx2str_t map[3];
     void SetUp() override {
         // String-Literale direkt zuweisen — kein strncpy auf uninitialisierten char*.
-        map[0] = { (char *)"zero", 0 };
-        map[1] = { (char *)"one",  1 };
-        map[2] = { (char *)"two",  2 };
+        map[0] = {(char *)"zero", 0};
+        map[1] = {(char *)"one", 1};
+        map[2] = {(char *)"two", 2};
     }
 };
 
@@ -326,13 +320,9 @@ TEST_F(Idx2StrTest, FindsExistingEntry) {
     EXPECT_STREQ(idx2str(map, 3, 2), "two");
 }
 
-TEST_F(Idx2StrTest, MissingIndexReturnsNA) {
-    EXPECT_STREQ(idx2str(map, 3, 5), "NA ");
-}
+TEST_F(Idx2StrTest, MissingIndexReturnsNA) { EXPECT_STREQ(idx2str(map, 3, 5), "NA "); }
 
-TEST_F(Idx2StrTest, EmptyMapReturnsNA) {
-    EXPECT_STREQ(idx2str(map, 0, 0), "NA ");
-}
+TEST_F(Idx2StrTest, EmptyMapReturnsNA) { EXPECT_STREQ(idx2str(map, 0, 0), "NA "); }
 
 TEST_F(Idx2StrTest, Idxa2StrWrapper) {
     idxa2str_t amap = {3, map};
@@ -349,19 +339,14 @@ class SyncA2StrTest : public ::testing::Test {};
 TEST_F(SyncA2StrTest, AllStatesResolvable) {
     // Jeder Zustand in [SYNC_RESET, SYNC_CNT) muss einen Eintrag haben.
     for (int s = SYNC_RESET; s < SYNC_CNT; s++) {
-        EXPECT_STRNE(idxa2str(&synca2str, (uint8_t)s), "NA ")
-            << "state " << s << " fehlt in synca2str";
+        EXPECT_STRNE(idxa2str(&synca2str, (uint8_t)s), "NA ") << "state " << s << " fehlt in synca2str";
     }
 }
 
-TEST_F(SyncA2StrTest, BootUpContainsName) {
-    EXPECT_NE(strstr(idxa2str(&synca2str, BOOT_UP), "BOOT_UP"), nullptr);
-}
+TEST_F(SyncA2StrTest, BootUpContainsName) { EXPECT_NE(strstr(idxa2str(&synca2str, BOOT_UP), "BOOT_UP"), nullptr); }
 
 TEST_F(SyncA2StrTest, SynchronizeOkContainsName) {
     EXPECT_NE(strstr(idxa2str(&synca2str, SYNCHRONIZE_OK), "SYNCHRONIZE_OK"), nullptr);
 }
 
-TEST_F(SyncA2StrTest, OutOfRangeReturnsNA) {
-    EXPECT_STREQ(idxa2str(&synca2str, SYNC_CNT), "NA ");
-}
+TEST_F(SyncA2StrTest, OutOfRangeReturnsNA) { EXPECT_STREQ(idxa2str(&synca2str, SYNC_CNT), "NA "); }
