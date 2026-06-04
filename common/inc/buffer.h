@@ -27,7 +27,6 @@ typedef enum {
 
 typedef struct buffer_s {
     state_e state;
-    el_type_e dtype;
     uint8_t *pl;   /* pointer to first byte used in buffer */
     uint8_t *mem;  /* Start of memory */
     clabel_u lbl;  /* first 3 chars of input string */
