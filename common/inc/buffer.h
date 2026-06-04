@@ -25,14 +25,6 @@ typedef enum {
     RING,   // Ringbuffer
 } b_type_e;
 
-typedef enum {
-    BYTE,     // Byte size at mem
-    UINT16,   // uint16_t size at mem
-    UINT32,   // uint32_t at mem
-    UINT64,   // uint64_t at mem
-    EL_TYPE_CNT,   // Ringbuffer
-} el_type_e;
-
 typedef struct buffer_s {
     state_e state;
     el_type_e dtype;
