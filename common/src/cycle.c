@@ -7,17 +7,18 @@
 
 #include "cycle.h"
 #ifndef UNIT_TEST
+#include "rb_system.h"
 #include "stateled.h"
 #endif
 
-#define SLOT_PRINT_FMT "(c:%5d, %2d, %2d)" // length is 19
+#define SLOT_PRINT_FMT "(c:%5d, %1X, %2d)" // length is 19
 #define STRLEN 22
 em_msg cycle_init(cycle_t *cycle) {
     em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
-    if (cycle->init) return EM_OK;
     cycle->init         = true;
+    cycle_reset(cycle);
     res = EM_OK;
     return res;
 };
@@ -27,6 +28,7 @@ em_msg cycle_reset(cycle_t *cycle){
     em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
+    if (!cycle->init) return res;
     // clang-format on
     cycle->subSlot      = 0;
     cycle->cycle        = 0;
@@ -53,10 +55,11 @@ int8_t cycle_check_slot(int8_t slot){
 em_msg cycle_set_slot(cycle_t *cycle, int8_t slot){
      em_msg res = EM_ERR;
     // clang-format off
-    if (!cycle) return res;
+     if (!cycle) return res;
+     if (!cycle) return res;
     // clang-format on
     if ((cycle_check_slot(slot) > 0)) {
-        cycle_init(cycle);
+        cycle_reset(cycle);
         cycle->subSlot = slot * SUB_SLOT_CNT;
         res = EM_OK;
     } else {
@@ -83,15 +86,13 @@ void cycle_increment(cycle_t *cycle, system_state_e *sync_state) {
     if (is_set) {
         cycle->subSlot++;
         cycle->subSlot = (cycle->subSlot%(SUB_SLOT_CNT*SLOT_CNT));
+        cycle->actSlot = ACT_SLOT(cycle);
+        cycle->sSlot = ACT_SUB_SLOT(cycle);
 #if OPTION_SHOW_TIMING == 1
         em_msg res = stateled_toggle_pin(led_3);
 #endif
-        cycle->actSlot = ACT_SLOT(cycle);
     }
     if ((*sync_state == SYNCHRONIZE_DOING) || (*sync_state == SYNCHRONIZE_READY) || (*sync_state == SYNCHRONIZE_ERROR)) {
-        cycle->actSlot =  ACT_SLOT(cycle);
-        cycle->sSlot   =  ACT_SUB_SLOT(cycle);
-
         if (cycle->actSlot != lastActSlot) {
             cycle_once = false;
 #if OPTION_SHOW_TIMING == 1
@@ -99,7 +100,6 @@ void cycle_increment(cycle_t *cycle, system_state_e *sync_state) {
             stateled_toggle_pin(led_4);
 #endif
             lastActSlot = cycle->actSlot;
-            // stateled_set(msystem.actSlot);
             if (((cycle->actSlot == 0) && (is_set) && (!cycle_once))) {
 #if OPTION_SHOW_TIMING == 1
                 em_msg res = stateled_toggle_pin(led_5);
@@ -121,7 +121,7 @@ em_msg cycle_print(cycle_t *cycle, char *title) {
         printf("%s" NL, title);
     }
     printf("subSlot    = %d" NL, cycle->subSlot);
-    printf("actSlot    = %d" NL, ACT_SLOT(cycle));
+    printf("actSlot    = %x" NL, ACT_SLOT(cycle));
     printf("actSubSlot = %d" NL, ACT_SUB_SLOT(cycle));
     printf("cycle      = %d" NL, cycle->cycle);
     return EM_OK;
