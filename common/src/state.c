@@ -348,7 +348,7 @@ em_msg state_print(const state_t *state, const char *title, bool doLong) {
     em_msg res = EM_ERR;
     if (state_check(state)) return res;
     // clang-format on
-    if ((title != NULL)) {
+    if ((title != NULL)&&(doLong)) {
         printf("%s" NL, title);
     }
     if (doLong) {
