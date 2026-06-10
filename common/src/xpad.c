@@ -73,7 +73,7 @@ static xpad_dev_t default_xscan_dev = {
 };
 
 static xpad_dev_t default_eight_dev = {
-    .spalte = {{{0}}},
+    .spalte = {0},
     .zeile =
         {
             .cnt = EIGHT_BUTTON_CNT,

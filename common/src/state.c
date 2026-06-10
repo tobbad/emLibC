@@ -343,7 +343,7 @@ bool state_merge(state_t *inState, state_t *outState) {
     return outState->dirty;
 }
 
-em_msg state_print(const state_t *state, const char *title, bool doLong) {
+em_msg state_print(const state_t *state, const char *title, bool doLong, cycle_t *cycle) {
     // clang-format off
     em_msg res = EM_ERR;
     if (state_check(state)) return res;
@@ -356,23 +356,35 @@ em_msg state_print(const state_t *state, const char *title, bool doLong) {
         printf("cnt        = %d" NL, state->cnt);
         printf("clabel     = 0x%04lx" NL, state->clabel.cmd);
     }
-    printf("label      = ");
+    if (doLong){
+        printf("label      = ");
+    }else {
+        printf("label = ");
+    }
     for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
         char c = state->label[i];
         if (isprint(c)) {
             printf(" %c  ", state->label[i]);
         } else {
-            printf("....");
+            printf(".....");
         }
     }
     printf(NL);
-    printf("State      = ");
+    if (doLong){
+         printf("State      = ");
+     }else {
+         printf("State = ");
+     }
     for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {
         printf("%s ", idxa2str(&state2str, state->state[i]));
     }
     printf(NL);
 
-    (state->dirty && 0x01) ? printf("Dirty" NL) : printf("Not Dirty" NL);
+    if (state->dirty && 0x01){
+        printf("D  %s" NL, cycle_string(cycle));
+    } else {
+        printf("ND %s" NL, cycle_string(cycle));
+    }
     if ((state->dirty >> 6) == 1) {
         printf("clable is cmd" NL);
     } else if ((state->dirty >> 6) == 2) {
