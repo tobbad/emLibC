@@ -9,9 +9,6 @@
 
 char *state2Str[BUFFER_CNT] = {(char *)&"BUFFER_READY", (char *)&"BUFFER_USED"};
 char *type2Str[BUFFER_CNT] = {(char *)&"LINEAR", (char *)&"RING"};
-#define BUF_SIZ 1024
-int16_t size = BUF_SIZ;
-uint8_t buffer[BUF_SIZ];
 
 #if OPTION_VERBOSE == 1
 em_msg buffer_check(const buffer_t *buffer, bool reduced) {
