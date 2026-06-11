@@ -398,11 +398,12 @@ int8_t serial_waitForNumber(char **key) {
     if (!isio.init)
         return EM_ERR;
     char *str = NULL;
+#ifdef HAL_PCD_MODULE_ENABLED
     if (urx_buffer.state == BUFFER_USED) {
         *key = (char *)&urx_buffer.mem[0];
         return str2uint((char *)&urx_buffer.mem[0]);
     }
-
+#endif
     clabel_u lbl = {.cmd = 0};
     uint8_t len = 0;
     uint8_t i;
