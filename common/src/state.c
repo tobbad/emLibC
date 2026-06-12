@@ -43,6 +43,7 @@ em_msg state_check(const state_t *state) {
     if (state->first > MAX_STATE_CNT) return res;
     if (state->cnt > MAX_STATE_CNT) return res;
     if (state->first > state->cnt)  return res;
+    // clang-format on
     res = EM_OK;
     return res;
  }
