@@ -56,9 +56,8 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot){
      em_msg res = EM_ERR;
     // clang-format off
      if (!cycle) return res;
-     if (!cycle) return res;
     // clang-format on
-    if ((cycle_check_slot(slot) > 0)) {
+    if ( cycle_check_slot(slot) >= 0 ) {
         cycle_reset(cycle);
         cycle->subSlot = slot * SUB_SLOT_CNT;
         res = EM_OK;
@@ -68,6 +67,16 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot){
     }
     return res;
 };
+
+bool cycle_check(cycle_t *cycle, int8_t rxSlot, uint8_t ss){
+    bool res = false;
+   // clang-format off
+    if (!cycle) return res;
+    if (cycle_check_slot(rxSlot)<0) return res;
+   // clang-format on
+   res =  (cycle->sSlot==rxSlot);
+   return res;
+}
 
 void cycle_increment(cycle_t *cycle, system_state_e *sync_state) {
     // clang-format off

@@ -31,6 +31,7 @@ em_msg cycle_reset(cycle_t *cycle);
 char * cycle_string(cycle_t *cycle);
 int8_t cycle_check_slot(int8_t slot);
 em_msg cycle_set_slot(cycle_t *cycle, int8_t slot);
+bool cycle_check(cycle_t *cycle, int8_t rxSlot, uint8_t ss);
 void cycle_increment(cycle_t *cycle, system_state_e *sync_state);
 em_msg cycle_print(cycle_t *cycle, char *title);
 
