@@ -1,0 +1,144 @@
+\section{Systemdesign}
+\subsection{Einführung}
+Auf der Oberseite von RadioBell (oder Node des System) eine vom Auftraggeber bereitgestellte Tastatur mit 8 Tasten welche das Drücken einer Taste unserm Board mitteilt. Unter jeden Taste ist eine Led, die je den Zustand \texttt{OFF}, \texttt{BLINKING} und \texttt{ON} einnehmen kann. Das Drücken einer Taste ändert zyklisch das Blinkmuster \texttt{OFF} $\rightarrow$ \texttt{BLINKING}  $\rightarrow$ \texttt{ON} $\rightarrow$ \texttt{OFF} ...  der Taste darunter. Alle Geräte eines Zielsystems besitzen konfiguriere Kanalnummer (\verb|my_channel|=0..15). Wird eine Taste gedrückt, wird der Gerätezustand (8 Tasten in 3 verschieden Zuständen) "uber Systemkanal mitgeteilt. In einer weiteren Dimension ist ein Zeitslotverfahren realisiert um kollisionen zu verhindern. Die Zykluszeit von 360 $ms$ wird in 16 Zeitslot mit je 22.5 $ms$ Zeitdauer aufgeteilt. Im seinem Slot darf der RadioBell  senden, in der übrigen Zeit h\"ort es zu, was die anderen Ger\"ate mitzuteilen haben. Neben der fixen Kanalnummer (channel) wird bei der Systemkonfiguration jedem Systemgerät auch noch ein Zeitslot (slot) im EEPROM abgespeichert. Als FSK2 modulierte Trägerfrequenz wird die konfiguriert \verb|my_channel| Kanalnummer verwendet wodurch ab 435 $kHz$ in 100 $kHz$ Schritten die Trägerfrequenz des Geräts im Bereich 433.05 $kHz$ .. 434.55 $kHz$ abdeckt (\verb|my_channel|=0..15)). Bei einer Kanalbanddbreite von 25 $kHz$ können so 38600 Bit/s (Baud) pro Kanal übertragen werden. Das realisiert Packetformat hat 52 Byte was zu eine Sendezeit von 140 $\mu s$  $<<$ 25 $ms$) 
+
+\subsection{\texttt{state\_t} Struktur}
+Um einen Tastaturkonfiguration allen Teilnehmer des Systems mitzuteilen, wird er in ein \verb|state_t| Struktur eingefüllt:
+\begin{listing}
+\begin{minted}{C}
+typedef struct state_s {
+  uint8_t first;
+  uint8_t cnt;
+  uint8_t dirty; // bitfield??
+                 //  Evtl. können in den obersten 2 bit der Inhalt des clabel
+                 //  fields encodiert werden (01: cmd, 11:str))
+  uint8_t id;    // 8 Bitcounter, der bei jedem Senden in diesem Slots 
+                 // inkrementiert mitgesendet wird
+  clabel_u clabel;                  // is 4 bytes
+  key_state_e state[MAX_STATE_CNT]; // 16 bytes
+  char label[MAX_STATE_CNT];        // 16 bytes
+} state_t; // Size is 2*MAX_BUTTON_CNT + 8=  40 Byte (MAX_BUTTON_CNT = 16)
+\end{minted}
+\caption{Definition der \texttt{state\_t} Struktur}
+\label{state_t}
+\end{listing}
+Mit \verb|first| ist Index des ersten gültigen Label (in der Regel ''0'', ''1'', ''2'', ''3'', ''4'', ''5'', ''6'', ''7'', ''8'', ''9'', ''A'', ''B'', ''C'', ''D'', ''E'' und ''F'' sind), \verb|last| ist der Index des letzten gültigen Eintrag mitgeteilt. \verb|key_state_e| ist ein enum:
+\begin{listing}
+\begin{minted}{C}
+typedef enum { OFF, BLINKING, ON, STATE_CNT } key_state_e;
+\end{minted}
+Ein \verb|key_stat_e| kann die Zustände \verb|OFF| \verb|BLINKING| und \verb|ON| einnehmen
+\caption{Definition der \texttt{key\_state\_e} Struktur}
+\label{key_state_e}
+\end{listing}
+der eine Leuchtzustand einer Taste abbildet, wie in der Einleitung zu diesem Absatz ausgeführt wurde. \verb|clabel| ist ein \verb|char[4]| Array in die ASCII Wert der auf der Konsole der mit der verbundenen RadioBell UART \footnote{UART: Universal asynchronous receiver-transmitter} eingegeben wurde. Bei der Gerätekonfiguration wird er verwendet um das Gerät zu Konfigurieren, in der Entwicklungsphase wird er Log output verwendent oder - zu Testzwecken - Tastatureingaben vom Test-PC vorgegeben. Durch  eine simulierten Tastendruck vom Test-PC auf einem RadioBell wird die Log-Ausgabe aller System RadioBells erfasst und damit das korrekte Systemverhalten getestet. \verb|id| ist ein Slotspezifischer id der bei jedem Senden inkrementiert wird und dem System mitgeteilt wird. 
+\subsection{\texttt{payload\_t} Struktur}
+Um systemweit Informationen mitzuteilen wird \verb|struc_t| in eine übergeordnete Struktur \verb|payload_t| eingefügt:
+\begin{listing}
+\begin{minted}{C}
+typedef struct payload_s{
+    uint8_t slot;
+    uint8_t hubCnt;
+    uint8_t init;
+    pl_conf_e conf;
+   state_t state; // is 40 Bytes
+} payload_t; // size is 40 + 4 = 44
+\end{minted}
+\caption{Definition der \texttt{payload\_t} Struktur}
+\label{payload_t}
+\end{listing}
+In \verb|slot| teilt ein Gerät seine eindeutige und systemweite einmalige Slotnummer mit. Daher ist es wichtige diese Nummer systemweite nur einmal zu vergeben. Mit \verb|hubCnt| wird die Verbreitung von Funkpaketen begrenzt. In einem neuen TX Packet wird der \verb|hubCnt| auf null gesetzt. Jeder RadioBell, der ein Packet empfängt, dass einen \verb|hubCnt| $<$ \verb|MAX_HUB_CNT| hat, wird mit einem inkrementierten \verb|hubCnt + 1| wieder ausgesendet.  \verb|init| wird markiert, dass die Struktur sauber aufgesetzt ist. In \verb|slot| wird das slot des Sendersgerät mitgeteilt in dem der Tastedruck erkannt wurde. Der Wert von \verb|conf| eröffnet die Möglichkeit das Packet zu erweitern(TBD).
+
+\subsection{\texttt{AppliFrame\_t} Struktur}
+Eine \texttt{payload\_t} wird in der \texttt{AppliFrame\_t} eingefügt:
+\begin{listing}
+\begin{minted}{C}
+typedef struct AppliFrame_s {
+    uint8_t Cmdtag;
+    uint8_t CmdType;
+    uint8_t CmdLen;
+    uint8_t Cmd;
+    uint8_t DataLen;
+    uint8_t conf[3];
+    payload_t payload; // 44 Byte
+ } AppliFrame_t; // header size is payload (44 Byte) + 8 = 52 Byte
+\end{minted}
+\caption{Definition der \texttt{AppliFrame\_t} Struktur}
+\label{AppliFrame_t}
+\end{listing}
+Das \verb|Cmd| kann die Werte \verb|LED_TOGGLE| oder \verb|ACK_OK| einnehmen, zusammen mit \verb|Cmdlen| dass immer 1 ist, wird mitgeteilt, dass das Kommando aus einem Byte besteht. Der \verb|Cmdlen| ist immer auf \verb|APPLI_CMD| gesetzt. Jeder RadioBell hat in der Quellendatei \verb|app_x-cube-subg2.c|eine statische Variable \verb|txCounter| die zu Beginn mit 0 initalisiert ist. Jedes mal, wenn ein RadioBell ein Datenpacket mit Payload sendet wird im Feld \verb|Cmdtag| der 8 Bit Wert \verb|txCounter++| übermittelt, was dazu führt, dass diese Feld nur den Wert 0-255 übermittelen kann. Wird hingegen ein \verb|ACK_OK| Packet geschickt so wird das \verb|Cmdtag| des letzten empfangenen Packets mitgeschickt. Das heisst, dass ein RadioBell kann erkennen, dass sein Packet mit mit seinem \verb|Cmdtag| Wert im \verb|ACK_OK| Packet wiederfindet. Das Feld \verb|DataLen| enthält die Frösse der Payload. Wird Information zu einem Tastenzustand übermittlet (44 Bytes), bei einem \verb|ACK| Packet ist \verb|DataLen| =0 und es wird keine Payload geschickt und das gesammte Packet hat eine Länge von nur 8 Byte.
+ 
+\subsection{Packetaustausch}
+Wie erwähnt basiert das System auf einem Slotsystem in dem jedem Gerät ein fixer Slot zugewiesen ist für Mitteilung an das System. In der übrigen Zeit hört es auf Mitteilungen der anderen Geräte. Mitteilungen welche im eigenen Slot ausgesendet werden sind der Zustand der eigenen Tastatur, ein Resend eines empfangenen Packets oder das Akzeptieren eines Packets (\verb|ACK_OK|) das in den internen Zustand aufgenommen wurde. In allen anderen Slot ist das Gerät in \verb|SM_STATE_START_RX| oder \verb|SM_STATE_WAIT_FOR_RX_DONE|. 
+
+Zu Beginn werden drei \verb|AppliFrame_t| \verb|rxFrame|, \verb|txFrame| und \verb|system_state| und intialisiert. In \verb|txFrame| wird sie Slotnummer und die Kanalnummer gesetzt. In der Hauptschleife von \verb|main.c| wird immer pro Eingangsgeräte (UART Terminal und das Tastaturfeld) nach Änderungen zum Systemzustand befragt (\verb|system_state| $\leftrightarrow$ Eingangsgeräte State). Diese Änderungen (diff) werden im \verb|system_state| dazu genommen. Der neue \verb|system_state| der Eingangsgeräte wird in allen anderen im Eingabegerät gesetzt. Die \verb|struc_t| im Systemzustand wird mit der \verb|struc_t| \verb|txFrame| gemerged wodurch in \verb|state_t| von \verb|txFrame| auf \verb|dirty| gesetzt wenn sich etwas geändert hat.  Vor dem Aufruf von \verb|MX_X_CUBE_SUBG2_Process();| wird der \verb|struc_t| in \verb|rxFrame| auf \verb|undirty| gesetzt.  
+
+In der Radiofunktion(\verb|MX_X_CUBE_SUBG2_Process();|) wird zu beginn detektiert, ob eine \verb|rxFrame| \verb|dirty| ist und dem entsprechen ein Sendevorgang des Packets durchgeführt. Nach dem Senden wir \verb|txFrame| auf \verb|undirty| gesetzt. In der selben Routine wird ein empfangenes Packet (\verb|rxFrame|) detektiert und in der entsprechenden Struktur eingefüllt. Ebenfalls in der Radioloop wird detekiert, wenn ein Packet in der Luft ist. Im nachfolgenden Abschnitt \ref{sync} wird das System synchroniziert.
+
+Nach dem Aufruf von \verb|MX_X_CUBE_SUBG2_Process();| wird die Änderung diff =  (\verb|system_state| $\leftrightarrow$ \verb|txFrame| erfasst und diese Änderung im \verb|system_state| dazugenommen. Ist der \verb|hubCnt| Wert des emfangenen Frame kleiner als \verb|MAX_HUB_CNT| wird der \verb|hubCnt| im \verb|rxFrame| inkrementiert und dem \verb|hubCnt| des \verb|txFrame| zugewiesen.
+
+Das System quittiert ein empfangenes Packet in seinem Slot mit einem \verb|ACK| Packet. Da das \verb|ACK| im eigene Slot stattfinden muss wird im Radioloop eine statische Variable (\verb|SM_State_t pushState|) mit den Defaultzustand \verb|SM_STATE_NONE| aufgesetzt. Erreicht der Zustand im Radioloop den \verb|SM_STATE_SEND_ACK| Zustand zugewiesen und als Folgezusand \verb|SM_STATE_START_RX| getriggert. Wenn der Radioloop das nächstemal da
+
+\subsection{Synchronization} \label{sync}
+
+Das Gerät startet im Zustand \verb|SYNC_RESET| (alle Zustandsübergänge werden beim Erreichen auf dem Terminal ausgegeben), indem es bestimmte Variablen initialisiert, und wechselt anschließend in den Zustand \verb|BOOT_UP|. Hier wird Timer 5 so konfiguriert, dass eine Interruptroutine \verb|TIM1_UP_TIM16_IRQ|-\verb|Handler| alle 2.5\,ms (Subslotdauer) aufgerufen wird. In den nachfolgenden Zuständen \verb|SLOT| , \verb|CHANNEL| , \verb|FREQBAND| und \verb|FREQUENCY_OFFSET| erfasst ein nicht konfiguriertes Gerät die Slotnummer (\verb|rb_system.slot|), den Kanal (\verb|rb_system.channel|), das Frequenzband sowie einen gerätespezifischen Frequenzoffset im persistent Speicher (\verb|pers->foffset|) als Gleitkommazahl, damit alle Radiobells exakt auf derselben Frequenz arbeiten.
+
+Im nachfolgenden Zustand \verb|SYNCHRONIZE| werden in der Interruptroutine \verb|TIM1_UP_TIM16_IRQHandler| die Zähler \verb|rb_system.actSlot| und \verb|rb_sys|-\verb|tem.subSlot| auf 0 initialisiert. Dieser Vorgang findet nur einmal statt und wird durch eine statische Variable \verb|is_set| geschützt. Ebenfalls bei dieser Initialisierung wird der Systemzustand auf \verb|SYNCHRONIZE_READY| gesetzt. Anschließend wird in dieser Routine ein Modulozähler \verb|rb_system.subSlot| mit der Zykluslänge \verb|TIME_IRQ_PER_SLOT| $\times$ \verb|SYSTEM_SLOT_CNT| $= 144$ gestartet. Im \verb|main|-Programm wird der Systemzustand daraufhin auf \verb|SYNCHRONIZE_DO|-\verb|ING| gesetzt, wodurch der Zähler \verb|rb_system.actSlot| zu einem freilaufenden Zähler wird, der über 0 bis 15 rotiert.
+
+Der Radioprozess \verb|MX_SUBG2_P2P_Process| kommt nun ins Spiel. Die Synchronisation kann auf zwei Arten erfolgen:
+
+\begin{itemize}
+    \item Sie kann durch das Gerät initiiert werden: Wird eine Taste gedrückt, wird im Zustand \verb|rb_system.actSlot|$==$\verb|rb_system.slot| ein Funkpaket gesendet.
+
+    \item Alternativ kann gewartet werden, bis ein Paket mit dem \verb|rxSlot| empfangen wird. Befindet sich das Gerät im Zustand \verb|SYNCHRONIZE_DOING|, wird dieser als \verb|rb_system.actSlot|$=$\verb|rxSlot| übernommen. Falls \verb|rb|-\verb|_system.slot|$==$\verb|rxSlot| gilt, liegt ein Fehler vor und das System wechselt in den Zustand \verb|SYNCHRONIZE_ERROR|. Bei jedem weiteren empfangenen Paket wird geprüft, ob die Bedingung \verb|rb_system.actSlot|$==$\verb|rxSlot| erfüllt ist; im Fehlerfall wird in den Zustand \verb|SYNCHRONIZE_ERROR| gewechselt, in dem alle Tasten blinken. Für jedes empfangene \verb|rxSlot| wird in der Systemvariable \verb|rb_system.recv[rxSlot]| der passende Eintrag bis zu einem Maximum (255) inkrementiert. Ferne wird erfasste, wieviele Slot aktiv sind. Mit einem threshold Vergleich mit der Kanalbelegung kann nun bestimmt werden wann der Systemzustand in \verb|SYNCHRONIZE_OK| erreicht ist.
+\end{itemize}
+
+Um die Synchronisierung zu beschleunigen, kann die Systemvariable \verb|rb_sys|-\verb|tem.keep_alive| aktiviert werden. Zu Beginn von \verb|MX_SUBG2_P2P_Process| wird eine statische Variable \verb|keep_alive_timeout| auf \verb|SM_STATE_KEEP|-\verb|_ALIVE| gesetzt. Bei jedem Aufruf des Radioloops wird diese Variable dekrementiert. Erreicht der Zähler den Wert 0, wird er auf den Standardwert zurückgesetzt und im eigenen Slot ein Paket gesendet. Wird ein reguläres Paket gesendet, wird dieser Zähler ebenfalls auf den Standardwert zurückgesetzt.
+
+
+\subsection{Packetformat}
+%\begin{table}[]
+%\begin{tabular}{ll}
+%PreambleLength& 16&  \\
+%xSyncLength   & 32\\
+%lSyncWords    & 0x88888888\\
+%xFixVarLength & true\\
+%cExtendedPktLenField & false\\
+%xCrcMode      & 0x20\\
+%cExtendedPktLenField & false\\
+%xFec          &false\\
+%xDataWhitening&true\\
+%Bandwidth     &100500 \\
+%lDatarate     &38400 \\
+%lFreqDev      &19985 \\
+%lFrequencyBase&433050003  \\
+%Modulation    &MOD_2FSK    \\
+%\end{tabular}
+%\caption{Packetformat}
+%\label{tab:my-table}
+%\end{table}
+
+\section{Management tool}
+Dies ist ein PyQt (oder PySide) Pythonskript mit einm GUI. Es ist an alle Radiobells des Systems angeschlossen. Es zeigt 8 Felder an, die den Zustand des Radiobell am angeschlossenen COM Port an. Jedes der 8 Panels - Header is die Slotnummer - zeigt die Tasten 1-8 mit ihrem Zustand (OFF, BLINKEND, ON) an. Die Farbe des Felds  zeigt den Systemzustands des entsrechenden Gerät an. 
+
+Ein System durchläuft die Zustände \verb|RESET| $\rightarrow$ \verb|BOOT_UP| $\rightarrow$ \verb|SLOT| $\rightarrow$ (beim Neuaufsetzen Nachfrage des Slot) \verb|CHANNEL| (beim neuaufsetzen nachfrage des Channels) $\rightarrow$ \verb|FREQBAND| (beim neuaufsetzen nachfrage des Frequenzbandes) \verb|FREQUENCY_OFFSET| (beim neuaufsetzen nachfrage des Frequenzoffsets) $\rightarrow$  \verb|SYNCHRONIZE| (es iteriert über Taste 1-8 bis synchronisiert). Das System landet bei vorhandender Synchronisierung in der Darstellung des Reset Systemzustand (alle Tasten \verb|OFF|) oder im Fehlerzustand (alle Tasten \verb|BLINKING|). Die Hintergrundfarbe started bei Rot (\verb|RESET| und \verb|BOOT_UP|) geht in den Setupzustand (\verb|SLOT|, \verb|CHANNEL|,  \verb|FREQBAND| \verb|FREQUENCY_OFFSET|) mit einem Gelben Hintergrund. Im Endzustand wird der Tastenzustand des angeschlossenen Radiobell dargestellt. Beim Setupzustand wird ein Eingabefeld angezeigt über die ein Integer oder ein float eingegeben werden kann. Kleine Buttons im Feld ermöglichen es den Radiobell bestimmte Actions mitzuteilen (z.B. Reset, Löschen der Konfiguration, rssi Ausgabe).  
+
+\section{Configuration}
+Bei einem leeren EEPROM wird im Bootprozess die Konfiguration von  \verb|SLOT|, \verb|CHANNEL|, \verb|FREQBAND| und \verb|FREQUENCY_OFFSET| abgefragt und abgespeichert. Das GUI stellt daher den Zustand aller Systemradiobells übersichtlich dar.
+
+\section{XBEE Anbindung}
+Für die Unterstützung eines Handsenders werden XBEE module (XBEE3 802.15.4 TH mit U.Fl Ant TH MT) von Digi (\url{https://www.digi.com/}) verwendet. Die XBEE werden gepaart damit eine Handsender in einem Raum nur den Radiobell im gleichen Raum ansprechen kann.
+
+\section{Endgültiges Design}
+Das Zielsystem ist im ISM400 Band. Daher wurde eine eigene Hardware entwickelt. Mit geringen \"Anderungen (Bandfrequenz) kann die Software direkt auf dem neuen Ger\"at verwendet werden. Die Funktionalit\"at kann auf dem Board, das einen Stecker f\"ur eine acht Tasten Tastatur hat und 8 Led auf dem der Systemtzustand mitgeteilt werden kann so getestet werden, ohne dass die Zieltastatur angeschlossen ist. 
+Im Abweichung zum Referenzdesign wird für die Radioanbindung über SPI3 (eeprom\_cs: PB11, SCK:PB10, MOSI/D-DQ0: PB1, MISO/Q-DQ1: P0, W-DQ2: PA7, HOLD-DQ3: PA6 ) und als persistenter Speicher wird ein QuadSpi (STM M95P16) verwendet.
+
+\section{Noch zu Implementierende Funktionali\"at}
+{\large\textbullet} Im Verlauf der Softwareentwicklung kamen verschiedene Verkabelungsfehler zum Vorschein, was ein neues Board erfordert.\\
+{\large\textbullet} Knacknuss ist, dass auf dem neuen System der Paketaustausch noch nie demonstriert werden konnte.
+{\large\textbullet} Der verwendete Quarz kann für den verwendeten MCU nicht verwendet werden $\rightarrow$ redesign .
+
+
+ 
+
+\end{document}

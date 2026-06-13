@@ -1,0 +1,37 @@
+\section{Nummerisch Berechnung einer Flugbahn mit Luftreibung}\label{mkejv_a}
+Zu L"osen ist die Gleichung 
+\begin{eqnarray}
+\vec{F}_{drag}=m_{Kugel}\frac{d\vec{v}}{dt}&=&-c_w\frac{\rho_{g}}{2}r^2\pi \vert \vec{v}| \vec{v}\label{vevodgl_a} 
+\end{eqnarray}
+mit einem Reynoldszahlabh"angigen Widerstandsbeiwert $c_w$ (Abb.\ \ref{resph}).
+
+Ich entwickelte zu diesem Zweck ein Programm \verb|mkejvel| in dem die nummerische Integration mit einer Routine der 'GNU Scientific Library (GSL)'\footnote{\url{http://www.gnu.org/software/gsl/}} durchgef"uhrt wurde. 
+
+Ausgangspunkt f"ur dieses Programms war das Beispiel zu den gew"ohnlichen Differentialgleichungen im GSL-Manual. Die Schrittweite wird in diesem Beispiel mit ''Embedded 8th order Runge-Kutta Prince-Dormand method with 9th order error estimate'' berechnet. Die Differentialgleichungen in diesem Beispiel wurden so abge"andert, dass sie die eindimensionale Version von Gl.\ \ref{vevodgl_a} mit der analytischen L"osung Gl.\ \ref{vev_gl} beschrieben. Die "Ubereinstimmung zwischen der nummerischen und analytischen L"osung war hervorragend. Mit der Erweiterung auf zwei Dimensionen (x und z) wurde die Gravitationsbeschleunigung $g$ und schliesslich der reale Widerstandsbeiwert $c_w$ nach Abb.\ \ref{resph} eingef"uhrt. 
+
+Der Hilfetext zu diesem Programm (Option -h) ist selbsterkl"arend.
+\begin{small}
+\begin{verbatim}
+> mkejvel -h
+Usage:  mkejvel [Options] r v al t_max
+        This program calculates the velocity evoluation of an ejecta
+        with radius r (in mm), density rho [kg/m^3], velocity v [m/s]
+        and electa angle al [Grad] in air of standard pressure (1bar)
+        and standard temperatur (20C)
+        and standard density rho= 1.293 kg/m^3 up to time t_max [s].
+        The output goes to stdout.
+        Heightdependance is Barometric height Formula
+        Output Format:
+        t x z vx vz
+        Options:
+        h     : Print this help
+        m val : Set ejecta density to val (DEFAULT= 2600  kg/m^3)
+        g val : Set gas    density to val (DEFAULT= 1.293 kg/m^3)
+        G val : Set gravity to val        (DEFAULT= 9.81  m/s^2 )
+        t val : Set log interval to val s (DEFAULT= 0.001 s     )
+        a     : Make gas density and g hight dependent (Earth)
+        e     : Output more information
+        x val : Stop if ejecta is outside of x_eject>val [m]
+        z val : Stop if ejecta is outside of z_eject>val [m]
+\end{verbatim}
+\end{small}

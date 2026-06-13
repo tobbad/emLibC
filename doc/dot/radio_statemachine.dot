@@ -1,0 +1,23 @@
+digraph Radio_state_machine {
+	{node [shape = circle] "SM_STATE_START_RX"};
+	{node [shape = circle] "SM_STATE_WAIT_FOR_RX_DONE"};
+	{node [shape = circle] "SM_STATE_DATA_RECEIVED"};
+	{node [shape = circle] "SM_STATE_SEND_DATA"};
+	{node [shape = circle] "SM_STATE_DATA_RECEIVED"};
+	{node [shape = circle] "SM_STATE_SEND_ACK"};
+	{node [shape = circle] "SM_STATE_ACK_RECEIVED"};
+	{node [shape = circle] "SM_STATE_WAIT_FOR_TX_DONE"};
+	{node [shape = circle] "SM_STATE_TOGGLE_LED"};
+	{node [shape = circle] "SM_STATE_IDLE"};
+	"SM_STATE_START_RX"         ->"SM_STATE_WAIT_FOR_RX_DONE";
+	"SM_STATE_WAIT_FOR_RX_DONE" ->"SM_STATE_WAIT_FOR_RX_DONE";
+	"SM_STATE_WAIT_FOR_RX_DONE" ->"SM_STATE_DATA_RECEIVED";
+	"SM_STATE_DATA_RECEIVED"    ->"SM_STATE_TOGGLE_LED"   [ label = "rb_system.rxFrame.Cmd == LED_TOGGLE" ];
+	"SM_STATE_DATA_RECEIVED"    ->"SM_STATE_ACK_RECEIVED" [ label = "rb_system.rxFrame.Cmd == ACK_OK" ];
+	"SM_STATE_SEND_ACK"         ->"SM_STATE_WAIT_FOR_TX_DONE" ;
+	"SM_STATE_SEND_DATA"        ->"SM_STATE_WAIT_FOR_TX_DONE" ;
+	"SM_STATE_WAIT_FOR_TX_DONE" ->"SM_STATE_START_RX"     [ label = "rb_system.rxFrame.Cmd == ACK_OK" ];
+	"SM_STATE_WAIT_FOR_TX_DONE" ->"SM_STATE_IDLE    "     [ label = "rb_system.txFrame.Cmd == ACK_OK" ];
+	"SM_STATE_ACK_RECEIVED"     ->"SM_STATE_IDLE    "  ;
+	"SM_STATE_TOGGLE_LED"       ->"SM_STATE_SEND_ACK    "  ;
+}
