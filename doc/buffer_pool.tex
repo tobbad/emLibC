@@ -36,20 +36,23 @@ typedef struct buffer_pool_s {
   einen Pool aus \verb|lcnt| Puffern zu je \verb|charCnt| Bytes. \verb|line_type|
   legt den Typ der einzelnen Puffer fest (\verb|LINEAR| oder \verb|RING|),
   \verb|type| die Betriebsart des Pools. Schlägt eine Teil\-Allokation fehl,
-  werden bereits angelegte Puffer wieder freigegeben und \verb|NULL|
-  zurückgeliefert.
+  werden bereits angelegte Puffer wieder freigegeben. Rückgabe:
+  \verb|buffer_pool_t *| (\verb|NULL| bei Fehler).
 \item[\texttt{buffer\_pool\_free(pool)}] Gibt alle Puffer und den Pool selbst
-  frei.
-\item[\texttt{buffer\_pool\_get(bp)}] Liefert den ersten freien Puffer, markiert
-  ihn als \verb|BUFFER_USED| und gibt ihn zurück; \verb|NULL|, wenn kein Puffer
-  frei ist.
+  frei. Rückgabe: \verb|void|.
+\item[\texttt{buffer\_pool\_get(bp)}] Liefert den ersten freien Puffer und
+  markiert ihn als \verb|BUFFER_USED|. Rückgabe: \verb|buffer_t *|
+  (\verb|NULL|, wenn kein Puffer frei ist).
 \item[\texttt{buffer\_pool\_return(bp, buffer)}] Gibt einen Puffer an den Pool
   zurück. Geprüft werden der Index\-Bereich, die Zugehörigkeit zum Pool
   (Pointer\-Vergleich) und dass der Puffer nicht mehr belegt ist; danach wird er
   mit \verb|buffer_reset()| zurückgesetzt. Ein noch als \verb|BUFFER_USED|
-  markierter Puffer wird mit \verb|EM_ERR| abgelehnt -- der Inhalt muss also
-  zuvor verbraucht (z.\,B.\ per \verb|buffer_get()|) worden sein.
+  markierter Puffer wird abgelehnt -- der Inhalt muss also zuvor verbraucht
+  (z.\,B.\ per \verb|buffer_get()|) worden sein. Rückgabe: \verb|em_msg|
+  (\verb|EM_OK| nach erfolgreichem Zurücksetzen, \verb|EM_ERR| bei ungültigem,
+  fremdem oder noch belegtem Puffer).
 \item[\texttt{buffer\_pool\_print(bp, title)}] Gibt die Puffer des Pools zu
-  Debug\-Zwecken aus.
+  Debug\-Zwecken aus. Rückgabe: \verb|em_msg| (\verb|EM_ERR| bei
+  \verb|NULL|\-Pool, sonst \verb|EM_OK|).
 \end{description}
 \par}

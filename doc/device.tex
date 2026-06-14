@@ -1,0 +1,55 @@
+\subsection{device}\label{device}
+Das \verb|device| Modul stellt eine generische Geräte\-Abstraktion für
+Byte\-orientierte Ein\-/Ausgabe bereit. Ein Gerät wird durch \verb|device_t|
+(Listing \ref{device_t}) beschrieben -- eine Tabelle aus Funktionszeigern
+für \verb|open|, \verb|read|, \verb|write|, \verb|ioctrl|, \verb|close| und
+einen \verb|ready_cb|\-Rückruf, ergänzt um anwendungsspezifische
+\verb|user_data|. Konkrete Geräte registrieren sich mit \verb|device_init()|
+und werden anschließend über ein \verb|dev_handle_t| ($\ge 0$ gültig)
+angesprochen; die \verb|device_*|\-Funktionen prüfen das Handle und delegieren
+an die hinterlegten Zeiger. Genutzt wird das Modul u.\,a.\ vom \verb|serial|
+(Abschnitt \ref{serial}, \verb|serial_io|).
+
+\begin{listing}
+\begin{minted}{C}
+typedef struct device_s {
+    void *user_data;
+    em_msg (*open)(dev_handle_t, void *user_data);
+    em_msg (*read)(dev_handle_t, uint8_t *buffer, int16_t *cnt);
+    em_msg (*write)(dev_handle_t, const uint8_t *buffer, int16_t cnt);
+    em_msg (*ioctrl)(dev_handle_t, dev_command_t cmd, int16_t value);
+    em_msg (*close)(dev_handle_t);
+    em_msg (*ready_cb)(device_state_t state);
+    uint8_t dev_type;
+} device_t;
+\end{minted}
+\caption{Geräte\-Schnittstelle \texttt{device\_t}}
+\label{device_t}
+\end{listing}
+
+\noindent Welche Funktionen ein Gerät tatsächlich anbietet, wird über das
+Bitfeld \verb|dev_func_t| (\verb|DEV_OPEN|, \verb|DEV_READ|, \verb|DEV_WRITE|,
+\dots) ausgedrückt. \verb|device_check()| prüft, ob die durch eine solche
+Maske geforderten Funktionszeiger gesetzt sind.
+
+\subsubsection*{API}
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{device\_init(dev, user\_data)}] Registriert das Gerät und ruft
+  dessen \verb|open| auf. Rückgabe: \verb|dev_handle_t| (zugeteiltes Handle,
+  $0$ bei Fehler bzw.\ voller Tabelle).
+\item[\texttt{device\_check(hdl, dev\_type)}] Prüft, ob die per Maske
+  \verb|dev_type| geforderten Funktionen vorhanden sind. Rückgabe:
+  \verb|em_msg| (\verb|EM_OK|, wenn alle geforderten Zeiger gesetzt sind,
+  sonst \verb|EM_ERR|).
+\item[\texttt{device\_read(hdl, buffer, cnt)} /
+  \texttt{device\_write(hdl, buffer, cnt)}] Lesen bzw.\ schreiben über die
+  Funktionszeiger des Geräts. Rückgabe: \verb|em_msg| (\verb|EM_ERR|, wenn das
+  Gerät oder der jeweilige Zeiger fehlt).
+\item[\texttt{device\_reset(hdl)}] Setzt das Gerät auf \verb|DEVICE_RESET|
+  (alle Zeiger \verb|NULL|) zurück. Rückgabe: \verb|em_msg| (\verb|EM_OK|,
+  bzw.\ \verb|EM_ERR| bei unbekanntem Gerät).
+\item[\texttt{device\_print(hdl)}] Gibt die hinterlegten Zeiger zu
+  Debug\-Zwecken aus. Rückgabe: \verb|void|.
+\end{description}
+\par}

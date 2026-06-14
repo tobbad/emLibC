@@ -11,13 +11,13 @@
 extern "C" {
 #endif
 #include <ctype.h>
+#include <errno.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
-#include <inttypes.h>
 #ifndef UNIT_TEST
 #include "hal_port.h"
 #endif
@@ -29,14 +29,14 @@ extern "C" {
 #endif
 #define ELCNT(array) (array == 0) ? 0 : (sizeof((array)) / sizeof((array[0])))
 
-//#ifdef UNIT_TEST
-//#warning "Building emLibC with UNIT_TEST enabled"
-//#endif
+// #ifdef UNIT_TEST
+// #warning "Building emLibC with UNIT_TEST enabled"
+// #endif
 
 #define NEWLINE "\r\n"
 #define NEW_LINE_LEN strlen(NEWLINE)
 #define NL NEWLINE
-#define TRUNCT_NL "*"NL
+#define TRUNCT_NL "*" NL
 #define TRUCT_NL_LEN strlen(TRUNCT_NL)
 #define LINE_LENGTH 96 // FIXME -> CHAR_PER_LINE
 #define MAX_BUTTON_CNT 16
@@ -46,7 +46,7 @@ extern "C" {
 #endif
 
 #ifndef MAX
-#define MAX(a, b)  (((a) > (b)) ? (a) : (b))
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #endif /* MAX */
 
 #if !defined(MAX)
@@ -54,57 +54,51 @@ extern "C" {
 #endif
 
 typedef enum {
-  EM_ERR = -1,
-  EM_OK = 0,
-  EM_TRUE,
+    EM_ERR = -1,
+    EM_OK = 0,
+    EM_TRUE,
 } em_msg;
 
 typedef enum {
-  SYNC_RESET,
-  BOOT_UP,
-  SLOT,
-  CHANNEL,
-  FREQBAND,
-  FREQUENCY_OFFSET,
-  SYNCHRONIZE,
-  SYNCHRONIZE_DOING,
-  SYNCHRONIZE_READY,
-  SYNCHRONIZE_ERROR,
-  SYNCHRONIZE_OK,
-  SYNC_CNT
+    SYNC_RESET,
+    BOOT_UP,
+    SLOT,
+    CHANNEL,
+    FREQBAND,
+    FREQUENCY_OFFSET,
+    SYNCHRONIZE,
+    SYNCHRONIZE_DOING,
+    SYNCHRONIZE_READY,
+    SYNCHRONIZE_ERROR,
+    SYNCHRONIZE_OK,
+    SYNC_CNT
 } system_state_e;
 
 typedef union {
-  const uint8_t *cptr;
-  uint8_t *ptr;
+    const uint8_t *cptr;
+    uint8_t *ptr;
 } cPtrAway_u;
 
-typedef enum  {
-    hexnum  = 0x10,
-    ascii   = 0x20,
-    nonasci = 0x80
-}type_e;
-
+typedef enum { hexnum = 0x10, ascii = 0x20, nonasci = 0x80 } type_e;
 
 #define CMD_LEN 4
 #define DEV_CNT 1
 typedef union {
-     uint32_t cmd;  // Kann ein pointer zu einem Pointer enthalten, das
-                    // den anderen Geräten mitgeteilt wird oder NULL
-     char str[CMD_LEN]; //CMD_LEN ist 4 ist leer (0) oder ein command
- }clabel_u;
-#define ZERO4 ((32<<24)+(32<<16)+(32<<8)+32) // is "     " as str
+    uint32_t cmd;      // Kann ein pointer zu einem Pointer enthalten, das
+                       // den anderen Geräten mitgeteilt wird oder NULL
+    char str[CMD_LEN]; // CMD_LEN ist 4 ist leer (0) oder ein command
+} clabel_u;
+#define ZERO4 ((32 << 24) + (32 << 16) + (32 << 8) + 32) // is "     " as str
 
- typedef struct idx2str_s {
-     char    *str;
-     uint8_t idx;
- } idx2str_t;
+typedef struct idx2str_s {
+    char *str;
+    uint8_t idx;
+} idx2str_t;
 
- typedef struct idxa2str_s {
-     uint8_t cnt;
-     idx2str_t *entry;
- } idxa2str_t;
-
+typedef struct idxa2str_s {
+    uint8_t cnt;
+    idx2str_t *entry;
+} idxa2str_t;
 
 extern idxa2str_t synca2str;
 /*
@@ -124,10 +118,12 @@ void print_buffer(const uint8_t *buffer, uint8_t size, const char *header);
 type_e clable2type(clabel_u *lbl);
 int8_t str2uint(char *str);
 int8_t clabel2uint(clabel_u *lbl);
-char* idxa2str(idxa2str_t *map, uint8_t idx);
-char* idx2str(idx2str_t *map, uint8_t cnt, uint8_t idx);
+char *idxa2str(idxa2str_t *map, uint8_t idx);
+char *idx2str(idx2str_t *map, uint8_t cnt, uint8_t idx);
 int in_interrupt(void);
 char int2hchar(uint8_t idx);
+uint32_t swap(uint32_t val);
+bool ReadModify_write(int8_t *mem, int8_t add);
 
 #ifdef __cplusplus
 }

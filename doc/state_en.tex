@@ -55,15 +55,24 @@ disabled here.
 \begin{description}
 \item[\texttt{state\_init(state)} / \texttt{state\_reset(state)}] Initialises
   the structure (default labels \verb|0..F|) or sets all keys to \verb|OFF|.
+  Returns: \verb|em_msg| (\verb|EM_ERR| on an invalid structure, otherwise
+  \verb|EM_OK|).
 \item[\texttt{state\_check(state)}] Checks the range fields for validity.
+  Returns: \verb|em_msg| (\verb|EM_OK| for valid range fields, otherwise
+  \verb|EM_ERR|).
 \item[\texttt{state\_set(state, nr, ns)} / \texttt{state\_get(state, nr)}]
-  Sets or reads the state of a key by its index.
+  Sets or reads the state of a key by its index. Returns: \verb|em_msg|
+  (setter; \verb|EM_ERR| on an invalid index/structure) or \verb|key_state_e|
+  (the key state).
 \item[\texttt{state\_set\_key\_by\_lbl(\dots)} /
   \texttt{state\_get\_key\_by\_lbl(\dots)}] The same via the label;
-  \verb|state_ch2idx()| maps a character to the index.
+  \verb|state_ch2idx()| maps a character to the index (\verb|int8_t|, $-1$ if
+  not found). Returns: \verb|em_msg| (setter) or \verb|key_state_e| (the key
+  state, \verb|STATE_CNT| if not found).
 \item[\texttt{state\_propagate(state, idx)} /
   \texttt{state\_propagate\_by\_idx} / \texttt{\dots\_by\_lbl}] Advances a key
-  cyclically by one step and sets \emph{dirty}.
+  cyclically by one step and sets \emph{dirty}. Returns: \verb|em_msg|
+  (\verb|EM_ERR| on an invalid structure, otherwise \verb|EM_OK|).
 \end{description}
 \par}
 
@@ -71,17 +80,21 @@ disabled here.
 {\sloppy\emergencystretch=3em
 \begin{description}
 \item[\texttt{state\_set\_state(from, to)} / \texttt{state\_copy(from, to)}]
-  Copy the key content from \verb|from| to \verb|to|.
+  Copy the key content from \verb|from| to \verb|to|. Returns: \verb|em_msg|
+  (\verb|EM_ERR| on an invalid structure, otherwise \verb|EM_OK|).
 \item[\texttt{state\_set\_u32(state, u32)} / \texttt{state\_get\_u32(state)}]
   Pack or unpack the $16$ keys of $2$ bits each into a \verb|uint32_t|.
+  Returns: \verb|em_msg| (setter) or \verb|uint32_t| (the packed states).
 \item[\texttt{state\_diff(ref, state, diff)}] Determines the per-key difference
   (modular, cf.\ \verb|state_key_diff()|) relative to \verb|ref| in
-  \verb|diff|; the return value is the \emph{dirty} flag.
+  \verb|diff|. Returns: \verb|em_msg| (the \emph{dirty} flag).
 \item[\texttt{state\_add(ref, add)}] Applies \verb|add| as a number of
-  advances to \verb|ref| (\verb|BLINKING| $= +1$, \verb|ON| $= +2$).
+  advances to \verb|ref| (\verb|BLINKING| $= +1$, \verb|ON| $= +2$). Returns:
+  \verb|em_msg| (the \emph{dirty} flag).
 \item[\texttt{state\_merge(in, out)}] Copies changed keys from \verb|in| to
-  \verb|out| and reports whether anything changed.
+  \verb|out| and reports whether anything changed. Returns: \verb|bool|.
 \item[\texttt{state\_is\_same(last, cur)}] Checks two states for equality.
+  Returns: \verb|em_msg| (\verb|EM_OK| if equal).
 \end{description}
 \par}
 
@@ -89,10 +102,14 @@ disabled here.
 {\sloppy\emergencystretch=3em
 \begin{description}
 \item[\texttt{state\_set\_first/cnt} / \texttt{state\_get\_first/cnt}] Set or
-  read the active key window.
+  read the active key window. Returns: \verb|em_msg| (setters) or
+  \verb|uint8_t| (getters).
 \item[\texttt{state\_get\_dirty} / \texttt{state\_set\_dirty} /
-  \texttt{state\_set\_undirty}] Manage the change flag.
+  \texttt{state\_set\_undirty}] Manage the change flag (\verb|state_get_dirty|
+  returns its value). Returns: \verb|em_msg| (\verb|EM_ERR| on an invalid
+  structure).
 \item[\texttt{state\_print(state, title, doLong, cycle)}] Prints labels,
-  states and the cycle position (Section \ref{cycle}) for debugging.
+  states and the cycle position (Section \ref{cycle}) for debugging. Returns:
+  \verb|em_msg| (\verb|EM_ERR| on an invalid structure, otherwise \verb|EM_OK|).
 \end{description}
 \par}

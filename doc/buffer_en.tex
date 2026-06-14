@@ -59,12 +59,14 @@ typedef struct buffer_s {
 {\sloppy\emergencystretch=3em
 \begin{description}
 \item[\texttt{buffer\_new(size, type)}] Allocates a \verb|buffer_t| structure
-  together with memory of size \verb|size| and returns a pointer to it, or
-  \verb|NULL| on \verb|size == 0| or failed allocation.
+  together with memory of size \verb|size|. Returns: \verb|buffer_t *| (pointer
+  to the buffer, or \verb|NULL| on \verb|size == 0| or failed allocation).
 \item[\texttt{buffer\_new\_buffer\_t(buffer)}] Re-initialises an already
   existing structure: size and type are kept, the memory is allocated anew.
-\item[\texttt{buffer\_free(buffer)}] Frees memory and structure. Reports
-  \verb|EM_ERR| if the buffer is still marked \verb|BUFFER_USED|.
+  Returns: \verb|buffer_t *| (\verb|NULL| on failure).
+\item[\texttt{buffer\_free(buffer)}] Frees memory and structure. Returns:
+  \verb|em_msg| (\verb|EM_ERR| if the buffer is still marked
+  \verb|BUFFER_USED|).
 \end{description}
 \par}
 
@@ -74,16 +76,20 @@ typedef struct buffer_s {
 \item[\texttt{buffer\_set(buffer, data, size)}] Writes \verb|size| bytes into
   the buffer (\verb|LINEAR|: from index $0$; \verb|RING|: from the write
   position with wrap-around). Fails if \verb|size| exceeds the free space;
-  sets \verb|state = BUFFER_USED| and updates the label.
+  sets \verb|state = BUFFER_USED| and updates the label. Returns: \verb|em_msg|
+  (\verb|EM_OK| on success, \verb|EM_ERR| on an invalid buffer or insufficient
+  space).
 \item[\texttt{buffer\_get(buffer, data, size)}] Reads up to \verb|*size| bytes
   (limited to the amount in use), unrolls the wrap for \verb|RING| and writes
   the actual length back to \verb|*size|. If the buffer is empty afterwards,
-  \verb|state = BUFFER_READY|.
+  \verb|state = BUFFER_READY|. Returns: \verb|em_msg| (\verb|EM_OK| on success,
+  \verb|EM_ERR| on an invalid buffer or \verb|*size <= 0|).
 \item[\texttt{buffer\_transfer(from, to)}] Transfers the content of \verb|from|
   to \verb|to| and supports all \verb|LINEAR|/\verb|RING| combinations. The
   capacity is checked \emph{before} reading (transactional): if the content
-  does not fit, \verb|from| is left untouched and \verb|EM_ERR| is returned;
-  otherwise \verb|from| is emptied.
+  does not fit, \verb|from| is left untouched; otherwise \verb|from| is
+  emptied. Returns: \verb|int16_t| -- the transferred length, or \verb|EM_ERR|
+  if the destination is too small.
 \end{description}
 \par}
 
@@ -91,26 +97,32 @@ typedef struct buffer_s {
 {\sloppy\emergencystretch=3em
 \begin{description}
 \item[\texttt{buffer\_reset(buffer)}] Resets content and state completely
-  (zeroes the memory).
+  (zeroes the memory). Returns: \verb|em_msg| (\verb|EM_ERR| on an invalid
+  buffer, otherwise \verb|EM_OK|).
 \item[\texttt{buffer\_clear(buffer)}] Marks the content as consumed
   (\verb|first += used|, \verb|used = 0|, \verb|state = BUFFER_READY|) without
-  zeroing the memory.
+  zeroing the memory. Returns: \verb|em_msg| (\verb|EM_ERR| on an invalid
+  buffer, otherwise \verb|EM_OK|).
 \item[\texttt{buffer\_tolower(buffer)}] Converts all uppercase letters
-  \texttt{A}--\texttt{Z} in the used region to lowercase.
+  \texttt{A}--\texttt{Z} in the used region to lowercase. Returns: \verb|em_msg|
+  (\verb|EM_ERR| on a null pointer, otherwise \verb|EM_OK|).
 \item[\texttt{buffer\_writeable(buffer)}] Returns the free space
-  (\verb|size - used|).
+  (\verb|size - used|). Returns: \verb|int16_t|.
 \item[\texttt{buffer\_used(buffer)}] Returns the number of bytes in use.
+  Returns: \verb|int16_t|.
 \item[\texttt{buffer\_is\_used(buffer)}] Returns \verb|true| if the state is
-  \verb|BUFFER_USED|.
+  \verb|BUFFER_USED|. Returns: \verb|bool|.
 \item[\texttt{buffer\_get\_clabel(buffer)}] Returns a pointer to the buffer's
-  label (\verb|clabel_u|).
+  label. Returns: \verb|clabel_u *|.
 \item[\texttt{buffer\_get\_till\_end(buffer)}] Returns a temporary (static)
   \verb|buffer_t| describing the region from \verb|first| to the end of the
-  memory -- useful for \verb|RING| access without wrap.
+  memory -- useful for \verb|RING| access without wrap. Returns:
+  \verb|buffer_t *|.
 \item[\texttt{buffer\_check(buffer, reduced)}] Checks the structure for
   validity (null pointer, \verb|size == 0|, and -- unless \verb|reduced| --
-  \verb|mem == NULL|).
+  \verb|mem == NULL|). Returns: \verb|em_msg| (\verb|EM_OK| for a valid
+  structure, otherwise \verb|EM_ERR|).
 \item[\texttt{buffer\_print(buffer, title)}] Prints the fields and the content
-  for debugging.
+  for debugging. Returns: \verb|void|.
 \end{description}
 \par}

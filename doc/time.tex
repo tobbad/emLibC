@@ -146,36 +146,42 @@ typedef struct timem_s {
 \item[\texttt{time\_init()}] Initialisiert das Modul: aktiviert den
   DWT\-Cycle\-Counter (Listing \ref{time_init_regs}), berechnet
   \verb|ccnt2ns| aus der HCLK\-Frequenz und setzt alle Handles zurück.
-  Muss vor allen anderen Funktionen aufgerufen werden.
-\item[\texttt{time\_new(name)}] Reserviert einen freien Handle, hinterlegt
-  den Namen und liefert dessen \verb|time_handle_t| zurück bzw. $-1$, wenn
-  alle \verb|TIME_DEV_CNT| Handles belegt sind.
+  Muss vor allen anderen Funktionen aufgerufen werden. Rückgabe: \verb|void|.
+\item[\texttt{time\_new(name)}] Reserviert einen freien Handle und hinterlegt
+  den Namen. Rückgabe: \verb|time_handle_t| (das Handle, bzw.\ $-1$, wenn
+  alle \verb|TIME_DEV_CNT| Handles belegt sind).
 \item[\texttt{time\_set\_mode(hdl, mode)} / \texttt{time\_get\_mode(hdl)}]
   Setzt bzw. liest das Betriebsart\-Bitfeld (\verb|mode_e|) des Handles.
+  Rückgabe: \verb|em_msg| (Setzer; \verb|EM_ERR| bei ungültigem Handle) bzw.\
+  \verb|mode_e| (die aktuelle Betriebsart).
 \item[\texttt{time\_set\_max(hdl, max)} / \texttt{time\_get\_max(hdl)}]
   Legt die Anzahl festgehaltener Pool\-Einträge fest ($0 \le \mathtt{max} <
   \mathtt{TIME\_MEAS\_CNT}-1$); die übrigen Plätze werden zyklisch
-  überschrieben.
+  überschrieben. Rückgabe: \verb|em_msg| (Setzer) bzw.\ \verb|int8_t| (die
+  gesetzte Grenze; \verb|EM_ERR| bei ungültigem Handle).
 \item[\texttt{time\_reset(hdl)}] Löscht die Messungen des Handles, behält
-  aber den Initialisierungszeitpunkt \verb|init_ns| bei.
+  aber den Initialisierungszeitpunkt \verb|init_ns| bei. Rückgabe: \verb|void|.
 \item[\texttt{time\_start(hdl, count, ptr, cycle)}] Startet eine Messung:
   speichert Start\-Tick und \-Zeit, die Stückzahl \verb|count| (Grundlage
   der Baud\-Berechnung) und das Label \verb|ptr| -- bzw. bei gesetztem
-  \verb|SSSC| die Cycle\-Position aus \verb|cycle|.
+  \verb|SSSC| die Cycle\-Position aus \verb|cycle|. Rückgabe: \verb|void|.
 \item[\texttt{time\_stop\_su(hdl)}] Erfasst den Zwischenstopp und berechnet
-  \verb|duration_su_ns| (Zeit von Start bis \emph{setup}).
+  \verb|duration_su_ns| (Zeit von Start bis \emph{setup}). Rückgabe:
+  \verb|void|.
 \item[\texttt{time\_stop(hdl, ptr)}] Erfasst den Endstopp, berechnet
   \verb|duration_tx_ns|, \verb|baud| und die Tick\-Dauer und schaltet den
   Ringpuffer\-Index weiter. Optional aktualisiert \verb|ptr| das Label.
+  Rückgabe: \verb|void|.
 \item[\texttt{time\_auto(hdl, count, ptr, cycle)}] Bequemlichkeit:
-  \verb|time_start()| unmittelbar gefolgt von \verb|time_stop()|.
+  \verb|time_start()| unmittelbar gefolgt von \verb|time_stop()|. Rückgabe:
+  \verb|void|.
 \item[\texttt{time\_now\_ns()}] Liefert den aktuellen Zählerstand in
-  Nanosekunden (\verb|NOW|).
-\item[\texttt{time\_doLoop\_get()}] Liefert \verb|doLoop|; im
-  \verb|ONESHOT|\-Betrieb wird es nach einem vollen Durchlauf
-  \verb|false|.
+  Nanosekunden (\verb|NOW|). Rückgabe: \verb|int64_t|.
+\item[\texttt{time\_doLoop\_get()}] Im \verb|ONESHOT|\-Betrieb wird
+  \verb|doLoop| nach einem vollen Durchlauf \verb|false|. Rückgabe:
+  \verb|bool|.
 \item[\texttt{time\_print(hdl, titel, python, timing)}] Gibt den Pool als
-  Tabelle aus. Siehe nächster Abschnitt.
+  Tabelle aus. Siehe nächster Abschnitt. Rückgabe: \verb|void|.
 \end{description}
 
 \subsubsection*{Messablauf und Ausgabe}

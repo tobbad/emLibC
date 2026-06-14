@@ -53,10 +53,11 @@ fasst eine solche Tabelle samt Länge zusammen.
 {\sloppy\emergencystretch=3em
 \begin{description}
 \item[\texttt{idx2str(map, cnt, idx)}] Sucht \verb|idx| in einer Tabelle aus
-  \verb|cnt| Einträgen und liefert die zugehörige Zeichenkette bzw.
-  \verb|"NA "|, falls nicht gefunden.
+  \verb|cnt| Einträgen. Rückgabe: \verb|char *| -- die zugehörige Zeichenkette
+  bzw.\ \verb|"NA "|, falls nicht gefunden.
 \item[\texttt{idxa2str(map, idx)}] Bequemlichkeit für \verb|idxa2str_t|: ruft
-  \verb|idx2str()| mit den in \verb|map| hinterlegten Daten auf.
+  \verb|idx2str()| mit den in \verb|map| hinterlegten Daten auf. Rückgabe:
+  \verb|char *|.
 \end{description}
 \par}
 
@@ -84,9 +85,10 @@ vom \verb|buffer| (Abschnitt \ref{buffer}) genutzt.
 \begin{description}
 \item[\texttt{clable2type(lbl)}] Bestimmt, ob das Label eine Hexzahl
   (\verb|hexnum|), druckbares ASCII (\verb|ascii|) oder nicht darstellbar
-  (\verb|nonasci|) ist (Rückgabetyp \verb|type_e|).
+  (\verb|nonasci|) ist. Rückgabe: \verb|type_e|.
 \item[\texttt{clabel2uint(lbl)} / \texttt{str2uint(str)}] Interpretieren das
-  Label bzw.\ eine Zeichenkette als vorzeichenlose Ganzzahl.
+  Label bzw.\ eine Zeichenkette als vorzeichenlose Ganzzahl. Rückgabe:
+  \verb|int8_t|.
 \end{description}
 \par}
 
@@ -107,11 +109,14 @@ typedef union {
 \item[\texttt{to\_hex(out, out\_size, buffer, buffer\_size, write\_asci)}]
   Formatiert \verb|buffer| als Hexdump in den Zeichenpuffer \verb|out|: je
   Zeile die Adresse, $16$ Hexbytes (mit Extra\-Abstand nach $8$) und optional
-  die ASCII\-Darstellung. Liefert die Anzahl geschriebener Zeichen.
+  die ASCII\-Darstellung. Rückgabe: \verb|uint16_t| (Anzahl geschriebener
+  Zeichen).
 \item[\texttt{print\_buffer(buffer, size, header)}] Gibt einen Hexdump
   ($8$ Bytes je Zeile mit ASCII\-Spalte) direkt über \verb|printf| aus.
+  Rückgabe: \verb|void|.
 \item[\texttt{int2hchar(nr)}] Wandelt einen Wert in das zugehörige
   Hexziffer\-Zeichen (\texttt{0}--\texttt{9}, \texttt{A}--\texttt{F}) um.
+  Rückgabe: \verb|char|.
 \end{description}
 \par}
 
@@ -121,11 +126,20 @@ typedef union {
 \item[\texttt{common\_crc16(data\_p, length)}] Berechnet eine CRC\-16 nach
   X.25 (Polynom \verb|0x8408| reversed, Startwert \verb|0xFFFF|, XOR\-out
   \verb|0xFFFF|). Das Ergebnis ist kompatibel zur \verb|x-25|\-Definition aus
-  Pythons \verb|crcmod|.
+  Pythons \verb|crcmod|. Rückgabe: \verb|uint16_t| (Prüfsumme).
 \item[\texttt{csss2uint32(cycle, slot, sSlot)}] Packt Cycle ($16$ Bit), Slot
   und Sub\-Slot in einen \verb|uint32_t| (\verb!cycle | slot<<16 | sSlot<<24!).
+  Rückgabe: \verb|uint32_t|.
+\item[\texttt{swap(val)}] Vertauscht die Byte\-Reihenfolge eines
+  $32$\-Bit\-Werts (Umkehr der Endianness). Rückgabe: \verb|uint32_t|.
 \item[\texttt{modulo\_sub(slot, oSlot, modulo)}] Liefert die modulare Differenz
-  zweier Slots. Im Quelltext als noch nicht getestet markiert.
+  zweier Slots. Im Quelltext als noch nicht getestet markiert. Rückgabe:
+  \verb|uint8_t|.
+\item[\texttt{ReadModify\_write(mem, add)}] Atomares Read\-Modify\-Write:
+  addiert \verb|add| über die exklusiven Lade\-/Speicherbefehle
+  (\verb|LDREX|/\verb|STREX|) mit Speicherbarriere atomar auf das Byte unter
+  \verb|mem| und wiederholt, bis der Speichervorgang gelingt. Rückgabe:
+  \verb|bool| (\verb|true| bei Erfolg).
 \end{description}
 \par}
 
@@ -135,8 +149,9 @@ typedef union {
 \item[\texttt{board\_get\_unique\_id(id, max\_len)}] Liest die 96\-Bit
   ($12$~Byte) eindeutige Chip\-ID des STM32L476 (Adresse \verb|UID_BASE|) und
   füllt einen größeren Puffer mit Nullen auf. Im \verb|UNIT_TEST|\-Build durch
-  eine deterministische Ersatzimplementierung ersetzt.
+  eine deterministische Ersatzimplementierung ersetzt. Rückgabe: \verb|size_t|
+  (Anzahl geschriebener Werte).
 \item[\texttt{in\_interrupt()}] Platzhalter; liefert derzeit stets
-  \verb|false|.
+  \verb|false|. Rückgabe: \verb|int|.
 \end{description}
 \par}

@@ -62,13 +62,15 @@ typedef struct buffer_s {
 {\sloppy\emergencystretch=3em
 \begin{description}
 \item[\texttt{buffer\_new(size, type)}] Alloziert eine \verb|buffer_t|\-Struktur
-  samt Speicher der Größe \verb|size| und liefert einen Zeiger darauf bzw.
-  \verb|NULL| bei \verb|size == 0| oder fehlgeschlagener Allokation.
+  samt Speicher der Größe \verb|size|. Rückgabe: \verb|buffer_t *| (Zeiger auf
+  den Puffer, bzw.\ \verb|NULL| bei \verb|size == 0| oder fehlgeschlagener
+  Allokation).
 \item[\texttt{buffer\_new\_buffer\_t(buffer)}] Re\-initialisiert eine bereits
   bestehende Struktur: Größe und Typ bleiben erhalten, der Speicher wird neu
-  angelegt.
-\item[\texttt{buffer\_free(buffer)}] Gibt Speicher und Struktur frei. Meldet
-  \verb|EM_ERR|, wenn der Puffer noch als \verb|BUFFER_USED| markiert ist.
+  angelegt. Rückgabe: \verb|buffer_t *| (\verb|NULL| bei Fehler).
+\item[\texttt{buffer\_free(buffer)}] Gibt Speicher und Struktur frei. Rückgabe:
+  \verb|em_msg| (\verb|EM_ERR|, wenn der Puffer noch als \verb|BUFFER_USED|
+  markiert ist).
 \end{description}
 \par}
 
@@ -78,16 +80,21 @@ typedef struct buffer_s {
 \item[\texttt{buffer\_set(buffer, data, size)}] Schreibt \verb|size| Bytes in
   den Puffer (\verb|LINEAR|: ab Index $0$; \verb|RING|: ab der Schreibposition
   mit Umlauf). Schlägt fehl, wenn \verb|size| den freien Platz übersteigt;
-  setzt \verb|state = BUFFER_USED| und aktualisiert das Label.
+  setzt \verb|state = BUFFER_USED| und aktualisiert das Label. Rückgabe:
+  \verb|em_msg| (\verb|EM_OK| bei Erfolg, \verb|EM_ERR| bei ungültigem Puffer
+  oder zu wenig Platz).
 \item[\texttt{buffer\_get(buffer, data, size)}] Liest bis zu \verb|*size| Bytes
   (begrenzt auf die belegte Menge), entrollt beim \verb|RING| den Umlauf und
   schreibt die tatsächliche Länge nach \verb|*size| zurück. Ist der Puffer
-  danach leer, wird \verb|state = BUFFER_READY|.
+  danach leer, wird \verb|state = BUFFER_READY|. Rückgabe: \verb|em_msg|
+  (\verb|EM_OK| bei Erfolg, \verb|EM_ERR| bei ungültigem Puffer oder
+  \verb|*size <= 0|).
 \item[\texttt{buffer\_transfer(from, to)}] Überträgt den Inhalt von \verb|from|
   nach \verb|to| und unterstützt alle \verb|LINEAR|/\verb|RING|\-Kombinationen.
   Die Kapazität wird \emph{vor} dem Lesen geprüft (transaktional): passt der
-  Inhalt nicht, bleibt \verb|from| unangetastet und es wird \verb|EM_ERR|
-  geliefert; andernfalls wird \verb|from| geleert.
+  Inhalt nicht, bleibt \verb|from| unangetastet; andernfalls wird \verb|from|
+  geleert. Rückgabe: \verb|int16_t| -- die übertragene Länge, bzw.\
+  \verb|EM_ERR| bei zu kleinem Ziel.
 \end{description}
 \par}
 
@@ -95,26 +102,32 @@ typedef struct buffer_s {
 {\sloppy\emergencystretch=3em
 \begin{description}
 \item[\texttt{buffer\_reset(buffer)}] Setzt Inhalt und Zustand vollständig
-  zurück (nullt den Speicher).
+  zurück (nullt den Speicher). Rückgabe: \verb|em_msg| (\verb|EM_ERR| bei
+  ungültigem Puffer, sonst \verb|EM_OK|).
 \item[\texttt{buffer\_clear(buffer)}] Markiert den Inhalt als verbraucht
   (\verb|first += used|, \verb|used = 0|, \verb|state = BUFFER_READY|), ohne
-  den Speicher zu nullen.
+  den Speicher zu nullen. Rückgabe: \verb|em_msg| (\verb|EM_ERR| bei
+  ungültigem Puffer, sonst \verb|EM_OK|).
 \item[\texttt{buffer\_tolower(buffer)}] Wandelt im belegten Bereich alle
-  Großbuchstaben \texttt{A}--\texttt{Z} in Kleinbuchstaben um.
+  Großbuchstaben \texttt{A}--\texttt{Z} in Kleinbuchstaben um. Rückgabe:
+  \verb|em_msg| (\verb|EM_ERR| bei Nullzeiger, sonst \verb|EM_OK|).
 \item[\texttt{buffer\_writeable(buffer)}] Liefert den freien Platz
-  (\verb|size - used|).
+  (\verb|size - used|). Rückgabe: \verb|int16_t|.
 \item[\texttt{buffer\_used(buffer)}] Liefert die Anzahl belegter Bytes.
+  Rückgabe: \verb|int16_t|.
 \item[\texttt{buffer\_is\_used(buffer)}] Liefert \verb|true|, wenn der Zustand
-  \verb|BUFFER_USED| ist.
+  \verb|BUFFER_USED| ist. Rückgabe: \verb|bool|.
 \item[\texttt{buffer\_get\_clabel(buffer)}] Liefert einen Zeiger auf das Label
-  (\verb|clabel_u|) des Puffers.
+  des Puffers. Rückgabe: \verb|clabel_u *|.
 \item[\texttt{buffer\_get\_till\_end(buffer)}] Liefert einen temporären
   (statischen) \verb|buffer_t|, der den Bereich ab \verb|first| bis zum
   Speicherende beschreibt -- nützlich für \verb|RING|\-Zugriffe ohne Umlauf.
+  Rückgabe: \verb|buffer_t *|.
 \item[\texttt{buffer\_check(buffer, reduced)}] Prüft die Struktur auf
   Gültigkeit (Nullzeiger, \verb|size == 0|, und -- außer bei \verb|reduced| --
-  \verb|mem == NULL|).
+  \verb|mem == NULL|). Rückgabe: \verb|em_msg| (\verb|EM_OK| bei gültiger
+  Struktur, sonst \verb|EM_ERR|).
 \item[\texttt{buffer\_print(buffer, title)}] Gibt die Felder und den Inhalt zu
-  Debug\-Zwecken aus.
+  Debug\-Zwecken aus. Rückgabe: \verb|void|.
 \end{description}
 \par}

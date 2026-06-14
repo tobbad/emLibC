@@ -34,17 +34,20 @@ such a mask are set.
 \subsubsection*{API}
 {\sloppy\emergencystretch=3em
 \begin{description}
-\item[\texttt{device\_init(dev, user\_data)}] Registers the device, calls its
-  \verb|open| and returns the assigned \verb|dev_handle_t| ($0$ on error or a
-  full table).
+\item[\texttt{device\_init(dev, user\_data)}] Registers the device and calls
+  its \verb|open|. Returns: \verb|dev_handle_t| (the assigned handle, $0$ on
+  error or a full table).
 \item[\texttt{device\_check(hdl, dev\_type)}] Checks whether the functions
-  required by the mask \verb|dev_type| are present.
+  required by the mask \verb|dev_type| are present. Returns: \verb|em_msg|
+  (\verb|EM_OK| if all required pointers are set, otherwise \verb|EM_ERR|).
 \item[\texttt{device\_read(hdl, buffer, cnt)} /
   \texttt{device\_write(hdl, buffer, cnt)}] Read or write via the device's
-  function pointers; \verb|EM_ERR| if the device or the respective pointer is
-  missing.
+  function pointers. Returns: \verb|em_msg| (\verb|EM_ERR| if the device or the
+  respective pointer is missing).
 \item[\texttt{device\_reset(hdl)}] Resets the device to \verb|DEVICE_RESET|
-  (all pointers \verb|NULL|).
+  (all pointers \verb|NULL|). Returns: \verb|em_msg| (\verb|EM_OK|, or
+  \verb|EM_ERR| for an unknown device).
 \item[\texttt{device\_print(hdl)}] Prints the stored pointers for debugging.
+  Returns: \verb|void|.
 \end{description}
 \par}

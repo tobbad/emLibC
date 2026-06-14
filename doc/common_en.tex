@@ -52,10 +52,10 @@ its length.
 {\sloppy\emergencystretch=3em
 \begin{description}
 \item[\texttt{idx2str(map, cnt, idx)}] Looks up \verb|idx| in a table of
-  \verb|cnt| entries and returns the associated string, or \verb|"NA "| if not
-  found.
+  \verb|cnt| entries. Returns: \verb|char *| -- the associated string, or
+  \verb|"NA "| if not found.
 \item[\texttt{idxa2str(map, idx)}] Convenience for \verb|idxa2str_t|: calls
-  \verb|idx2str()| with the data stored in \verb|map|.
+  \verb|idx2str()| with the data stored in \verb|map|. Returns: \verb|char *|.
 \end{description}
 \par}
 
@@ -83,9 +83,9 @@ others, by the \verb|buffer| (Section \ref{buffer}).
 \begin{description}
 \item[\texttt{clable2type(lbl)}] Determines whether the label is a hex number
   (\verb|hexnum|), printable ASCII (\verb|ascii|) or non-representable
-  (\verb|nonasci|) (return type \verb|type_e|).
+  (\verb|nonasci|). Returns: \verb|type_e|.
 \item[\texttt{clabel2uint(lbl)} / \texttt{str2uint(str)}] Interpret the label
-  or a string as an unsigned integer.
+  or a string as an unsigned integer. Returns: \verb|int8_t|.
 \end{description}
 \par}
 
@@ -106,12 +106,14 @@ typedef union {
 \item[\texttt{to\_hex(out, out\_size, buffer, buffer\_size, write\_asci)}]
   Formats \verb|buffer| as a hex dump into the character buffer \verb|out|:
   per line the address, $16$ hex bytes (with extra spacing after $8$) and
-  optionally the ASCII representation. Returns the number of characters
-  written.
+  optionally the ASCII representation. Returns: \verb|uint16_t| (number of
+  characters written).
 \item[\texttt{print\_buffer(buffer, size, header)}] Prints a hex dump
   ($8$ bytes per line with an ASCII column) directly via \verb|printf|.
+  Returns: \verb|void|.
 \item[\texttt{int2hchar(nr)}] Converts a value into the corresponding hex digit
-  character (\texttt{0}--\texttt{9}, \texttt{A}--\texttt{F}).
+  character (\texttt{0}--\texttt{9}, \texttt{A}--\texttt{F}). Returns:
+  \verb|char|.
 \end{description}
 \par}
 
@@ -121,11 +123,20 @@ typedef union {
 \item[\texttt{common\_crc16(data\_p, length)}] Computes a CRC-16 according to
   X.25 (polynomial \verb|0x8408| reversed, initial value \verb|0xFFFF|,
   XOR-out \verb|0xFFFF|). The result is compatible with the \verb|x-25|
-  definition from Python's \verb|crcmod|.
+  definition from Python's \verb|crcmod|. Returns: \verb|uint16_t| (checksum).
 \item[\texttt{csss2uint32(cycle, slot, sSlot)}] Packs cycle ($16$ bit), slot
   and sub-slot into a \verb|uint32_t| (\verb!cycle | slot<<16 | sSlot<<24!).
+  Returns: \verb|uint32_t|.
+\item[\texttt{swap(val)}] Swaps the byte order of a $32$-bit value (endianness
+  reversal). Returns: \verb|uint32_t|.
 \item[\texttt{modulo\_sub(slot, oSlot, modulo)}] Returns the modular
-  difference of two slots. Marked as not yet tested in the source.
+  difference of two slots. Marked as not yet tested in the source. Returns:
+  \verb|uint8_t|.
+\item[\texttt{ReadModify\_write(mem, add)}] Atomic read-modify-write:
+  atomically adds \verb|add| to the byte at \verb|mem| via the exclusive
+  load/store instructions (\verb|LDREX|/\verb|STREX|) with a memory barrier,
+  retrying until the store succeeds. Returns: \verb|bool| (\verb|true| on
+  success).
 \end{description}
 \par}
 
@@ -135,8 +146,9 @@ typedef union {
 \item[\texttt{board\_get\_unique\_id(id, max\_len)}] Reads the 96-bit
   ($12$~byte) unique chip ID of the STM32L476 (address \verb|UID_BASE|) and
   pads a larger buffer with zeros. Replaced by a deterministic substitute
-  implementation in the \verb|UNIT_TEST| build.
+  implementation in the \verb|UNIT_TEST| build. Returns: \verb|size_t| (number
+  of values written).
 \item[\texttt{in\_interrupt()}] Placeholder; currently always returns
-  \verb|false|.
+  \verb|false|. Returns: \verb|int|.
 \end{description}
 \par}

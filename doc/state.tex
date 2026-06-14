@@ -55,16 +55,24 @@ deaktiviert ist.
 \begin{description}
 \item[\texttt{state\_init(state)} / \texttt{state\_reset(state)}] Initialisiert
   die Struktur (Standardbeschriftung \verb|0..F|) bzw.\ setzt alle Tasten auf
-  \verb|OFF|.
+  \verb|OFF|. Rückgabe: \verb|em_msg| (\verb|EM_ERR| bei ungültiger Struktur,
+  sonst \verb|EM_OK|).
 \item[\texttt{state\_check(state)}] Prüft die Bereichsfelder auf Gültigkeit.
+  Rückgabe: \verb|em_msg| (\verb|EM_OK| bei gültigen Bereichsfeldern, sonst
+  \verb|EM_ERR|).
 \item[\texttt{state\_set(state, nr, ns)} / \texttt{state\_get(state, nr)}]
-  Setzt bzw.\ liest den Zustand einer Taste über ihren Index.
+  Setzt bzw.\ liest den Zustand einer Taste über ihren Index. Rückgabe:
+  \verb|em_msg| (Setzer; \verb|EM_ERR| bei ungültigem Index/Struktur) bzw.\
+  \verb|key_state_e| (der Tastenzustand).
 \item[\texttt{state\_set\_key\_by\_lbl(\dots)} /
   \texttt{state\_get\_key\_by\_lbl(\dots)}] Dasselbe über die Beschriftung;
-  \verb|state_ch2idx()| bildet ein Zeichen auf den Index ab.
+  \verb|state_ch2idx()| bildet ein Zeichen auf den Index ab (\verb|int8_t|,
+  $-1$ wenn nicht gefunden). Rückgabe: \verb|em_msg| (Setzer) bzw.\
+  \verb|key_state_e| (der Tastenzustand, \verb|STATE_CNT| wenn nicht gefunden).
 \item[\texttt{state\_propagate(state, idx)} /
   \texttt{state\_propagate\_by\_idx} / \texttt{\dots\_by\_lbl}] Schaltet eine
-  Taste zyklisch um einen Schritt weiter und setzt \emph{dirty}.
+  Taste zyklisch um einen Schritt weiter und setzt \emph{dirty}. Rückgabe:
+  \verb|em_msg| (\verb|EM_ERR| bei ungültiger Struktur, sonst \verb|EM_OK|).
 \end{description}
 \par}
 
@@ -72,19 +80,23 @@ deaktiviert ist.
 {\sloppy\emergencystretch=3em
 \begin{description}
 \item[\texttt{state\_set\_state(from, to)} / \texttt{state\_copy(from, to)}]
-  Übernehmen den Tasteninhalt von \verb|from| nach \verb|to|.
+  Übernehmen den Tasteninhalt von \verb|from| nach \verb|to|. Rückgabe:
+  \verb|em_msg| (\verb|EM_ERR| bei ungültiger Struktur, sonst \verb|EM_OK|).
 \item[\texttt{state\_set\_u32(state, u32)} / \texttt{state\_get\_u32(state)}]
   Packen bzw.\ entpacken die $16$ Tasten zu je $2$ Bit in einen
-  \verb|uint32_t|.
+  \verb|uint32_t|. Rückgabe: \verb|em_msg| (Setzer) bzw.\ \verb|uint32_t| (die
+  gepackten Zustände).
 \item[\texttt{state\_diff(ref, state, diff)}] Bestimmt die tasten\-weise
   Differenz (modular, vgl.\ \verb|state_key_diff()|) gegenüber \verb|ref| in
-  \verb|diff|; Rückgabe ist das \emph{dirty}\-Flag.
+  \verb|diff|. Rückgabe: \verb|em_msg| (das \emph{dirty}\-Flag).
 \item[\texttt{state\_add(ref, add)}] Wendet \verb|add| als Anzahl von
   Weiterschaltungen auf \verb|ref| an (\verb|BLINKING| $= +1$, \verb|ON| $=
-  +2$).
+  +2$). Rückgabe: \verb|em_msg| (das \emph{dirty}\-Flag).
 \item[\texttt{state\_merge(in, out)}] Übernimmt geänderte Tasten von \verb|in|
-  nach \verb|out| und meldet, ob sich etwas geändert hat.
+  nach \verb|out| und meldet, ob sich etwas geändert hat. Rückgabe:
+  \verb|bool|.
 \item[\texttt{state\_is\_same(last, cur)}] Prüft zwei Zustände auf Gleichheit.
+  Rückgabe: \verb|em_msg| (\verb|EM_OK| bei Gleichheit).
 \end{description}
 \par}
 
@@ -92,11 +104,15 @@ deaktiviert ist.
 {\sloppy\emergencystretch=3em
 \begin{description}
 \item[\texttt{state\_set\_first/cnt} / \texttt{state\_get\_first/cnt}] Setzen
-  bzw.\ lesen das aktive Tastenfenster.
+  bzw.\ lesen das aktive Tastenfenster. Rückgabe: \verb|em_msg| (Setzer) bzw.\
+  \verb|uint8_t| (Getter).
 \item[\texttt{state\_get\_dirty} / \texttt{state\_set\_dirty} /
-  \texttt{state\_set\_undirty}] Verwalten das Änderungs\-Flag.
+  \texttt{state\_set\_undirty}] Verwalten das Änderungs\-Flag
+  (\verb|state_get_dirty| liefert dessen Wert). Rückgabe: \verb|em_msg|
+  (\verb|EM_ERR| bei ungültiger Struktur).
 \item[\texttt{state\_print(state, title, doLong, cycle)}] Gibt Beschriftung,
   Zustände und die Cycle\-Position (Abschnitt \ref{cycle}) zu Debug\-Zwecken
-  aus.
+  aus. Rückgabe: \verb|em_msg| (\verb|EM_ERR| bei ungültiger Struktur, sonst
+  \verb|EM_OK|).
 \end{description}
 \par}

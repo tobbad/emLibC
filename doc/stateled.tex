@@ -27,21 +27,27 @@ typedef enum {
   Initialisiert das Modul mit dem anzuzeigenden \verb|state_t|, einem
   GPIO\-Port (oder der Standardbelegung bei \verb|NULL|), der Zykluslänge für
   das Blinken und einem Blink\-Zähler; führt zur Kontrolle einen Lauflicht\-Test
-  über alle LEDs aus.
-\item[\texttt{stateled\_deinit()}] Deaktiviert das Modul.
+  über alle LEDs aus. Rückgabe: \verb|void|.
+\item[\texttt{stateled\_deinit()}] Deaktiviert das Modul. Rückgabe:
+  \verb|void|.
 \item[\texttt{stateled\_on(nr)} / \texttt{stateled\_off(nr)} /
   \texttt{stateled\_all\_off()}] Schalten eine einzelne LED bzw.\ alle LEDs.
+  Rückgabe: \verb|em_msg| (\verb|EM_ERR|, wenn das Modul nicht initialisiert
+  ist, sonst \verb|EM_OK|).
 \item[\texttt{stateled\_toggle\_pin(nr)} / \texttt{stateled\_toggle\_port()}]
-  Invertieren eine einzelne LED bzw.\ alle gemeinsam.
+  Invertieren eine einzelne LED bzw.\ alle gemeinsam. Rückgabe: \verb|em_msg|
+  (\verb|EM_ERR|, wenn nicht initialisiert).
 \item[\texttt{stateled\_set(val)} / \texttt{stateled\_set\_mask(mask)}] Setzen
-  das LED\-Muster direkt bzw.\ legen die aktive Bitmaske fest.
+  das LED\-Muster direkt bzw.\ legen die aktive Bitmaske fest. Rückgabe:
+  \verb|em_msg| (\verb|EM_ERR|, wenn nicht initialisiert).
 \item[\texttt{stateled\_iterate()}] Schaltet zyklisch zur nächsten LED weiter
-  (Lauflicht).
+  (Lauflicht). Rückgabe: \verb|void|.
 \item[\texttt{stateled\_show(state)}] Stellt im Zustand
   \verb|SYNCHRONIZE_READY|/\verb|SYNCHRONIZE_DOING| den \verb|state_t| auf den
   LEDs dar (an/aus/blinkend) und signalisiert Fehler durch Umschalten des
-  gesamten Ports.
+  gesamten Ports. Rückgabe: \verb|void|.
 \item[\texttt{stateled\_update(state)}] Variante, die abhängig vom
   Synchronisationszustand ein Lauflicht bzw.\ eine Fehleranzeige treibt.
+  Rückgabe: \verb|bool|.
 \end{description}
 \par}

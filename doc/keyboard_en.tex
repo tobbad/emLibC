@@ -40,21 +40,24 @@ The \verb|keyboard_*| functions check the handle and delegate to the
 identically named vtable entry of the registered device.
 {\sloppy\emergencystretch=3em
 \begin{description}
-\item[\texttt{keyboard\_init(kybd, device)}] Registers the vtable \verb|kybd|,
-  calls its \verb|init| and returns the assigned \verb|dev_handle_t| ($0$ on
-  error or a full table).
+\item[\texttt{keyboard\_init(kybd, device)}] Registers the vtable \verb|kybd|
+  and calls its \verb|init|. Returns: \verb|dev_handle_t| (the assigned handle,
+  $0$ on error or a full table).
 \item[\texttt{keyboard\_scan(dev)}] Polls the device and returns the detected
-  key. By convention a negative value denotes an entered number ($0\dots127$),
-  a positive one a letter.
+  key. Returns: \verb|int16_t| -- by convention a negative value denotes an
+  entered number ($0\dots127$), a positive one a letter.
 \item[\texttt{keyboard\_state(dev, ret)} / \texttt{keyboard\_set\_state(dev, state)}]
-  Reads the current key state into \verb|ret| or overwrites it.
+  Reads the current key state into \verb|ret| or overwrites it. Returns:
+  \verb|void|.
 \item[\texttt{keyboard\_add(dev, add)}] Merges a state additively into the
-  device state.
+  device state. Returns: \verb|void|.
 \item[\texttt{keyboard\_diff(dev, ref, diff)}] Determines the difference of the
-  device state relative to \verb|ref|.
+  device state relative to \verb|ref|. Returns: \verb|em_msg| (result of the
+  device function; \verb|EM_ERR| on an invalid handle).
 \item[\texttt{keyboard\_isdirty(dev)} / \texttt{keyboard\_undirty(dev)}]
-  Queries the change flag or resets it.
+  Queries the change flag (\verb|bool|) or resets it (\verb|void|).
 \item[\texttt{keyboard\_reset(dev)}] Resets the device to its initial state.
+  Returns: \verb|void|.
 \end{description}
 \par}
 

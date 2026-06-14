@@ -34,17 +34,22 @@ typedef struct buffer_pool_s {
   pool of \verb|lcnt| buffers of \verb|charCnt| bytes each. \verb|line_type|
   sets the type of the individual buffers (\verb|LINEAR| or \verb|RING|),
   \verb|type| the operating mode of the pool. If a partial allocation fails,
-  already created buffers are freed again and \verb|NULL| is returned.
+  already created buffers are freed again. Returns: \verb|buffer_pool_t *|
+  (\verb|NULL| on failure).
 \item[\texttt{buffer\_pool\_free(pool)}] Frees all buffers and the pool itself.
-\item[\texttt{buffer\_pool\_get(bp)}] Returns the first free buffer, marks it
-  \verb|BUFFER_USED| and returns it; \verb|NULL| if no buffer is free.
+  Returns: \verb|void|.
+\item[\texttt{buffer\_pool\_get(bp)}] Returns the first free buffer and marks
+  it \verb|BUFFER_USED|. Returns: \verb|buffer_t *| (\verb|NULL| if no buffer
+  is free).
 \item[\texttt{buffer\_pool\_return(bp, buffer)}] Returns a buffer to the pool.
   The index range, the membership of the pool (pointer comparison) and that
   the buffer is no longer in use are checked; it is then reset with
   \verb|buffer_reset()|. A buffer still marked \verb|BUFFER_USED| is rejected
-  with \verb|EM_ERR| -- so the content must have been consumed beforehand
-  (e.g.\ via \verb|buffer_get()|).
+  -- so the content must have been consumed beforehand (e.g.\ via
+  \verb|buffer_get()|). Returns: \verb|em_msg| (\verb|EM_OK| after a successful
+  reset, \verb|EM_ERR| for an invalid, foreign or still-used buffer).
 \item[\texttt{buffer\_pool\_print(bp, title)}] Prints the pool's buffers for
-  debugging.
+  debugging. Returns: \verb|em_msg| (\verb|EM_ERR| on a \verb|NULL| pool,
+  otherwise \verb|EM_OK|).
 \end{description}
 \par}

@@ -71,17 +71,21 @@ number toggles the corresponding key.
 \subsubsection*{API}
 {\sloppy\emergencystretch=3em
 \begin{description}
-\item[\texttt{serial\_mode\_set(mode)} / \texttt{serial\_mode\_get()}] Sets or
-  reads the \verb|print_e| bit field.
+\item[\texttt{serial\_mode\_set(mode)}] Sets the \verb|print_e| bit field.
+  Returns: \verb|void|.
+\item[\texttt{serial\_mode\_get()}] Reads the \verb|print_e| bit field.
+  Returns: \verb|print_e|.
 \item[\texttt{serial\_reset(dev)}] Resets the RX/TX buffers and the device
-  state.
-\item[\texttt{serial\_waitForNumber(key)}] Returns the last received input as a
-  number or $-1$; \verb|key| then points to the string.
-\item[\texttt{serial\_get\_byte\_per\_second()} /
-  \texttt{serial\_reset\_byte\_per\_second()}] Read or reset the measured
-  transmit throughput.
+  state. Returns: \verb|void|.
+\item[\texttt{serial\_waitForNumber(key)}] Evaluates the last received input;
+  \verb|key| then points to the string. Returns: \verb|int8_t| -- the number,
+  or $-1$.
+\item[\texttt{serial\_get\_byte\_per\_second()}] Reads the measured transmit
+  throughput. Returns: \verb|uint32_t|.
+\item[\texttt{serial\_reset\_byte\_per\_second()}] Resets the measured transmit
+  throughput. Returns: \verb|void|.
 \item[\texttt{serial\_uart\_printf(line, len)}] Prints \verb|len| bytes
-  directly over the UART.
+  directly over the UART. Returns: \verb|uint32_t| (number of bytes sent).
 \end{description}
 \par}
 

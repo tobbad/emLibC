@@ -67,25 +67,31 @@ typedef struct cycle_s {
 \subsubsection*{API}
 \begin{description}
 \item[\texttt{cycle\_init(cycle)}] Setzt \verb|init| und ruft anschliessend
-  \verb|cycle_reset()| auf. Liefert \verb|EM_ERR| bei einem Nullzeiger, sonst
-  \verb|EM_OK|.
+  \verb|cycle_reset()| auf. Rückgabe: \verb|em_msg| (\verb|EM_OK|, bzw.\
+  \verb|EM_ERR| bei einem Nullzeiger).
 \item[\texttt{cycle\_reset(cycle)}] Setzt \verb|subSlot| und \verb|cycle|
-  auf $0$ zurück. Erfordert eine zuvor initialisierte Struktur, andernfalls
-  \verb|EM_ERR|.
+  auf $0$ zurück. Erfordert eine zuvor initialisierte Struktur. Rückgabe:
+  \verb|em_msg| (\verb|EM_ERR|, wenn nicht initialisiert).
 \item[\texttt{cycle\_set\_slot(cycle, slot)}] Positioniert den Zähler auf den
   Beginn des angegebenen Slots ($\mathtt{subSlot} = \mathtt{slot} \cdot
   \mathtt{SUB\_SLOT\_CNT}$). Nur gültige Slots werden akzeptiert; der Slot wird
-  zuvor mit \verb|cycle_check_slot()| geprüft.
+  zuvor mit \verb|cycle_check_slot()| geprüft. Rückgabe: \verb|em_msg|
+  (\verb|EM_OK| bei gültigem Slot, \verb|EM_ERR| bei Nullzeiger oder
+  ungültigem Slot).
 \item[\texttt{cycle\_check\_slot(slot)}] Validiert einen Slot: zulässig sind
   ungerade Werte im Bereich $0 < \mathtt{slot} \le \mathtt{SLOT\_CNT}$.
-  Liefert den Slot zurück oder $-1$.
+  Rückgabe: \verb|int8_t| -- der Slot oder $-1$.
 \item[\texttt{cycle\_check(cycle, rxSlot, ss)}] Prüft, ob der empfangene Slot
   \verb|rxSlot| dem aktuell erwarteten Sub\-Slot entspricht
-  (\verb|cycle->sSlot == rxSlot|). Ungültige Slots liefern \verb|false|.
+  (\verb|cycle->sSlot == rxSlot|). Rückgabe: \verb|bool| (\verb|false| bei
+  ungültigem Slot).
 \item[\texttt{cycle\_string(cycle)}] Liefert eine kompakte Darstellung im
   Format \verb|(c:<cycle>, <slot>, <subSlot>)| in einem statischen Puffer.
+  Rückgabe: \verb|char *| (\verb|NULL| bei Nullzeiger).
 \item[\texttt{cycle\_print(cycle, title)}] Gibt alle Felder zeilenweise aus
-  (Debug\-Hilfe, vgl. \verb|xx_print| Konvention in der Einführung).
+  (Debug\-Hilfe, vgl. \verb|xx_print| Konvention in der Einführung). Rückgabe:
+  \verb|em_msg| (\verb|EM_ERR| bei Nullzeiger oder nicht initialisierter
+  Struktur, sonst \verb|EM_OK|).
 \end{description}
 
 \subsubsection*{Fortschalten des Cycles}

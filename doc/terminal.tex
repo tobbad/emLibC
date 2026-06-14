@@ -23,9 +23,10 @@ greifen direkt auf die Funktionen des \verb|state|\-Moduls zu.
 {\sloppy\emergencystretch=3em
 \begin{description}
 \item[\texttt{terminal\_waitForNumber(key)}] Blockierend: liest eine Zahl von
-  der seriellen Konsole und liefert sie als Wert; \verb|key| zeigt danach auf
-  die gelesene Zeichenkette. Die Eingabe \verb|R|/\verb|r| signalisiert einen
-  Reset und liefert $-1$.
+  der seriellen Konsole; \verb|key| zeigt danach auf die gelesene
+  Zeichenkette. Die Eingabe \verb|R|/\verb|r| signalisiert einen Reset.
+  Rückgabe: \verb|int8_t| -- der Wert, bzw.\ $-1$ bei Reset/ungültiger
+  Eingabe.
 \end{description}
 \par}
 

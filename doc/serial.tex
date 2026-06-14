@@ -72,17 +72,21 @@ Hexzahl erkannte Eingabe schaltet die entsprechende Taste.
 \subsubsection*{API}
 {\sloppy\emergencystretch=3em
 \begin{description}
-\item[\texttt{serial\_mode\_set(mode)} / \texttt{serial\_mode\_get()}] Setzt
-  bzw.\ liest das \verb|print_e|\-Bitfeld.
+\item[\texttt{serial\_mode\_set(mode)}] Setzt das \verb|print_e|\-Bitfeld.
+  Rückgabe: \verb|void|.
+\item[\texttt{serial\_mode\_get()}] Liest das \verb|print_e|\-Bitfeld.
+  Rückgabe: \verb|print_e|.
 \item[\texttt{serial\_reset(dev)}] Setzt RX\-/TX\-Puffer und den Gerätezustand
-  zurück.
-\item[\texttt{serial\_waitForNumber(key)}] Liefert die zuletzt empfangene
-  Eingabe als Zahl bzw.\ $-1$; \verb|key| zeigt danach auf die Zeichenkette.
-\item[\texttt{serial\_get\_byte\_per\_second()} /
-  \texttt{serial\_reset\_byte\_per\_second()}] Lesen bzw.\ Zurücksetzen des
-  gemessenen Sende\-Durchsatzes.
+  zurück. Rückgabe: \verb|void|.
+\item[\texttt{serial\_waitForNumber(key)}] Wertet die zuletzt empfangene
+  Eingabe aus; \verb|key| zeigt danach auf die Zeichenkette. Rückgabe:
+  \verb|int8_t| -- die Zahl, bzw.\ $-1$.
+\item[\texttt{serial\_get\_byte\_per\_second()}] Liefert den gemessenen
+  Sende\-Durchsatz. Rückgabe: \verb|uint32_t|.
+\item[\texttt{serial\_reset\_byte\_per\_second()}] Setzt den gemessenen
+  Sende\-Durchsatz zurück. Rückgabe: \verb|void|.
 \item[\texttt{serial\_uart\_printf(line, len)}] Gibt \verb|len| Bytes direkt
-  über den UART aus.
+  über den UART aus. Rückgabe: \verb|uint32_t| (Anzahl gesendeter Bytes).
 \end{description}
 \par}
 

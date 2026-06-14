@@ -141,35 +141,40 @@ typedef struct timem_s {
 \item[\texttt{time\_init()}] Initialises the module: enables the DWT cycle
   counter (Listing \ref{time_init_regs}), computes \verb|ccnt2ns| from the
   HCLK frequency and resets all handles. Must be called before any other
-  function.
-\item[\texttt{time\_new(name)}] Reserves a free handle, stores the name and
-  returns its \verb|time_handle_t|, or $-1$ if all \verb|TIME_DEV_CNT| handles
-  are taken.
+  function. Returns: \verb|void|.
+\item[\texttt{time\_new(name)}] Reserves a free handle and stores the name.
+  Returns: \verb|time_handle_t| (the handle, or $-1$ if all
+  \verb|TIME_DEV_CNT| handles are taken).
 \item[\texttt{time\_set\_mode(hdl, mode)} / \texttt{time\_get\_mode(hdl)}]
   Sets or reads the operating-mode bit field (\verb|mode_e|) of the handle.
+  Returns: \verb|em_msg| (setter; \verb|EM_ERR| on an invalid handle) or
+  \verb|mode_e| (the current mode).
 \item[\texttt{time\_set\_max(hdl, max)} / \texttt{time\_get\_max(hdl)}]
   Defines the number of retained pool entries ($0 \le \mathtt{max} <
   \mathtt{TIME\_MEAS\_CNT}-1$); the remaining slots are overwritten
-  cyclically.
+  cyclically. Returns: \verb|em_msg| (setter) or \verb|int8_t| (the set bound;
+  \verb|EM_ERR| on an invalid handle).
 \item[\texttt{time\_reset(hdl)}] Clears the handle's measurements but keeps the
-  initialisation instant \verb|init_ns|.
+  initialisation instant \verb|init_ns|. Returns: \verb|void|.
 \item[\texttt{time\_start(hdl, count, ptr, cycle)}] Starts a measurement:
   stores start tick and time, the quantity \verb|count| (basis of the baud
   computation) and the label \verb|ptr| -- or, with \verb|SSSC| set, the cycle
-  position from \verb|cycle|.
+  position from \verb|cycle|. Returns: \verb|void|.
 \item[\texttt{time\_stop\_su(hdl)}] Records the intermediate stop and computes
-  \verb|duration_su_ns| (time from start to \emph{setup}).
+  \verb|duration_su_ns| (time from start to \emph{setup}). Returns: \verb|void|.
 \item[\texttt{time\_stop(hdl, ptr)}] Records the final stop, computes
   \verb|duration_tx_ns|, \verb|baud| and the tick duration and advances the
-  ring-buffer index. Optionally \verb|ptr| updates the label.
+  ring-buffer index. Optionally \verb|ptr| updates the label. Returns:
+  \verb|void|.
 \item[\texttt{time\_auto(hdl, count, ptr, cycle)}] Convenience:
-  \verb|time_start()| immediately followed by \verb|time_stop()|.
+  \verb|time_start()| immediately followed by \verb|time_stop()|. Returns:
+  \verb|void|.
 \item[\texttt{time\_now\_ns()}] Returns the current counter value in
-  nanoseconds (\verb|NOW|).
-\item[\texttt{time\_doLoop\_get()}] Returns \verb|doLoop|; in \verb|ONESHOT|
-  mode it becomes \verb|false| after one full pass.
+  nanoseconds (\verb|NOW|). Returns: \verb|int64_t|.
+\item[\texttt{time\_doLoop\_get()}] In \verb|ONESHOT| mode \verb|doLoop|
+  becomes \verb|false| after one full pass. Returns: \verb|bool|.
 \item[\texttt{time\_print(hdl, titel, python, timing)}] Prints the pool as a
-  table. See the next section.
+  table. See the next section. Returns: \verb|void|.
 \end{description}
 
 \subsubsection*{Measurement flow and output}

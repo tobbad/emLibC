@@ -45,7 +45,7 @@ size_t board_get_unique_id(uint16_t id[], size_t max_len) {
     // RM0351 Rev.9, Section 49.1: "Unique device ID register (96 bits)"
     const uint8_t *uid = (const uint8_t *)UID_BASE; // UID_BASE = 0x1FFF7590 (definiert in stm32l476xx.h)
     memcpy(id, uid, 12);
-   // Falls der Puffer größer als 12 Bytes ist: Rest mit 0 auffüllen
+    // Falls der Puffer größer als 12 Bytes ist: Rest mit 0 auffüllen
     for (uint32_t i = 12U; i < max_len; i++) {
         id[i] = 0x00U;
     }
@@ -198,8 +198,7 @@ char int2hchar(uint8_t nr) {
 type_e clable2type(clabel_u *lbl) {
     type_e res = nonasci;
 #define ASCIHEX_LEN 16
-    char ascihex[ASCIHEX_LEN] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A',
-                                 'B', 'C', 'D', 'E'};
+    char ascihex[ASCIHEX_LEN] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E'};
     char *stopstring = NULL;
     lbl->str[CMD_LEN - 1] = 0;
     strtol(lbl->str, &stopstring, 10);
@@ -295,3 +294,20 @@ char *idx2str(idx2str_t *map, uint8_t cnt, uint8_t idx) {
 }
 
 char *idxa2str(idxa2str_t *map, uint8_t idx) { return idx2str(map->entry, map->cnt, idx); }
+
+uint32_t swap(uint32_t val) {
+    uint32_t out = 0;
+    const uint8_t *in = (uint8_t *)&val;
+    out = (in[0] << 24) | (in[1] << 16) | (in[2] << 8) | (in[0]);
+    return out;
+};
+
+bool ReadModify_write(int8_t *mem, int8_t add) {
+    do {
+        uint8_t val = __LDREXB((uint8_t *)mem);
+        if (0 == __STREXB((val + add), (uint8_t *)mem)) {
+            __DMB();
+            return true;
+        }
+    } while (true);
+};

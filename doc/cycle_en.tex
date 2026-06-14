@@ -64,24 +64,31 @@ typedef struct cycle_s {
 \subsubsection*{API}
 \begin{description}
 \item[\texttt{cycle\_init(cycle)}] Sets \verb|init| and then calls
-  \verb|cycle_reset()|. Returns \verb|EM_ERR| on a null pointer, otherwise
-  \verb|EM_OK|.
+  \verb|cycle_reset()|. Returns: \verb|em_msg| (\verb|EM_OK|, or \verb|EM_ERR|
+  on a null pointer).
 \item[\texttt{cycle\_reset(cycle)}] Resets \verb|subSlot| and \verb|cycle| to
-  $0$. Requires a previously initialised structure, otherwise \verb|EM_ERR|.
+  $0$. Requires a previously initialised structure. Returns: \verb|em_msg|
+  (\verb|EM_ERR| if not initialised).
 \item[\texttt{cycle\_set\_slot(cycle, slot)}] Positions the counter at the
   start of the given slot ($\mathtt{subSlot} = \mathtt{slot} \cdot
   \mathtt{SUB\_SLOT\_CNT}$). Only valid slots are accepted; the slot is checked
-  beforehand with \verb|cycle_check_slot()|.
+  beforehand with \verb|cycle_check_slot()|. Returns: \verb|em_msg|
+  (\verb|EM_OK| for a valid slot, \verb|EM_ERR| on a null pointer or invalid
+  slot).
 \item[\texttt{cycle\_check\_slot(slot)}] Validates a slot: odd values in the
-  range $0 < \mathtt{slot} \le \mathtt{SLOT\_CNT}$ are allowed. Returns the
-  slot or $-1$.
+  range $0 < \mathtt{slot} \le \mathtt{SLOT\_CNT}$ are allowed. Returns:
+  \verb|int8_t| -- the slot or $-1$.
 \item[\texttt{cycle\_check(cycle, rxSlot, ss)}] Checks whether the received
   slot \verb|rxSlot| matches the currently expected sub-slot
-  (\verb|cycle->sSlot == rxSlot|). Invalid slots return \verb|false|.
+  (\verb|cycle->sSlot == rxSlot|). Returns: \verb|bool| (\verb|false| on an
+  invalid slot).
 \item[\texttt{cycle\_string(cycle)}] Returns a compact representation in the
-  format \verb|(c:<cycle>, <slot>, <subSlot>)| in a static buffer.
+  format \verb|(c:<cycle>, <slot>, <subSlot>)| in a static buffer. Returns:
+  \verb|char *| (\verb|NULL| on a null pointer).
 \item[\texttt{cycle\_print(cycle, title)}] Prints all fields line by line
   (debug aid, cf.\ the \verb|xx_print| convention in the introduction).
+  Returns: \verb|em_msg| (\verb|EM_ERR| on a null pointer or uninitialised
+  structure, otherwise \verb|EM_OK|).
 \end{description}
 
 \subsubsection*{Advancing the cycle}

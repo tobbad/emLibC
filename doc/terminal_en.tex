@@ -22,8 +22,9 @@ the \verb|state| module directly.
 {\sloppy\emergencystretch=3em
 \begin{description}
 \item[\texttt{terminal\_waitForNumber(key)}] Blocking: reads a number from the
-  serial console and returns it as a value; \verb|key| then points to the read
-  string. The input \verb|R|/\verb|r| signals a reset and returns $-1$.
+  serial console; \verb|key| then points to the read string. The input
+  \verb|R|/\verb|r| signals a reset. Returns: \verb|int8_t| -- the value, or
+  $-1$ on reset/invalid input.
 \end{description}
 \par}
 

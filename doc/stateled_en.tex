@@ -26,20 +26,26 @@ typedef enum {
   Initialises the module with the \verb|state_t| to display, a GPIO port (or
   the default assignment on \verb|NULL|), the cycle length for blinking and a
   blink counter; runs a running-light test across all LEDs as a check.
-\item[\texttt{stateled\_deinit()}] Deactivates the module.
+  Returns: \verb|void|.
+\item[\texttt{stateled\_deinit()}] Deactivates the module. Returns: \verb|void|.
 \item[\texttt{stateled\_on(nr)} / \texttt{stateled\_off(nr)} /
-  \texttt{stateled\_all\_off()}] Switch a single LED or all LEDs.
+  \texttt{stateled\_all\_off()}] Switch a single LED or all LEDs. Returns:
+  \verb|em_msg| (\verb|EM_ERR| if the module is not initialised, otherwise
+  \verb|EM_OK|).
 \item[\texttt{stateled\_toggle\_pin(nr)} / \texttt{stateled\_toggle\_port()}]
-  Invert a single LED or all of them together.
+  Invert a single LED or all of them together. Returns: \verb|em_msg|
+  (\verb|EM_ERR| if not initialised).
 \item[\texttt{stateled\_set(val)} / \texttt{stateled\_set\_mask(mask)}] Set the
-  LED pattern directly or define the active bit mask.
+  LED pattern directly or define the active bit mask. Returns: \verb|em_msg|
+  (\verb|EM_ERR| if not initialised).
 \item[\texttt{stateled\_iterate()}] Advances cyclically to the next LED
-  (running light).
+  (running light). Returns: \verb|void|.
 \item[\texttt{stateled\_show(state)}] In state
   \verb|SYNCHRONIZE_READY|/\verb|SYNCHRONIZE_DOING| displays the \verb|state_t|
   on the LEDs (on/off/blinking) and signals errors by toggling the entire
-  port.
+  port. Returns: \verb|void|.
 \item[\texttt{stateled\_update(state)}] Variant that drives a running light or
-  an error indication depending on the synchronisation state.
+  an error indication depending on the synchronisation state. Returns:
+  \verb|bool|.
 \end{description}
 \par}
