@@ -1,0 +1,58 @@
+\subsection{xpad}\label{xpad}
+Das \verb|xpad| Modul ist eine konkrete \verb|kybd_t|\-Implementierung
+(Abschnitt \ref{keyboard}) für über GPIO angeschlossene Tasten. Es stellt
+zwei Geräte bereit:
+\begin{description}
+\item[\texttt{xscan\_dev}] eine $4\times4$\-Matrixtastatur, die spaltenweise
+  abgetastet wird (\verb|XSCAN|).
+\item[\texttt{eight\_dev}] acht direkt angeschlossene Tasten
+  (\verb|EIGHTKEY|).
+\end{description}
+Die Spalten (\verb|spalte|) sind Ausgänge, die Zeilen (\verb|zeile|) Eingänge
+mit Pull\-up; beide werden über das \verb|gpio_port_t| (Port\-Modul)
+angesprochen. Jede Taste durchläuft eine Entprellung über \verb|mkey_t|
+(Listing \ref{mkey_t}): ein Pegel gilt erst nach \verb|STABLE_CNT| gleichen
+Abtastungen als stabil und wird dann in den \verb|state_t| des Geräts
+übernommen.
+
+\begin{listing}
+\begin{minted}{C}
+typedef struct key_s {
+    bool last;      // letzter stabiler Pegel
+    bool current;   // aktuell gelesener Pegel
+    bool unstable;  // Pegel hat sich geaendert
+    uint8_t cnt;    // Zaehler gleicher Abtastungen
+    bool stable;    // entprellter Pegel
+} mkey_t;
+
+typedef struct xpad_dev_s {
+    gpio_port_t spalte;        // Spalten (Ausgaenge)
+    gpio_port_t zeile;         // Zeilen (Eingaenge)
+    dev_type_e dev_type;
+    mkey_t key[MAX_BUTTON_CNT]; // Entprell-Zustand je Taste
+    state_t state;             // Tastenzustand
+} xpad_dev_t;
+\end{minted}
+\caption{Entprell\- und Geräte\-Struktur \texttt{mkey\_t} / \texttt{xpad\_dev\_t}}
+\label{mkey_t}
+\end{listing}
+
+\subsubsection*{Abtastung}
+{\sloppy\emergencystretch=3em
+Bei der Matrix (\verb|xscan_dev|) wird je Spalte der Ausgang aktiviert, nach
+\verb|SETTLE_TIME_MS| Einschwingzeit werden alle Zeilen gelesen und über
+\verb|(zeile, spalte)| auf einen Tastenindex abgebildet. Bei \verb|eight_dev|
+wird jede Taste direkt eingelesen. Jeder gelesene Pegel geht durch die
+Entprellung; wird eine Taste stabil als gedrückt erkannt, propagiert das
+Modul die Änderung in den \verb|state_t| und setzt dessen \emph{dirty}\-Flag.
+Die für die Anwendung sichtbare Belegung legen die Beschriftungen im
+\verb|state| fest (z.\,B.\ \verb|1 2 3 A / 4 5 6 B / ...| bei der Matrix).
+\par}
+
+\noindent Die eigentlichen Vtable\-Methoden (\verb|xpad_init|,
+\verb|xpad_spalten_scan|, \verb|xpad_eight_scan|, \verb|xpad_state|,
+\verb|xpad_diff|, \verb|xpad_add|, \dots) sind dateilokal und werden über die
+exportierten \verb|kybd_t| \verb|xscan_dev| und \verb|eight_dev| sowie die
+\verb|keyboard_*|\-Funktionen erreicht. Ohne übergebene Konfiguration nutzt
+\verb|xpad_init()| eine fest hinterlegte Standard\-Pinbelegung
+(GPIOA/B/C\-Pins).

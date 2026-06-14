@@ -1,0 +1,34 @@
+\subsection{terminal}\label{terminal}
+Das \verb|terminal| Modul ist eine \verb|kybd_t|\-Implementierung
+(Abschnitt \ref{keyboard}), die Tasteneingaben von einer seriellen Konsole
+entgegennimmt. Es exportiert das Gerät \verb|terminal_dev| mit der
+Betriebsart \verb|TERMINAL|. Intern hält es einen eigenen \verb|state_t|
+(\verb|my_term|) mit acht Tasten, die mit \verb|'1'|\dots\verb|'8'|
+beschriftet sind, und greift für den UART\-Zugriff auf die \verb|sio_t|\-Konfiguration
+des \verb|serial|\-Moduls (Abschnitt \ref{serial}) zurück.
+
+\subsubsection*{Funktionsweise}
+{\sloppy\emergencystretch=3em
+Beim Abtasten (\verb|terminal_scan|) fordert das Modul einmalig zur Eingabe
+auf (\glqq Please enter key\grqq{}) und liest dann zeichenweise über
+\verb|HAL_UART_Receive| bis zum Zeilenende. Eine erkannte Ziffer wird über
+\verb|state_ch2idx()| auf einen Tastenindex abgebildet; liegt dieser im
+gültigen Bereich, wird die Änderung in \verb|my_term| propagiert und das
+\emph{dirty}\-Flag gesetzt. Die übrigen Vtable\-Methoden (\verb|terminal_state|,
+\verb|terminal_diff|, \verb|terminal_add|, \verb|terminal_isdirty|, \dots)
+greifen direkt auf die Funktionen des \verb|state|\-Moduls zu.
+\par}
+
+\subsubsection*{API}
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{terminal\_waitForNumber(key)}] Blockierend: liest eine Zahl von
+  der seriellen Konsole und liefert sie als Wert; \verb|key| zeigt danach auf
+  die gelesene Zeichenkette. Die Eingabe \verb|R|/\verb|r| signalisiert einen
+  Reset und liefert $-1$.
+\end{description}
+\par}
+
+\noindent Daneben existiert ein \verb|UART_IdleCallback()| für den
+DMA\-basierten Empfang (Idle\-Line\-Erkennung), der empfangene Zeichen in das
+Label \verb|clabel| des \verb|state_t| übernimmt.

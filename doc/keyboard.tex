@@ -1,0 +1,66 @@
+\subsection{keyboard}\label{keyboard}
+Das \verb|keyboard| Modul definiert eine generische, polymorphe
+Schnittstelle für Eingabegeräte (\glqq Tastaturen\grqq{}). Jedes konkrete
+Gerät stellt eine \verb|kybd_t|\-Vtable aus Funktionszeigern bereit
+(Listing \ref{kybd_t}) und liefert seinen Zustand als \verb|state_t|
+(bis zu \verb|MAX_BUTTON_CNT| Tastenzustände \verb|OFF|/\verb|BLI|/\verb|ON|
+mit Beschriftungen und einem \emph{dirty}\-Flag). Konkrete Implementierungen
+sind \verb|xpad| (Abschnitt \ref{xpad}), \verb|terminal| (Abschnitt
+\ref{terminal}) und \verb|serial| (Abschnitt \ref{serial}).
+
+Der Dispatcher verwaltet eine interne Tabelle registrierter Geräte.
+\verb|keyboard_init()| trägt ein Gerät ein und liefert ein
+\verb|dev_handle_t| ($> 0$); über dieses Handle leiten die übrigen
+\verb|keyboard_*|\-Funktionen ihren Aufruf an die jeweilige Vtable weiter.
+So bleibt der Anwendungscode unabhängig davon, ob die Eingabe von einer
+GPIO\-Matrix, einer seriellen Konsole oder USB stammt.
+
+\begin{listing}
+\begin{minted}{C}
+typedef struct kybd_s {
+    em_msg  (*init)(dev_handle_t, dev_type_e, void *device);
+    int16_t (*scan)(dev_handle_t);
+    void    (*reset)(dev_handle_t);
+    void    (*state)(dev_handle_t, state_t *ret);
+    void    (*set_state)(dev_handle_t, const state_t *state);
+    em_msg  (*add)(dev_handle_t, state_t *add);
+    em_msg  (*diff)(dev_handle_t, state_t *ref, state_t *diff);
+    bool    (*isdirty)(dev_handle_t);
+    void    (*undirty)(dev_handle_t);
+    dev_type_e dev_type;
+    uint8_t cnt;    // Anzahl Tasten
+    uint8_t first;  // Index der ersten Taste
+} kybd_t;
+\end{minted}
+\caption{Geräte\-Schnittstelle \texttt{kybd\_t}}
+\label{kybd_t}
+\end{listing}
+
+\subsubsection*{API}
+Die \verb|keyboard_*|\-Funktionen prüfen das Handle und delegieren an den
+gleichnamigen Vtable\-Eintrag des registrierten Geräts.
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{keyboard\_init(kybd, device)}] Registriert die Vtable
+  \verb|kybd|, ruft deren \verb|init| auf und liefert das zugeteilte
+  \verb|dev_handle_t| ($0$ bei Fehler bzw.\ voller Tabelle).
+\item[\texttt{keyboard\_scan(dev)}] Pollt das Gerät und liefert die erkannte
+  Taste. Per Konvention bezeichnet ein negativer Wert eine eingegebene Zahl
+  ($0\dots127$), ein positiver einen Buchstaben.
+\item[\texttt{keyboard\_state(dev, ret)} / \texttt{keyboard\_set\_state(dev, state)}]
+  Liest den aktuellen Tastenzustand in \verb|ret| bzw.\ überschreibt ihn.
+\item[\texttt{keyboard\_add(dev, add)}] Mischt einen Zustand additiv in den
+  Gerätezustand.
+\item[\texttt{keyboard\_diff(dev, ref, diff)}] Bestimmt die Differenz des
+  Gerätezustands gegenüber \verb|ref|.
+\item[\texttt{keyboard\_isdirty(dev)} / \texttt{keyboard\_undirty(dev)}] Fragt
+  das Änderungs\-Flag ab bzw.\ setzt es zurück.
+\item[\texttt{keyboard\_reset(dev)}] Setzt das Gerät in den Ausgangszustand.
+\end{description}
+\par}
+
+\noindent Zur Anzeige stellt das Modul die Beschriftungstabellen
+\verb|key_state_3c| und \verb|key_state_2c| bereit, die die Zustände
+\verb|OFF|/\verb|BLI|/\verb|ON| in drei\- bzw.\ zweispaltige Texte abbilden.
+Die Konstanten \verb|SCAN_MS| und \verb|SETTLE_TIME_MS| legen Abtast\- und
+Einschwingzeiten fest.

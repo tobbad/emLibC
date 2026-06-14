@@ -1,0 +1,102 @@
+\subsection{state}\label{state}
+Die Struktur \verb|state_t| ist die zentrale Datenstruktur des Systems: sie
+hält den Tastenzustand, der zwischen allen Eingabegeräten (Abschnitt
+\ref{keyboard}) ausgetauscht und über Funk zwischen den Geräten
+synchronisiert wird. Jede der bis zu \verb|MAX_BUTTON_CNT| Tasten besitzt
+einen Zustand \verb|key_state_e| -- \verb|OFF|, \verb|BLINKING| oder
+\verb|ON| (Listing \ref{key_state_e}) -- sowie eine Beschriftung.
+
+Der zentrale Mechanismus ist \verb|state_propagate()|: ein Tastendruck
+schaltet den Zustand zyklisch weiter
+($\mathtt{OFF} \to \mathtt{BLINKING} \to \mathtt{ON} \to \mathtt{OFF}$,
+also $\mathtt{state} = (\mathtt{state}+1) \bmod \mathtt{STATE\_CNT}$) und
+markiert den \verb|state_t| als \emph{dirty}.
+
+\begin{listing}
+\begin{minted}{C}
+typedef enum __attribute__((packed)) {
+    OFF, BLINKING, ON, STATE_CNT
+} key_state_e;
+\end{minted}
+\caption{Tastenzustand \texttt{key\_state\_e}}
+\label{key_state_e}
+\end{listing}
+
+\subsubsection*{Zustand}
+Listing \ref{state_t} zeigt die Struktur (Größe $40$~Byte). \verb|first| und
+\verb|cnt| legen das aktive Fenster der Tasten fest, \verb|dirty| markiert
+eine Änderung seit der letzten Synchronisation, \verb|id| ist ein bei jedem
+Senden mitgeführter Zähler und \verb|clabel| (Abschnitt \ref{common}) trägt
+ein Kommando bzw.\ Label. Die Felder \verb|state[]| und \verb|label[]| halten
+Zustand und Beschriftung je Taste.
+
+\begin{listing}
+\begin{minted}{C}
+typedef struct state_s {
+    uint8_t  first;                 // erste gueltige Taste
+    uint8_t  cnt;                   // Anzahl gueltiger Tasten
+    uint8_t  dirty;                 // Aenderungs-Flag
+    uint8_t  id;                    // Sende-Zaehler
+    clabel_u clabel;                // Kommando/Label (4 Byte)
+    key_state_e state[MAX_STATE_CNT]; // Zustand je Taste
+    char     label[MAX_STATE_CNT];  // Beschriftung je Taste
+} state_t;                          // 2*MAX_BUTTON_CNT + 8 = 40 Byte
+\end{minted}
+\caption{Definition der \texttt{state\_t} Struktur}
+\label{state_t}
+\end{listing}
+
+\noindent Über die Option \verb|REDUCED_PAYLOAD| (in \verb|emLibC_options.h|)
+existiert alternativ eine bit\-gepackte Variante ($\approx 10$~Byte), die hier
+deaktiviert ist.
+
+\subsubsection*{Lebenszyklus und Einzeltasten}
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{state\_init(state)} / \texttt{state\_reset(state)}] Initialisiert
+  die Struktur (Standardbeschriftung \verb|0..F|) bzw.\ setzt alle Tasten auf
+  \verb|OFF|.
+\item[\texttt{state\_check(state)}] Prüft die Bereichsfelder auf Gültigkeit.
+\item[\texttt{state\_set(state, nr, ns)} / \texttt{state\_get(state, nr)}]
+  Setzt bzw.\ liest den Zustand einer Taste über ihren Index.
+\item[\texttt{state\_set\_key\_by\_lbl(\dots)} /
+  \texttt{state\_get\_key\_by\_lbl(\dots)}] Dasselbe über die Beschriftung;
+  \verb|state_ch2idx()| bildet ein Zeichen auf den Index ab.
+\item[\texttt{state\_propagate(state, idx)} /
+  \texttt{state\_propagate\_by\_idx} / \texttt{\dots\_by\_lbl}] Schaltet eine
+  Taste zyklisch um einen Schritt weiter und setzt \emph{dirty}.
+\end{description}
+\par}
+
+\subsubsection*{Ganzer Zustand: Übertragen und Kombinieren}
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{state\_set\_state(from, to)} / \texttt{state\_copy(from, to)}]
+  Übernehmen den Tasteninhalt von \verb|from| nach \verb|to|.
+\item[\texttt{state\_set\_u32(state, u32)} / \texttt{state\_get\_u32(state)}]
+  Packen bzw.\ entpacken die $16$ Tasten zu je $2$ Bit in einen
+  \verb|uint32_t|.
+\item[\texttt{state\_diff(ref, state, diff)}] Bestimmt die tasten\-weise
+  Differenz (modular, vgl.\ \verb|state_key_diff()|) gegenüber \verb|ref| in
+  \verb|diff|; Rückgabe ist das \emph{dirty}\-Flag.
+\item[\texttt{state\_add(ref, add)}] Wendet \verb|add| als Anzahl von
+  Weiterschaltungen auf \verb|ref| an (\verb|BLINKING| $= +1$, \verb|ON| $=
+  +2$).
+\item[\texttt{state\_merge(in, out)}] Übernimmt geänderte Tasten von \verb|in|
+  nach \verb|out| und meldet, ob sich etwas geändert hat.
+\item[\texttt{state\_is\_same(last, cur)}] Prüft zwei Zustände auf Gleichheit.
+\end{description}
+\par}
+
+\subsubsection*{Bereich, Flags und Ausgabe}
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{state\_set\_first/cnt} / \texttt{state\_get\_first/cnt}] Setzen
+  bzw.\ lesen das aktive Tastenfenster.
+\item[\texttt{state\_get\_dirty} / \texttt{state\_set\_dirty} /
+  \texttt{state\_set\_undirty}] Verwalten das Änderungs\-Flag.
+\item[\texttt{state\_print(state, title, doLong, cycle)}] Gibt Beschriftung,
+  Zustände und die Cycle\-Position (Abschnitt \ref{cycle}) zu Debug\-Zwecken
+  aus.
+\end{description}
+\par}
