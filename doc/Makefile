@@ -1,6 +1,6 @@
 # Minimal Makefile for LaTeX project
 
-LATEX=pdflatex
+LATEX=pdflatex -shell-escape
 MAIN=main
 
 all: pdf dot
@@ -21,7 +21,7 @@ tar:
 	tar  -cvf $(MAIN).tar *.tex
 	tar  -rf  $(MAIN).tar  Makefile
 	tar  -rf  $(MAIN).tar  pic/*
-	gzip -f $(MAIN).tar  
+	gzip -f $(MAIN).tar
 
-dot: 	statemachine.png
-	cat dot/radio_statemachine.dot | dot -Tpng > statemachine.png
+#dot: 	statemachine.png
+#	cat dot/radio_statemachine.dot | dot -Tpng > statemachine.png

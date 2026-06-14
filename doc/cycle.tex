@@ -1,0 +1,114 @@
+\subsection{cycle}\label{cycle}
+Das \verb|cycle| Modul bildet die zeitliche Grundstruktur des Slot\-basierten
+Funkprotokolls ab. Ein vollständiger \emph{Cycle} wird in \verb|SLOT_CNT|
+Slots unterteilt, und jeder Slot wiederum in \verb|SUB_SLOT_CNT| Sub\-Slots.
+Mit den Standardwerten aus \verb|system_definitions.h| (Listing
+\ref{cycle_defines}) ergibt das $16$ Slots zu je $8$ Sub\-Slots, also $128$
+Sub\-Slots pro Cycle. Jedes Gerät besitzt einen eigenen, ungeraden Slot
+($1, 3, 5, \dots, \mathtt{f}$) und darf nur in diesem senden; die übrigen
+Slots dienen dem Empfang der anderen Teilnehmer.
+
+\begin{listing}
+\begin{minted}{C}
+#define SUB_SLOT_POW2  3
+#define SUB_SLOT_CNT   (1<<SUB_SLOT_POW2)   // 8 Sub-Slots pro Slot
+#define SUB_SLOT_MASK  (SUB_SLOT_CNT-1)     // 0x07
+#define SLOT_POW2      4
+#define SLOT_CNT       (1<<SLOT_POW2)        // 16 Slots pro Cycle
+#define SLOT_MASK      (SLOT_CNT-1)          // 0x0F
+#define SLOT_SHIFT     (SUB_SLOT_POW2)       // 3
+\end{minted}
+\caption{Slot\-Konstanten aus \texttt{system\_definitions.h}}
+\label{cycle_defines}
+\end{listing}
+
+\subsubsection*{Zustand}
+Der gesamte Zustand wird in der Struktur \verb|cycle_t| (Listing
+\ref{cycle_t}) gehalten. Das zentrale Feld ist der monoton hochzählende
+Zähler \verb|subSlot| (Bereich $0 \dots 127$), in dem Slot\- und
+Sub\-Slot\-Index \emph{bitweise gepackt} sind: die unteren
+\verb|SUB_SLOT_POW2| Bits enthalten den Sub\-Slot, die darüber liegenden
+\verb|SLOT_POW2| Bits den Slot. Die beiden Makros aus Listing
+\ref{cycle_macros} extrahieren die beiden Anteile, ohne dass an anderer
+Stelle gerechnet werden muss:
+\begin{align*}
+\mathtt{ACT\_SUB\_SLOT} &= \mathtt{subSlot}\ \&\ \mathtt{SUB\_SLOT\_MASK} \\
+\mathtt{ACT\_SLOT}      &= (\mathtt{subSlot} \gg \mathtt{SLOT\_SHIFT})\ \&\ \mathtt{SLOT\_MASK}
+\end{align*}
+Die Felder \verb|actSlot| und \verb|sSlot| sind zwischengespeicherte Kopien
+des aktuellen Slots bzw. Sub\-Slots, die bei jedem Fortschalten neu gesetzt
+werden, damit sie ohne erneute Bitoperation zur Verfügung stehen.
+\verb|cycle| zählt die vollständig durchlaufenen Cycles ($16$ Bit, läuft
+bei $65535$ über) und \verb|init| markiert die erfolgte Initialisierung.
+
+\begin{listing}
+\begin{minted}{C}
+typedef struct cycle_s {
+    volatile int8_t subSlot; // aktueller SubSlot (actSlot+sSlot gepackt)
+    int8_t          actSlot; // zwischengespeicherter Slot
+    int8_t          sSlot;   // zwischengespeicherter Sub-Slot
+    uint16_t        cycle;   // Anzahl durchlaufener Cycles
+    bool            init;    // true nach cycle_init()
+} cycle_t;
+\end{minted}
+\caption{Definition der \texttt{cycle\_t} Struktur}
+\label{cycle_t}
+\end{listing}
+
+\begin{listing}
+\begin{minted}{C}
+#define ACT_SUB_SLOT(_cycle)  (((_cycle)->subSlot) & SUB_SLOT_MASK)
+#define ACT_SLOT(_cycle)      (((_cycle)->subSlot >> SLOT_SHIFT) & SLOT_MASK)
+\end{minted}
+\caption{Makros zum Extrahieren von Slot und Sub\-Slot}
+\label{cycle_macros}
+\end{listing}
+
+\subsubsection*{API}
+\begin{description}
+\item[\texttt{cycle\_init(cycle)}] Setzt \verb|init| und ruft anschliessend
+  \verb|cycle_reset()| auf. Liefert \verb|EM_ERR| bei einem Nullzeiger, sonst
+  \verb|EM_OK|.
+\item[\texttt{cycle\_reset(cycle)}] Setzt \verb|subSlot| und \verb|cycle|
+  auf $0$ zurück. Erfordert eine zuvor initialisierte Struktur, andernfalls
+  \verb|EM_ERR|.
+\item[\texttt{cycle\_set\_slot(cycle, slot)}] Positioniert den Zähler auf den
+  Beginn des angegebenen Slots ($\mathtt{subSlot} = \mathtt{slot} \cdot
+  \mathtt{SUB\_SLOT\_CNT}$). Nur gültige Slots werden akzeptiert; der Slot wird
+  zuvor mit \verb|cycle_check_slot()| geprüft.
+\item[\texttt{cycle\_check\_slot(slot)}] Validiert einen Slot: zulässig sind
+  ungerade Werte im Bereich $0 < \mathtt{slot} \le \mathtt{SLOT\_CNT}$.
+  Liefert den Slot zurück oder $-1$.
+\item[\texttt{cycle\_check(cycle, rxSlot, ss)}] Prüft, ob der empfangene Slot
+  \verb|rxSlot| dem aktuell erwarteten Sub\-Slot entspricht
+  (\verb|cycle->sSlot == rxSlot|). Ungültige Slots liefern \verb|false|.
+\item[\texttt{cycle\_string(cycle)}] Liefert eine kompakte Darstellung im
+  Format \verb|(c:<cycle>, <slot>, <subSlot>)| in einem statischen Puffer.
+\item[\texttt{cycle\_print(cycle, title)}] Gibt alle Felder zeilenweise aus
+  (Debug\-Hilfe, vgl. \verb|xx_print| Konvention in der Einführung).
+\end{description}
+
+\subsubsection*{Fortschalten des Cycles}
+{\sloppy\emergencystretch=3em
+Der Zähler wird ausschliesslich über \verb|cycle_increment()| weitergeschaltet,
+typischerweise einmal pro Sub\-Slot\-Tick. Die Funktion ist an die
+Synchronisations\-Zustandsmaschine (\verb|system_state_e|) gekoppelt:
+
+\begin{itemize}
+\item Im Zustand \verb|SYNCHRONIZE| wird der Übergang nach
+  \verb|SYNCHRONIZE_READY| ausgelöst und das interne Flag \verb|is_set|
+  gesetzt; ab diesem Zeitpunkt läuft der Zähler.
+\item Solange \verb|is_set| gilt, wird \verb|subSlot| inkrementiert und modulo
+  $\mathtt{SUB\_SLOT\_CNT} \cdot \mathtt{SLOT\_CNT}$ ($=128$) zurückgefaltet;
+  \verb|actSlot| und \verb|sSlot| werden aus dem neuen Wert nachgeführt.
+\item In den Zuständen \verb|SYNCHRONIZE_DOING|, \verb|SYNCHRONIZE_READY| und
+  \verb|SYNCHRONIZE_ERROR| wird ein Slotwechsel erkannt. Beim Übergang auf
+  Slot $0$ wird der Cycle\-Zähler \verb|cycle| genau einmal pro Umlauf erhöht
+  (über das Flag \verb|cycle_once| entprellt).
+\end{itemize}
+\par}
+
+\noindent Da \verb|cycle_increment()| zuerst fortschaltet und erst danach die
+Felder meldet, liefert der erste Aufruf nach einem Reset bereits den nächsten
+Sub\-Slot. Ist \verb|OPTION_SHOW_TIMING| aktiv, werden zusätzlich Status\-LEDs
+zur Laufzeitmessung getoggelt.

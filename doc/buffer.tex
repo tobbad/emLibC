@@ -1,0 +1,120 @@
+\subsection{buffer}\label{buffer}
+Das \verb|buffer| Modul stellt einen dynamisch allozierten Datenpuffer
+bereit, der einen zusammenhängenden Speicherbereich verwaltet und dessen
+Belegung mitführt. Es werden zwei Ausprägungen unterschieden
+(\verb|b_type_e|, Listing \ref{buffer_enums}):
+\begin{description}
+\item[\texttt{LINEAR}] Ein linearer Puffer; Daten liegen ab dem Anfang des
+  Speichers, Schreiben beginnt stets bei Index $0$.
+\item[\texttt{RING}] Ein Ringpuffer; Schreib\- und Lesepositionen laufen
+  über das Speicherende hinaus zyklisch um (\emph{wrap\-around}).
+\end{description}
+Der Belegungszustand wird über \verb|state_e| ausgedrückt:
+\verb|BUFFER_READY| (frei/leer) bzw. \verb|BUFFER_USED| (enthält Daten,
+also belegt).
+
+\begin{listing}
+\begin{minted}{C}
+typedef enum {
+    BUFFER_READY, // Buffer frei/leer
+    BUFFER_USED,  // enthaelt Daten (belegt)
+    BUFFER_CNT
+} state_e;
+
+typedef enum {
+    LINEAR, // linearer Puffer
+    RING,   // Ringpuffer
+} b_type_e;
+\end{minted}
+\caption{Aufzählungen \texttt{state\_e} und \texttt{b\_type\_e}}
+\label{buffer_enums}
+\end{listing}
+
+\subsubsection*{Zustand}
+Ein Puffer wird durch \verb|buffer_t| (Listing \ref{buffert})
+beschrieben. \verb|mem| zeigt auf den allozierten Speicher der Größe
+\verb|size|; \verb|used| gibt die Anzahl belegter Bytes an und
+\verb|first| (für \verb|RING|) den Index des ersten genutzten Bytes. Das
+Feld \verb|lbl| (\verb|clabel_u|, siehe Abschnitt \ref{common}) nimmt die
+ersten bis zu \verb|CMD_LEN|$-1$ Zeichen des Inhalts als kurzes Label auf,
+\verb|id| dient der Identifikation innerhalb eines Pools (Abschnitt
+\ref{buffer_pool}).
+
+\begin{listing}
+\begin{minted}{C}
+typedef struct buffer_s {
+    state_e state;
+    uint8_t *pl;   // Zeiger auf erstes genutztes Byte
+    uint8_t *mem;  // Start des Speichers
+    clabel_u lbl;  // erste Zeichen des Inhalts als Label
+    int16_t first; // Index des ersten genutzten Bytes
+    int16_t used;  // Anzahl belegter Bytes
+    int16_t size;  // Groesse des Speichers
+    uint8_t id;    // Id des Buffers (im Pool)
+    b_type_e type; // LINEAR oder RING
+} buffer_t;
+\end{minted}
+\caption{Definition der \texttt{buffer\_t} Struktur}
+\label{buffert}
+\end{listing}
+
+\subsubsection*{Lebenszyklus}
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{buffer\_new(size, type)}] Alloziert eine \verb|buffer_t|\-Struktur
+  samt Speicher der Größe \verb|size| und liefert einen Zeiger darauf bzw.
+  \verb|NULL| bei \verb|size == 0| oder fehlgeschlagener Allokation.
+\item[\texttt{buffer\_new\_buffer\_t(buffer)}] Re\-initialisiert eine bereits
+  bestehende Struktur: Größe und Typ bleiben erhalten, der Speicher wird neu
+  angelegt.
+\item[\texttt{buffer\_free(buffer)}] Gibt Speicher und Struktur frei. Meldet
+  \verb|EM_ERR|, wenn der Puffer noch als \verb|BUFFER_USED| markiert ist.
+\end{description}
+\par}
+
+\subsubsection*{Daten schreiben und lesen}
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{buffer\_set(buffer, data, size)}] Schreibt \verb|size| Bytes in
+  den Puffer (\verb|LINEAR|: ab Index $0$; \verb|RING|: ab der Schreibposition
+  mit Umlauf). Schlägt fehl, wenn \verb|size| den freien Platz übersteigt;
+  setzt \verb|state = BUFFER_USED| und aktualisiert das Label.
+\item[\texttt{buffer\_get(buffer, data, size)}] Liest bis zu \verb|*size| Bytes
+  (begrenzt auf die belegte Menge), entrollt beim \verb|RING| den Umlauf und
+  schreibt die tatsächliche Länge nach \verb|*size| zurück. Ist der Puffer
+  danach leer, wird \verb|state = BUFFER_READY|.
+\item[\texttt{buffer\_transfer(from, to)}] Überträgt den Inhalt von \verb|from|
+  nach \verb|to| und unterstützt alle \verb|LINEAR|/\verb|RING|\-Kombinationen.
+  Die Kapazität wird \emph{vor} dem Lesen geprüft (transaktional): passt der
+  Inhalt nicht, bleibt \verb|from| unangetastet und es wird \verb|EM_ERR|
+  geliefert; andernfalls wird \verb|from| geleert.
+\end{description}
+\par}
+
+\subsubsection*{Verwaltung und Abfrage}
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{buffer\_reset(buffer)}] Setzt Inhalt und Zustand vollständig
+  zurück (nullt den Speicher).
+\item[\texttt{buffer\_clear(buffer)}] Markiert den Inhalt als verbraucht
+  (\verb|first += used|, \verb|used = 0|, \verb|state = BUFFER_READY|), ohne
+  den Speicher zu nullen.
+\item[\texttt{buffer\_tolower(buffer)}] Wandelt im belegten Bereich alle
+  Großbuchstaben \texttt{A}--\texttt{Z} in Kleinbuchstaben um.
+\item[\texttt{buffer\_writeable(buffer)}] Liefert den freien Platz
+  (\verb|size - used|).
+\item[\texttt{buffer\_used(buffer)}] Liefert die Anzahl belegter Bytes.
+\item[\texttt{buffer\_is\_used(buffer)}] Liefert \verb|true|, wenn der Zustand
+  \verb|BUFFER_USED| ist.
+\item[\texttt{buffer\_get\_clabel(buffer)}] Liefert einen Zeiger auf das Label
+  (\verb|clabel_u|) des Puffers.
+\item[\texttt{buffer\_get\_till\_end(buffer)}] Liefert einen temporären
+  (statischen) \verb|buffer_t|, der den Bereich ab \verb|first| bis zum
+  Speicherende beschreibt -- nützlich für \verb|RING|\-Zugriffe ohne Umlauf.
+\item[\texttt{buffer\_check(buffer, reduced)}] Prüft die Struktur auf
+  Gültigkeit (Nullzeiger, \verb|size == 0|, und -- außer bei \verb|reduced| --
+  \verb|mem == NULL|).
+\item[\texttt{buffer\_print(buffer, title)}] Gibt die Felder und den Inhalt zu
+  Debug\-Zwecken aus.
+\end{description}
+\par}

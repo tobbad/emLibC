@@ -1,0 +1,20 @@
+\subsection{Einführung}
+emLibC ist eine embbeded Projekt das primär für die  STMicoelectronic MCU entwickelt wurde. Es bietet verscĥieden Services die im folgenden Beschrieben werden. Beim Design wurden folgende Designentscheide befolgt:
+\begin{itemize}
+\item {\bf Einheitliche Funktions- und Strukturnamierung:} Funktionen werden kleine Namen gegeben und ihre Funktion mit \verb|_| abgetrennt. Z.B.\ initialisiert
+\begin{minted}{C}
+em_msg cycle_init(cycle_t *cycle);
+\end{minted}
+die \verb|cycle|-Struktur, die als
+\begin{minted}{C}
+typedef struct cycle_s {
+    volatile int8_t subSlot; // actual sub slot
+    int8_t          actSlot;
+    int8_t          sSlot;
+    uint16_t        cycle;
+    bool            init;
+} cycle_t;
+\end{minted}
+festgelegt wird. Eine Typedefinition wird mit \verb|_t| und eine Enumdefinition mit \verb|_e| definiert.
+\item {\bf Debug support:} Oftmals gibt es eine \verb|xx_print| funktion, die den Inhalt einer Struktur ausgibt.
+\end{itemize}

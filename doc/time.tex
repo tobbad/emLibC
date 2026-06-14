@@ -1,0 +1,203 @@
+\subsection{\_time}\label{time}
+Das \verb|_time| Modul stellt eine leichtgewichtige Laufzeitmessung
+(Profiling) zur Verfügung. Es basiert auf dem Cycle\-Counter der
+ARM Cortex\-M Debug\-Einheit (\verb|DWT->CYCCNT|), der bei jedem
+Prozessortakt hochzählt und so eine Auflösung im Nanosekundenbereich
+erlaubt. Verwaltet werden bis zu \verb|TIME_DEV_CNT| unabhängige,
+benannte Messkanäle (\emph{Handles}); jeder Kanal hält einen Pool von
+\verb|TIME_MEAS_CNT| Einzelmessungen.
+
+\subsubsection*{Initialisierung}
+Vor der ersten Verwendung muss \verb|time_init()| aufgerufen werden.
+Dadurch wird im Debug\-Core\-Register das Trace\-System aktiviert und der
+Cycle\-Counter gestartet (Listing \ref{time_init_regs}). Aus der mit
+\verb|HAL_RCC_GetHCLKFreq()| ermittelten Taktfrequenz wird der
+Umrechnungsfaktor \verb|ccnt2ns| ($= 10^9 / f_{\mathrm{HCLK}}$)
+berechnet, mit dem das Makro \verb|NOW| den aktuellen Zählerstand in
+Nanosekunden umrechnet.
+
+\begin{listing}
+\begin{minted}{C}
+CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk; // Trace aktivieren
+DWT->CTRL        |= DWT_CTRL_CYCCNTENA_Msk;     // Cycle-Counter an
+\end{minted}
+\caption{Aktivierung des DWT\-Cycle\-Counters in \texttt{time\_init()}}
+\label{time_init_regs}
+\end{listing}
+
+\begin{listing}
+\begin{minted}{C}
+#define TIME_MEAS_CNT             10  // Messungen pro Handle
+#define TIME_MEAS_CHAR_PER_LINE   20  // max. Laenge des Label-Strings
+#define TIME_MEAS_TIME_FIELD_LEN  12
+#define TIME_DEV_CNT               6  // Anzahl gleichzeitiger Handles
+\end{minted}
+\caption{Konfigurationskonstanten aus \texttt{\_time.h}}
+\label{time_defines}
+\end{listing}
+
+\subsubsection*{Betriebsarten}
+Das Verhalten eines Handles wird über ein Bitfeld aus \verb|mode_e|
+(Listing \ref{mode_e}) gesteuert, das mit \verb|time_set_mode()|
+gesetzt wird:
+\begin{description}
+\item[\texttt{ONESHOT}] Es wird genau ein Pool\-Durchlauf aufgezeichnet;
+  danach wird \verb|doLoop| auf \verb|false| gesetzt und die Aufzeichnung
+  hält an (abfragbar über \verb|time_doLoop_get()|).
+\item[\texttt{MAX\_HOLD}] Hält die untersten \verb|max| Pool\-Einträge fest
+  (vgl. \verb|time_set_max()|); nur die darüber liegenden Plätze werden
+  zyklisch überschrieben.
+\item[\texttt{SSSC}] \emph{Store subslot, slot, cycle}: anstelle des
+  übergebenen Label\-Strings wird die Cycle\-Position über
+  \verb|cycle_string()| (siehe Abschnitt \ref{cycle}) im Datenfeld
+  abgelegt.
+\end{description}
+
+\begin{listing}
+\begin{minted}{C}
+typedef enum {
+    ONESHOT  = 1,
+    MAX_HOLD = 2,
+    SSSC     = 4, // Store subslot, slot, cycle data in data field
+} mode_e;
+\end{minted}
+\caption{Betriebsarten \texttt{mode\_e}}
+\label{mode_e}
+\end{listing}
+
+\subsubsection*{Datenstrukturen}
+Eine Einzelmessung wird in \verb|time_meas_t| (Listing \ref{time_meas_t})
+gehalten. Sie speichert sowohl die rohen Tick\-Werte
+(\verb|tick_start|, \verb|tick_stop|) als auch die daraus berechneten
+Zeiten in Nanosekunden. Zwei Stopp\-Zeitpunkte werden unterschieden: ein
+Zwischenstopp \verb|stop_su_ns| (\emph{setup}, gesetzt von
+\verb|time_stop_su()|) und der Endstopp \verb|stop_tx_ns|. Das Feld
+\verb|line| nimmt den Label\-String bzw. die SSSC\-Cycle\-Information auf.
+
+\begin{listing}
+\begin{minted}{C}
+typedef struct time_meas_s {
+    uint32_t tick_start;
+    uint32_t tick_stop;
+    uint32_t tick_duration;
+    int64_t start_ns;
+    int64_t stop_su_ns;
+    int64_t stop_tx_ns;
+    int64_t duration_su_ns;
+    int64_t duration_tx_ns;
+    int64_t baud;
+    uint8_t count;
+    char line[TIME_MEAS_CHAR_PER_LINE + 1];
+} time_meas_t;
+\end{minted}
+\caption{Definition der \texttt{time\_meas\_t} Struktur}
+\label{time_meas_t}
+\end{listing}
+
+Alle Messungen eines Handles fasst \verb|time_single_t|
+(Listing \ref{time_single_t}) zusammen. Neben dem Mess\-Pool
+\verb|measurement[]| hält es den aktuellen Ringpuffer\-Index \verb|idx|,
+die untere Haltegrenze \verb|max| (für \verb|MAX_HOLD|), aggregierte
+Statistik (\verb|max_baud|, \verb|max_cnt|) sowie den Kanalnamen.
+
+\begin{listing}
+\begin{minted}{C}
+typedef struct time_single_s {
+    time_meas_t measurement[TIME_MEAS_CNT];
+    int8_t idx;
+    uint8_t max;
+    int64_t init_ns;
+    int64_t last_start_ns;
+    int64_t first_ns;
+    int64_t last_ns; // gesetzt, wenn die maximale Baudrate erreicht wurde
+    float max_baud;
+    int32_t max_cnt;
+    uint8_t mode;
+    uint8_t name[LINE_CHAR];
+} time_single_t;
+\end{minted}
+\caption{Definition der \texttt{time\_single\_t} Struktur}
+\label{time_single_t}
+\end{listing}
+
+Die umfassende Struktur \verb|timem_t| (Listing \ref{timem_t}) wird in
+\verb|_time.c| als einzige statische Variable \verb|_time| angelegt. Sie
+verwaltet das Feld aller Handles, die Belegungs\-Bitmaske \verb|used|,
+die Taktfrequenz \verb|clk_Hz| und den Umrechnungsfaktor \verb|ccnt2ns|.
+
+\begin{listing}
+\begin{minted}{C}
+typedef struct timem_s {
+    time_single_t time[TIME_DEV_CNT];
+    uint8_t used;       // Belegungs-Bitmaske der Handles
+    uint32_t clk_Hz;
+    float ccnt2ns;      // Tick -> ns
+    int64_t init_ns;
+    bool init;
+    bool doLoop;        // true, solange aufgezeichnet wird (ONESHOT)
+} timem_t;
+\end{minted}
+\caption{Definition der \texttt{timem\_t} Struktur}
+\label{timem_t}
+\end{listing}
+
+\subsubsection*{API}
+\begin{description}
+\item[\texttt{time\_init()}] Initialisiert das Modul: aktiviert den
+  DWT\-Cycle\-Counter (Listing \ref{time_init_regs}), berechnet
+  \verb|ccnt2ns| aus der HCLK\-Frequenz und setzt alle Handles zurück.
+  Muss vor allen anderen Funktionen aufgerufen werden.
+\item[\texttt{time\_new(name)}] Reserviert einen freien Handle, hinterlegt
+  den Namen und liefert dessen \verb|time_handle_t| zurück bzw. $-1$, wenn
+  alle \verb|TIME_DEV_CNT| Handles belegt sind.
+\item[\texttt{time\_set\_mode(hdl, mode)} / \texttt{time\_get\_mode(hdl)}]
+  Setzt bzw. liest das Betriebsart\-Bitfeld (\verb|mode_e|) des Handles.
+\item[\texttt{time\_set\_max(hdl, max)} / \texttt{time\_get\_max(hdl)}]
+  Legt die Anzahl festgehaltener Pool\-Einträge fest ($0 \le \mathtt{max} <
+  \mathtt{TIME\_MEAS\_CNT}-1$); die übrigen Plätze werden zyklisch
+  überschrieben.
+\item[\texttt{time\_reset(hdl)}] Löscht die Messungen des Handles, behält
+  aber den Initialisierungszeitpunkt \verb|init_ns| bei.
+\item[\texttt{time\_start(hdl, count, ptr, cycle)}] Startet eine Messung:
+  speichert Start\-Tick und \-Zeit, die Stückzahl \verb|count| (Grundlage
+  der Baud\-Berechnung) und das Label \verb|ptr| -- bzw. bei gesetztem
+  \verb|SSSC| die Cycle\-Position aus \verb|cycle|.
+\item[\texttt{time\_stop\_su(hdl)}] Erfasst den Zwischenstopp und berechnet
+  \verb|duration_su_ns| (Zeit von Start bis \emph{setup}).
+\item[\texttt{time\_stop(hdl, ptr)}] Erfasst den Endstopp, berechnet
+  \verb|duration_tx_ns|, \verb|baud| und die Tick\-Dauer und schaltet den
+  Ringpuffer\-Index weiter. Optional aktualisiert \verb|ptr| das Label.
+\item[\texttt{time\_auto(hdl, count, ptr, cycle)}] Bequemlichkeit:
+  \verb|time_start()| unmittelbar gefolgt von \verb|time_stop()|.
+\item[\texttt{time\_now\_ns()}] Liefert den aktuellen Zählerstand in
+  Nanosekunden (\verb|NOW|).
+\item[\texttt{time\_doLoop\_get()}] Liefert \verb|doLoop|; im
+  \verb|ONESHOT|\-Betrieb wird es nach einem vollen Durchlauf
+  \verb|false|.
+\item[\texttt{time\_print(hdl, titel, python, timing)}] Gibt den Pool als
+  Tabelle aus. Siehe nächster Abschnitt.
+\end{description}
+
+\subsubsection*{Messablauf und Ausgabe}
+{\sloppy\emergencystretch=3em
+Eine typische Messung besteht aus \verb|time_start()| und einem
+zugehörigen \verb|time_stop()| (oder dem kombinierten \verb|time_auto()|);
+optional kann dazwischen mit \verb|time_stop_su()| eine Zwischenzeit
+genommen werden. Aus der Dauer und der übergebenen Stückzahl wird die
+Baudrate berechnet:
+\[
+  \mathtt{baud} = \frac{\mathtt{count} \cdot 8 \cdot 10^{9}}
+                       {\mathtt{duration\_tx\_ns}} \quad [\mathrm{bit/s}]
+\]
+Die Messungen werden in einem Ringpuffer abgelegt: Plätze unterhalb von
+\verb|max| bleiben erhalten, die übrigen werden zyklisch überschrieben. Im
+\verb|ONESHOT|\-Betrieb wird nach dem ersten vollen Umlauf \verb|doLoop|
+auf \verb|false| gesetzt.
+
+\verb|time_print()| gibt den Pool als Tabelle aus. Mit \verb|python == true|
+wird die serielle Schnittstelle für die Ausgabe in den \verb|RAW|\-Modus
+geschaltet und das Ergebnis als Python\-Dictionary formatiert, sodass es
+direkt von den Auswerteskripten eingelesen werden kann. Die Parameter
+\verb|timing| und das \verb|SSSC|\-Flag steuern, welche Spalten (reine
+Zeiten bzw. Cycle/Slot/Sub\-Slot) ausgegeben werden.
+\par}
