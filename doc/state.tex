@@ -69,9 +69,9 @@ deaktiviert ist.
   \verb|state_ch2idx()| bildet ein Zeichen auf den Index ab (\verb|int8_t|,
   $-1$ wenn nicht gefunden). Rückgabe: \verb|em_msg| (Setzer) bzw.\
   \verb|key_state_e| (der Tastenzustand, \verb|STATE_CNT| wenn nicht gefunden).
-\item[\texttt{state\_propagate(state, idx)} /
-  \texttt{state\_propagate\_by\_idx} / \texttt{\dots\_by\_lbl}] Schaltet eine
-  Taste zyklisch um einen Schritt weiter und setzt \emph{dirty}. Rückgabe:
+\item[\texttt{state\_propagate(state, idx)}] Schaltet eine Taste zyklisch um
+  einen Schritt weiter und setzt \emph{dirty} (auch als
+  \verb|state_propagate_by_idx| / \verb|_by_lbl| verfügbar). Rückgabe:
   \verb|em_msg| (\verb|EM_ERR| bei ungültiger Struktur, sonst \verb|EM_OK|).
 \end{description}
 \par}

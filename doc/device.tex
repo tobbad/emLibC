@@ -42,10 +42,9 @@ Maske geforderten Funktionszeiger gesetzt sind.
   \verb|dev_type| geforderten Funktionen vorhanden sind. Rückgabe:
   \verb|em_msg| (\verb|EM_OK|, wenn alle geforderten Zeiger gesetzt sind,
   sonst \verb|EM_ERR|).
-\item[\texttt{device\_read(hdl, buffer, cnt)} /
-  \texttt{device\_write(hdl, buffer, cnt)}] Lesen bzw.\ schreiben über die
-  Funktionszeiger des Geräts. Rückgabe: \verb|em_msg| (\verb|EM_ERR|, wenn das
-  Gerät oder der jeweilige Zeiger fehlt).
+\item[\texttt{device\_read/write(hdl, buffer, cnt)}] Lesen bzw.\ schreiben über
+  die Funktionszeiger des Geräts. Rückgabe: \verb|em_msg| (\verb|EM_ERR|, wenn
+  das Gerät oder der jeweilige Zeiger fehlt).
 \item[\texttt{device\_reset(hdl)}] Setzt das Gerät auf \verb|DEVICE_RESET|
   (alle Zeiger \verb|NULL|) zurück. Rückgabe: \verb|em_msg| (\verb|EM_OK|,
   bzw.\ \verb|EM_ERR| bei unbekanntem Gerät).

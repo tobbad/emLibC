@@ -69,10 +69,10 @@ disabled here.
   \verb|state_ch2idx()| maps a character to the index (\verb|int8_t|, $-1$ if
   not found). Returns: \verb|em_msg| (setter) or \verb|key_state_e| (the key
   state, \verb|STATE_CNT| if not found).
-\item[\texttt{state\_propagate(state, idx)} /
-  \texttt{state\_propagate\_by\_idx} / \texttt{\dots\_by\_lbl}] Advances a key
-  cyclically by one step and sets \emph{dirty}. Returns: \verb|em_msg|
-  (\verb|EM_ERR| on an invalid structure, otherwise \verb|EM_OK|).
+\item[\texttt{state\_propagate(state, idx)}] Advances a key cyclically by one
+  step and sets \emph{dirty} (also available as \verb|state_propagate_by_idx|
+  / \verb|_by_lbl|). Returns: \verb|em_msg| (\verb|EM_ERR| on an invalid
+  structure, otherwise \verb|EM_OK|).
 \end{description}
 \par}
 

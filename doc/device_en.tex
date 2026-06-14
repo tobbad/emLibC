@@ -40,10 +40,9 @@ such a mask are set.
 \item[\texttt{device\_check(hdl, dev\_type)}] Checks whether the functions
   required by the mask \verb|dev_type| are present. Returns: \verb|em_msg|
   (\verb|EM_OK| if all required pointers are set, otherwise \verb|EM_ERR|).
-\item[\texttt{device\_read(hdl, buffer, cnt)} /
-  \texttt{device\_write(hdl, buffer, cnt)}] Read or write via the device's
-  function pointers. Returns: \verb|em_msg| (\verb|EM_ERR| if the device or the
-  respective pointer is missing).
+\item[\texttt{device\_read/write(hdl, buffer, cnt)}] Read or write via the
+  device's function pointers. Returns: \verb|em_msg| (\verb|EM_ERR| if the
+  device or the respective pointer is missing).
 \item[\texttt{device\_reset(hdl)}] Resets the device to \verb|DEVICE_RESET|
   (all pointers \verb|NULL|). Returns: \verb|em_msg| (\verb|EM_OK|, or
   \verb|EM_ERR| for an unknown device).

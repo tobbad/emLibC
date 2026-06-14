@@ -43,8 +43,8 @@ typedef enum {
 \item[\texttt{stateled\_iterate()}] Schaltet zyklisch zur nächsten LED weiter
   (Lauflicht). Rückgabe: \verb|void|.
 \item[\texttt{stateled\_show(state)}] Stellt im Zustand
-  \verb|SYNCHRONIZE_READY|/\verb|SYNCHRONIZE_DOING| den \verb|state_t| auf den
-  LEDs dar (an/aus/blinkend) und signalisiert Fehler durch Umschalten des
+  \verb|SYNCHRONIZE_READY| oder \verb|SYNCHRONIZE_DOING| den \verb|state_t| auf
+  den LEDs dar (an/aus/blinkend) und signalisiert Fehler durch Umschalten des
   gesamten Ports. Rückgabe: \verb|void|.
 \item[\texttt{stateled\_update(state)}] Variante, die abhängig vom
   Synchronisationszustand ein Lauflicht bzw.\ eine Fehleranzeige treibt.

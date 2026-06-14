@@ -137,6 +137,7 @@ typedef struct timem_s {
 \end{listing}
 
 \subsubsection*{API}
+{\sloppy\emergencystretch=3em
 \begin{description}
 \item[\texttt{time\_init()}] Initialises the module: enables the DWT cycle
   counter (Listing \ref{time_init_regs}), computes \verb|ccnt2ns| from the
@@ -176,6 +177,7 @@ typedef struct timem_s {
 \item[\texttt{time\_print(hdl, titel, python, timing)}] Prints the pool as a
   table. See the next section. Returns: \verb|void|.
 \end{description}
+\par}
 
 \subsubsection*{Measurement flow and output}
 {\sloppy\emergencystretch=3em

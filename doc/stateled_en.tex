@@ -40,10 +40,10 @@ typedef enum {
   (\verb|EM_ERR| if not initialised).
 \item[\texttt{stateled\_iterate()}] Advances cyclically to the next LED
   (running light). Returns: \verb|void|.
-\item[\texttt{stateled\_show(state)}] In state
-  \verb|SYNCHRONIZE_READY|/\verb|SYNCHRONIZE_DOING| displays the \verb|state_t|
-  on the LEDs (on/off/blinking) and signals errors by toggling the entire
-  port. Returns: \verb|void|.
+\item[\texttt{stateled\_show(state)}] In the \verb|SYNCHRONIZE_READY| or
+  \verb|SYNCHRONIZE_DOING| state, displays the \verb|state_t| on the LEDs
+  (on/off/blinking) and signals errors by toggling the entire port. Returns:
+  \verb|void|.
 \item[\texttt{stateled\_update(state)}] Variant that drives a running light or
   an error indication depending on the synchronisation state. Returns:
   \verb|bool|.
