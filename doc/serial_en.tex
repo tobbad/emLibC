@@ -1,0 +1,91 @@
+\subsection{serial}\label{serial}
+The \verb|serial| module encapsulates serial input/output over UART
+(optionally USB-CDC). It serves two purposes: first, it redirects the standard
+output -- the newlib hooks \verb|_write| and \verb|_read| bind \verb|printf| to
+the UART or USB so that debug output goes out directly. Second, it is itself a
+\verb|kybd_t| implementation (Section \ref{keyboard}, device \verb|serial_dev|)
+that turns received characters into key input within a \verb|state_t|.
+
+The module connects several other building blocks: \verb|buffer| and
+\verb|buffer_pool| (Sections \ref{buffer}, \ref{buffer_pool}) for the RX/TX
+buffers, \verb|_time| (Section \ref{time}) for throughput measurement
+(\verb|srxhdl|, \verb|stxhdl|) and \verb|cycle| (Section \ref{cycle}) for
+timestamps.
+
+\subsubsection*{Operating modes}
+The behaviour is controlled via the bit field \verb|print_e| (Listing
+\ref{print_e}) and set with \verb|serial_mode_set()|. It selects, among other
+things, the transport layer (\verb|USE_UART|, \verb|USE_DMA_RX|,
+\verb|USE_USB|) and optional preparation such as timestamps (\verb|TIMESTAMP|),
+gap detection (\verb|GAP_DETECT|) or plain raw output (\verb|RAW|).
+
+\begin{listing}
+\begin{minted}{C}
+typedef enum {
+    RAW        = 1,
+    TIMESTAMP  = 2,
+    GAP_DETECT = 4,
+    ONE_SHOT   = 0x8,
+    USE_UART   = 0x10,
+    USE_DMA_RX = 0x20,
+    USE_DMA_TX = 0x40, // does not work
+    USE_USB    = 0x80,
+    MEASURE_BYTE_PER_SECONDS = 0x100,
+} print_e;
+\end{minted}
+\caption{Output operating modes \texttt{print\_e}}
+\label{print_e}
+\end{listing}
+
+\subsubsection*{State}
+The configuration is passed at initialisation as \verb|sio_t| (Listing
+\ref{sio_t}): UART handle, RX/TX buffers, a \verb|cycle_t| and the operating
+mode. The module keeps the run-time state internally in the single variable
+\verb|isio| (type \verb|isio_t|); this additionally holds the device state
+\verb|state_t|, a \verb|buffer_pool_t| and counters for overflows and dropped
+USB bytes.
+
+\begin{listing}
+\begin{minted}{C}
+typedef struct _sio_t {
+    UART_HandleTypeDef *uart;
+    buffer_t *buffer[SIO_RXTX_CNT]; // [SIO_RX], [SIO_TX]
+    cycle_t  *cycle;
+    print_e   mode;
+} sio_t;
+\end{minted}
+\caption{Configuration structure \texttt{sio\_t}}
+\label{sio_t}
+\end{listing}
+
+\subsubsection*{Reception}
+{\sloppy\emergencystretch=3em
+Reception runs via DMA with idle-line detection
+(\verb|HAL_UARTEx_ReceiveToIdle_DMA|). On reception the HAL calls the
+\verb|HAL_UARTEx_RxEventCallback|: this copies the data into the RX buffer,
+converts it to lowercase (\verb|buffer_tolower|) and passes it to the
+\verb|state_t| via \verb|serial_apply_change()| -- an input recognised as a hex
+number toggles the corresponding key.
+\par}
+
+\subsubsection*{API}
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{serial\_mode\_set(mode)} / \texttt{serial\_mode\_get()}] Sets or
+  reads the \verb|print_e| bit field.
+\item[\texttt{serial\_reset(dev)}] Resets the RX/TX buffers and the device
+  state.
+\item[\texttt{serial\_waitForNumber(key)}] Returns the last received input as a
+  number or $-1$; \verb|key| then points to the string.
+\item[\texttt{serial\_get\_byte\_per\_second()} /
+  \texttt{serial\_reset\_byte\_per\_second()}] Read or reset the measured
+  transmit throughput.
+\item[\texttt{serial\_uart\_printf(line, len)}] Prints \verb|len| bytes
+  directly over the UART.
+\end{description}
+\par}
+
+\noindent Through the exported \verb|kybd_t| \verb|serial_dev| the module can
+at the same time be used as an input device on the \verb|keyboard| interface;
+the structure \verb|device_t serial_io| additionally offers generic
+open/read/write access.

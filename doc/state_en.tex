@@ -1,0 +1,98 @@
+\subsection{state}\label{state}
+The structure \verb|state_t| is the central data structure of the system: it
+holds the key state that is exchanged between all input devices (Section
+\ref{keyboard}) and synchronised over the radio between the devices. Each of
+the up to \verb|MAX_BUTTON_CNT| keys has a state \verb|key_state_e| --
+\verb|OFF|, \verb|BLINKING| or \verb|ON| (Listing \ref{key_state_e}) -- as
+well as a label.
+
+The central mechanism is \verb|state_propagate()|: a key press advances the
+state cyclically
+($\mathtt{OFF} \to \mathtt{BLINKING} \to \mathtt{ON} \to \mathtt{OFF}$, i.e.\
+$\mathtt{state} = (\mathtt{state}+1) \bmod \mathtt{STATE\_CNT}$) and marks the
+\verb|state_t| as \emph{dirty}.
+
+\begin{listing}
+\begin{minted}{C}
+typedef enum __attribute__((packed)) {
+    OFF, BLINKING, ON, STATE_CNT
+} key_state_e;
+\end{minted}
+\caption{Key state \texttt{key\_state\_e}}
+\label{key_state_e}
+\end{listing}
+
+\subsubsection*{State}
+Listing \ref{state_t} shows the structure (size $40$~bytes). \verb|first| and
+\verb|cnt| define the active window of keys, \verb|dirty| marks a change since
+the last synchronisation, \verb|id| is a counter carried along on every
+transmission and \verb|clabel| (Section \ref{common}) carries a command or
+label. The fields \verb|state[]| and \verb|label[]| hold state and label per
+key.
+
+\begin{listing}
+\begin{minted}{C}
+typedef struct state_s {
+    uint8_t  first;                 // first valid key
+    uint8_t  cnt;                   // number of valid keys
+    uint8_t  dirty;                 // change flag
+    uint8_t  id;                    // transmit counter
+    clabel_u clabel;                // command/label (4 bytes)
+    key_state_e state[MAX_STATE_CNT]; // state per key
+    char     label[MAX_STATE_CNT];  // label per key
+} state_t;                          // 2*MAX_BUTTON_CNT + 8 = 40 bytes
+\end{minted}
+\caption{Definition of the \texttt{state\_t} structure}
+\label{state_t}
+\end{listing}
+
+\noindent Via the option \verb|REDUCED_PAYLOAD| (in \verb|emLibC_options.h|) a
+bit-packed variant ($\approx 10$~bytes) exists alternatively, which is
+disabled here.
+
+\subsubsection*{Life cycle and individual keys}
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{state\_init(state)} / \texttt{state\_reset(state)}] Initialises
+  the structure (default labels \verb|0..F|) or sets all keys to \verb|OFF|.
+\item[\texttt{state\_check(state)}] Checks the range fields for validity.
+\item[\texttt{state\_set(state, nr, ns)} / \texttt{state\_get(state, nr)}]
+  Sets or reads the state of a key by its index.
+\item[\texttt{state\_set\_key\_by\_lbl(\dots)} /
+  \texttt{state\_get\_key\_by\_lbl(\dots)}] The same via the label;
+  \verb|state_ch2idx()| maps a character to the index.
+\item[\texttt{state\_propagate(state, idx)} /
+  \texttt{state\_propagate\_by\_idx} / \texttt{\dots\_by\_lbl}] Advances a key
+  cyclically by one step and sets \emph{dirty}.
+\end{description}
+\par}
+
+\subsubsection*{Whole state: transferring and combining}
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{state\_set\_state(from, to)} / \texttt{state\_copy(from, to)}]
+  Copy the key content from \verb|from| to \verb|to|.
+\item[\texttt{state\_set\_u32(state, u32)} / \texttt{state\_get\_u32(state)}]
+  Pack or unpack the $16$ keys of $2$ bits each into a \verb|uint32_t|.
+\item[\texttt{state\_diff(ref, state, diff)}] Determines the per-key difference
+  (modular, cf.\ \verb|state_key_diff()|) relative to \verb|ref| in
+  \verb|diff|; the return value is the \emph{dirty} flag.
+\item[\texttt{state\_add(ref, add)}] Applies \verb|add| as a number of
+  advances to \verb|ref| (\verb|BLINKING| $= +1$, \verb|ON| $= +2$).
+\item[\texttt{state\_merge(in, out)}] Copies changed keys from \verb|in| to
+  \verb|out| and reports whether anything changed.
+\item[\texttt{state\_is\_same(last, cur)}] Checks two states for equality.
+\end{description}
+\par}
+
+\subsubsection*{Range, flags and output}
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{state\_set\_first/cnt} / \texttt{state\_get\_first/cnt}] Set or
+  read the active key window.
+\item[\texttt{state\_get\_dirty} / \texttt{state\_set\_dirty} /
+  \texttt{state\_set\_undirty}] Manage the change flag.
+\item[\texttt{state\_print(state, title, doLong, cycle)}] Prints labels,
+  states and the cycle position (Section \ref{cycle}) for debugging.
+\end{description}
+\par}

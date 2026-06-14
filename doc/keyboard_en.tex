@@ -1,0 +1,64 @@
+\subsection{keyboard}\label{keyboard}
+The \verb|keyboard| module defines a generic, polymorphic interface for input
+devices (``keyboards''). Each concrete device provides a \verb|kybd_t| vtable
+of function pointers (Listing \ref{kybd_t}) and reports its state as a
+\verb|state_t| (up to \verb|MAX_BUTTON_CNT| key states \verb|OFF|/\verb|BLI|/\verb|ON|
+with labels and a \emph{dirty} flag). Concrete implementations are \verb|xpad|
+(Section \ref{xpad}), \verb|terminal| (Section \ref{terminal}) and
+\verb|serial| (Section \ref{serial}).
+
+The dispatcher manages an internal table of registered devices.
+\verb|keyboard_init()| registers a device and returns a \verb|dev_handle_t|
+($> 0$); through this handle the remaining \verb|keyboard_*| functions forward
+their call to the respective vtable. Thus the application code remains
+independent of whether the input comes from a GPIO matrix, a serial console or
+USB.
+
+\begin{listing}
+\begin{minted}{C}
+typedef struct kybd_s {
+    em_msg  (*init)(dev_handle_t, dev_type_e, void *device);
+    int16_t (*scan)(dev_handle_t);
+    void    (*reset)(dev_handle_t);
+    void    (*state)(dev_handle_t, state_t *ret);
+    void    (*set_state)(dev_handle_t, const state_t *state);
+    em_msg  (*add)(dev_handle_t, state_t *add);
+    em_msg  (*diff)(dev_handle_t, state_t *ref, state_t *diff);
+    bool    (*isdirty)(dev_handle_t);
+    void    (*undirty)(dev_handle_t);
+    dev_type_e dev_type;
+    uint8_t cnt;    // number of keys
+    uint8_t first;  // index of the first key
+} kybd_t;
+\end{minted}
+\caption{Device interface \texttt{kybd\_t}}
+\label{kybd_t}
+\end{listing}
+
+\subsubsection*{API}
+The \verb|keyboard_*| functions check the handle and delegate to the
+identically named vtable entry of the registered device.
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{keyboard\_init(kybd, device)}] Registers the vtable \verb|kybd|,
+  calls its \verb|init| and returns the assigned \verb|dev_handle_t| ($0$ on
+  error or a full table).
+\item[\texttt{keyboard\_scan(dev)}] Polls the device and returns the detected
+  key. By convention a negative value denotes an entered number ($0\dots127$),
+  a positive one a letter.
+\item[\texttt{keyboard\_state(dev, ret)} / \texttt{keyboard\_set\_state(dev, state)}]
+  Reads the current key state into \verb|ret| or overwrites it.
+\item[\texttt{keyboard\_add(dev, add)}] Merges a state additively into the
+  device state.
+\item[\texttt{keyboard\_diff(dev, ref, diff)}] Determines the difference of the
+  device state relative to \verb|ref|.
+\item[\texttt{keyboard\_isdirty(dev)} / \texttt{keyboard\_undirty(dev)}]
+  Queries the change flag or resets it.
+\item[\texttt{keyboard\_reset(dev)}] Resets the device to its initial state.
+\end{description}
+\par}
+
+\noindent For display the module provides the label tables
+\verb|key_state_3c| and \verb|key_state_2c|, which map the states
+\verb|OFF|/\verb|BLI|/\verb|ON| to three- or two-column texts. The constants
+\verb|SCAN_MS| and \verb|SETTLE_TIME_MS| define sampling and settling times.

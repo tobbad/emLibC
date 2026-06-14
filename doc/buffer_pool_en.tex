@@ -1,0 +1,50 @@
+\subsection{buffer\_pool}\label{buffer_pool}
+The \verb|buffer_pool| module manages a fixed number of pre-allocated
+\verb|buffer_t| (Section \ref{buffer}) and hands them out on a used/free
+basis. Callers obtain a free buffer with \verb|buffer_pool_get()| and return
+it after use with \verb|buffer_pool_return()|, instead of repeatedly
+allocating and freeing individual buffers. This avoids heap fragmentation and
+makes the memory footprint deterministic at run time.
+
+\subsubsection*{State}
+The pool is described by \verb|buffer_pool_t| (Listing \ref{buffer_pool_t}).
+\verb|buffer| is the array of the managed \verb|buffer_cnt| buffers;
+\verb|type| denotes the operating mode of the pool and \verb|next| the index
+of the next element (negative if a linear buffer is used in a ring).
+\verb|sbuffer| is a second field, currently reserved for extensions.
+
+\begin{listing}
+\begin{minted}{C}
+typedef struct buffer_pool_s {
+    uint8_t buffer_cnt;  // number of buffers in the pool
+    buffer_t **buffer;   // array of buffers
+    buffer_t **sbuffer;  // reserved
+    b_type_e type;       // operating mode of the pool
+    int8_t next;         // index of the next element
+} buffer_pool_t;
+\end{minted}
+\caption{Definition of the \texttt{buffer\_pool\_t} structure}
+\label{buffer_pool_t}
+\end{listing}
+
+\subsubsection*{API}
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{buffer\_pool\_new(lcnt, charCnt, line\_type, type)}] Creates a
+  pool of \verb|lcnt| buffers of \verb|charCnt| bytes each. \verb|line_type|
+  sets the type of the individual buffers (\verb|LINEAR| or \verb|RING|),
+  \verb|type| the operating mode of the pool. If a partial allocation fails,
+  already created buffers are freed again and \verb|NULL| is returned.
+\item[\texttt{buffer\_pool\_free(pool)}] Frees all buffers and the pool itself.
+\item[\texttt{buffer\_pool\_get(bp)}] Returns the first free buffer, marks it
+  \verb|BUFFER_USED| and returns it; \verb|NULL| if no buffer is free.
+\item[\texttt{buffer\_pool\_return(bp, buffer)}] Returns a buffer to the pool.
+  The index range, the membership of the pool (pointer comparison) and that
+  the buffer is no longer in use are checked; it is then reset with
+  \verb|buffer_reset()|. A buffer still marked \verb|BUFFER_USED| is rejected
+  with \verb|EM_ERR| -- so the content must have been consumed beforehand
+  (e.g.\ via \verb|buffer_get()|).
+\item[\texttt{buffer\_pool\_print(bp, title)}] Prints the pool's buffers for
+  debugging.
+\end{description}
+\par}

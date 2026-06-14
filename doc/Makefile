@@ -3,19 +3,21 @@
 LATEX=pdflatex -shell-escape
 MAIN=main
 
-all: pdf dot
+all: pdf pdf_en
 
 pdf:
 	$(LATEX) $(MAIN).tex
 	$(LATEX) $(MAIN).tex
-	#$(LATEX) $(MAIN)_en.tex
-	#$(LATEX) $(MAIN)_en.tex
+
+pdf_en:
+	$(LATEX) $(MAIN)_en.tex
+	$(LATEX) $(MAIN)_en.tex
 
 clean:
-	rm -f *.aux *.log *.toc *.out *.lof *.lot *.fls *.fdb_latexmk
+	rm -f *.aux *.log *.toc *.out *.lof *.lot *.lol *.idx *.ilg *.ind *.fls *.fdb_latexmk
 
 distclean: clean
-	rm -f $(MAIN).pdf
+	rm -f $(MAIN).pdf $(MAIN)_en.pdf
 
 tar:
 	tar  -cvf $(MAIN).tar *.tex

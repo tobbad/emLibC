@@ -1,0 +1,116 @@
+\subsection{buffer}\label{buffer}
+The \verb|buffer| module provides a dynamically allocated data buffer that
+manages a contiguous memory region and tracks its usage. Two variants are
+distinguished (\verb|b_type_e|, Listing \ref{buffer_enums}):
+\begin{description}
+\item[\texttt{LINEAR}] A linear buffer; data resides from the start of the
+  memory, writing always begins at index $0$.
+\item[\texttt{RING}] A ring buffer; write and read positions wrap cyclically
+  past the end of the memory (\emph{wrap-around}).
+\end{description}
+The usage state is expressed via \verb|state_e|: \verb|BUFFER_READY|
+(free/empty) or \verb|BUFFER_USED| (contains data, i.e.\ in use).
+
+\begin{listing}
+\begin{minted}{C}
+typedef enum {
+    BUFFER_READY, // buffer free/empty
+    BUFFER_USED,  // contains data (in use)
+    BUFFER_CNT
+} state_e;
+
+typedef enum {
+    LINEAR, // linear buffer
+    RING,   // ring buffer
+} b_type_e;
+\end{minted}
+\caption{Enumerations \texttt{state\_e} and \texttt{b\_type\_e}}
+\label{buffer_enums}
+\end{listing}
+
+\subsubsection*{State}
+A buffer is described by \verb|buffer_t| (Listing \ref{buffert}). \verb|mem|
+points to the allocated memory of size \verb|size|; \verb|used| gives the
+number of bytes in use and \verb|first| (for \verb|RING|) the index of the
+first used byte. The field \verb|lbl| (\verb|clabel_u|, see Section
+\ref{common}) holds the first up to \verb|CMD_LEN|$-1$ characters of the
+content as a short label, \verb|id| serves to identify it within a pool
+(Section \ref{buffer_pool}).
+
+\begin{listing}
+\begin{minted}{C}
+typedef struct buffer_s {
+    state_e state;
+    uint8_t *pl;   // pointer to first used byte
+    uint8_t *mem;  // start of memory
+    clabel_u lbl;  // first characters of the content as label
+    int16_t first; // index of the first used byte
+    int16_t used;  // number of bytes in use
+    int16_t size;  // size of the memory
+    uint8_t id;    // id of the buffer (in a pool)
+    b_type_e type; // LINEAR or RING
+} buffer_t;
+\end{minted}
+\caption{Definition of the \texttt{buffer\_t} structure}
+\label{buffert}
+\end{listing}
+
+\subsubsection*{Life cycle}
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{buffer\_new(size, type)}] Allocates a \verb|buffer_t| structure
+  together with memory of size \verb|size| and returns a pointer to it, or
+  \verb|NULL| on \verb|size == 0| or failed allocation.
+\item[\texttt{buffer\_new\_buffer\_t(buffer)}] Re-initialises an already
+  existing structure: size and type are kept, the memory is allocated anew.
+\item[\texttt{buffer\_free(buffer)}] Frees memory and structure. Reports
+  \verb|EM_ERR| if the buffer is still marked \verb|BUFFER_USED|.
+\end{description}
+\par}
+
+\subsubsection*{Writing and reading data}
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{buffer\_set(buffer, data, size)}] Writes \verb|size| bytes into
+  the buffer (\verb|LINEAR|: from index $0$; \verb|RING|: from the write
+  position with wrap-around). Fails if \verb|size| exceeds the free space;
+  sets \verb|state = BUFFER_USED| and updates the label.
+\item[\texttt{buffer\_get(buffer, data, size)}] Reads up to \verb|*size| bytes
+  (limited to the amount in use), unrolls the wrap for \verb|RING| and writes
+  the actual length back to \verb|*size|. If the buffer is empty afterwards,
+  \verb|state = BUFFER_READY|.
+\item[\texttt{buffer\_transfer(from, to)}] Transfers the content of \verb|from|
+  to \verb|to| and supports all \verb|LINEAR|/\verb|RING| combinations. The
+  capacity is checked \emph{before} reading (transactional): if the content
+  does not fit, \verb|from| is left untouched and \verb|EM_ERR| is returned;
+  otherwise \verb|from| is emptied.
+\end{description}
+\par}
+
+\subsubsection*{Management and queries}
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{buffer\_reset(buffer)}] Resets content and state completely
+  (zeroes the memory).
+\item[\texttt{buffer\_clear(buffer)}] Marks the content as consumed
+  (\verb|first += used|, \verb|used = 0|, \verb|state = BUFFER_READY|) without
+  zeroing the memory.
+\item[\texttt{buffer\_tolower(buffer)}] Converts all uppercase letters
+  \texttt{A}--\texttt{Z} in the used region to lowercase.
+\item[\texttt{buffer\_writeable(buffer)}] Returns the free space
+  (\verb|size - used|).
+\item[\texttt{buffer\_used(buffer)}] Returns the number of bytes in use.
+\item[\texttt{buffer\_is\_used(buffer)}] Returns \verb|true| if the state is
+  \verb|BUFFER_USED|.
+\item[\texttt{buffer\_get\_clabel(buffer)}] Returns a pointer to the buffer's
+  label (\verb|clabel_u|).
+\item[\texttt{buffer\_get\_till\_end(buffer)}] Returns a temporary (static)
+  \verb|buffer_t| describing the region from \verb|first| to the end of the
+  memory -- useful for \verb|RING| access without wrap.
+\item[\texttt{buffer\_check(buffer, reduced)}] Checks the structure for
+  validity (null pointer, \verb|size == 0|, and -- unless \verb|reduced| --
+  \verb|mem == NULL|).
+\item[\texttt{buffer\_print(buffer, title)}] Prints the fields and the content
+  for debugging.
+\end{description}
+\par}

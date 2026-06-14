@@ -1,0 +1,110 @@
+\subsection{cycle}\label{cycle}
+The \verb|cycle| module represents the temporal backbone of the slot-based
+radio protocol. A complete \emph{cycle} is divided into \verb|SLOT_CNT| slots,
+and each slot in turn into \verb|SUB_SLOT_CNT| sub-slots. With the default
+values from \verb|system_definitions.h| (Listing \ref{cycle_defines}) this
+gives $16$ slots of $8$ sub-slots each, i.e.\ $128$ sub-slots per cycle. Each
+device owns its own odd slot ($1, 3, 5, \dots, \mathtt{f}$) and may transmit
+only in it; the remaining slots are used to receive the other participants.
+
+\begin{listing}
+\begin{minted}{C}
+#define SUB_SLOT_POW2  3
+#define SUB_SLOT_CNT   (1<<SUB_SLOT_POW2)   // 8 sub-slots per slot
+#define SUB_SLOT_MASK  (SUB_SLOT_CNT-1)     // 0x07
+#define SLOT_POW2      4
+#define SLOT_CNT       (1<<SLOT_POW2)        // 16 slots per cycle
+#define SLOT_MASK      (SLOT_CNT-1)          // 0x0F
+#define SLOT_SHIFT     (SUB_SLOT_POW2)       // 3
+\end{minted}
+\caption{Slot constants from \texttt{system\_definitions.h}}
+\label{cycle_defines}
+\end{listing}
+
+\subsubsection*{State}
+The entire state is held in the structure \verb|cycle_t| (Listing
+\ref{cycle_t}). The central field is the monotonically increasing counter
+\verb|subSlot| (range $0 \dots 127$), in which slot and sub-slot index are
+\emph{bit-packed}: the lower \verb|SUB_SLOT_POW2| bits hold the sub-slot, the
+\verb|SLOT_POW2| bits above hold the slot. The two macros from Listing
+\ref{cycle_macros} extract the two parts so that no computation is needed
+elsewhere:
+\begin{align*}
+\mathtt{ACT\_SUB\_SLOT} &= \mathtt{subSlot}\ \&\ \mathtt{SUB\_SLOT\_MASK} \\
+\mathtt{ACT\_SLOT}      &= (\mathtt{subSlot} \gg \mathtt{SLOT\_SHIFT})\ \&\ \mathtt{SLOT\_MASK}
+\end{align*}
+The fields \verb|actSlot| and \verb|sSlot| are cached copies of the current
+slot and sub-slot, updated on every advance so that they are available without
+a renewed bit operation. \verb|cycle| counts the fully completed cycles
+($16$ bit, wraps at $65535$) and \verb|init| marks successful initialisation.
+
+\begin{listing}
+\begin{minted}{C}
+typedef struct cycle_s {
+    volatile int8_t subSlot; // current sub-slot (slot+sub-slot packed)
+    int8_t          actSlot; // cached slot
+    int8_t          sSlot;   // cached sub-slot
+    uint16_t        cycle;   // number of completed cycles
+    bool            init;    // true after cycle_init()
+} cycle_t;
+\end{minted}
+\caption{Definition of the \texttt{cycle\_t} structure}
+\label{cycle_t}
+\end{listing}
+
+\begin{listing}
+\begin{minted}{C}
+#define ACT_SUB_SLOT(_cycle)  (((_cycle)->subSlot) & SUB_SLOT_MASK)
+#define ACT_SLOT(_cycle)      (((_cycle)->subSlot >> SLOT_SHIFT) & SLOT_MASK)
+\end{minted}
+\caption{Macros for extracting slot and sub-slot}
+\label{cycle_macros}
+\end{listing}
+
+\subsubsection*{API}
+\begin{description}
+\item[\texttt{cycle\_init(cycle)}] Sets \verb|init| and then calls
+  \verb|cycle_reset()|. Returns \verb|EM_ERR| on a null pointer, otherwise
+  \verb|EM_OK|.
+\item[\texttt{cycle\_reset(cycle)}] Resets \verb|subSlot| and \verb|cycle| to
+  $0$. Requires a previously initialised structure, otherwise \verb|EM_ERR|.
+\item[\texttt{cycle\_set\_slot(cycle, slot)}] Positions the counter at the
+  start of the given slot ($\mathtt{subSlot} = \mathtt{slot} \cdot
+  \mathtt{SUB\_SLOT\_CNT}$). Only valid slots are accepted; the slot is checked
+  beforehand with \verb|cycle_check_slot()|.
+\item[\texttt{cycle\_check\_slot(slot)}] Validates a slot: odd values in the
+  range $0 < \mathtt{slot} \le \mathtt{SLOT\_CNT}$ are allowed. Returns the
+  slot or $-1$.
+\item[\texttt{cycle\_check(cycle, rxSlot, ss)}] Checks whether the received
+  slot \verb|rxSlot| matches the currently expected sub-slot
+  (\verb|cycle->sSlot == rxSlot|). Invalid slots return \verb|false|.
+\item[\texttt{cycle\_string(cycle)}] Returns a compact representation in the
+  format \verb|(c:<cycle>, <slot>, <subSlot>)| in a static buffer.
+\item[\texttt{cycle\_print(cycle, title)}] Prints all fields line by line
+  (debug aid, cf.\ the \verb|xx_print| convention in the introduction).
+\end{description}
+
+\subsubsection*{Advancing the cycle}
+{\sloppy\emergencystretch=3em
+The counter is advanced solely through \verb|cycle_increment()|, typically
+once per sub-slot tick. The function is coupled to the synchronisation state
+machine (\verb|system_state_e|):
+
+\begin{itemize}
+\item In state \verb|SYNCHRONIZE| the transition to \verb|SYNCHRONIZE_READY| is
+  triggered and the internal flag \verb|is_set| is set; from this point on the
+  counter runs.
+\item As long as \verb|is_set| holds, \verb|subSlot| is incremented and folded
+  back modulo $\mathtt{SUB\_SLOT\_CNT} \cdot \mathtt{SLOT\_CNT}$ ($=128$);
+  \verb|actSlot| and \verb|sSlot| are derived from the new value.
+\item In states \verb|SYNCHRONIZE_DOING|, \verb|SYNCHRONIZE_READY| and
+  \verb|SYNCHRONIZE_ERROR| a slot change is detected. On the transition to
+  slot $0$ the cycle counter \verb|cycle| is incremented exactly once per pass
+  (debounced via the flag \verb|cycle_once|).
+\end{itemize}
+\par}
+
+\noindent Since \verb|cycle_increment()| advances first and only then reports
+the fields, the first call after a reset already yields the next sub-slot. If
+\verb|OPTION_SHOW_TIMING| is active, status LEDs are additionally toggled for
+run-time measurement.

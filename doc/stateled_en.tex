@@ -1,0 +1,45 @@
+\subsection{stateled}\label{stateled}
+The \verb|stateled| module drives a row of status LEDs and thus makes the key
+state visible. It maps the key states of a \verb|state_t| (Section \ref{state})
+to LEDs: \verb|ON| is permanently lit, \verb|OFF| is off and \verb|BLINKING|
+blinks -- the blink rate results from \verb|cycle_size|. In addition it
+visualises the device's synchronisation state via the \verb|system_state_e|
+(Section \ref{common}). The LEDs are driven through a \verb|gpio_port_t| (port
+module); the constant \verb|REGUAL_STATELD| switches between normal and
+inverted logic (active-low).
+
+\begin{listing}
+\begin{minted}{C}
+typedef enum {
+    led_0, led_1, led_2, led_3, led_4, led_5, led_6, led_7,
+    led_fehler, led_normal,
+} stateled_e;
+\end{minted}
+\caption{LED identifiers \texttt{stateled\_e}}
+\label{stateled_e}
+\end{listing}
+
+\subsubsection*{API}
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{stateled\_init(state, port, cycle\_size, bli\_cnt)}]
+  Initialises the module with the \verb|state_t| to display, a GPIO port (or
+  the default assignment on \verb|NULL|), the cycle length for blinking and a
+  blink counter; runs a running-light test across all LEDs as a check.
+\item[\texttt{stateled\_deinit()}] Deactivates the module.
+\item[\texttt{stateled\_on(nr)} / \texttt{stateled\_off(nr)} /
+  \texttt{stateled\_all\_off()}] Switch a single LED or all LEDs.
+\item[\texttt{stateled\_toggle\_pin(nr)} / \texttt{stateled\_toggle\_port()}]
+  Invert a single LED or all of them together.
+\item[\texttt{stateled\_set(val)} / \texttt{stateled\_set\_mask(mask)}] Set the
+  LED pattern directly or define the active bit mask.
+\item[\texttt{stateled\_iterate()}] Advances cyclically to the next LED
+  (running light).
+\item[\texttt{stateled\_show(state)}] In state
+  \verb|SYNCHRONIZE_READY|/\verb|SYNCHRONIZE_DOING| displays the \verb|state_t|
+  on the LEDs (on/off/blinking) and signals errors by toggling the entire
+  port.
+\item[\texttt{stateled\_update(state)}] Variant that drives a running light or
+  an error indication depending on the synchronisation state.
+\end{description}
+\par}

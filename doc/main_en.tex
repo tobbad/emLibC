@@ -1,0 +1,49 @@
+%% Overleaf
+%% Software Manual and Technical Document Template
+%%
+%% English version of the emLibC documentation.
+\documentclass{ol-softwaremanual}
+
+% Packages used in this example
+\usepackage{graphicx}  % for including images
+\usepackage{microtype} % for typographical enhancements
+\usepackage{minted}    % for code listings
+\usepackage{amsmath}   % for equations and mathematics
+\usepackage[english]{babel}
+\usepackage[export]{adjustbox}
+\setminted{style=friendly,fontsize=\small,breaklines=true}
+%\renewcommand{\listoflistingscaption}{List of Code Listings}
+\graphicspath{{pic/}}
+
+\usepackage{hyperref}  % for hyperlinks
+\usepackage[a4paper,top=4.2cm,bottom=4.2cm,left=3.5cm,right=3.5cm]{geometry} % for setting page size and margins
+\usepackage{makeidx}   % for \printindex / \index
+\makeindex
+
+% Custom macros used in this example document
+\newcommand{\doclink}[2]{\href{#1}{#2}\footnote{\url{#1}}}
+\newcommand{\cs}[1]{\texttt{\textbackslash #1}}
+
+% Frontmatter data; appears on title page
+\title{emLibC: Technical Documentation}
+\version{0.2}
+\author{Baerospace}
+\softwarelogo{\includegraphics[width=6cm]{Baerospace_logo.png} \vspace{1cm}
+}
+\begin{document}
+\maketitle
+\tableofcontents
+%scan\listoflistings
+\newpage
+
+\input{emLibC_en}
+\appendix
+\section*{References}
+\addcontentsline{toc}{section}{References}
+\listoflistings
+\bibliography{biblio/database}
+\bibliographystyle{dinat}
+%\bibliographystyle{elsart-harv}
+\addcontentsline{toc}{section}{Index}
+\printindex
+\end{document}

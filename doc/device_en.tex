@@ -1,0 +1,50 @@
+\subsection{device}\label{device}
+The \verb|device| module provides a generic device abstraction for
+byte-oriented input/output. A device is described by \verb|device_t| (Listing
+\ref{device_t}) -- a table of function pointers for \verb|open|, \verb|read|,
+\verb|write|, \verb|ioctrl|, \verb|close| and a \verb|ready_cb| callback,
+complemented by application-specific \verb|user_data|. Concrete devices
+register with \verb|device_init()| and are subsequently addressed via a
+\verb|dev_handle_t| (valid when $\ge 0$); the \verb|device_*| functions check
+the handle and delegate to the stored pointers. The module is used, among
+others, by the \verb|serial| (Section \ref{serial}, \verb|serial_io|).
+
+\begin{listing}
+\begin{minted}{C}
+typedef struct device_s {
+    void *user_data;
+    em_msg (*open)(dev_handle_t, void *user_data);
+    em_msg (*read)(dev_handle_t, uint8_t *buffer, int16_t *cnt);
+    em_msg (*write)(dev_handle_t, const uint8_t *buffer, int16_t cnt);
+    em_msg (*ioctrl)(dev_handle_t, dev_command_t cmd, int16_t value);
+    em_msg (*close)(dev_handle_t);
+    em_msg (*ready_cb)(device_state_t state);
+    uint8_t dev_type;
+} device_t;
+\end{minted}
+\caption{Device interface \texttt{device\_t}}
+\label{device_t}
+\end{listing}
+
+\noindent Which functions a device actually offers is expressed via the bit
+field \verb|dev_func_t| (\verb|DEV_OPEN|, \verb|DEV_READ|, \verb|DEV_WRITE|,
+\dots). \verb|device_check()| verifies that the function pointers required by
+such a mask are set.
+
+\subsubsection*{API}
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{device\_init(dev, user\_data)}] Registers the device, calls its
+  \verb|open| and returns the assigned \verb|dev_handle_t| ($0$ on error or a
+  full table).
+\item[\texttt{device\_check(hdl, dev\_type)}] Checks whether the functions
+  required by the mask \verb|dev_type| are present.
+\item[\texttt{device\_read(hdl, buffer, cnt)} /
+  \texttt{device\_write(hdl, buffer, cnt)}] Read or write via the device's
+  function pointers; \verb|EM_ERR| if the device or the respective pointer is
+  missing.
+\item[\texttt{device\_reset(hdl)}] Resets the device to \verb|DEVICE_RESET|
+  (all pointers \verb|NULL|).
+\item[\texttt{device\_print(hdl)}] Prints the stored pointers for debugging.
+\end{description}
+\par}

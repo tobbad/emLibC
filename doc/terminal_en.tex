@@ -1,0 +1,32 @@
+\subsection{terminal}\label{terminal}
+The \verb|terminal| module is a \verb|kybd_t| implementation (Section
+\ref{keyboard}) that accepts key input from a serial console. It exports the
+device \verb|terminal_dev| with the operating mode \verb|TERMINAL|. Internally
+it keeps its own \verb|state_t| (\verb|my_term|) with eight keys labelled
+\verb|'1'|\dots\verb|'8'|, and for UART access it relies on the
+\verb|sio_t| configuration of the \verb|serial| module (Section \ref{serial}).
+
+\subsubsection*{Operation}
+{\sloppy\emergencystretch=3em
+On scanning (\verb|terminal_scan|) the module prompts once for input
+(``Please enter key'') and then reads character by character via
+\verb|HAL_UART_Receive| up to the line ending. A recognised digit is mapped to
+a key index via \verb|state_ch2idx()|; if it lies within the valid range, the
+change is propagated into \verb|my_term| and the \emph{dirty} flag is set. The
+remaining vtable methods (\verb|terminal_state|, \verb|terminal_diff|,
+\verb|terminal_add|, \verb|terminal_isdirty|, \dots) access the functions of
+the \verb|state| module directly.
+\par}
+
+\subsubsection*{API}
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{terminal\_waitForNumber(key)}] Blocking: reads a number from the
+  serial console and returns it as a value; \verb|key| then points to the read
+  string. The input \verb|R|/\verb|r| signals a reset and returns $-1$.
+\end{description}
+\par}
+
+\noindent In addition there is a \verb|UART_IdleCallback()| for DMA-based
+reception (idle-line detection), which takes received characters into the
+label \verb|clabel| of the \verb|state_t|.

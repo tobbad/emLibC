@@ -1,0 +1,54 @@
+\subsection{xpad}\label{xpad}
+The \verb|xpad| module is a concrete \verb|kybd_t| implementation (Section
+\ref{keyboard}) for keys connected via GPIO. It provides two devices:
+\begin{description}
+\item[\texttt{xscan\_dev}] a $4\times4$ matrix keypad that is scanned column by
+  column (\verb|XSCAN|).
+\item[\texttt{eight\_dev}] eight directly connected keys (\verb|EIGHTKEY|).
+\end{description}
+The columns (\verb|spalte|) are outputs, the rows (\verb|zeile|) are inputs
+with pull-up; both are addressed via the \verb|gpio_port_t| (port module). Each
+key passes through a debounce based on \verb|mkey_t| (Listing \ref{mkey_t}): a
+level is only considered stable after \verb|STABLE_CNT| identical samples and
+is then taken over into the device's \verb|state_t|.
+
+\begin{listing}
+\begin{minted}{C}
+typedef struct key_s {
+    bool last;      // last stable level
+    bool current;   // currently read level
+    bool unstable;  // level has changed
+    uint8_t cnt;    // counter of identical samples
+    bool stable;    // debounced level
+} mkey_t;
+
+typedef struct xpad_dev_s {
+    gpio_port_t spalte;        // columns (outputs)
+    gpio_port_t zeile;         // rows (inputs)
+    dev_type_e dev_type;
+    mkey_t key[MAX_BUTTON_CNT]; // debounce state per key
+    state_t state;             // key state
+} xpad_dev_t;
+\end{minted}
+\caption{Debounce and device structure \texttt{mkey\_t} / \texttt{xpad\_dev\_t}}
+\label{mkey_t}
+\end{listing}
+
+\subsubsection*{Scanning}
+{\sloppy\emergencystretch=3em
+For the matrix (\verb|xscan_dev|) the output is activated per column, after
+\verb|SETTLE_TIME_MS| settling time all rows are read and mapped via
+\verb|(zeile, spalte)| to a key index. For \verb|eight_dev| each key is read
+directly. Every read level passes through the debounce; once a key is detected
+as stably pressed, the module propagates the change into the \verb|state_t| and
+sets its \emph{dirty} flag. The assignment visible to the application is
+defined by the labels in the \verb|state| (e.g.\ \verb|1 2 3 A / 4 5 6 B / ...|
+for the matrix).
+\par}
+
+\noindent The actual vtable methods (\verb|xpad_init|,
+\verb|xpad_spalten_scan|, \verb|xpad_eight_scan|, \verb|xpad_state|,
+\verb|xpad_diff|, \verb|xpad_add|, \dots) are file-local and are reached
+through the exported \verb|kybd_t| \verb|xscan_dev| and \verb|eight_dev| as
+well as the \verb|keyboard_*| functions. Without a supplied configuration,
+\verb|xpad_init()| uses a fixed default pin assignment (GPIOA/B/C pins).

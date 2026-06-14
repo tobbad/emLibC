@@ -1,0 +1,142 @@
+\subsection{common}\label{common}
+The \verb|common| module forms the shared foundation of all other modules. Its
+header \verb|common.h| is included virtually everywhere and provides the basic
+types and macros as well as a number of helper functions (hex output,
+checksums, state names, label helpers). The macro \verb|UNIT_TEST| switches
+between the MCU build (which includes \verb|hal_port.h|) and the host test
+build; in the test build \verb|STATIC| is empty so that file-local functions
+become testable.
+
+\subsubsection*{Basic types and macros}
+Functions report their status uniformly via \verb|em_msg|
+(Listing \ref{em_msg}). In addition, \verb|common.h| defines, among others,
+the macros \verb|MIN| and \verb|MAX|, \verb|ELCNT| (element count of an
+array), \verb|NL| / \verb|NEWLINE| (line ending) and the union
+\verb|cPtrAway_u| for controlled removal of a \verb|const|.
+
+\begin{listing}
+\begin{minted}{C}
+typedef enum {
+    EM_ERR  = -1,  // error
+    EM_OK   =  0,  // success
+    EM_TRUE,       // true
+} em_msg;
+\end{minted}
+\caption{Uniform return type \texttt{em\_msg}}
+\label{em_msg}
+\end{listing}
+
+\subsubsection*{System states}
+The flow of the radio synchronisation is described via \verb|system_state_e|
+(Listing \ref{system_state_e}). The mapping \verb|synca2str| returns the name
+of each state as a string (see \verb|idxa2str()| below).
+
+\begin{listing}
+\begin{minted}{C}
+typedef enum {
+    SYNC_RESET, BOOT_UP, SLOT, CHANNEL, FREQBAND,
+    FREQUENCY_OFFSET, SYNCHRONIZE, SYNCHRONIZE_DOING,
+    SYNCHRONIZE_READY, SYNCHRONIZE_ERROR, SYNCHRONIZE_OK,
+    SYNC_CNT
+} system_state_e;
+\end{minted}
+\caption{Synchronisation states \texttt{system\_state\_e}}
+\label{system_state_e}
+\end{listing}
+
+\subsubsection*{Index-to-string mapping}
+For converting numeric indices (e.g.\ states) into readable names, the two
+structures from Listing \ref{idx2str_t} are used: \verb|idx2str_t| maps a
+single index to a string, \verb|idxa2str_t| groups such a table together with
+its length.
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{idx2str(map, cnt, idx)}] Looks up \verb|idx| in a table of
+  \verb|cnt| entries and returns the associated string, or \verb|"NA "| if not
+  found.
+\item[\texttt{idxa2str(map, idx)}] Convenience for \verb|idxa2str_t|: calls
+  \verb|idx2str()| with the data stored in \verb|map|.
+\end{description}
+\par}
+
+\begin{listing}
+\begin{minted}{C}
+typedef struct idx2str_s {
+    char    *str;
+    uint8_t  idx;
+} idx2str_t;
+
+typedef struct idxa2str_s {
+    uint8_t    cnt;
+    idx2str_t *entry;
+} idxa2str_t;
+\end{minted}
+\caption{Lookup tables \texttt{idx2str\_t} / \texttt{idxa2str\_t}}
+\label{idx2str_t}
+\end{listing}
+
+\subsubsection*{Label helpers}
+The union \verb|clabel_u| (Listing \ref{clabel_u}) stores up to
+\verb|CMD_LEN|$-1$ characters as a short label or command and is used, among
+others, by the \verb|buffer| (Section \ref{buffer}).
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{clable2type(lbl)}] Determines whether the label is a hex number
+  (\verb|hexnum|), printable ASCII (\verb|ascii|) or non-representable
+  (\verb|nonasci|) (return type \verb|type_e|).
+\item[\texttt{clabel2uint(lbl)} / \texttt{str2uint(str)}] Interpret the label
+  or a string as an unsigned integer.
+\end{description}
+\par}
+
+\begin{listing}
+\begin{minted}{C}
+typedef union {
+    uint32_t cmd;        // as a 32-bit command
+    char     str[CMD_LEN]; // or as up to CMD_LEN characters
+} clabel_u;
+\end{minted}
+\caption{Label/command union \texttt{clabel\_u}}
+\label{clabel_u}
+\end{listing}
+
+\subsubsection*{Hex output and dumps}
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{to\_hex(out, out\_size, buffer, buffer\_size, write\_asci)}]
+  Formats \verb|buffer| as a hex dump into the character buffer \verb|out|:
+  per line the address, $16$ hex bytes (with extra spacing after $8$) and
+  optionally the ASCII representation. Returns the number of characters
+  written.
+\item[\texttt{print\_buffer(buffer, size, header)}] Prints a hex dump
+  ($8$ bytes per line with an ASCII column) directly via \verb|printf|.
+\item[\texttt{int2hchar(nr)}] Converts a value into the corresponding hex digit
+  character (\texttt{0}--\texttt{9}, \texttt{A}--\texttt{F}).
+\end{description}
+\par}
+
+\subsubsection*{Computations}
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{common\_crc16(data\_p, length)}] Computes a CRC-16 according to
+  X.25 (polynomial \verb|0x8408| reversed, initial value \verb|0xFFFF|,
+  XOR-out \verb|0xFFFF|). The result is compatible with the \verb|x-25|
+  definition from Python's \verb|crcmod|.
+\item[\texttt{csss2uint32(cycle, slot, sSlot)}] Packs cycle ($16$ bit), slot
+  and sub-slot into a \verb|uint32_t| (\verb!cycle | slot<<16 | sSlot<<24!).
+\item[\texttt{modulo\_sub(slot, oSlot, modulo)}] Returns the modular
+  difference of two slots. Marked as not yet tested in the source.
+\end{description}
+\par}
+
+\subsubsection*{Hardware-related}
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{board\_get\_unique\_id(id, max\_len)}] Reads the 96-bit
+  ($12$~byte) unique chip ID of the STM32L476 (address \verb|UID_BASE|) and
+  pads a larger buffer with zeros. Replaced by a deterministic substitute
+  implementation in the \verb|UNIT_TEST| build.
+\item[\texttt{in\_interrupt()}] Placeholder; currently always returns
+  \verb|false|.
+\end{description}
+\par}
