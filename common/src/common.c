@@ -51,13 +51,6 @@ size_t board_get_unique_id(uint16_t id[], size_t max_len) {
     }
     return max_len;
 }
-uint32_t csss2uint32(uint32_t cycle, uint8_t slot, uint8_t sSlot) {
-    uint32_t res = 0;
-    res = cycle & (0xFFFF);
-    res |= slot << 16;
-    res |= sSlot << 24;
-    return res;
-};
 
 #else
 size_t board_get_unique_id(uint16_t id[], size_t max_len) {
@@ -73,6 +66,14 @@ size_t board_get_unique_id(uint16_t id[], size_t max_len) {
     return max_len;
 }
 #endif
+
+uint32_t csss2uint32(uint32_t cycle, uint8_t slot, uint8_t sSlot) {
+    uint32_t res = 0;
+    res = cycle & (0xFFFF);
+    res |= slot << 16;
+    res |= sSlot << 24;
+    return res;
+};
 
 int in_interrupt(void) { return false; }
 
@@ -298,11 +299,12 @@ char *idxa2str(idxa2str_t *map, uint8_t idx) { return idx2str(map->entry, map->c
 uint32_t swap(uint32_t val) {
     uint32_t out = 0;
     const uint8_t *in = (uint8_t *)&val;
-    out = (in[0] << 24) | (in[1] << 16) | (in[2] << 8) | (in[0]);
+    out = (in[0] << 24) | (in[1] << 16) | (in[2] << 8) | (in[3]);
     return out;
 };
 
 bool ReadModify_write(int8_t *mem, int8_t add) {
+#ifndef UNIT_TEST
     do {
         uint8_t val = __LDREXB((uint8_t *)mem);
         if (0 == __STREXB((val + add), (uint8_t *)mem)) {
@@ -310,4 +312,8 @@ bool ReadModify_write(int8_t *mem, int8_t add) {
             return true;
         }
     } while (true);
+#else
+    *mem += add;
+    return true;
+#endif
 };

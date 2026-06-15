@@ -28,11 +28,11 @@ When adding code that touches hardware, wrap it so the host test build still com
 cmake -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build
 cd build && ctest -V
-./build/buffer_test          # run a single test binary directly
+./build/cycle_test           # run a single test binary directly
 ```
 Debug builds compile with AddressSanitizer (`-fsanitize=address`). C++17, `UNIT_TEST` is defined automatically when `DEBUG` is on.
 
-**`CMakeLists.txt` enables tests/sources by exclusion, not inclusion.** It `file(GLOB ...)`s everything under `common/src` and `common/test`, then `list(REMOVE_ITEM ...)` disables the rest. So which tests actually build is whatever is *not* removed — currently only `buffer_test`. To work on another module, comment out its `REMOVE_ITEM` line for both the test `.cpp` (lines ~57-64) and any source `.c` it needs (lines ~45-53). Each surviving `*_test.cpp` is linked with `test/AllTests.cpp` (the `main`) into its own executable named after the file. Note: the parent project's CLAUDE.md names different "active" tests — trust the current `CMakeLists.txt` over that.
+**`CMakeLists.txt` enables tests/sources by exclusion, not inclusion.** It `file(GLOB ...)`s everything under `common/src` and `common/test`, then `list(REMOVE_ITEM ...)` disables the rest. So which tests actually build is whatever is *not* removed — currently only `cycle_test` (its `REMOVE_ITEM` at line ~63 is commented out; all other `*_test.cpp` are removed). To work on another module, comment out its `REMOVE_ITEM` line for both the test `.cpp` (lines ~56-63) and any source `.c` it needs (lines ~45-53). Each surviving `*_test.cpp` is linked with `test/AllTests.cpp` (the `main`) into its own executable named after the file. Note: the parent project's CLAUDE.md names different "active" tests — trust the current `CMakeLists.txt` over that.
 
 `PROJECT_INC_DIR` points at `../../Core/Inc` (the firmware's headers), so the host test build expects this repo to sit inside the parent project tree.
 

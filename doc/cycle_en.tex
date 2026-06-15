@@ -78,10 +78,28 @@ typedef struct cycle_s {
 \item[\texttt{cycle\_check\_slot(slot)}] Validates a slot: odd values in the
   range $0 < \mathtt{slot} \le \mathtt{SLOT\_CNT}$ are allowed. Returns:
   \verb|int8_t| -- the slot or $-1$.
-\item[\texttt{cycle\_check(cycle, rxSlot, ss)}] Checks whether the received
-  slot \verb|rxSlot| matches the currently expected sub-slot
-  (\verb|cycle->sSlot == rxSlot|). Returns: \verb|bool| (\verb|false| on an
-  invalid slot).
+\item[\texttt{cycle\_check(cycle, rxSlot, ss)}] Checks whether a frame received
+  from slot \verb|rxSlot| fits the current cycle position. The result is true
+  if the current slot equals \verb|rxSlot|, or if \verb|rxSlot| is the
+  immediately \emph{following} slot and the current sub-slot is smaller than
+  the tolerance \verb|ss|, or if \verb|rxSlot| is the immediately
+  \emph{preceding} slot and fewer than \verb|ss| sub-slots remain until the end
+  of the slot (slot indices taken modulo \verb|SLOT_CNT|). The tolerance window
+  \verb|ss| therefore also admits frames from the directly neighbouring slots.
+  Returns: \verb|bool| (\verb|false| on a null pointer or invalid
+  \verb|rxSlot|).
+\item[\texttt{cycle\_difference(cycle, rxSlot)}] Returns the signed distance in
+  sub-slots from the current position \verb|subSlot| to the start of slot
+  \verb|rxSlot| ($\mathtt{rxSlot} \cdot \mathtt{SUB\_SLOT\_CNT}$), measured the
+  shortest way around the ring of $\mathtt{SUB\_SLOT\_CNT} \cdot
+  \mathtt{SLOT\_CNT} = 128$ sub-slots. The value lies in the range
+  $[-64, 63]$; negative means \verb|rxSlot| lies ahead, positive means it
+  already lies behind:
+  \[
+    \mathtt{diff} = \big((\mathtt{subSlot} - \mathtt{rxSlot} \cdot
+    \mathtt{SUB\_SLOT\_CNT} + 64) \bmod 128\big) - 64 .
+  \]
+  Returns: \verb|int8_t| ($0$ on a null pointer or uninitialised structure).
 \item[\texttt{cycle\_string(cycle)}] Returns a compact representation in the
   format \verb|(c:<cycle>, <slot>, <subSlot>)| in a static buffer. Returns:
   \verb|char *| (\verb|NULL| on a null pointer).

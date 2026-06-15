@@ -81,10 +81,29 @@ typedef struct cycle_s {
 \item[\texttt{cycle\_check\_slot(slot)}] Validiert einen Slot: zulässig sind
   ungerade Werte im Bereich $0 < \mathtt{slot} \le \mathtt{SLOT\_CNT}$.
   Rückgabe: \verb|int8_t| -- der Slot oder $-1$.
-\item[\texttt{cycle\_check(cycle, rxSlot, ss)}] Prüft, ob der empfangene Slot
-  \verb|rxSlot| dem aktuell erwarteten Sub\-Slot entspricht
-  (\verb|cycle->sSlot == rxSlot|). Rückgabe: \verb|bool| (\verb|false| bei
-  ungültigem Slot).
+\item[\texttt{cycle\_check(cycle, rxSlot, ss)}] Prüft, ob ein vom Slot
+  \verb|rxSlot| empfangenes Frame zur aktuellen Cycle\-Position passt. Das
+  Ergebnis ist wahr, wenn der aktuelle Slot gleich \verb|rxSlot| ist, oder
+  wenn \verb|rxSlot| der unmittelbar \emph{folgende} Slot ist und der aktuelle
+  Sub\-Slot kleiner als die Toleranz \verb|ss| ist, oder wenn \verb|rxSlot|
+  der unmittelbar \emph{vorangehende} Slot ist und weniger als \verb|ss|
+  Sub\-Slots bis zum Slotende verbleiben (Slotindizes jeweils modulo
+  \verb|SLOT_CNT|). Das Toleranzfenster \verb|ss| lässt damit auch Frames der
+  direkten Nachbarslots zu. Rückgabe: \verb|bool| (\verb|false| bei Nullzeiger
+  oder ungültigem \verb|rxSlot|).
+\item[\texttt{cycle\_difference(cycle, rxSlot)}] Liefert den vorzeichen\-
+  behafteten Abstand in Sub\-Slots von der aktuellen Position \verb|subSlot|
+  zum Beginn des Slots \verb|rxSlot| ($\mathtt{rxSlot} \cdot
+  \mathtt{SUB\_SLOT\_CNT}$), gemessen auf dem kürzesten Weg über den Ring aus
+  $\mathtt{SUB\_SLOT\_CNT} \cdot \mathtt{SLOT\_CNT} = 128$ Sub\-Slots. Der
+  Wert liegt im Bereich $[-64, 63]$; negativ bedeutet, dass \verb|rxSlot|
+  voraus liegt, positiv, dass er bereits zurückliegt:
+  \[
+    \mathtt{diff} = \big((\mathtt{subSlot} - \mathtt{rxSlot} \cdot
+    \mathtt{SUB\_SLOT\_CNT} + 64) \bmod 128\big) - 64 .
+  \]
+  Rückgabe: \verb|int8_t| ($0$ bei Nullzeiger oder nicht initialisierter
+  Struktur).
 \item[\texttt{cycle\_string(cycle)}] Liefert eine kompakte Darstellung im
   Format \verb|(c:<cycle>, <slot>, <subSlot>)| in einem statischen Puffer.
   Rückgabe: \verb|char *| (\verb|NULL| bei Nullzeiger).

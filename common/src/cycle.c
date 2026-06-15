@@ -30,34 +30,34 @@ em_msg cycle_reset(cycle_t *cycle){
     if (!cycle) return res;
     if (!cycle->init) return res;
     // clang-format on
-    cycle->subSlot      = 0;
-    cycle->cycle        = 0;
+    cycle->subSlot = 0;
+    cycle->cycle = 0;
     res = EM_OK;
     return res;
 };
 
-char * cycle_string(cycle_t *cycle){
+char *cycle_string(cycle_t *cycle) {
     // clang-format off
     if (!cycle) return NULL;
     // clang-format on
     static char rStr[STRLEN];
-    snprintf(rStr, STRLEN, SLOT_PRINT_FMT, cycle->cycle , ACT_SLOT(cycle), ACT_SUB_SLOT(cycle));
+    snprintf(rStr, STRLEN, SLOT_PRINT_FMT, cycle->cycle, ACT_SLOT(cycle), ACT_SUB_SLOT(cycle));
     return rStr;
 }
 
-int8_t cycle_check_slot(int8_t slot){
-    if (((slot > 0) && (slot <= SLOT_CNT))&&(slot%2==1)){
+int8_t cycle_check_slot(int8_t slot) {
+    if (((slot > 0) && (slot <= SLOT_CNT)) && (slot % 2 == 1)) {
         return slot;
     }
     return -1;
 }
 
-em_msg cycle_set_slot(cycle_t *cycle, int8_t slot){
-     em_msg res = EM_ERR;
+em_msg cycle_set_slot(cycle_t *cycle, int8_t slot) {
+    em_msg res = EM_ERR;
     // clang-format off
      if (!cycle) return res;
     // clang-format on
-    if ( cycle_check_slot(slot) >= 0 ) {
+    if (cycle_check_slot(slot) >= 0) {
         cycle_reset(cycle);
         cycle->subSlot = slot * SUB_SLOT_CNT;
         res = EM_OK;
@@ -68,7 +68,7 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot){
     return res;
 };
 
-bool cycle_check(cycle_t *cycle, int8_t rxSlot, uint8_t ss){
+bool cycle_check(cycle_t *cycle, int8_t rxSlot, uint8_t ss) {
     bool inSlot = false;
     bool res = false;
     bool res_p = false;
@@ -77,22 +77,38 @@ bool cycle_check(cycle_t *cycle, int8_t rxSlot, uint8_t ss){
     if (!cycle) return res;
     if (cycle_check_slot(rxSlot)<0) return res;
     // clang-format on
-    inSlot =  (ACT_SLOT(&rb_system.cycle) == rxSlot);
-    res_a  == rxSlot == (( ACT_SLOT(&rb_system.cycle)+1 )%SUB_SLOT_CNT) &&  (ACT_SUB_SLOT(cycle) < ss);
-    res_p  == rxSlot == ((ACT_SLOT(&rb_system.cycle)-1  ))               && ((SUB_SLOT_CNT- ACT_SUB_SLOT(cycle))<ss );
-    if (res_p){
-        printf("Pre"NL);
+    inSlot = (ACT_SLOT(cycle) == rxSlot);
+    res_a = (rxSlot == ((ACT_SLOT(cycle) + 1) % SLOT_CNT)) && (ACT_SUB_SLOT(cycle) < ss);
+    res_p = (rxSlot == ((ACT_SLOT(cycle) + SLOT_CNT - 1) % SLOT_CNT)) && ((SUB_SLOT_CNT - ACT_SUB_SLOT(cycle)) < ss);
+    if (res_p) {
+        printf("Pre" NL);
     }
-    if (res_a){
-        printf("After"NL);
+    if (res_a) {
+        printf("After" NL);
     }
-    res  = inSlot || res_p || res_a;
-    if (res){
-        if (!inSlot){
-            printf("%s: out matches %d"NL, cycle_string(&rb_system.cycle), rxSlot);
+    res = inSlot || res_p || res_a;
+    if (res) {
+        if (!inSlot) {
+            printf("%s: out matches %d" NL, cycle_string(cycle), rxSlot);
         }
     }
-return res;
+    return res;
+}
+
+int8_t cycle_difference(cycle_t *cycle, int8_t rxSlot) {
+    // clang-format off
+    if (!cycle) return 0;
+    if (!cycle->init) return 0;
+    // clang-format on
+    const int16_t total = SUB_SLOT_CNT * SLOT_CNT; // 128 sub-slots per cycle
+    const int16_t half = total / 2;                // 64
+    // Signed sub-slot distance from the current position to the start of
+    // rxSlot's region, taken the shortest way around the sub-slot ring.
+    // Negative => rxSlot lies ahead of us, positive => rxSlot lies behind us.
+    int16_t diff = (cycle->subSlot - (int16_t)rxSlot * SUB_SLOT_CNT) % total;
+    if (diff < 0) diff += total;     // normalise to [0, total)
+    if (diff >= half) diff -= total; // fold to [-half, half) => [-64, 63]
+    return (int8_t)diff;
 }
 
 void cycle_increment(cycle_t *cycle, system_state_e *sync_state) {
@@ -111,7 +127,7 @@ void cycle_increment(cycle_t *cycle, system_state_e *sync_state) {
     }
     if (is_set) {
         cycle->subSlot++;
-        cycle->subSlot = (cycle->subSlot%(SUB_SLOT_CNT*SLOT_CNT));
+        cycle->subSlot = (cycle->subSlot % (SUB_SLOT_CNT * SLOT_CNT));
         cycle->actSlot = ACT_SLOT(cycle);
         cycle->sSlot = ACT_SUB_SLOT(cycle);
 #if OPTION_SHOW_TIMING == 1

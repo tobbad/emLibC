@@ -43,6 +43,7 @@ TEST(CycleTest, CheckCycleIncrement) {
     uint32_t cycle;
     uint32_t subSlot;
     int8_t slot = 3;
+    ASSERT_EQ(cycle_init(&c), EM_OK);
     ASSERT_EQ(cycle_set_slot(nullptr, 1), EM_ERR);
     ASSERT_EQ(cycle_set_slot(&c, slot), EM_OK);
     ASSERT_EQ(c.subSlot, slot * SUB_SLOT_CNT);
@@ -99,4 +100,49 @@ TEST(CycleTest, CheckCycleIncrement) {
     ASSERT_EQ(c.sSlot, 0);
     ASSERT_EQ(c.cycle, 0);
 
+}
+
+// ---------------------------------------------------------------------------
+// cycle_difference: signed sub-slot distance from the current position to the
+// start of rxSlot's region, shortest way around the SUB_SLOT_CNT*SLOT_CNT ring.
+// Negative => rxSlot lies ahead of us, positive => rxSlot lies behind us.
+// ---------------------------------------------------------------------------
+TEST(CycleTest, CycleDifference) {
+    const int total = SUB_SLOT_CNT * SLOT_CNT; // 128 sub-slots per cycle
+    const int half = total / 2;                // 64
+
+    // NULL / uninitialised guards return 0.
+    EXPECT_EQ(cycle_difference(nullptr, 0), 0);
+    cycle_t u{};
+    u.init = false;
+    EXPECT_EQ(cycle_difference(&u, 0), 0);
+
+    cycle_t c;
+    ASSERT_EQ(cycle_init(&c), EM_OK);
+
+    // Spot checks matching the documented behaviour.
+    c.subSlot = 0;
+    EXPECT_EQ(cycle_difference(&c, 0), 0); // sitting at the start of slot 0
+    c.subSlot = 15 * SUB_SLOT_CNT;         // slot 15, sub-slot 0 -> linear 120
+    EXPECT_EQ(cycle_difference(&c, 0), -8); // rxSlot 0 starts 8 sub-slots ahead
+    c.subSlot = SUB_SLOT_CNT;               // slot 1, sub-slot 0
+    EXPECT_EQ(cycle_difference(&c, 0), 8);  // rxSlot 0 is 8 sub-slots behind us
+    c.subSlot = 3;                          // slot 0, sub-slot 3
+    EXPECT_EQ(cycle_difference(&c, 0), 3);  // 3 sub-slots into rxSlot's region
+    c.subSlot = 0;
+    EXPECT_EQ(cycle_difference(&c, 1), -8); // next slot starts 8 ahead
+    c.subSlot = half;                       // exactly half a cycle away
+    EXPECT_EQ(cycle_difference(&c, 0), -half); // folds to the negative edge
+
+    // Exhaustive cross-check against a reference for every position/slot pair.
+    for (int ss = 0; ss < total; ss++) {
+        for (int8_t rx = 0; rx < SLOT_CNT; rx++) {
+            c.subSlot = (int8_t)ss;
+            int expect = (ss - rx * SUB_SLOT_CNT) % total;
+            if (expect < 0) expect += total;
+            if (expect >= half) expect -= total;
+            EXPECT_EQ(cycle_difference(&c, rx), expect)
+                << "subSlot=" << ss << " rxSlot=" << (int)rx;
+        }
+    }
 }
