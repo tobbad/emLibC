@@ -68,7 +68,6 @@
 #include "common.h"
 #include "hal_port.h"
 #include "main.h"
-#include "mutex.h"
 #include "serial.h"
 #include "state.h"
 

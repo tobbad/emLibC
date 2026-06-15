@@ -69,13 +69,30 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot){
 };
 
 bool cycle_check(cycle_t *cycle, int8_t rxSlot, uint8_t ss){
+    bool inSlot = false;
     bool res = false;
-   // clang-format off
+    bool res_p = false;
+    bool res_a = false;
+    // clang-format off
     if (!cycle) return res;
     if (cycle_check_slot(rxSlot)<0) return res;
-   // clang-format on
-   res =  (cycle->sSlot==rxSlot);
-   return res;
+    // clang-format on
+    inSlot =  (ACT_SLOT(&rb_system.cycle) == rxSlot);
+    res_a  == rxSlot == (( ACT_SLOT(&rb_system.cycle)+1 )%SUB_SLOT_CNT) &&  (ACT_SUB_SLOT(cycle) < ss);
+    res_p  == rxSlot == ((ACT_SLOT(&rb_system.cycle)-1  ))               && ((SUB_SLOT_CNT- ACT_SUB_SLOT(cycle))<ss );
+    if (res_p){
+        printf("Pre"NL);
+    }
+    if (res_a){
+        printf("After"NL);
+    }
+    res  = inSlot || res_p || res_a;
+    if (res){
+        if (!inSlot){
+            printf("%s: out matches %d"NL, cycle_string(&rb_system.cycle), rxSlot);
+        }
+    }
+return res;
 }
 
 void cycle_increment(cycle_t *cycle, system_state_e *sync_state) {
