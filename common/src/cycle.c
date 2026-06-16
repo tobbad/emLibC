@@ -9,6 +9,7 @@
 #ifndef UNIT_TEST
 #include "rb_system.h"
 #include "stateled.h"
+#include "options.h"
 #endif
 
 #define SLOT_PRINT_FMT "(c:%5d, %1X, %2d)" // length is 19
