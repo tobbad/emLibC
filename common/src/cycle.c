@@ -1,5 +1,5 @@
 /*
- * cycle.c
+ * cycle->c
  *
  *  Created on: 20.05.2026
  *      Author: badi
@@ -7,18 +7,33 @@
 
 #include "cycle.h"
 #ifndef UNIT_TEST
-#include "rb_system.h"
 #include "stateled.h"
 #include "options.h"
 #endif
 
+
+typedef struct cycle_s {
+    volatile int8_t subSlot; // actual sub slot
+    int8_t    actSlot;
+    int8_t    sSlot;
+    uint16_t  cycle;
+    bool init;
+} cycle_t;
+
+#define CYCLE_ACT_SUB_SLOT(_cycle) (((_cycle)->subSlot) & CYCLE_SUB_SLOT_MASK)
+
+#define CYCLE_ACT_SLOT(_cycle) (((_cycle)->subSlot >> CYCLE_SLOT_SHIFT) & CYCLE_SLOT_MASK)
+
+cycle_t cycle;
+
 #define SLOT_PRINT_FMT "(c:%5d, %1X, %2d)" // length is 19
 #define STRLEN 22
-em_msg cycle_init(cycle_t *cycle) {
+
+em_msg cycle_init(cycle_t *cycle ) {
     em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
-    cycle->init         = true;
+    cycle->init = true;
     cycle_reset(cycle);
     res = EM_OK;
     return res;
@@ -40,27 +55,65 @@ em_msg cycle_reset(cycle_t *cycle){
 char *cycle_string(cycle_t *cycle) {
     // clang-format off
     if (!cycle) return NULL;
+    if (!cycle->init) return NULL;
     // clang-format on
     static char rStr[STRLEN];
-    snprintf(rStr, STRLEN, SLOT_PRINT_FMT, cycle->cycle, ACT_SLOT(cycle), ACT_SUB_SLOT(cycle));
+    snprintf(rStr, STRLEN, SLOT_PRINT_FMT, cycle->cycle,  CYCLE_ACT_SLOT(cycle),  CYCLE_ACT_SUB_SLOT(cycle));
     return rStr;
+}
+int8_t cycle_act_slot(cycle_t *cycle ){
+    em_msg res = EM_ERR;
+    // clang-format off
+    if (!cycle) return res;
+    if (!cycle->init) return res;
+    // clang-format on
+    return CYCLE_ACT_SLOT(cycle);
+};
+int8_t cycle_act_sub_slot(cycle_t *cycle ){
+    em_msg res = EM_ERR;
+    // clang-format off
+    if (!cycle) return res;
+    if (!cycle->init) return res;
+    // clang-format on
+    return CYCLE_ACT_SUB_SLOT(cycle);
+
+};
+int8_t cycle_sub_sub_slot(cycle_t *cycle ){
+    em_msg res = EM_ERR;
+    // clang-format off
+    if (!cycle) return res;
+    if (!cycle->init) return res;
+    // clang-format on
+    return cycle->subSlot;
+
+};
+
+
+uint16_t cycle_cycle(cycle_t *cycle){
+    uint16_t res = EM_ERR;
+    // clang-format off
+    if (!cycle) return res;
+    if (!cycle->init) return res;
+    // clang-format on
+    return cycle->cycle;
 }
 
 int8_t cycle_check_slot(int8_t slot) {
-    if (((slot > 0) && (slot <= SLOT_CNT)) && (slot % 2 == 1)) {
+    if (((slot > 0) && (slot <= CYCLE_SLOT_CNT)) && (slot % 2 == 1)) {
         return slot;
     }
     return -1;
 }
 
-em_msg cycle_set_slot(cycle_t *cycle, int8_t slot) {
+em_msg cycle_set_slot(cycle_t *cycle,  int8_t slot) {
     em_msg res = EM_ERR;
     // clang-format off
-     if (!cycle) return res;
+    if (!cycle) return res;
+    if (!cycle->init) return res;
     // clang-format on
     if (cycle_check_slot(slot) >= 0) {
         cycle_reset(cycle);
-        cycle->subSlot = slot * SUB_SLOT_CNT;
+        cycle->subSlot = slot * CYCLE_SUB_SLOT_CNT;
         res = EM_OK;
     } else {
         res = EM_ERR;
@@ -76,11 +129,12 @@ bool cycle_check(cycle_t *cycle, int8_t rxSlot, uint8_t ss) {
     bool res_a = false;
     // clang-format off
     if (!cycle) return res;
+    if (!cycle->init) return res;
     if (cycle_check_slot(rxSlot)<0) return res;
     // clang-format on
-    inSlot = (ACT_SLOT(cycle) == rxSlot);
-    res_a = (rxSlot == ((ACT_SLOT(cycle) + 1) % SLOT_CNT)) && (ACT_SUB_SLOT(cycle) < ss);
-    res_p = (rxSlot == ((ACT_SLOT(cycle) + SLOT_CNT - 1) % SLOT_CNT)) && ((SUB_SLOT_CNT - ACT_SUB_SLOT(cycle)) < ss);
+    inSlot = (CYCLE_ACT_SLOT(cycle) == rxSlot);
+    res_a = (rxSlot == (( CYCLE_ACT_SLOT(cycle) + 1) %  CYCLE_SLOT_CNT)) && ( CYCLE_ACT_SUB_SLOT(cycle) < ss);
+    res_p = (rxSlot == (( CYCLE_ACT_SLOT(cycle) +  CYCLE_SLOT_CNT - 1) % CYCLE_SLOT_CNT)) && ((CYCLE_SUB_SLOT_CNT - CYCLE_ACT_SUB_SLOT(cycle)) < ss);
     if (res_p) {
         printf("Pre" NL);
     }
@@ -101,12 +155,12 @@ int8_t cycle_difference(cycle_t *cycle, int8_t rxSlot) {
     if (!cycle) return 0;
     if (!cycle->init) return 0;
     // clang-format on
-    const int16_t total = SUB_SLOT_CNT * SLOT_CNT; // 128 sub-slots per cycle
+    const int16_t total = CYCLE_SUB_SLOT_CNT * CYCLE_SLOT_CNT; // 128 sub-slots per cycle
     const int16_t half = total / 2;                // 64
     // Signed sub-slot distance from the current position to the start of
     // rxSlot's region, taken the shortest way around the sub-slot ring.
     // Negative => rxSlot lies ahead of us, positive => rxSlot lies behind us.
-    int16_t diff = (cycle->subSlot - (int16_t)rxSlot * SUB_SLOT_CNT) % total;
+    int16_t diff = (cycle->subSlot - (int16_t)rxSlot * CYCLE_SUB_SLOT_CNT) % total;
     if (diff < 0) diff += total;     // normalise to [0, total)
     if (diff >= half) diff -= total; // fold to [-half, half) => [-64, 63]
     return (int8_t)diff;
@@ -128,9 +182,9 @@ void cycle_increment(cycle_t *cycle, system_state_e *sync_state) {
     }
     if (is_set) {
         cycle->subSlot++;
-        cycle->subSlot = (cycle->subSlot % (SUB_SLOT_CNT * SLOT_CNT));
-        cycle->actSlot = ACT_SLOT(cycle);
-        cycle->sSlot = ACT_SUB_SLOT(cycle);
+        cycle->subSlot = (cycle->subSlot % (CYCLE_SUB_SLOT_CNT * CYCLE_SLOT_CNT));
+        cycle->actSlot = CYCLE_ACT_SLOT(cycle);
+        cycle->sSlot = CYCLE_ACT_SUB_SLOT(cycle);
 #if OPTION_SHOW_TIMING == 1
         em_msg res = stateled_toggle_pin(led_3);
 #endif
@@ -164,8 +218,8 @@ em_msg cycle_print(cycle_t *cycle, char *title) {
         printf("%s" NL, title);
     }
     printf("subSlot    = %d" NL, cycle->subSlot);
-    printf("actSlot    = %x" NL, ACT_SLOT(cycle));
-    printf("actSubSlot = %d" NL, ACT_SUB_SLOT(cycle));
+    printf("actSlot    = %x" NL, CYCLE_ACT_SLOT(cycle));
+    printf("actSubSlot = %d" NL, CYCLE_ACT_SUB_SLOT(cycle));
     printf("cycle      = %d" NL, cycle->cycle);
     return EM_OK;
 }
