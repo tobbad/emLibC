@@ -29,7 +29,7 @@ typedef enum {
 typedef struct cycle_s cycle_t;
 extern cycle_t cycle;
 
-em_msg   cycle_init(cycle_t *cycle);
+em_msg   cycle_init(cycle_t *cycle, int8_t press);
 em_msg   cycle_reset(cycle_t *cycle);
 char    *cycle_string(cycle_t *cycle);
 int8_t   cycle_sub_sub_slot(cycle_t *cycle );
