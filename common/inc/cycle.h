@@ -13,6 +13,10 @@ extern "C" {
 #include "common.h"
 #include "system_definitions.h"
 
+typedef enum {
+    SLAVE,
+    MASTER,
+} set_slot_e;
 
 #define CYCLE_SUB_SLOT_POW2 3
 #define CYCLE_SUB_SLOT_CNT (1<<CYCLE_SUB_SLOT_POW2)
@@ -33,7 +37,7 @@ int8_t   cycle_act_slot(cycle_t *cycle);
 int8_t   cycle_act_sub_slot(cycle_t *cycle);
 uint16_t cycle_cycle(cycle_t *cycle);
 int8_t   cycle_check_slot(int8_t slot);
-em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot);
+em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type);
 bool     cycle_check(cycle_t *cycle, int8_t rxSlot, uint8_t ss);
 int8_t   cycle_difference(cycle_t *cycle, int8_t rxSlot);
 void     cycle_increment(cycle_t *cycle, system_state_e *sync_state);

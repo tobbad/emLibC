@@ -17,6 +17,7 @@ typedef struct cycle_s {
     int8_t    actSlot;
     int8_t    sSlot;
     uint16_t  cycle;
+    int8_t    press;
     bool init;
 } cycle_t;
 
@@ -29,11 +30,13 @@ cycle_t cycle;
 #define SLOT_PRINT_FMT "(c:%5d, %1X, %2d)" // length is 19
 #define STRLEN 22
 
-em_msg cycle_init(cycle_t *cycle ) {
+em_msg cycle_init(cycle_t *cycle, int8_t press ) {
     em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
+    // clang-format on
     cycle->init = true;
+    cycle->press= press;
     cycle_reset(cycle);
     res = EM_OK;
     return res;
@@ -105,7 +108,7 @@ int8_t cycle_check_slot(int8_t slot) {
     return -1;
 }
 
-em_msg cycle_set_slot(cycle_t *cycle,  int8_t slot) {
+em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type){
     em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
@@ -113,7 +116,12 @@ em_msg cycle_set_slot(cycle_t *cycle,  int8_t slot) {
     // clang-format on
     if (cycle_check_slot(slot) >= 0) {
         cycle_reset(cycle);
-        cycle->subSlot = slot * CYCLE_SUB_SLOT_CNT;
+        if (ss_type==MASTER){
+            cycle->subSlot = slot * CYCLE_SUB_SLOT_CNT-cycle->press;
+        } else{
+            cycle->subSlot = slot * CYCLE_SUB_SLOT_CNT;
+        }
+
         res = EM_OK;
     } else {
         res = EM_ERR;
