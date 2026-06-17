@@ -34,7 +34,7 @@ em_msg   cycle_reset(cycle_t *cycle);
 char    *cycle_string(cycle_t *cycle);
 int8_t   cycle_sub_sub_slot(cycle_t *cycle );
 int8_t   cycle_act_slot(cycle_t *cycle);
-int8_t   cycle_act_sub_slot(cycle_t *cycle);
+int8_t   cycle_sub_sub_slot(cycle_t *cycle);
 uint16_t cycle_cycle(cycle_t *cycle);
 int8_t   cycle_check_slot(int8_t slot);
 em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type);

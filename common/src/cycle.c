@@ -72,6 +72,7 @@ int8_t cycle_act_slot(cycle_t *cycle ){
     // clang-format on
     return CYCLE_ACT_SLOT(cycle);
 };
+
 int8_t cycle_act_sub_slot(cycle_t *cycle ){
     em_msg res = EM_ERR;
     // clang-format off
@@ -81,16 +82,16 @@ int8_t cycle_act_sub_slot(cycle_t *cycle ){
     return CYCLE_ACT_SUB_SLOT(cycle);
 
 };
+
 int8_t cycle_sub_sub_slot(cycle_t *cycle ){
     em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
     if (!cycle->init) return res;
     // clang-format on
-    return cycle->subSlot;
+    return CYCLE_ACT_SUB_SLOT(cycle);
 
 };
-
 
 uint16_t cycle_cycle(cycle_t *cycle){
     uint16_t res = EM_ERR;
