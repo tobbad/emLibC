@@ -27,6 +27,7 @@ static idx2str_t sync2str[] = {
     {.str = (char *)&"SYNCHRONIZE_READY   ", .idx = SYNCHRONIZE_READY}, /*!< Partly synchronized */
     {.str = (char *)&"SYNCHRONIZE_DOING   ", .idx = SYNCHRONIZE_DOING}, /*!< Partly synchronized */
     {.str = (char *)&"SYNCHRONIZE_ERROR   ", .idx = SYNCHRONIZE_ERROR}, /*!< Synchronizion error */
+    {.str = (char *)&"SYNCHRONIZE_LOCKED  ", .idx = SYNCHRONIZE_LOCKED}, /*!< Device claimed tom be master or slave */
     {.str = (char *)&"SYNCHRONIZE_OK      ", .idx = SYNCHRONIZE_OK},    /*!< Synchronized */
 };
 

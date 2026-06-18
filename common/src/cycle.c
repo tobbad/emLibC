@@ -15,28 +15,32 @@
 typedef struct cycle_s {
     volatile int8_t subSlot; // actual sub slot
     int8_t    actSlot;
+    int8_t    lSlot;
     int8_t    sSlot;
     uint16_t  cycle;
     int8_t    press;
-    bool init;
+    system_state_e *sync_state;
+    bool      init;
 } cycle_t;
 
 #define CYCLE_ACT_SUB_SLOT(_cycle) (((_cycle)->subSlot) & CYCLE_SUB_SLOT_MASK)
 
-#define CYCLE_ACT_SLOT(_cycle) (((_cycle)->subSlot >> CYCLE_SLOT_SHIFT) & CYCLE_SLOT_MASK)
+#define CYCLE_ACT_SLOT(_cycle) (((_cycle)->subSlot >> CYCLE_SUB_SLOT_SHIFT) & CYCLE_SLOT_MASK)
 
 cycle_t cycle;
 
 #define SLOT_PRINT_FMT "(c:%5d, %1X, %2d)" // length is 19
 #define STRLEN 22
 
-em_msg cycle_init(cycle_t *cycle, int8_t press ) {
+em_msg cycle_init(cycle_t *cycle, int8_t press , system_state_e *sync_state) {
     em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
+    if (!sync_state) return res;
     // clang-format on
-    cycle->init = true;
     cycle->press= press;
+    cycle->sync_state= sync_state;
+    cycle->init = true;
     cycle_reset(cycle);
     res = EM_OK;
     return res;
@@ -50,7 +54,10 @@ em_msg cycle_reset(cycle_t *cycle){
     if (!cycle->init) return res;
     // clang-format on
     cycle->subSlot = 0;
-    cycle->cycle = 0;
+    cycle->sSlot   = 0;
+    cycle->actSlot = 0;
+    cycle->lSlot   = 0;
+    cycle->cycle   = 0;
     res = EM_OK;
     return res;
 };
@@ -71,16 +78,6 @@ int8_t cycle_act_slot(cycle_t *cycle ){
     if (!cycle->init) return res;
     // clang-format on
     return CYCLE_ACT_SLOT(cycle);
-};
-
-int8_t cycle_act_sub_slot(cycle_t *cycle ){
-    em_msg res = EM_ERR;
-    // clang-format off
-    if (!cycle) return res;
-    if (!cycle->init) return res;
-    // clang-format on
-    return CYCLE_ACT_SUB_SLOT(cycle);
-
 };
 
 int8_t cycle_sub_sub_slot(cycle_t *cycle ){
@@ -115,23 +112,27 @@ em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type){
     if (!cycle) return res;
     if (!cycle->init) return res;
     // clang-format on
-    if (cycle_check_slot(slot) >= 0) {
-        cycle_reset(cycle);
-        if (ss_type==MASTER){
-            cycle->subSlot = slot * CYCLE_SUB_SLOT_CNT-cycle->press;
-        } else{
-            cycle->subSlot = slot * CYCLE_SUB_SLOT_CNT;
+    if ((*cycle->sync_state == SYNCHRONIZE_DOING) || (*cycle->sync_state == SYNCHRONIZE_READY)){
+        if (cycle_check_slot(slot) >= 0) {
+            cycle_reset(cycle);
+            *cycle->sync_state = SYNCHRONIZE_LOCKED;
+            if (ss_type==MASTER){
+                cycle->subSlot = slot * CYCLE_SUB_SLOT_CNT-cycle->press;
+            } else{
+                cycle->subSlot = slot * CYCLE_SUB_SLOT_CNT;
+            }
+            cycle->actSlot = CYCLE_ACT_SLOT(cycle);
+            cycle->sSlot   = CYCLE_ACT_SUB_SLOT(cycle);
+            res = EM_OK;
+        } else {
+            res = EM_ERR;
+            printf("Set invalid slot %d" NL, slot);
         }
-
-        res = EM_OK;
-    } else {
-        res = EM_ERR;
-        printf("Set invalid slot %d" NL, slot);
     }
     return res;
-};
+}
 
-bool cycle_check(cycle_t *cycle, int8_t rxSlot, uint8_t ss) {
+bool cycle_check(cycle_t *cycle, int8_t rxSlot) {
     bool inSlot = false;
     bool res = false;
     bool res_p = false;
@@ -142,8 +143,8 @@ bool cycle_check(cycle_t *cycle, int8_t rxSlot, uint8_t ss) {
     if (cycle_check_slot(rxSlot)<0) return res;
     // clang-format on
     inSlot = (CYCLE_ACT_SLOT(cycle) == rxSlot);
-    res_a = (rxSlot == (( CYCLE_ACT_SLOT(cycle) + 1) %  CYCLE_SLOT_CNT)) && ( CYCLE_ACT_SUB_SLOT(cycle) < ss);
-    res_p = (rxSlot == (( CYCLE_ACT_SLOT(cycle) +  CYCLE_SLOT_CNT - 1) % CYCLE_SLOT_CNT)) && ((CYCLE_SUB_SLOT_CNT - CYCLE_ACT_SUB_SLOT(cycle)) < ss);
+    res_a = (rxSlot == (( CYCLE_ACT_SLOT(cycle) + 1) %  CYCLE_SLOT_CNT)) && ( CYCLE_ACT_SUB_SLOT(cycle) < cycle->press);
+    res_p = (rxSlot == (( CYCLE_ACT_SLOT(cycle) +  CYCLE_SLOT_CNT - 1) % CYCLE_SLOT_CNT)) && ((CYCLE_SUB_SLOT_CNT - CYCLE_ACT_SUB_SLOT(cycle)) < cycle->press);
     if (res_p) {
         printf("Pre" NL);
     }
@@ -175,17 +176,15 @@ int8_t cycle_difference(cycle_t *cycle, int8_t rxSlot) {
     return (int8_t)diff;
 }
 
-void cycle_increment(cycle_t *cycle, system_state_e *sync_state) {
+void cycle_increment(cycle_t *cycle) {
     // clang-format off
     if (!cycle) return;
     if (!cycle->init) return;
-    if (!sync_state) return;
     // clang-format on
-    static uint8_t lastActSlot;
     static bool is_set = false;
     static uint8_t cycle_once = false;
-    if (*sync_state == SYNCHRONIZE) {
-        *sync_state = SYNCHRONIZE_READY;
+    if (*cycle->sync_state == SYNCHRONIZE) {
+        *cycle->sync_state = SYNCHRONIZE_READY;
         is_set = true;
         return;
     }
@@ -198,14 +197,15 @@ void cycle_increment(cycle_t *cycle, system_state_e *sync_state) {
         em_msg res = stateled_toggle_pin(led_3);
 #endif
     }
-    if ((*sync_state == SYNCHRONIZE_DOING) || (*sync_state == SYNCHRONIZE_READY) || (*sync_state == SYNCHRONIZE_ERROR)) {
-        if (cycle->actSlot != lastActSlot) {
+    if ((*cycle->sync_state == SYNCHRONIZE_DOING) || (*cycle->sync_state == SYNCHRONIZE_READY)
+            || (*cycle->sync_state== SYNCHRONIZE_ERROR) ||  (*cycle->sync_state == SYNCHRONIZE_LOCKED)) {
+        if (cycle->actSlot != cycle->lSlot) {
             cycle_once = false;
 #if OPTION_SHOW_TIMING == 1
             stateled_set(cycle->actSlot);
             stateled_toggle_pin(led_4);
 #endif
-            lastActSlot = cycle->actSlot;
+            cycle->lSlot = cycle->actSlot;
             if (((cycle->actSlot == 0) && (is_set) && (!cycle_once))) {
 #if OPTION_SHOW_TIMING == 1
                 em_msg res = stateled_toggle_pin(led_5);
