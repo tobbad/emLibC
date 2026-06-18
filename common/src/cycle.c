@@ -19,9 +19,19 @@ typedef struct cycle_s {
     int8_t    sSlot;
     uint16_t  cycle;
     int8_t    press;
+    set_slot_e role;
     system_state_e *sync_state;
     bool      init;
 } cycle_t;
+
+
+
+static idx2str_t cycle2str[] = {
+    {.str = (char *)&"SLAVE  ", .idx = SLAVE},        /*!< SYNC_RESET */
+    {.str = (char *)&"MASTER ", .idx = MASTER},           /*!< BOOT_UP */
+};
+
+idxa2str_t cyclea2str = {.cnt = ELCNT(cycle2str), .entry = (idx2str_t *)&cycle2str};
 
 #define CYCLE_ACT_SUB_SLOT(_cycle) (((_cycle)->subSlot) & CYCLE_SUB_SLOT_MASK)
 
@@ -58,6 +68,7 @@ em_msg cycle_reset(cycle_t *cycle){
     cycle->actSlot = 0;
     cycle->lSlot   = 0;
     cycle->cycle   = 0;
+    cycle->role    = SLAVE;
     res = EM_OK;
     return res;
 };
@@ -90,6 +101,10 @@ int8_t cycle_sub_sub_slot(cycle_t *cycle ){
 
 };
 
+char *   cycle_role(cycle_t *cycle){
+    return idxa2str(&cyclea2str, cycle->role);
+}
+
 uint16_t cycle_cycle(cycle_t *cycle){
     uint16_t res = EM_ERR;
     // clang-format off
@@ -111,6 +126,7 @@ em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type){
     // clang-format off
     if (!cycle) return res;
     if (!cycle->init) return res;
+    cycle->role = ss_type;
     // clang-format on
     if ((*cycle->sync_state == SYNCHRONIZE_DOING) || (*cycle->sync_state == SYNCHRONIZE_READY)){
         if (cycle_check_slot(slot) >= 0) {

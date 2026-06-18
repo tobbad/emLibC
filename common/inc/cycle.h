@@ -27,7 +27,7 @@ typedef enum {
 #define CYCLE_SLOT_CNT (1<<CYCLE_SLOT_POW2)
 #define CYCLE_SLOT_MASK (CYCLE_SLOT_CNT-1)
 #define CYCLE_SLOT_SHIFT (CYCLE_SLOT_POW2)
-
+extern idxa2str_t synca2str;
 typedef struct cycle_s cycle_t;
 extern cycle_t cycle;
 
@@ -37,6 +37,7 @@ char    *cycle_string(cycle_t *cycle);
 int8_t   cycle_sub_sub_slot(cycle_t *cycle );
 int8_t   cycle_act_slot(cycle_t *cycle);
 int8_t   cycle_sub_sub_slot(cycle_t *cycle);
+char *   cycle_role(cycle_t *cycle);
 uint16_t cycle_cycle(cycle_t *cycle);
 int8_t   cycle_check_slot(int8_t slot);
 em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type);
