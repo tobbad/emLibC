@@ -235,3 +235,14 @@ TEST_F(CycleTest, CycleDifference) {
         }
     }
 }
+
+TEST_F(CycleTest, MyCycleDifference) {
+    cycle_t c;
+    const int total = CYCLE_SUB_SLOT_CNT * CYCLE_SLOT_CNT; // 128 sub-slots per cycle
+    ASSERT_EQ(cycle_init(&c, PRESS, &sync_state), EM_OK);
+    for (uint8_t press =0; press<CYCLE_SUB_SLOT_CNT;press++){
+        for (slot)
+    }
+
+}
+
