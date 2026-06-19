@@ -27,8 +27,8 @@ typedef struct cycle_s {
 
 
 static idx2str_t cycle2str[] = {
-    {.str = (char *)&"SLAVE  ", .idx = SLAVE},        /*!< SYNC_RESET */
-    {.str = (char *)&"MASTER ", .idx = MASTER},           /*!< BOOT_UP */
+    {.str = (char *)&"SLAVE ", .idx = SLAVE},        /*!< Device is slave */
+    {.str = (char *)&"MASTER", .idx = MASTER},       /*!< Device is master */
 };
 
 idxa2str_t cyclea2str = {.cnt = ELCNT(cycle2str), .entry = (idx2str_t *)&cycle2str};
@@ -134,8 +134,10 @@ em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type){
             cycle_reset(cycle);
             *cycle->sync_state = SYNCHRONIZE_LOCKED;
             if (ss_type==MASTER){
+                cycle->role = MASTER;
                 cycle->subSlot = slot * CYCLE_SUB_SLOT_CNT-cycle->press;
             } else{
+                cycle->role = SLAVE;
                 cycle->subSlot = slot * CYCLE_SUB_SLOT_CNT;
             }
             cycle->actSlot = CYCLE_ACT_SLOT(cycle);

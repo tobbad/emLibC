@@ -17,18 +17,18 @@
 #endif
 
 static idx2str_t sync2str[] = {
-    {.str = (char *)&"SYNC_RESET          ", .idx = SYNC_RESET},        /*!< SYNC_RESET */
-    {.str = (char *)&"BOOT_UP             ", .idx = BOOT_UP},           /*!< BOOT_UP */
-    {.str = (char *)&"SLOT                ", .idx = SLOT},              /*!< Ask for SLOT */
-    {.str = (char *)&"CHANNEL             ", .idx = CHANNEL},           /*!< Ask for CHANNEL */
-    {.str = (char *)&"FREQBAND            ", .idx = FREQBAND},          /*!< Ask for FREQBAND */
-    {.str = (char *)&"FREQUENCY_OFFSET    ", .idx = FREQUENCY_OFFSET},  /*!< Ask for FREQUENCY_OFFSET */
-    {.str = (char *)&"SYNCHRONIZE         ", .idx = SYNCHRONIZE},       /*!< Start synchronize */
-    {.str = (char *)&"SYNCHRONIZE_READY   ", .idx = SYNCHRONIZE_READY}, /*!< Partly synchronized */
-    {.str = (char *)&"SYNCHRONIZE_DOING   ", .idx = SYNCHRONIZE_DOING}, /*!< Partly synchronized */
-    {.str = (char *)&"SYNCHRONIZE_ERROR   ", .idx = SYNCHRONIZE_ERROR}, /*!< Synchronizion error */
-    {.str = (char *)&"SYNCHRONIZE_LOCKED  ", .idx = SYNCHRONIZE_LOCKED}, /*!< Device claimed tom be master or slave */
-    {.str = (char *)&"SYNCHRONIZE_OK      ", .idx = SYNCHRONIZE_OK},    /*!< Synchronized */
+    {.str = (char *)&"SYNC_RESET   ", .idx = SYNC_RESET},        /*!< SYNC_RESET */
+    {.str = (char *)&"BOOT_UP      ", .idx = BOOT_UP},           /*!< BOOT_UP */
+    {.str = (char *)&"SLOT         ", .idx = SLOT},              /*!< Ask for SLOT */
+    {.str = (char *)&"CHANNEL      ", .idx = CHANNEL},           /*!< Ask for CHANNEL */
+    {.str = (char *)&"FREQBAND     ", .idx = FREQBAND},          /*!< Ask for FREQBAND */
+    {.str = (char *)&"FREQ_OFFSET  ", .idx = FREQUENCY_OFFSET},  /*!< Ask for FREQUENCY_OFFSET */
+    {.str = (char *)&"SYNC         ", .idx = SYNCHRONIZE},       /*!< Start synchronize */
+    {.str = (char *)&"SYNC_READY   ", .idx = SYNCHRONIZE_READY}, /*!< Partly synchronized */
+    {.str = (char *)&"SYNC_DOING   ", .idx = SYNCHRONIZE_DOING}, /*!< Partly synchronized */
+    {.str = (char *)&"SYNC_ERROR   ", .idx = SYNCHRONIZE_ERROR}, /*!< Synchronizion error */
+    {.str = (char *)&"SYNC_LOCKED  ", .idx = SYNCHRONIZE_LOCKED}, /*!< Device claimed tom be master or slave */
+    {.str = (char *)&"SYNC_OK      ", .idx = SYNCHRONIZE_OK},    /*!< Synchronized */
 };
 
 idxa2str_t synca2str = {.cnt = ELCNT(sync2str), .entry = (idx2str_t *)&sync2str};
