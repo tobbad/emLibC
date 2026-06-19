@@ -207,18 +207,16 @@ type_e clable2type(clabel_u *lbl) {
     if (strlen(stopstring) == 0) {
         return hexnum;
     }
-
+        uint8_t len = strlen(lbl->str);
+/*
     bool isNot = true;
-    uint8_t len = strlen(lbl->str);
-    /*
-        for (uint8_t i = 0; i < len; i++) {
-            for (j=0;j<ASCIHEX_LEN;j++){
-                isNot &= ascihex[j]!=lbl->str[i];
-            }
+    for (uint8_t i = 0; i < len; i++) {
+        for (j=0;j<ASCIHEX_LEN;j++){
+            isNot &= ascihex[j]!=lbl->str[i];
         }
-    */
+    }
+*/
     bool itIs = true;
-
     for (uint8_t i = 0; i < len; i++) {
         itIs &= isascii(lbl->str[i]);
     }
