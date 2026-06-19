@@ -11,7 +11,7 @@
 #include "options.h"
 #endif
 
-
+#ifndef UNIT_TEST
 typedef struct cycle_s {
     volatile int8_t subSlot; // actual sub slot
     int8_t    actSlot;
@@ -23,7 +23,7 @@ typedef struct cycle_s {
     system_state_e *sync_state;
     bool      init;
 } cycle_t;
-
+#endif
 
 
 static idx2str_t cycle2str[] = {
@@ -128,6 +128,7 @@ em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type){
     // clang-format off
     if (!cycle) return res;
     if (!cycle->init) return res;
+    if (cycle_check_slot(slot)<0) return res;
     cycle->role = ss_type;
     // clang-format on
     if ((*cycle->sync_state == SYNCHRONIZE_DOING) || (*cycle->sync_state == SYNCHRONIZE_READY)){
@@ -204,15 +205,31 @@ int8_t cycle_difference(cycle_t *cycle, int8_t rxSlot) {
     if (!cycle) return 0;
     if (!cycle->init) return 0;
     // clang-format on
-    const int16_t total = CYCLE_SUB_SLOT_CNT * CYCLE_SLOT_CNT; // 128 sub-slots per cycle
-    const int16_t half = total / 2;                // 64
-    // Signed sub-slot distance from the current position to the start of
-    // rxSlot's region, taken the shortest way around the sub-slot ring.
-    // Negative => rxSlot lies ahead of us, positive => rxSlot lies behind us.
-    int16_t diff = (cycle->subSlot - (int16_t)rxSlot * CYCLE_SUB_SLOT_CNT) % total;
-    if (diff < 0) diff += total;     // normalise to [0, total)
-    if (diff >= half) diff -= total; // fold to [-half, half) => [-64, 63]
-    return (int8_t)diff;
+    // Signed sub-slot distance from the current position to rxSlot's window.
+    // The window spans CYCLE_SUB_SLOT_CNT sub-slots with
+    //   lower corner = rxSlot*CYCLE_SUB_SLOT_CNT
+    //   upper corner = lower + CYCLE_SUB_SLOT_CNT - 1.
+    // Inside the window the distance is 0; below the lower corner it is the
+    // (negative) distance to that corner; above the upper corner it is the
+    // (positive) distance past it. Distances are measured the shortest way
+    // around the CYCLE_SUB_SLOT_CNT*CYCLE_SLOT_CNT ring, so rxSlot 0 and
+    // rxSlot CYCLE_SLOT_CNT yield the same result.
+    const int16_t total = CYCLE_SUB_SLOT_CNT * CYCLE_SLOT_CNT; // 128
+    const int16_t half  = total / 2;                           // 64
+    int16_t d = (cycle->subSlot - (int16_t)rxSlot * CYCLE_SUB_SLOT_CNT) % total;
+    if (d < 0) {
+        d += total; // normalise to [0, total)
+    }
+    if (d >= half) {
+        d -= total; // fold to [-half, half): signed distance to the lower corner
+    }
+    if (d < 0) {
+        return (int8_t)d; // below the lower corner
+    }
+    if (d < CYCLE_SUB_SLOT_CNT) {
+        return 0; // inside the window
+    }
+    return (int8_t)(d - (CYCLE_SUB_SLOT_CNT - 1)); // above the upper corner
 }
 
 void cycle_increment(cycle_t *cycle) {

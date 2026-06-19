@@ -89,15 +89,29 @@ typedef struct cycle_s {
   Returns: \verb|bool| (\verb|false| on a null pointer or invalid
   \verb|rxSlot|).
 \item[\texttt{cycle\_difference(cycle, rxSlot)}] Returns the signed distance in
-  sub-slots from the current position \verb|subSlot| to the start of slot
-  \verb|rxSlot| ($\mathtt{rxSlot} \cdot \mathtt{SUB\_SLOT\_CNT}$), measured the
-  shortest way around the ring of $\mathtt{SUB\_SLOT\_CNT} \cdot
-  \mathtt{SLOT\_CNT} = 128$ sub-slots. The value lies in the range
-  $[-64, 63]$; negative means \verb|rxSlot| lies ahead, positive means it
-  already lies behind:
+  sub-slots from the current position \verb|subSlot| to the \emph{window} of
+  slot \verb|rxSlot|. That window spans \verb|SUB_SLOT_CNT| sub-slots with the
+  lower corner $\mathtt{rxSlot} \cdot \mathtt{SUB\_SLOT\_CNT}$ and the upper
+  corner $\mathtt{rxSlot} \cdot \mathtt{SUB\_SLOT\_CNT} + \mathtt{SUB\_SLOT\_CNT} - 1$.
+  Inside the window the distance is $0$; below the lower corner it is the
+  (negative) distance to that corner, above the upper corner the (positive)
+  distance past it. It is measured the shortest way around the ring of
+  $\mathtt{SUB\_SLOT\_CNT} \cdot \mathtt{SLOT\_CNT} = 128$ sub-slots, so
+  \verb|rxSlot|~$0$ and \verb|rxSlot|~$=\mathtt{SLOT\_CNT}$ yield the same
+  result. With the signed distance to the lower corner
   \[
-    \mathtt{diff} = \big((\mathtt{subSlot} - \mathtt{rxSlot} \cdot
-    \mathtt{SUB\_SLOT\_CNT} + 64) \bmod 128\big) - 64 .
+    d = \big((\mathtt{subSlot} - \mathtt{rxSlot} \cdot
+    \mathtt{SUB\_SLOT\_CNT} + 64) \bmod 128\big) - 64
+  \]
+  the result is
+  \[
+    \mathtt{diff} =
+    \begin{cases}
+      d & d < 0 \quad(\text{below the lower corner}),\\
+      0 & 0 \le d < \mathtt{SUB\_SLOT\_CNT} \quad(\text{inside the window}),\\
+      d - (\mathtt{SUB\_SLOT\_CNT}-1) & d \ge \mathtt{SUB\_SLOT\_CNT}
+        \quad(\text{above the upper corner}).
+    \end{cases}
   \]
   Returns: \verb|int8_t| ($0$ on a null pointer or uninitialised structure).
 \item[\texttt{cycle\_string(cycle)}] Returns a compact representation in the

@@ -28,7 +28,21 @@ typedef enum {
 #define CYCLE_SLOT_MASK (CYCLE_SLOT_CNT-1)
 #define CYCLE_SLOT_SHIFT (CYCLE_SLOT_POW2)
 extern idxa2str_t synca2str;
+#ifdef UNIT_TEST
+typedef struct cycle_s {
+    volatile int8_t subSlot; // actual sub slot
+    int8_t    actSlot;
+    int8_t    lSlot;
+    int8_t    sSlot;
+    uint16_t  cycle;
+    int8_t    press;
+    set_slot_e role;
+    system_state_e *sync_state;
+    bool      init;
+} cycle_t;
+#else
 typedef struct cycle_s cycle_t;
+#endif
 extern cycle_t cycle;
 
 em_msg   cycle_init(cycle_t *cycle, int8_t press, system_state_e *sync_state);

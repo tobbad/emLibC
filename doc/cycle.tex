@@ -93,14 +93,29 @@ typedef struct cycle_s {
   oder ungültigem \verb|rxSlot|).
 \item[\texttt{cycle\_difference(cycle, rxSlot)}] Liefert den vorzeichen\-
   behafteten Abstand in Sub\-Slots von der aktuellen Position \verb|subSlot|
-  zum Beginn des Slots \verb|rxSlot| ($\mathtt{rxSlot} \cdot
-  \mathtt{SUB\_SLOT\_CNT}$), gemessen auf dem kürzesten Weg über den Ring aus
-  $\mathtt{SUB\_SLOT\_CNT} \cdot \mathtt{SLOT\_CNT} = 128$ Sub\-Slots. Der
-  Wert liegt im Bereich $[-64, 63]$; negativ bedeutet, dass \verb|rxSlot|
-  voraus liegt, positiv, dass er bereits zurückliegt:
+  zum \emph{Fenster} des Slots \verb|rxSlot|. Dieses Fenster umfasst
+  \verb|SUB_SLOT_CNT| Sub\-Slots mit der unteren Ecke
+  $\mathtt{rxSlot} \cdot \mathtt{SUB\_SLOT\_CNT}$ und der oberen Ecke
+  $\mathtt{rxSlot} \cdot \mathtt{SUB\_SLOT\_CNT} + \mathtt{SUB\_SLOT\_CNT} - 1$.
+  Innerhalb des Fensters ist der Abstand $0$; unterhalb der unteren Ecke ist
+  er der (negative) Abstand zu dieser Ecke, oberhalb der oberen Ecke der
+  (positive) Abstand dahinter. Gemessen wird auf dem kürzesten Weg über den
+  Ring aus $\mathtt{SUB\_SLOT\_CNT} \cdot \mathtt{SLOT\_CNT} = 128$ Sub\-Slots,
+  weshalb \verb|rxSlot|~$0$ und \verb|rxSlot|~$=\mathtt{SLOT\_CNT}$ dasselbe
+  Ergebnis liefern. Mit der vorzeichenbehafteten Distanz zur unteren Ecke
   \[
-    \mathtt{diff} = \big((\mathtt{subSlot} - \mathtt{rxSlot} \cdot
-    \mathtt{SUB\_SLOT\_CNT} + 64) \bmod 128\big) - 64 .
+    d = \big((\mathtt{subSlot} - \mathtt{rxSlot} \cdot
+    \mathtt{SUB\_SLOT\_CNT} + 64) \bmod 128\big) - 64
+  \]
+  gilt
+  \[
+    \mathtt{diff} =
+    \begin{cases}
+      d & d < 0 \quad(\text{unter der unteren Ecke}),\\
+      0 & 0 \le d < \mathtt{SUB\_SLOT\_CNT} \quad(\text{im Fenster}),\\
+      d - (\mathtt{SUB\_SLOT\_CNT}-1) & d \ge \mathtt{SUB\_SLOT\_CNT}
+        \quad(\text{über der oberen Ecke}).
+    \end{cases}
   \]
   Rückgabe: \verb|int8_t| ($0$ bei Nullzeiger oder nicht initialisierter
   Struktur).
