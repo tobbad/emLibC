@@ -51,6 +51,7 @@ em_msg cycle_init(cycle_t *cycle, int8_t press , system_state_e *sync_state) {
     cycle->press= press;
     cycle->sync_state= sync_state;
     cycle->init = true;
+    cycle->role = SLAVE;
     cycle_reset(cycle);
     res = EM_OK;
     return res;
