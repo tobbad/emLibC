@@ -154,41 +154,13 @@ em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type){
 }
 
 bool cycle_isOk(cycle_t *cycle, int8_t rxSlot) {
-    bool res = false;
-    bool inSlot = false;
-    bool res_p = false;
-    bool res_a = false;
-    bool pre_slot = false;
-    bool after_slot= false;
-    int8_t last_slot;
-    int8_t next_slot;
     // clang-format off
-    if (!cycle) return res;
-    if (!cycle->init) return res;
-    if (cycle_check_slot(rxSlot)<0) return res;
+    if (!cycle) return false;
+    if (!cycle->init) return false;
+    if (cycle_check_slot(rxSlot) < 0) return false;
     // clang-format on
-    inSlot = (CYCLE_ACT_SLOT(cycle) == rxSlot);
-    last_slot = (( CYCLE_ACT_SLOT(cycle) +  CYCLE_SLOT_CNT - 1) % CYCLE_SLOT_CNT);
-    next_slot = (( CYCLE_ACT_SLOT(cycle) + 1) %  CYCLE_SLOT_CNT);
-    pre_slot =   (rxSlot ==  last_slot);
-    after_slot = (rxSlot ==  next_slot);
-    bool  pre_sub_diff =   ((CYCLE_SUB_SLOT_CNT - CYCLE_ACT_SUB_SLOT(cycle)) < cycle->press);
-    bool  after_sub_diff =  ( CYCLE_ACT_SUB_SLOT(cycle) < cycle->press);
-    res_a = after_slot && after_sub_diff;
-    res_p = pre_slot   && pre_sub_diff;
-    if (pre_slot) {
-        printf("Pre" NL);
-    }
-    if (after_slot) {
-        printf("After" NL);
-    }
-    res = inSlot || res_p || res_a;
-    if (res) {
-        if (inSlot) {
-            printf("%s: is in slot %d" NL, cycle_string(cycle), rxSlot);
-        }
-    }
-    return res;
+    // OK when the distance to rxSlot's window exceeds the press tolerance.
+    return cycle_difference(cycle, rxSlot) > cycle->press;
 }
 
 int8_t   cycle_press(cycle_t *cycle){
@@ -205,31 +177,23 @@ int8_t cycle_difference(cycle_t *cycle, int8_t rxSlot) {
     if (!cycle) return 0;
     if (!cycle->init) return 0;
     // clang-format on
-    // Signed sub-slot distance from the current position to rxSlot's window.
-    // The window spans CYCLE_SUB_SLOT_CNT sub-slots with
-    //   lower corner = rxSlot*CYCLE_SUB_SLOT_CNT
-    //   upper corner = lower + CYCLE_SUB_SLOT_CNT - 1.
-    // Inside the window the distance is 0; below the lower corner it is the
-    // (negative) distance to that corner; above the upper corner it is the
-    // (positive) distance past it. Distances are measured the shortest way
-    // around the CYCLE_SUB_SLOT_CNT*CYCLE_SLOT_CNT ring, so rxSlot 0 and
-    // rxSlot CYCLE_SLOT_CNT yield the same result.
-    const int16_t total = CYCLE_SUB_SLOT_CNT * CYCLE_SLOT_CNT; // 128
-    const int16_t half  = total / 2;                           // 64
-    int16_t d = (cycle->subSlot - (int16_t)rxSlot * CYCLE_SUB_SLOT_CNT) % total;
-    if (d < 0) {
-        d += total; // normalise to [0, total)
+    // Positive sub-slot distance from the current position to rxSlot's window,
+    // with
+    //   lower = rxSlot*CYCLE_SUB_SLOT_CNT
+    //   upper = (rxSlot+1)*CYCLE_SUB_SLOT_CNT.
+    // Below the lower corner -> lower - subSlot
+    // At/above the upper edge -> subSlot - lower
+    // Inside [lower, upper)  -> 0  (8 sub-slots wide)
+    // Always >= 0, no ring wrap-around.
+    const int16_t lower = (int16_t)rxSlot * CYCLE_SUB_SLOT_CNT;
+    const int16_t upper = ((int16_t)rxSlot + 1) * CYCLE_SUB_SLOT_CNT;
+    if (cycle->subSlot < lower) {
+        return (int8_t)(lower - cycle->subSlot); // below the lower corner
     }
-    if (d >= half) {
-        d -= total; // fold to [-half, half): signed distance to the lower corner
+    if (cycle->subSlot >= upper) {
+        return (int8_t)(cycle->subSlot - lower); // above the upper corner
     }
-    if (d < 0) {
-        return (int8_t)d; // below the lower corner
-    }
-    if (d < CYCLE_SUB_SLOT_CNT) {
-        return 0; // inside the window
-    }
-    return (int8_t)(d - (CYCLE_SUB_SLOT_CNT - 1)); // above the upper corner
+    return 0; // inside the window
 }
 
 void cycle_increment(cycle_t *cycle) {

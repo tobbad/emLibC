@@ -153,39 +153,29 @@ TEST_F(CycleTest, CheckCycleIncrement) {
 }
 
 // ---------------------------------------------------------------------------
-// cycle_difference: signed sub-slot distance from the current position to
-// rxSlot's window, which spans CYCLE_SUB_SLOT_CNT sub-slots
-//   [rxSlot*CYCLE_SUB_SLOT_CNT, rxSlot*CYCLE_SUB_SLOT_CNT + CYCLE_SUB_SLOT_CNT-1].
-// Inside the window => 0; below the lower corner => negative distance to it;
-// above the upper corner => positive distance past it. Measured the shortest
-// way around the CYCLE_SUB_SLOT_CNT*CYCLE_SLOT_CNT ring, so rxSlot 0 and rxSlot
-// CYCLE_SLOT_CNT coincide.
+// cycle_difference: positive sub-slot distance from the current position to
+// rxSlot's window, with
+//   lower = rxSlot*CYCLE_SUB_SLOT_CNT
+//   upper = (rxSlot+1)*CYCLE_SUB_SLOT_CNT.
+// Below the lower corner => lower - subSlot; above the upper corner =>
+// subSlot - lower; inside [lower, upper] => 0. Always >= 0, no ring wrap.
 // ---------------------------------------------------------------------------
 
-// Reference for cycle_difference: fold to a signed distance to the lower corner,
-// then clamp the window to 0 and re-base the upper side onto the upper corner.
+// Reference for cycle_difference: positive distance to rxSlot's window.
 static int8_t expected_difference(int16_t subSlot, int8_t rxSlot) {
-    const int16_t total = CYCLE_SUB_SLOT_CNT * CYCLE_SLOT_CNT; // 128
-    const int16_t half  = total / 2;                           // 64
-    int16_t d = (subSlot - (int16_t)rxSlot * CYCLE_SUB_SLOT_CNT) % total;
-    if (d < 0) {
-        d += total;
+    const int16_t lower = (int16_t)rxSlot * CYCLE_SUB_SLOT_CNT;
+    const int16_t upper = ((int16_t)rxSlot + 1) * CYCLE_SUB_SLOT_CNT;
+    if (subSlot < lower) {
+        return (int8_t)(lower - subSlot); // below the lower corner
     }
-    if (d >= half) {
-        d -= total; // signed distance to the lower corner, [-half, half)
+    if (subSlot >= upper) {
+        return (int8_t)(subSlot - lower); // at/above the upper edge
     }
-    if (d < 0) {
-        return (int8_t)d; // below the lower corner
-    }
-    if (d < CYCLE_SUB_SLOT_CNT) {
-        return 0; // inside the window
-    }
-    return (int8_t)(d - (CYCLE_SUB_SLOT_CNT - 1)); // above the upper corner
+    return 0; // inside the window
 }
 
 TEST_F(CycleTest, CycleDifference) {
     const int total = CYCLE_SUB_SLOT_CNT * CYCLE_SLOT_CNT; // 128 sub-slots per cycle
-    const int half  = total / 2;                           // 64
 
     // NULL / uninitialised guards return 0.
     EXPECT_EQ(cycle_difference(nullptr, 0), 0);
@@ -196,53 +186,107 @@ TEST_F(CycleTest, CycleDifference) {
     cycle_t c;
     ASSERT_EQ(cycle_init(&c, PRESS, &sync_state), EM_OK);
 
-    // --- rxSlot == 0 spot checks (window = sub-slots 0..7) -----------------
+    // --- rxSlot == 0 spot checks (window = [0, 7], 8 wide) -----------------
     c.subSlot = 0;   EXPECT_EQ(cycle_difference(&c, 0), 0);   // lower corner, inside
     c.subSlot = 3;   EXPECT_EQ(cycle_difference(&c, 0), 0);   // inside
     c.subSlot = 7;   EXPECT_EQ(cycle_difference(&c, 0), 0);   // upper corner, inside
-    c.subSlot = 8;   EXPECT_EQ(cycle_difference(&c, 0), 1);   // 1 above the upper corner
-    c.subSlot = 120; EXPECT_EQ(cycle_difference(&c, 0), -8);  // 8 below the lower corner
-    c.subSlot = 127; EXPECT_EQ(cycle_difference(&c, 0), -1);  // 1 below the lower corner
-    c.subSlot = 64;  EXPECT_EQ(cycle_difference(&c, 0), -half); // antipode folds negative
-    c.subSlot = 0;   EXPECT_EQ(cycle_difference(&c, 1), -8);  // next window's lower corner is 8 ahead
+    c.subSlot = 8;   EXPECT_EQ(cycle_difference(&c, 0), 8);   // upper edge -> above: subSlot - lower
+    c.subSlot = 64;  EXPECT_EQ(cycle_difference(&c, 0), 64);  // above
+    c.subSlot = 127; EXPECT_EQ(cycle_difference(&c, 0), 127); // above, max
+    c.subSlot = 0;   EXPECT_EQ(cycle_difference(&c, 1), 8);   // below: lower - subSlot = 8 - 0
 
-    // --- window edges for rxSlot == 2 (window = sub-slots 16..23) ----------
-    c.subSlot = 14;  EXPECT_EQ(cycle_difference(&c, 2), -2);
-    c.subSlot = 15;  EXPECT_EQ(cycle_difference(&c, 2), -1);
+    // --- window edges for rxSlot == 2 (window = [16, 23], 8 wide) ----------
+    c.subSlot = 14;  EXPECT_EQ(cycle_difference(&c, 2), 2);   // below: 16 - 14
+    c.subSlot = 15;  EXPECT_EQ(cycle_difference(&c, 2), 1);   // below: 16 - 15
     c.subSlot = 16;  EXPECT_EQ(cycle_difference(&c, 2), 0);   // lower corner
-    c.subSlot = 23;  EXPECT_EQ(cycle_difference(&c, 2), 0);   // upper corner
-    c.subSlot = 24;  EXPECT_EQ(cycle_difference(&c, 2), 1);
-    c.subSlot = 25;  EXPECT_EQ(cycle_difference(&c, 2), 2);
+    c.subSlot = 23;  EXPECT_EQ(cycle_difference(&c, 2), 0);   // upper corner, inside
+    c.subSlot = 24;  EXPECT_EQ(cycle_difference(&c, 2), 8);   // upper edge -> above: 24 - 16
 
-    // --- rxSlot == CYCLE_SLOT_CNT corner case ------------------------------
-    // rxSlot*CYCLE_SUB_SLOT_CNT == total, so slot CYCLE_SLOT_CNT == slot 0:
-    // cycle_difference(&c, CYCLE_SLOT_CNT) must equal cycle_difference(&c, 0).
+    // Exhaustive cross-check against the reference for rxSlot 0..CYCLE_SLOT_CNT-1.
     for (int ss = 0; ss < total; ss++) {
-        c.subSlot = (int8_t)ss;
-        EXPECT_EQ(cycle_difference(&c, CYCLE_SLOT_CNT), cycle_difference(&c, 0))
-            << "subSlot=" << ss;
-    }
-
-    // Exhaustive cross-check against the reference for rxSlot 0..CYCLE_SLOT_CNT.
-    // Output range is [-half, half - CYCLE_SUB_SLOT_CNT] = [-64, 56].
-    for (int ss = 0; ss < total; ss++) {
-        for (int8_t rx = 0; rx <= CYCLE_SLOT_CNT; rx++) {
+        for (int8_t rx = 0; rx < CYCLE_SLOT_CNT; rx++) {
             c.subSlot = (int8_t)ss;
             int8_t got = cycle_difference(&c, rx);
             EXPECT_EQ(got, expected_difference((int16_t)ss, rx)) << "subSlot=" << ss << " rxSlot=" << (int)rx;
-            EXPECT_GE(got, -half);
-            EXPECT_LE(got, half - CYCLE_SUB_SLOT_CNT);
+            EXPECT_GE(got, 0); // always positive or zero
         }
     }
 }
 
 TEST_F(CycleTest, MyCycleDifference) {
+    int8_t diff;
+    int8_t exp;
     cycle_t c;
     const int total = CYCLE_SUB_SLOT_CNT * CYCLE_SLOT_CNT; // 128 sub-slots per cycle
     ASSERT_EQ(cycle_init(&c, PRESS, &sync_state), EM_OK);
     for (uint8_t press =0; press<CYCLE_SUB_SLOT_CNT;press++){
-        for (slot)
+        // slot 0..CYCLE_SLOT_CNT-1 covers both boundaries: slot 0 (lower corner,
+        // "below" wraps onto subSlot 120..127) and slot 15 (upper corner,
+        // "above" wraps onto subSlot 0..7).
+        for (uint8_t slot=0;slot < CYCLE_SLOT_CNT; slot++){
+            cycle_set_slot(&c, slot, SLAVE);
+            printf("slot %d"NL, slot);
+            for (uint8_t ss=0;ss<total;ss++){
+                c.subSlot = ss;
+                diff = cycle_difference(&c, slot);
+                int lower = slot*CYCLE_SUB_SLOT_CNT;
+                int upper = (slot+1)*CYCLE_SUB_SLOT_CNT;
+                if (ss < lower){
+                    exp = lower - ss;       // below
+                } else if (ss >= upper){
+                    exp = ss - lower;       // at/above the upper edge
+                } else {
+                    exp = 0;                // inside [lower, upper)
+                }
+                EXPECT_EQ(diff, exp) << "subSlot=" << (int)ss << " rxSlot=" << (int)slot
+                                     << " diff=" << (int)diff << " exp=" << (int)exp;
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// cycle_isOk: true when the distance to rxSlot's window exceeds the press
+// tolerance, i.e. cycle_difference(cycle, rxSlot) > press. Guards (NULL /
+// uninitialised / invalid rxSlot) return false. Valid rxSlot are the odd
+// slots 1..CYCLE_SLOT_CNT-1 (see cycle_check_slot).
+// ---------------------------------------------------------------------------
+TEST_F(CycleTest, CheckIsOk) {
+    const int total = CYCLE_SUB_SLOT_CNT * CYCLE_SLOT_CNT; // 128
+
+    // --- guards ------------------------------------------------------------
+    EXPECT_FALSE(cycle_isOk(nullptr, 3));
+    cycle_t u{};
+    u.init = false;
+    EXPECT_FALSE(cycle_isOk(&u, 3));
+
+    cycle_t c;
+    ASSERT_EQ(cycle_init(&c, PRESS, &sync_state), EM_OK); // press == PRESS (3)
+
+    // out-of-range rxSlot is never ok, whatever subSlot.
+    for (int ss = 0; ss < total; ss++) {
+        c.subSlot = (int8_t)ss;
+        EXPECT_FALSE(cycle_isOk(&c, 16)) << "subSlot=" << ss;
     }
 
+    // --- spot checks for rxSlot == 3 (window [24, 31], press == 3) ----------
+    c.subSlot = 27; EXPECT_FALSE(cycle_isOk(&c, 3)); // inside window -> diff 0
+    c.subSlot = 23; EXPECT_FALSE(cycle_isOk(&c, 3)); // below, diff 1 <= press
+    c.subSlot = 21; EXPECT_FALSE(cycle_isOk(&c, 3)); // below, diff 3 == press
+    c.subSlot = 20; EXPECT_TRUE(cycle_isOk(&c, 3));  // below, diff 4 > press
+    c.subSlot = 32; EXPECT_TRUE(cycle_isOk(&c, 3));  // above, diff 8 > press
+
+    // --- exhaustive cross-check over all slots 0..CYCLE_SLOT_CNT-1 ----------
+    // Even slots and slot 0 are invalid (cycle_check_slot) -> always false;
+    // valid odd slots follow cycle_difference > press.
+    for (int8_t rx = 0; rx < CYCLE_SLOT_CNT; rx++) {
+        const bool valid = (rx > 0) && (rx % 2 == 1);
+        for (int ss = 0; ss < total; ss++) {
+            c.subSlot = (int8_t)ss;
+            const bool expected = valid && (cycle_difference(&c, rx) > cycle_press(&c));
+            EXPECT_EQ(cycle_isOk(&c, rx), expected)
+                << "subSlot=" << ss << " rxSlot=" << (int)rx;
+        }
+    }
 }
 
