@@ -13,7 +13,7 @@
 #include <string.h>
 #ifndef UNIT_TEST
 #include "core_cm4.h"
-#include "stm32l4xx_hal.h"
+#include "hal_port.h"
 #endif
 
 static idx2str_t sync2str[] = {

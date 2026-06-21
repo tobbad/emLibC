@@ -34,7 +34,7 @@
 #include "common.h"
 #include "hal_port.h"
 #include "main.h"
-#include "stm32l4xx_hal_conf.h"
+#include "hal_port.h"
 #include <assert.h>
 #include <errno.h>
 #include <signal.h>
