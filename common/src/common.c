@@ -30,7 +30,6 @@ static idx2str_t sync2str[] = {
     {.str = (char *)&"SYNC_LOCKED  ", .idx = SYNCHRONIZE_LOCKED}, /*!< Device claimed tom be master or slave */
     {.str = (char *)&"SYNC_OK      ", .idx = SYNCHRONIZE_OK},    /*!< Synchronized */
 };
-
 idxa2str_t synca2str = {.cnt = ELCNT(sync2str), .entry = (idx2str_t *)&sync2str};
 
 #ifndef UNIT_TEST
@@ -41,7 +40,7 @@ idxa2str_t synca2str = {.cnt = ELCNT(sync2str), .entry = (idx2str_t *)&sync2str}
  * @param  id       Ausgabepuffer
  * @param  max_len  Maximale Anzahl Bytes die geschrieben werden (tinyUSB gibt 16 vor)
  */
-size_t board_get_unique_id(uint16_t id[], size_t max_len) {
+size_t board_get_unique_id(uint8_t *id, size_t max_len) {
     // STM32L476 UID Register: drei 32-bit Worte = 12 Bytes
     // RM0351 Rev.9, Section 49.1: "Unique device ID register (96 bits)"
     const uint8_t *uid = (const uint8_t *)UID_BASE; // UID_BASE = 0x1FFF7590 (definiert in stm32l476xx.h)
