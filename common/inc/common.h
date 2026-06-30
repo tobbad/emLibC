@@ -18,6 +18,7 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "math.h"
 #ifndef UNIT_TEST
 #include "hal_port.h"
 #endif
@@ -117,6 +118,7 @@ uint16_t common_crc16(const uint8_t *data_p, uint16_t length);
 uint8_t modulo_sub(int8_t slot, int8_t oSlot, uint8_t modulo);
 void print_buffer(const uint8_t *buffer, uint8_t size, const char *header);
 type_e clable2type(clabel_u *lbl);
+int16_t uint_pow(unsigned base, unsigned exp);
 int8_t str2uint(char *str);
 int8_t clabel2uint(clabel_u *lbl);
 char *idxa2str(idxa2str_t *map, uint8_t idx);

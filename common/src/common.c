@@ -31,6 +31,8 @@ static idx2str_t sync2str[] = {
     {.str = (char *)&"SYNC_OK      ", .idx = SYNCHRONIZE_OK},    /*!< Synchronized */
 };
 idxa2str_t synca2str = {.cnt = ELCNT(sync2str), .entry = (idx2str_t *)&sync2str};
+#define ASCIHEX_LEN 16
+char ascihex[ASCIHEX_LEN] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
 #ifndef UNIT_TEST
 /**
@@ -198,42 +200,64 @@ char int2hchar(uint8_t nr) {
 
 type_e clable2type(clabel_u *lbl) {
     type_e res = nonasci;
-#define ASCIHEX_LEN 16
-    char ascihex[ASCIHEX_LEN] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E'};
-    char *stopstring = NULL;
     lbl->str[CMD_LEN - 1] = 0;
-    strtol(lbl->str, &stopstring, 10);
-    if (strlen(stopstring) == 0) {
+    uint8_t len = strlen(lbl->str);
+
+    bool itIs = true;
+    bool itIs_n;
+    for (uint8_t i =0; i <len; i++) {
+        for (uint8_t j=0;j<ASCIHEX_LEN;j++){
+            itIs_n = ascihex[j]==lbl->str[i];
+            if (itIs_n){
+                break;
+            }
+        }
+        itIs &= itIs_n;
+    }
+    if (itIs) {
         return hexnum;
     }
-        uint8_t len = strlen(lbl->str);
-/*
-    bool isNot = true;
-    for (uint8_t i = 0; i < len; i++) {
-        for (j=0;j<ASCIHEX_LEN;j++){
-            isNot &= ascihex[j]!=lbl->str[i];
-        }
-    }
-*/
-    bool itIs = true;
+
+    itIs = true;
     for (uint8_t i = 0; i < len; i++) {
         itIs &= isascii(lbl->str[i]);
     }
     if (itIs) {
-        res = ascii;
+        return ascii;
     }
     return res;
 }
 
-int8_t clabel2uint(clabel_u *lbl) {
-    int res = str2uint((char *)&lbl->str);
-    return res;
-};
+int8_t hchar2int(char ch){
+    for (int8_t i=0;i<ASCIHEX_LEN+1;i++){
+        if (ascihex[i]==ch){
+            return i;
+        }
+    }
+    return EM_ERR;
+}
 
-int8_t str2uint(char *str) {
-    uint8_t res = atoi(str);
+
+int16_t uint_pow(unsigned base, unsigned exp){
+    unsigned res = 0;
+    res = (uint8_t)pow(base, exp) + 1e-9;
     return res;
-};
+}
+
+int8_t clabel2uint(clabel_u *lbl){
+    lbl->str[CMD_LEN - 1] = 0;
+    uint8_t len = strlen(lbl->str);
+    int8_t res = 0;
+    for (int8_t i= 0;i <len ;i++){
+        int8_t digit = hchar2int(lbl->str[i]);
+        if (digit>=0){
+            res += digit*uint_pow(10, len-i-1);
+        } else {
+            return -1;
+        }
+    }
+    return res;
+}
 
 // Not tested yet!!
 uint8_t modulo_sub(int8_t slot, int8_t oSlot, uint8_t modulo) {

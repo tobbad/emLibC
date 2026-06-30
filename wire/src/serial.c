@@ -255,8 +255,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
                 return len;
             }
             isio.cbuffer = buffer_pool_get(isio.pool);
-            while (!ReadModify_write((int8_t *)&isio.cbuffer->state, 1)) {
-            };
+            while (!ReadModify_write((int8_t *)&isio.cbuffer->state, 1)) { };
             time_start(stxhdl, len, ptr, isio.cycle);
             buffer_set(isio.cbuffer, ptr, len);
             HAL_UART_Transmit_DMA(isio.uart, isio.cbuffer->mem, len);
@@ -340,12 +339,10 @@ static void serial_apply_change(clabel_u *lbl) {
         return;
     uint16_t len = strlen(lbl->str);
     if (len > 0) {
-        type_e ctype = clable2type(lbl);
-        if (ctype == hexnum) {
+        int8_t res = clabel2uint(lbl);
+        if (res>= 0) {
             if (!state_get_dirty(&isio.state)) {
-                char *stopstring = NULL;
-                uint8_t res = strtol(lbl->str, &stopstring, 10);
-                if (strlen(stopstring) == 0) {
+                if  (res>=0) {
                     state_propagate_by_idx(&isio.state, res);
                 }
                 isio.state.clabel.cmd = lbl->cmd;
@@ -400,7 +397,7 @@ int8_t serial_waitForNumber(char **key) {
 #ifdef HAL_PCD_MODULE_ENABLED
     if (urx_buffer.state == BUFFER_USED) {
         *key = (char *)&urx_buffer.mem[0];
-        return str2uint((char *)&urx_buffer.mem[0]);
+        return clabel2uint((clabel_u  *)&urx_buffer.mem[0]);
     }
 #endif
     clabel_u lbl = {.cmd = 0};
