@@ -153,6 +153,15 @@ em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type){
     return res;
 }
 
+
+system_state_e   cycle_state(cycle_t *cycle){
+    em_msg res = EM_ERR;
+    // clang-format off
+    if (!cycle) return res;
+    if (!cycle->init) return res;
+    return *cycle->sync_state;
+}
+
 bool cycle_isOk(cycle_t *cycle, int8_t rxSlot) {
     // clang-format off
     if (!cycle) return false;
