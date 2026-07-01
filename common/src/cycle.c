@@ -129,6 +129,7 @@ em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type){
     if (!cycle) return res;
     if (!cycle->init) return res;
     if (cycle_check_slot(slot)<0) return res;
+    if (*cycle->sync_state == SYNCHRONIZE_LOCKED) return res;
     cycle->role = ss_type;
     // clang-format on
     if ((*cycle->sync_state == SYNCHRONIZE_DOING) || (*cycle->sync_state == SYNCHRONIZE_READY)){
@@ -137,7 +138,7 @@ em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type){
             *cycle->sync_state = SYNCHRONIZE_LOCKED;
             if (ss_type==MASTER){
                 cycle->role = MASTER;
-                cycle->subSlot = slot * CYCLE_SUB_SLOT_CNT-cycle->press;
+                cycle->subSlot = slot * CYCLE_SUB_SLOT_CNT-cycle->press;;
             } else{
                 cycle->role = SLAVE;
                 cycle->subSlot = slot * CYCLE_SUB_SLOT_CNT;
@@ -196,11 +197,10 @@ int8_t cycle_difference(cycle_t *cycle, int8_t rxSlot) {
     // Always >= 0, no ring wrap-around.
     const int16_t lower = (int16_t)rxSlot * CYCLE_SUB_SLOT_CNT;
     const int16_t upper = ((int16_t)rxSlot + 1) * CYCLE_SUB_SLOT_CNT;
-    if (cycle->subSlot < lower) {
+    if (cycle->subSlot <= lower) {
         return (int8_t)(lower - cycle->subSlot); // below the lower corner
-    }
-    if (cycle->subSlot >= upper) {
-        return (int8_t)(cycle->subSlot - lower); // above the upper corner
+    } else if (cycle->subSlot >= upper) {
+        return (int8_t)(cycle->subSlot - upper); // above the upper corner
     }
     return 0; // inside the window
 }

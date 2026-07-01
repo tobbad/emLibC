@@ -14,6 +14,7 @@ extern "C" {
 #include "system_definitions.h"
 
 typedef enum {
+    NOT_SET,
     SLAVE,
     MASTER,
 } set_slot_e;
