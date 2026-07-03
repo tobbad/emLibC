@@ -20,6 +20,9 @@ typedef struct cycle_s {
     uint16_t  cycle;
     int8_t    press;
     set_slot_e role;
+    int8_t    ssCnt;
+    bool      doMeasure;
+    bool      cntErrror;
     system_state_e *sync_state;
     bool      init;
 } cycle_t;
@@ -52,11 +55,15 @@ em_msg cycle_init(cycle_t *cycle, int8_t press , system_state_e *sync_state) {
     cycle->sync_state= sync_state;
     cycle->init = true;
     cycle->role = SLAVE;
+    cycle_sscnt_init(cycle);
     cycle_reset(cycle);
     res = EM_OK;
     return res;
 };
 
+size_t cycle_size(){
+    return sizeof(cycle_t);
+}
 
 em_msg cycle_reset(cycle_t *cycle){
     em_msg res = EM_ERR;
@@ -64,12 +71,14 @@ em_msg cycle_reset(cycle_t *cycle){
     if (!cycle) return res;
     if (!cycle->init) return res;
     // clang-format on
-    cycle->subSlot = 0;
-    cycle->sSlot   = 0;
-    cycle->actSlot = 0;
-    cycle->lSlot   = 0;
-    cycle->cycle   = 0;
-    cycle->role    = SLAVE;
+    cycle->subSlot  = 0;
+    cycle->sSlot    = 0;
+    cycle->actSlot  = 0;
+    cycle->lSlot    = 0;
+    cycle->cycle    = 0;
+    cycle->role     = SLAVE;
+    cycle->ssCnt    = -1;
+    cycle->doMeasure= false;
     res = EM_OK;
     return res;
 };
@@ -170,7 +179,7 @@ bool cycle_isOk(cycle_t *cycle, int8_t rxSlot) {
     if (cycle_check_slot(rxSlot) < 0) return false;
     // clang-format on
     // OK when the distance to rxSlot's window exceeds the press tolerance.
-    return cycle_difference(cycle, rxSlot) > cycle->press;
+    return cycle_difference(cycle, rxSlot) < cycle->press;
 }
 
 int8_t   cycle_press(cycle_t *cycle){
@@ -204,6 +213,33 @@ int8_t cycle_difference(cycle_t *cycle, int8_t rxSlot) {
     }
     return 0; // inside the window
 }
+void     cycle_sscnt_init(cycle_t *cycle){
+    if (!cycle) return;
+    if (!cycle->init) return;
+    cycle->ssCnt     = 0;
+    cycle->doMeasure = false;
+}
+
+void     cycle_sscnt_start(cycle_t *cycle){
+    if (!cycle) return;
+    if (!cycle->init) return;
+    cycle->doMeasure = true;
+}
+
+void     cycle_sscnt_stop(cycle_t *cycle){
+    if (!cycle) return;
+    if (!cycle->init) return;
+    cycle->doMeasure = false;
+}
+
+uint8_t  cycle_sscnt_get(cycle_t *cycle){
+    if (!cycle) return -1;
+    if (!cycle->init) return -1;
+    if (!cycle->cntErrror){
+        return cycle->ssCnt;
+    }
+    return EM_ERR;
+};
 
 void cycle_increment(cycle_t *cycle) {
     // clang-format off
@@ -215,7 +251,6 @@ void cycle_increment(cycle_t *cycle) {
     if (*cycle->sync_state == SYNCHRONIZE) {
         *cycle->sync_state = SYNCHRONIZE_READY;
         is_set = true;
-        return;
     }
     if (is_set) {
         cycle->subSlot++;
@@ -225,6 +260,13 @@ void cycle_increment(cycle_t *cycle) {
 #if OPTION_SHOW_TIMING == 1
         stateled_toggle_pin(led_3);
 #endif
+    }
+    if (cycle->doMeasure){
+        int8_t lss =cycle->ssCnt;
+        cycle->ssCnt++;
+        if (cycle->ssCnt<lss){
+            cycle->cntErrror = true;
+        }
     }
     if ((*cycle->sync_state == SYNCHRONIZE_DOING) || (*cycle->sync_state == SYNCHRONIZE_READY)
             || (*cycle->sync_state== SYNCHRONIZE_ERROR) ||  (*cycle->sync_state == SYNCHRONIZE_LOCKED)) {
@@ -241,6 +283,9 @@ void cycle_increment(cycle_t *cycle) {
 #endif
                 cycle_once = true;
                 cycle->cycle += 1;
+//                if (cycle->cycle%CYCLE_RESET_CNT==0){
+//                    *cycle->sync_state = SYNCHRONIZE;
+//                }
             }
         }
     }

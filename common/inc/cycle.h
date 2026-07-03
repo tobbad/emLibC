@@ -48,6 +48,7 @@ extern cycle_t cycle;
 
 em_msg   cycle_init(cycle_t *cycle, int8_t press, system_state_e *sync_state);
 em_msg   cycle_reset(cycle_t *cycle);
+size_t   cycle_size();
 char    *cycle_string(cycle_t *cycle);
 int8_t   cycle_act_slot(cycle_t *cycle);
 char *   cycle_role(cycle_t *cycle);
@@ -59,6 +60,11 @@ system_state_e   cycle_state(cycle_t *cycle);
 bool     cycle_isOk(cycle_t *cycle, int8_t rxSlot);
 int8_t   cycle_press(cycle_t *cycle);
 int8_t   cycle_difference(cycle_t *cycle, int8_t rxSlot);
+void     cycle_increment(cycle_t *cycle);
+void     cycle_sscnt_init(cycle_t *cycle);
+void     cycle_sscnt_start(cycle_t *cycle);
+void     cycle_sscnt_stop(cycle_t *cycle);
+uint8_t  cycle_sscnt_get(cycle_t *cycle);
 void     cycle_increment(cycle_t *cycle);
 em_msg   cycle_print(cycle_t *cycle, char *title);
 
