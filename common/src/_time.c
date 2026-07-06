@@ -160,9 +160,11 @@ void time_start(time_handle_t hdl, uint8_t count, uint8_t *ptr, cycle_t *cycle) 
         _time.time[hdl].measurement[_time.time[hdl].idx].tick_start = HAL_GetTick();
         if (_time.time[hdl].mode & SSSC) {
             char *str = cycle_string(cycle);
-            size_t len = strlen(str);
-            memcpy((void *)_time.time[hdl].measurement[_time.time[hdl].idx].line, (void *)cycle_string(cycle), len);
+            count = strlen(str);
+            len = MIN(count, TIME_MEAS_CHAR_PER_LINE);
+            memcpy((void *)_time.time[hdl].measurement[_time.time[hdl].idx].line, str, len);
         } else {
+            len = MIN(count, TIME_MEAS_CHAR_PER_LINE);
             memcpy((uint8_t *)_time.time[hdl].measurement[_time.time[hdl].idx].line, ptr, len);
         }
         _time.time[hdl].measurement[_time.time[hdl].idx].line[len + 1] = 0;
