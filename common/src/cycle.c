@@ -132,7 +132,7 @@ int8_t cycle_check_slot(int8_t slot) {
     return -1;
 }
 
-em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type){
+em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, int8_t add, set_slot_e ss_type){
     em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
@@ -150,7 +150,7 @@ em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type){
                 cycle->subSlot = slot * CYCLE_SUB_SLOT_CNT-cycle->press;;
             } else{
                 cycle->role = SLAVE;
-                cycle->subSlot = slot * CYCLE_SUB_SLOT_CNT;
+                cycle->subSlot = (slot * CYCLE_SUB_SLOT_CNT*CYCLE_MODULO+add)%CYCLE_MODULO;
             }
             cycle->actSlot = CYCLE_ACT_SLOT(cycle);
             cycle->sSlot   = CYCLE_ACT_SUB_SLOT(cycle);
