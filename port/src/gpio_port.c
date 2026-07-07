@@ -9,8 +9,7 @@
 #include "common.h"
 
 em_msg GpioPortCheck_mask(gpio_port_t *port, uint16_t mask) {
-    for (port->mask_size = 0; (mask & (1 << port->mask_size)) != 0; port->mask_size++)
-        ;
+    for (port->mask_size = 0; (mask & (1 << port->mask_size)) != 0; port->mask_size++) ;
     if (port->mask_size == 0) {
         return EM_ERR;
     } else {

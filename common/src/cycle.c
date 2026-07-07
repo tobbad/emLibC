@@ -275,6 +275,7 @@ void cycle_increment(cycle_t *cycle) {
         cycle->actSlot = CYCLE_ACT_SLOT(cycle);
         cycle->sSlot = CYCLE_ACT_SUB_SLOT(cycle);
 #if OPTION_SHOW_TIMING == 1
+        stateled_set(cycle->sSlot);
         stateled_toggle_pin(led_3);
 #endif
     }
@@ -290,7 +291,7 @@ void cycle_increment(cycle_t *cycle) {
         if (cycle->actSlot != cycle->lSlot) {
             cycle_once = false;
 #if OPTION_SHOW_TIMING == 1
-            stateled_set(cycle->actSlot);
+            //stateled_set(cycle->actSlot);
             stateled_toggle_pin(led_4);
 #endif
             cycle->lSlot = cycle->actSlot;
