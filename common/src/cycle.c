@@ -13,18 +13,19 @@
 
 #ifndef UNIT_TEST
 typedef struct cycle_s {
-    volatile int8_t subSlot; // actual sub slot
-    int8_t    actSlot;
-    int8_t    lSlot;
-    int8_t    sSlot;
-    uint16_t  cycle;
-    int8_t    press;
-    set_slot_e role;
-    int8_t    ssCnt;
-    bool      doMeasure;
-    bool      cntErrror;
-    system_state_e *sync_state;
-    bool      init;
+    volatile int8_t   subSlot; // actual sub slot
+    int8_t            actSlot;
+    int8_t            lSlot;
+    int8_t            sSlot;
+    uint16_t          cycle;
+    int8_t            press;
+    set_slot_e        role;
+    int8_t            ssCnt;
+    bool              doMeasure;
+    bool              cntErrror;
+    system_state_e    *sync_state;
+    bool              init;
+    TIM_HandleTypeDef *timer;
 } cycle_t;
 #endif
 
@@ -45,13 +46,14 @@ cycle_t cycle;
 #define SLOT_PRINT_FMT "(c:%5d, %1X, %2d)" // length is 19
 #define STRLEN 22
 
-em_msg cycle_init(cycle_t *cycle, int8_t press , system_state_e *sync_state) {
+em_msg cycle_init(cycle_t *cycle, int8_t press , system_state_e *sync_state, TIM_HandleTypeDef *htim) {
     em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
     if (!sync_state) return res;
     // clang-format on
     cycle->press= press;
+    cycle->timer= htim;
     cycle->sync_state= sync_state;
     cycle->init = true;
     cycle->role = SLAVE;
@@ -79,6 +81,21 @@ em_msg cycle_reset(cycle_t *cycle){
     cycle->role     = SLAVE;
     cycle->ssCnt    = -1;
     cycle->doMeasure= false;
+    res = EM_OK;
+    return res;
+};
+
+em_msg cycle_reset_timer(cycle_t *cycle){
+    em_msg res = EM_ERR;
+    // clang-format off
+    if (!cycle) return res;
+    if (!cycle->init) return res;
+    // clang-format on
+    // from https://stackoverflow.com/questions/73620644/how-to-reset-stm32-timer
+    cycle->timer->Instance->ARR = 0;
+    cycle->timer->Instance->CR1 &= ~TIM_CR1_UDIS;
+    cycle->timer->Instance->EGR = TIM_EGR_UG;
+    cycle->timer->Instance->CR1 |= TIM_CR1_UDIS;
     res = EM_OK;
     return res;
 };
