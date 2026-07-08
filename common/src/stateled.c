@@ -25,7 +25,7 @@ typedef struct led_line_s {
 
 static led_line_t my_stateled;
 // clang-format off
-#if REGUAL_STATELD == 1
+#if REGUALR_STATELD == 1
 static  gpio_port_t def_port ={
     .mask = 0x03FF,
 	.cnt =10,

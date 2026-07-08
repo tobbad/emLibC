@@ -78,7 +78,6 @@ em_msg cycle_reset(cycle_t *cycle){
     cycle->actSlot  = 0;
     cycle->lSlot    = 0;
     cycle->cycle    = 0;
-    cycle->role     = SLAVE;
     cycle->ssCnt    = -1;
     cycle->doMeasure= false;
     res = EM_OK;
@@ -92,10 +91,14 @@ em_msg cycle_reset_timer(cycle_t *cycle){
     if (!cycle->init) return res;
     // clang-format on
     // from https://stackoverflow.com/questions/73620644/how-to-reset-stm32-timer
-    cycle->timer->Instance->ARR = 0;
+    // but removed reset of autoreload
+#if 1==1
+    cycle->timer->Instance->CNT =0;
+#else
     cycle->timer->Instance->CR1 &= ~TIM_CR1_UDIS;
     cycle->timer->Instance->EGR = TIM_EGR_UG;
     cycle->timer->Instance->CR1 |= TIM_CR1_UDIS;
+#endif
     res = EM_OK;
     return res;
 };
@@ -159,24 +162,20 @@ em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, int8_t add, set_slot_e ss_t
     cycle->role = ss_type;
     // clang-format on
     if ((*cycle->sync_state == SYNCHRONIZE_DOING) || (*cycle->sync_state == SYNCHRONIZE_READY)){
-        if (cycle_check_slot(slot) >= 0) {
-            cycle_reset(cycle);
-            *cycle->sync_state = SYNCHRONIZE_LOCKED;
-            if (ss_type==MASTER){
-                cycle->role = MASTER;
-                cycle->subSlot = slot * CYCLE_SUB_SLOT_CNT-cycle->press;;
-            } else{
-                cycle->role = SLAVE;
-                cycle->subSlot = (slot * CYCLE_SUB_SLOT_CNT*CYCLE_MODULO+add)%CYCLE_MODULO;
-            }
-            cycle->actSlot = CYCLE_ACT_SLOT(cycle);
-            cycle->sSlot   = CYCLE_ACT_SUB_SLOT(cycle);
-            res = EM_OK;
-        } else {
-            res = EM_ERR;
-            printf("Set invalid slot %d" NL, slot);
+        //cycle_reset_timer(cycle);
+        cycle_reset(cycle);
+        *cycle->sync_state = SYNCHRONIZE_LOCKED;
+        if (ss_type==MASTER){
+            cycle->role = MASTER;
+            cycle->subSlot = slot * CYCLE_SUB_SLOT_CNT-cycle->press;;
+        } else{
+            cycle->role = SLAVE;
+            cycle->subSlot = (slot * CYCLE_SUB_SLOT_CNT+CYCLE_MODULO+add)%CYCLE_MODULO;
         }
-    }
+        cycle->actSlot = CYCLE_ACT_SLOT(cycle);
+        cycle->sSlot   = CYCLE_ACT_SUB_SLOT(cycle);
+        res = EM_OK;
+     }
     return res;
 }
 
