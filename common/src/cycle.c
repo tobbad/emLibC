@@ -235,7 +235,12 @@ void     cycle_sscnt_init(cycle_t *cycle){
     cycle->ssCnt     = 0;
     cycle->doMeasure = false;
 }
-
+/*
+ *  Measure how many subslot past between cycle_sscnt_start and
+ *  cycle_sscnt_stop and return the value with cycle_sscnt_get.
+ *  If an overflow occured on this int8_t value cycle_sscnt_get
+ *  returns EM_ERR otherwise a value >=0
+ */
 void     cycle_sscnt_start(cycle_t *cycle){
     if (!cycle) return;
     if (!cycle->init) return;
