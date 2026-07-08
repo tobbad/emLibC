@@ -258,7 +258,7 @@ void time_print(time_handle_t hdl, char *titel, bool python, bool timing) {
             printf("//    Text                   tick  duration_ns  count     baud " NL);
         } else {
             if (_time.time[hdl].mode & SSSC) {
-                printf("//      ( c s  ss)          tick , duration_ns count   baud " NL);
+                printf("//    (      c  s  ss)        tick , duration_ns count  baud " NL);
             } else {
                 printf("//     tick, duration_ns count  baud " NL);
             }
