@@ -84,16 +84,22 @@ em_msg cycle_reset(cycle_t *cycle){
     return res;
 };
 
-em_msg cycle_reset_timer(cycle_t *cycle){
+em_msg   cycle_timer_add(cycle_t *cycle, int8_t add){
     em_msg res = EM_ERR;
+    int32_t preset;
     // clang-format off
     if (!cycle) return res;
     if (!cycle->init) return res;
     if (!cycle->timer) return res;
     // clang-format on
+    preset = cycle->timer->Instance->ARR;
     // Reset the counter directly: no update event is generated, so no UIF is
     // raised and there is no spurious cycle_increment to guard against.
-    cycle->timer->Instance->CNT = 0;
+    if (add >= 0){
+        cycle->timer->Instance->CNT = add;
+    } else {
+        cycle->timer->Instance->CNT = preset-add;
+    }
     return EM_OK;
 };
 
@@ -160,12 +166,14 @@ em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, int8_t add, set_slot_e ss_t
          uint32_t primask = __get_PRIMASK();
          __disable_irq();            // block TIM1 update ISR for the whole update
 #endif
-        cycle_reset_timer(cycle);
         cycle_reset(cycle);
         *cycle->sync_state = SYNCHRONIZE_LOCKED;
         if (ss_type==MASTER){
+            cycle_timer_add(cycle, -1);
             cycle->role = MASTER;
-            cycle->subSlot = slot * CYCLE_SUB_SLOT_CNT-cycle->press;;        } else{
+            cycle->subSlot = slot * CYCLE_SUB_SLOT_CNT-cycle->press;;
+        } else{
+            cycle_timer_add(cycle, 0);
             cycle->role = SLAVE;
             cycle->subSlot = (slot * CYCLE_SUB_SLOT_CNT+CYCLE_MODULO+add)%CYCLE_MODULO;
         }

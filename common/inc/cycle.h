@@ -53,7 +53,7 @@ extern cycle_t cycle;
 
 em_msg   cycle_init(cycle_t *cycle, int8_t press, system_state_e *sync_state, TIM_HandleTypeDef *htim);
 em_msg   cycle_reset(cycle_t *cycle);
-em_msg   cycle_reset_timer(cycle_t *cycle);
+em_msg   cycle_timer_add(cycle_t *cycle, int8_t add);
 size_t   cycle_size();
 char    *cycle_string(cycle_t *cycle);
 int8_t   cycle_act_slot(cycle_t *cycle);
