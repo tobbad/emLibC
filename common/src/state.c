@@ -8,6 +8,7 @@
 #include "state.h"
 #include "assert.h"
 #include "common.h"
+#include "options.h"
 
 #ifdef UNIT_TEST
 uint32_t HAL_GetTick() { return 1; };
