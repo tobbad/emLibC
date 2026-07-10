@@ -168,7 +168,7 @@ em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, int8_t add, set_slot_e ss_t
         cycle_reset(cycle);
         *cycle->sync_state = SYNCHRONIZE_LOCKED;
         if (ss_type==MASTER){
-            cycle_timer_add(cycle, -1);
+            cycle_timer_add(cycle, 0);
             cycle->role = MASTER;
             cycle->subSlot = (slot * CYCLE_SUB_SLOT_CNT+CYCLE_MODULO+add)%CYCLE_MODULO;
         } else{
