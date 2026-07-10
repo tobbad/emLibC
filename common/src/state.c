@@ -68,14 +68,10 @@ em_msg state_set(state_t *state, uint8_t nr, key_state_e ns) {
     if (state_check(state)) return res;
     if (nr>= state->cnt) return res;
     // clang-format on
-#if REDUCED_PAYLOAD == 1
-    return EM_ERR;
-#else
     if (state->state[nr] != ns) {
         state->state[nr] = ns;
         state->dirty = true;
     }
-#endif
     return EM_OK;
 }
 
@@ -173,7 +169,7 @@ em_msg state_propagate(state_t *state, uint8_t idx) {
     if (state_check(state)) return res;
     if (((idx < state->first) && (idx < state->first + state->cnt))) return res;
     // clang-format on
-#ifdef OPTION_VERBOSE
+#if OPTION_VERBOSE == 1
     printf("Propagate state %d" NL, idx);
 #endif
     state->state[idx] = (state->state[idx] + 1) % STATE_CNT;

@@ -6,6 +6,7 @@
  */
 
 #include "cycle.h"
+#include "assert.h"
 #ifndef UNIT_TEST
 #include "stateled.h"
 #include "options.h"
@@ -78,8 +79,6 @@ em_msg cycle_reset(cycle_t *cycle){
     cycle->actSlot  = 0;
     cycle->lSlot    = 0;
     cycle->cycle    = 0;
-    cycle->ssCnt    = -1;
-    cycle->doMeasure= false;
     res = EM_OK;
     return res;
 };
@@ -254,6 +253,7 @@ void     cycle_sscnt_init(cycle_t *cycle){
 void     cycle_sscnt_start(cycle_t *cycle){
     if (!cycle) return;
     if (!cycle->init) return;
+    assert(cycle->doMeasure != true);
     cycle->doMeasure = true;
 }
 
