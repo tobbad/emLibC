@@ -51,7 +51,7 @@ typedef struct cycle_s cycle_t;
 #endif
 extern cycle_t cycle;
 
-em_msg   cycle_init(cycle_t *cycle, int8_t press, system_state_e *sync_state, TIM_HandleTypeDef *htim);
+em_msg   cycle_init(cycle_t *cycle, int8_t press, int8_t postss, system_state_e *sync_state, TIM_HandleTypeDef *htim);
 em_msg   cycle_reset(cycle_t *cycle);
 em_msg   cycle_timer_add(cycle_t *cycle, int8_t add);
 size_t   cycle_size();
@@ -62,10 +62,11 @@ int8_t   cycle_act_sub_slot(cycle_t *cycle);
 uint16_t cycle_cycle(cycle_t *cycle);
 cycle_t * cycle_add(cycle_t *cycle, int8_t add);
 int8_t   cycle_check_slot(int8_t slot);
-em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, int8_t add, set_slot_e ss_type);
+em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type);
 system_state_e   cycle_state(cycle_t *cycle);
 bool     cycle_isOk(cycle_t *cycle, int8_t rxSlot);
 int8_t   cycle_press(cycle_t *cycle);
+int8_t   cycle_postss(cycle_t *cycle);
 int8_t   cycle_difference(cycle_t *cycle, int8_t rxSlot);
 void     cycle_increment(cycle_t *cycle);
 void     cycle_sscnt_init(cycle_t *cycle);

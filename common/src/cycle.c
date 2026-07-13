@@ -20,6 +20,7 @@ typedef struct cycle_s {
     int8_t            sSlot;
     uint16_t          cycle;
     int8_t            press;
+    int8_t            postss;
     set_slot_e        role;
     int8_t            ssCnt;
     bool              doMeasure;
@@ -47,17 +48,18 @@ cycle_t cycle;
 #define SLOT_PRINT_FMT "(c:%5d, %1X, %2d)" // length is 19
 #define STRLEN 22
 
-em_msg cycle_init(cycle_t *cycle, int8_t press , system_state_e *sync_state, TIM_HandleTypeDef *htim) {
+em_msg cycle_init(cycle_t *cycle, int8_t press, int8_t postss , system_state_e *sync_state, TIM_HandleTypeDef *htim) {
     em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
     if (!sync_state) return res;
     // clang-format on
     cycle->press= press;
+    cycle->postss= postss;
     cycle->timer= htim;
     cycle->sync_state= sync_state;
     cycle->init = true;
-    cycle->role = SLAVE;
+    cycle->role = NOT_SET;
     cycle_sscnt_init(cycle);
     cycle_reset(cycle);
     res = EM_OK;
@@ -151,13 +153,14 @@ int8_t cycle_check_slot(int8_t slot) {
     return -1;
 }
 
-em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, int8_t add, set_slot_e ss_type){
+em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type){
     em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
     if (!cycle->init) return res;
     if (cycle_check_slot(slot)<0) return res;
     if (*cycle->sync_state == SYNCHRONIZE_LOCKED) return res;
+    if ((cycle->role != NOT_SET) ||(ss_type!=cycle->role)) return res;
     cycle->role = ss_type;
     // clang-format on
     if ((*cycle->sync_state == SYNCHRONIZE_DOING) || (*cycle->sync_state == SYNCHRONIZE_READY)){
@@ -169,16 +172,17 @@ em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, int8_t add, set_slot_e ss_t
         *cycle->sync_state = SYNCHRONIZE_LOCKED;
         if (ss_type==MASTER){
             cycle_timer_add(cycle, 0);
+            cycle->subSlot = (slot * CYCLE_SUB_SLOT_CNT+CYCLE_MODULO+cycle_press(cycle))%CYCLE_MODULO;
             cycle->role = MASTER;
-            cycle->subSlot = (slot * CYCLE_SUB_SLOT_CNT+CYCLE_MODULO+add)%CYCLE_MODULO;
+            res = EM_OK;
         } else{
             cycle_timer_add(cycle, 0);
+            cycle->subSlot = (slot * CYCLE_SUB_SLOT_CNT+CYCLE_MODULO+0)%CYCLE_MODULO;
             cycle->role = SLAVE;
-            cycle->subSlot = (slot * CYCLE_SUB_SLOT_CNT+CYCLE_MODULO+add)%CYCLE_MODULO;
+            res = EM_ERR;
         }
         cycle->actSlot = CYCLE_ACT_SLOT(cycle);
         cycle->sSlot   = CYCLE_ACT_SUB_SLOT(cycle);
-        res = EM_OK;
 #ifndef UNIT_TEST
          __set_PRIMASK(primask);     // restore (don't blindly __enable_irq())
 #endif
@@ -213,6 +217,15 @@ int8_t   cycle_press(cycle_t *cycle){
     if (!cycle->init) return 0;
     // clang-format on
     return cycle->press;
+
+}
+
+int8_t   cycle_postss(cycle_t *cycle){
+    // clang-format off
+    if (!cycle) return 0;
+    if (!cycle->init) return 0;
+    // clang-format on
+    return cycle->postss;
 
 }
 
