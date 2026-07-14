@@ -47,7 +47,7 @@ cycle_t cycle;
 
 #define SLOT_PRINT_FMT     "(c:%5d, %1X, %2d)" // length is 19
 #define SLOT_PRINT_FMT_STR "(c:     ,  ,   )"
-#define SLOT_PRINT_FMT_STR_LEN 15
+#define SLOT_PRINT_FMT_STR_LEN 16+2
 em_msg cycle_init(cycle_t *cycle, int8_t press, int8_t postss , system_state_e *sync_state, TIM_HandleTypeDef *htim) {
     em_msg res = EM_ERR;
     // clang-format off
