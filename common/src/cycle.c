@@ -179,7 +179,7 @@ em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type){
             cycle_timer_add(cycle, 0);
             cycle->subSlot = (slot * CYCLE_SUB_SLOT_CNT+CYCLE_MODULO+0)%CYCLE_MODULO;
             cycle->role = SLAVE;
-            res = EM_ERR;
+            res = EM_OK;
         }
         cycle->actSlot = CYCLE_ACT_SLOT(cycle);
         cycle->sSlot   = CYCLE_ACT_SUB_SLOT(cycle);
