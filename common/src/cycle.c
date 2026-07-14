@@ -159,8 +159,9 @@ em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type){
     if (!cycle) return res;
     if (!cycle->init) return res;
     if (cycle_check_slot(slot)<0) return res;
-    if (*cycle->sync_state == SYNCHRONIZE_LOCKED) return res;
-    if ((cycle->role != NOT_SET) ||(ss_type!=cycle->role)) return res;
+    if (*cycle->sync_state == SYNCHRONIZE_LOCKED) return EM_OK;
+    if (cycle->role != NOT_SET) return res;
+    if (cycle->role == ss_type) return EM_OK;
     cycle->role = ss_type;
     // clang-format on
     if ((*cycle->sync_state == SYNCHRONIZE_DOING) || (*cycle->sync_state == SYNCHRONIZE_READY)){
@@ -169,7 +170,7 @@ em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type){
          __disable_irq();            // block TIM1 update ISR for the whole update
 #endif
         cycle_reset(cycle);
-        *cycle->sync_state = SYNCHRONIZE_LOCKED;
+        *cycle->sync_state = SYNCHRONIZE_DOING;
         if (ss_type==MASTER){
             cycle_timer_add(cycle, 0);
             cycle->subSlot = (slot * CYCLE_SUB_SLOT_CNT+CYCLE_MODULO+cycle_press(cycle))%CYCLE_MODULO;
