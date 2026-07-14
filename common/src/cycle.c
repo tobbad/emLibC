@@ -45,9 +45,9 @@ idxa2str_t cyclea2str = {.cnt = ELCNT(cycle2str), .entry = (idx2str_t *)&cycle2s
 
 cycle_t cycle;
 
-#define SLOT_PRINT_FMT "(c:%5d, %1X, %2d)" // length is 19
-#define STRLEN 22
-
+#define SLOT_PRINT_FMT     "(c:%5d, %1X, %2d)" // length is 19
+#define SLOT_PRINT_FMT_STR "(c:     ,  ,   )"
+#define SLOT_PRINT_FMT_STR_LEN 15
 em_msg cycle_init(cycle_t *cycle, int8_t press, int8_t postss , system_state_e *sync_state, TIM_HandleTypeDef *htim) {
     em_msg res = EM_ERR;
     // clang-format off
@@ -109,8 +109,8 @@ char *cycle_string(cycle_t *cycle){
     if (!cycle) return NULL;
     if (!cycle->init) return NULL;
     // clang-format on
-    static char rStr[STRLEN];
-    snprintf(rStr, STRLEN, SLOT_PRINT_FMT, cycle->cycle,  CYCLE_ACT_SLOT(cycle),  CYCLE_ACT_SUB_SLOT(cycle));
+    static char rStr[SLOT_PRINT_FMT_STR_LEN];
+    snprintf(rStr, SLOT_PRINT_FMT_STR_LEN, SLOT_PRINT_FMT, cycle->cycle,  CYCLE_ACT_SLOT(cycle),  CYCLE_ACT_SUB_SLOT(cycle));
     return rStr;
 }
 
