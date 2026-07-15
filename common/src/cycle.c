@@ -19,6 +19,7 @@ typedef struct cycle_s {
     int8_t            lSlot;
     int8_t            sSlot;
     uint16_t          cycle;
+    int8_t            slot;
     int8_t            press;
     int8_t            postss;
     set_slot_e        role;
@@ -48,13 +49,14 @@ cycle_t cycle;
 #define SLOT_PRINT_FMT     "(c:%5d, %1X, %2d)" // length is 19
 #define SLOT_PRINT_FMT_STR "(c:     ,  ,   )"
 #define SLOT_PRINT_FMT_STR_LEN 16+2
-em_msg cycle_init(cycle_t *cycle, int8_t press, int8_t postss , system_state_e *sync_state, TIM_HandleTypeDef *htim) {
+em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss , system_state_e *sync_state, TIM_HandleTypeDef *htim) {
     em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
     if (!sync_state) return res;
     // clang-format on
     cycle->press= press;
+    cycle->slot= my_slot;
     cycle->postss= postss;
     cycle->timer= htim;
     cycle->sync_state= sync_state;
@@ -153,12 +155,11 @@ bool cycle_doSend(cycle_t *cycle){
     if (!cycle) return res;
     if (!cycle->init) return res;
     // clang-format on
-    int8_t actSlot = cycle_act_slot(&cycle);
-    int8_t subSlot = cycle_act_sub_slot(&cycle);
-    res  = (actSlot == rb_system.slot-1);
-    res &= ((CYCLE_SUB_SLOT_CNT- subSlot) < cycle_press(&cycle));
+    int8_t actSlot = cycle_act_slot(cycle);
+    int8_t subSlot = cycle_act_sub_slot(cycle);
+    res  = (actSlot == cycle->slot-1);
+    res &= ((CYCLE_SUB_SLOT_CNT- subSlot) < cycle_press(cycle));
     return res;
-}
 }
 
 int8_t cycle_check_slot(int8_t slot) {
