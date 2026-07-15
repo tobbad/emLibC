@@ -4,6 +4,7 @@
  *  Created on: Jan 22, 2025
  *      Author: badi
  */
+#include "common.h"
 #include "_time.h"
 #include "cycle.h"
 #include "serial.h"
@@ -53,10 +54,11 @@ timem_t _time;
 
 em_msg time_check_hdl(time_handle_t hdl) {
     em_msg res = EM_ERR;
+    uint8_t bitCnt = int8bit_cnt(hdl);
     // clang-format off
     if ((hdl >= 0) && (hdl < TIME_DEV_CNT)) return EM_OK;
+    if (bitCnt == 1) return EM_OK;
     // clang-format on
-
     return res;
 }
 
@@ -101,6 +103,7 @@ void time_delete(time_handle_t hdl){
     // clang-format on
     if ( time_check_hdl(hdl) == EM_OK){
         printf("Delete handler %s (%d)"NL, _time.time[hdl].name, hdl);
+        _time.used  ^= hdl;
     } else {
         printf("*** Cannot delete handler (%d)" NL, hdl);
     }

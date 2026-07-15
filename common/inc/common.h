@@ -125,6 +125,7 @@ char *idxa2str(idxa2str_t *map, uint8_t idx);
 char *idx2str(idx2str_t *map, uint8_t cnt, uint8_t idx);
 int in_interrupt(void);
 char int2hchar(uint8_t idx);
+int8_t int8bit_cnt(int8_t val);
 uint32_t swap(uint32_t val);
 bool ReadModify_write(int8_t *mem, int8_t add);
 

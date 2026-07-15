@@ -325,6 +325,14 @@ uint32_t swap(uint32_t val) {
     return out;
 };
 
+int8_t int8bit_cnt(int8_t val){
+    int8_t cnt = 0;
+    for (uint8_t i=0;i<sizeof(int8_t);i++){
+        if (val & (1<<i)) cnt++;
+    }
+    return cnt;
+}
+
 bool ReadModify_write(int8_t *mem, int8_t add) {
 #ifndef UNIT_TEST
     do {
