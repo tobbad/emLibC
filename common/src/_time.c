@@ -95,6 +95,18 @@ time_handle_t time_new(char *name) {
     return -1;
 }
 
+void time_delete(time_handle_t hdl){
+    // clang-format off
+    if (!_time.init) return;
+    // clang-format on
+    if ( time_check_hdl(hdl) == EM_OK){
+        printf("Delete handler %s (%d)"NL, _time.time[hdl].name, hdl);
+    } else {
+        printf("*** Cannot delete handler (%d)" NL, hdl);
+    }
+};
+
+
 em_msg time_set_mode(time_handle_t hdl, mode_e mode) {
     em_msg res = EM_ERR;
     // clang-format off
