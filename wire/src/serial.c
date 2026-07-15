@@ -44,8 +44,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/times.h>
 #ifdef HAL_PCD_MODULE_ENABLED
 #ifdef USE_TINY_USB
 #include "tusb.h"

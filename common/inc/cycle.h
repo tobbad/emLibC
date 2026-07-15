@@ -51,7 +51,7 @@ typedef struct cycle_s cycle_t;
 #endif
 extern cycle_t cycle;
 
-em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss , system_state_e *sync_state, TIM_HandleTypeDef *htim) {
+em_msg   cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, system_state_e *sync_state, TIM_HandleTypeDef *htim);
 em_msg   cycle_reset(cycle_t *cycle);
 em_msg   cycle_timer_add(cycle_t *cycle, int8_t add);
 size_t   cycle_size();

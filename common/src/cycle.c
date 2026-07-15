@@ -56,8 +56,8 @@ em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss , 
     if (!sync_state) return res;
     // clang-format on
     cycle->press= press;
-    cycle->slot= my_slot;
     cycle->postss= postss;
+    cycle->slot  = my_slot;
     cycle->timer= htim;
     cycle->sync_state= sync_state;
     cycle->init = true;
@@ -155,13 +155,11 @@ bool cycle_doSend(cycle_t *cycle){
     if (!cycle) return res;
     if (!cycle->init) return res;
     // clang-format on
-    int8_t actSlot = cycle_act_slot(cycle);
-    int8_t subSlot = cycle_act_sub_slot(cycle);
-    res  = (actSlot == cycle->slot-1);
-    res &= ((CYCLE_SUB_SLOT_CNT- subSlot) < cycle_press(cycle));
+    int8_t actSlot = CYCLE_ACT_SLOT(cycle);
+    int8_t subSlot = CYCLE_ACT_SUB_SLOT(cycle);
+    res  =(actSlot== cycle->slot-1) && ((CYCLE_SUB_SLOT_CNT- subSlot) < cycle->press);
     return res;
-}
-
+};
 int8_t cycle_check_slot(int8_t slot) {
     if (((slot > 0) && (slot <= CYCLE_SLOT_CNT)) && (slot % 2 == 1)) {
         return slot;
