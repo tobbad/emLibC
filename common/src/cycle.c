@@ -62,6 +62,7 @@ em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss , 
     cycle->sync_state= sync_state;
     cycle->init = true;
     cycle->role = NOT_SET;
+    cycle->cntErrror = 0;
     cycle_sscnt_init(cycle);
     cycle_reset(cycle);
     res = EM_OK;
@@ -176,9 +177,9 @@ em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type){
     if (!cycle->init) return res;
     if (cycle_check_slot(slot)<0) return res;
     if (*cycle->sync_state == SYNCHRONIZE_LOCKED) return EM_OK;
+    if (*cycle->sync_state < SYNCHRONIZE_READY) return res;
     if (cycle->role != NOT_SET) return res;
-    if (cycle->role == ss_type) return EM_OK;
-    cycle->role = ss_type;
+    if ((ss_type < SLAVE) ||(ss_type>MASTER)) return res;
     // clang-format on
     if ((*cycle->sync_state == SYNCHRONIZE_DOING) || (*cycle->sync_state == SYNCHRONIZE_READY)){
 #ifndef UNIT_TEST
@@ -224,7 +225,8 @@ bool cycle_isOk(cycle_t *cycle, int8_t rxSlot) {
     if (!cycle->init) return false;
     if (cycle_check_slot(rxSlot) < 0) return false;
     // clang-format on
-    // OK when the distance to rxSlot's window exceeds the press tolerance.
+    // OK when we sit close enough to rxSlot's window: the distance must stay
+    // below the press tolerance.
     return cycle_difference(cycle, rxSlot) < cycle->press;
 }
 
@@ -255,18 +257,18 @@ int8_t cycle_difference(cycle_t *cycle, int8_t rxSlot) {
     // with
     //   lower = rxSlot*CYCLE_SUB_SLOT_CNT
     //   upper = (rxSlot+1)*CYCLE_SUB_SLOT_CNT.
-    // Below the lower corner -> lower - subSlot
-    // At/above the upper edge -> subSlot - lower
-    // Inside [lower, upper)  -> 0  (8 sub-slots wide)
-    // Always >= 0, no ring wrap-around.
+    // Inside [lower, upper) -> 0. Outside, the cycle is a ring of CYCLE_MODULO
+    // sub-slots, so take the shorter way round:
+    //   min((subSlot - upper) mod CYCLE_MODULO, (lower - subSlot) mod CYCLE_MODULO)
+    // Always >= 0, never more than CYCLE_MODULO/2.
     const int16_t lower = (int16_t)rxSlot * CYCLE_SUB_SLOT_CNT;
     const int16_t upper = ((int16_t)rxSlot + 1) * CYCLE_SUB_SLOT_CNT;
-    if (cycle->subSlot <= lower) {
-        return (int8_t)(lower - cycle->subSlot); // below the lower corner
-    } else if (cycle->subSlot >= upper) {
-        return (int8_t)(cycle->subSlot - upper); // above the upper corner
+    if ((cycle->subSlot >= lower) && (cycle->subSlot < upper)) {
+        return 0; // inside the window
     }
-    return 0; // inside the window
+    const int16_t above = ((cycle->subSlot - upper) + CYCLE_MODULO) % CYCLE_MODULO;
+    const int16_t below = ((lower - cycle->subSlot) + CYCLE_MODULO) % CYCLE_MODULO;
+    return (int8_t)((above < below) ? above : below);
 }
 void     cycle_sscnt_init(cycle_t *cycle){
     if (!cycle) return;

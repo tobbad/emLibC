@@ -21,6 +21,7 @@ typedef enum {
     NOT_SET,
     SLAVE,
     MASTER,
+    SS_CNT,
 } set_slot_e;
 
 #define CYCLE_SUB_SLOT_POW2 3

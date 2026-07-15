@@ -59,19 +59,19 @@ typedef enum {
 } em_msg;
 
 typedef enum {
-    SYNC_RESET,
-    BOOT_UP,
-    SLOT,
-    CHANNEL,
-    FREQBAND,
-    FREQUENCY_OFFSET,
-    SYNCHRONIZE,
-    SYNCHRONIZE_READY,
-    SYNCHRONIZE_DOING,
-    SYNCHRONIZE_ERROR,
-    SYNCHRONIZE_LOCKED,
-    SYNCHRONIZE_OK,
-    SYNC_CNT
+    SYNC_RESET,          // 0
+    BOOT_UP,             // 1
+    SLOT,                // 2
+    CHANNEL,             // 3
+    FREQBAND,            // 4
+    FREQUENCY_OFFSET,    // 5
+    SYNCHRONIZE,         // 6
+    SYNCHRONIZE_READY,   // 7
+    SYNCHRONIZE_DOING,   // 8
+    SYNCHRONIZE_ERROR,   // 9
+    SYNCHRONIZE_LOCKED,  // 10
+    SYNCHRONIZE_OK,      // 11
+    SYNC_CNT             // 12
 } system_state_e;
 
 typedef union {
