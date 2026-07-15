@@ -11,7 +11,9 @@
 // ---------------------------------------------------------------------------
 // Fixture: frisch initialisierter cycle
 // ---------------------------------------------------------------------------
-#define PRESS 3
+#define PRESS  3
+#define POSTSS 3
+static int8_t my_slot = 3;
 class CycleTest : public ::testing::Test {
   protected:
     cycle_t cycle;
@@ -22,15 +24,15 @@ class CycleTest : public ::testing::Test {
 // ---------------------------------------------------------------------------
 // cycle_init / cycle_reset
 // ---------------------------------------------------------------------------
-TEST_F(CycleTest, NullNullPtrReturnsError)  { EXPECT_EQ(cycle_init(nullptr, PRESS, nullptr), EM_ERR); }
-TEST_F(CycleTest, NullValidPtrReturnsError) { EXPECT_EQ(cycle_init(nullptr, PRESS, &sync_state), EM_ERR); }
-TEST_F(CycleTest, ValidNullPtrReturnsError) { EXPECT_EQ(cycle_init(&cycle, PRESS,  nullptr), EM_ERR); }
+TEST_F(CycleTest, NullNullPtrReturnsError)  { EXPECT_EQ(cycle_init(nullptr, my_slot, PRESS, POSTSS, nullptr, nullptr), EM_ERR); }
+TEST_F(CycleTest, NullValidPtrReturnsError) { EXPECT_EQ(cycle_init(nullptr, my_slot, PRESS, POSTSS, &sync_state, nullptr), EM_ERR); }
+TEST_F(CycleTest, ValidNullPtrReturnsError) { EXPECT_EQ(cycle_init(&cycle,  my_slot, PRESS, POSTSS, nullptr, nullptr), EM_ERR); }
 
 TEST_F(CycleTest, CheckSetSlot) {
     uint8_t slot;
     system_state_e sync_state = SYNCHRONIZE_READY;
     cycle_t c;
-    ASSERT_EQ(cycle_init(&c, PRESS, &sync_state), EM_OK);
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, &sync_state, NULL), EM_OK);
     // cycle_set_slot only acts while the device is synchronising
     // (SYNCHRONIZE_DOING/READY) and locks (-> SYNCHRONIZE_LOCKED) on success,
     // so re-arm sync_state before every call.
@@ -59,7 +61,7 @@ TEST_F(CycleTest, SetSlotLock) {
     const int8_t slot = 3;
     cycle_t c;
     sync_state = SYNCHRONIZE_READY;
-    ASSERT_EQ(cycle_init(&c, PRESS, &sync_state), EM_OK);
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, &sync_state, NULL), EM_OK);
     EXPECT_STREQ(cycle_role(&c), "SLAVE "); // default role after init
 
     // SLAVE lock: sit exactly at the slot start.
@@ -100,7 +102,7 @@ TEST_F(CycleTest, CheckCycleIncrement) {
     uint32_t cycle;
     int8_t slot = 3;
     sync_state = SYNCHRONIZE_READY; // precondition for cycle_set_slot
-    ASSERT_EQ(cycle_init(&c, PRESS, &sync_state), EM_OK);
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, &sync_state, NULL), EM_OK);
     ASSERT_EQ(cycle_set_slot(nullptr, 1, SLAVE), EM_ERR);
     sync_state = SYNCHRONIZE_READY;
     ASSERT_EQ(cycle_set_slot(&c, slot, SLAVE), EM_OK);
@@ -184,7 +186,7 @@ TEST_F(CycleTest, CycleDifference) {
     EXPECT_EQ(cycle_difference(&u, 0), 0);
 
     cycle_t c;
-    ASSERT_EQ(cycle_init(&c, PRESS, &sync_state), EM_OK);
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, &sync_state, NULL), EM_OK);
 
     // --- rxSlot == 0 spot checks (window = [0, 7], 8 wide) -----------------
     c.subSlot = 0;   EXPECT_EQ(cycle_difference(&c, 0), 0);   // lower corner, inside
@@ -218,7 +220,7 @@ TEST_F(CycleTest, MyCycleDifference) {
     int8_t exp;
     cycle_t c;
     const int total = CYCLE_SUB_SLOT_CNT * CYCLE_SLOT_CNT; // 128 sub-slots per cycle
-    ASSERT_EQ(cycle_init(&c, PRESS, &sync_state), EM_OK);
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, &sync_state, NULL), EM_OK);
     for (uint8_t press =0; press<CYCLE_SUB_SLOT_CNT;press++){
         // slot 0..CYCLE_SLOT_CNT-1 covers both boundaries: slot 0 (lower corner,
         // "below" wraps onto subSlot 120..127) and slot 15 (upper corner,
@@ -261,7 +263,7 @@ TEST_F(CycleTest, CheckIsOk) {
     EXPECT_FALSE(cycle_isOk(&u, 3));
 
     cycle_t c;
-    ASSERT_EQ(cycle_init(&c, PRESS, &sync_state), EM_OK); // press == PRESS (3)
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, &sync_state, NULL), EM_OK); // press == PRESS (3)
 
     // out-of-range rxSlot is never ok, whatever subSlot.
     for (int ss = 0; ss < total; ss++) {

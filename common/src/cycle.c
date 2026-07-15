@@ -95,6 +95,7 @@ em_msg   cycle_timer_add(cycle_t *cycle, int8_t add){
     if (!cycle->init) return res;
     if (!cycle->timer) return res;
     // clang-format on
+#ifndef UNIT_TEST
     preset = cycle->timer->Instance->ARR;
     // Reset the counter directly: no update event is generated, so no UIF is
     // raised and there is no spurious cycle_increment to guard against.
@@ -103,6 +104,7 @@ em_msg   cycle_timer_add(cycle_t *cycle, int8_t add){
     } else {
         cycle->timer->Instance->CNT = preset-add;
     }
+#endif
     return EM_OK;
 };
 

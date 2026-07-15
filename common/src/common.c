@@ -55,17 +55,11 @@ size_t board_get_unique_id(uint8_t *id, size_t max_len) {
 }
 
 #else
-size_t board_get_unique_id(uint16_t id[], size_t max_len) {
+size_t board_get_unique_id(uint8_t *id, size_t max_len) {
     // STM32L476 UID Register: drei 32-bit Worte = 12 Bytes
     // RM0351 Rev.9, Section 49.1: "Unique device ID register (96 bits)"
-    for (uint32_t i = 0; i < max_len && i < 12U; i++) {
-        id[i] = i;
-    }
-    // Falls der Puffer größer als 12 Bytes ist: Rest mit 0 auffüllen
-    for (uint32_t i = 12U; i < max_len; i++) {
-        id[i] = 0x00U;
-    }
-    return max_len;
+    memset(id, 0, max_len);
+return max_len;
 }
 #endif
 

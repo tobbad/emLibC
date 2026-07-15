@@ -9,7 +9,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "stm32l4xx_hal.h"
+#ifndef UNIT_TEST
+#include "hal_port.h"
+#else
+typedef struct __TIM_HandleTypeDef {} TIM_HandleTypeDef;
+#endif
 #include "common.h"
 #include "system_definitions.h"
 
@@ -37,14 +41,16 @@ typedef struct cycle_s {
     int8_t            lSlot;
     int8_t            sSlot;
     uint16_t          cycle;
+    int8_t            slot;
     int8_t            press;
+    int8_t            postss;
     set_slot_e        role;
     int8_t            ssCnt;
     bool              doMeasure;
     bool              cntErrror;
     system_state_e    *sync_state;
     bool              init;
-    void              *timer;
+    TIM_HandleTypeDef *timer;
 } cycle_t;
 #else
 typedef struct cycle_s cycle_t;

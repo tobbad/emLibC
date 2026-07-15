@@ -21,13 +21,11 @@ extern "C" {
 #include "math.h"
 #ifndef UNIT_TEST
 #include "hal_port.h"
-#endif
-#ifdef UNIT_TEST
-#define STATIC
-#include <stdio.h>
 #else
-#define STATIC static
+#include <stdio.h>
 #endif
+#define STATIC
+
 #define ELCNT(array) (array == 0) ? 0 : (sizeof((array)) / sizeof((array[0])))
 
 // #ifdef UNIT_TEST
