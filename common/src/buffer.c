@@ -281,12 +281,31 @@ clabel_u *buffer_get_clabel(buffer_t *buffer) {
     return &buffer->lbl;
 }
 
-buffer_t * buffer_get_till_end(buffer_t *buffer) {
+/*
+ * Returns a read-only view onto the ring starting at `first`. Only the run up
+ * to the end of the allocation is contiguous, so `used` is clamped to it: the
+ * caller may hand (mem, used) straight to a transfer. When the data wraps, the
+ * remainder stays in the ring and is picked up by the next call once `first`
+ * has moved past the seam.
+ * NOTE: the returned struct is static -- not reentrant. Consume the view before
+ * calling again, and do not call it from an ISR and the main loop both.
+ */
+buffer_t *buffer_get_till_end(buffer_t *buffer) {
     static buffer_t _buffer;
+    // clang-format off
+    em_msg res = buffer_check(buffer, false);
+    if (res == EM_ERR) return NULL;
+    // clang-format on
     int16_t data_to_end = buffer->size - buffer->first;
-    _buffer.size = buffer->size;
-    _buffer.used = buffer->used;
-    _buffer.mem  = &buffer->mem[buffer->first];
+    memset(&_buffer, 0, sizeof(_buffer));
+    _buffer.size  = buffer->size;
+    _buffer.used  = MIN(buffer->used, data_to_end);
+    _buffer.mem   = &buffer->mem[buffer->first];
+    _buffer.pl    = _buffer.mem;
+    _buffer.first = 0;
+    _buffer.lbl   = buffer->lbl;
+    _buffer.type  = buffer->type;
+    _buffer.state = (_buffer.used > 0) ? BUFFER_USED : BUFFER_READY;
     return &_buffer;
 }
 

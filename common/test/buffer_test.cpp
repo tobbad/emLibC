@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <string>
 
 #define BUFFER_SIZE 96
 #define BUFFER_CNT 5
@@ -392,6 +393,179 @@ TEST_F(RingBufferTest, WrapAroundWriteAndReadItBack) {
     for (uint8_t i = 0; i < rBufCharCnt; i++) {
         EXPECT_EQ(wbuffer[i], rbuffer[i]);
     }
+}
+
+// ---------------------------------------------------------------------------
+// Corner cases around the ring wrap.
+// ---------------------------------------------------------------------------
+
+// Helper: move `first` to `off` through the public API, leaving the ring empty.
+static void ring_seek(buffer_t *b, int16_t off, uint8_t *scratch) {
+    if (off == 0) {
+        return;
+    }
+    int16_t n = off;
+    ASSERT_EQ(buffer_set(b, scratch, off), EM_OK);
+    ASSERT_EQ(buffer_get(b, scratch, &n), EM_OK);
+    ASSERT_EQ(n, off);
+    ASSERT_EQ(b->first, off);
+    ASSERT_EQ(b->used, 0);
+}
+
+// buffer_get_till_end hands the caller a pointer into the ring plus a length.
+// That length must describe the *contiguous* run from `first` to the end of the
+// allocation -- anything more and the caller reads past buffer->mem.
+TEST_F(RingBufferTest, GetTillEndStaysContiguousAtWrap) {
+    ring_seek(buf, 40, rbuffer);
+
+    // 16 bytes from offset 40 in a 48-byte ring: 8 to the end, 8 wrapped round.
+    ASSERT_EQ(buffer_set(buf, wbuffer, 16), EM_OK);
+    ASSERT_EQ(buffer_used(buf), 16);
+
+    buffer_t *tail = buffer_get_till_end(buf);
+    ASSERT_NE(tail, nullptr);
+    EXPECT_EQ(tail->mem, &buf->mem[40]);
+    EXPECT_EQ(tail->used, rBufCharCnt - buf->first)
+        << "must clamp to the contiguous run (8), otherwise the caller reads "
+        << (16 - (rBufCharCnt - buf->first)) << " bytes past the end of the allocation";
+}
+
+// Write `len` bytes at every possible ring offset and read them straight back.
+TEST_F(RingBufferTest, WrapRoundTripAllOffsetsAndLengths) {
+    for (int16_t off = 0; off < (int16_t)rBufCharCnt; off++) {
+        for (int16_t len = 1; len <= (int16_t)rBufCharCnt; len++) {
+            buffer_t *b = buffer_new(rBufCharCnt, RING);
+            ASSERT_NE(b, nullptr);
+            ring_seek(b, off, rbuffer);
+
+            ASSERT_EQ(buffer_set(b, wbuffer, len), EM_OK) << "off=" << off << " len=" << len;
+            int16_t n = len;
+            memset(rbuffer, 0xAA, BUFFER_SIZE);
+            ASSERT_EQ(buffer_get(b, rbuffer, &n), EM_OK) << "off=" << off << " len=" << len;
+            EXPECT_EQ(n, len) << "off=" << off << " len=" << len;
+            EXPECT_EQ(memcmp(rbuffer, wbuffer, len), 0) << "off=" << off << " len=" << len;
+            buffer_free(b);
+        }
+    }
+}
+
+// A ring may be filled to 100%: used == size, writeable == 0.
+TEST_F(RingBufferTest, FillToCapacityAtEveryOffset) {
+    for (int16_t off = 0; off < (int16_t)rBufCharCnt; off++) {
+        buffer_t *b = buffer_new(rBufCharCnt, RING);
+        ASSERT_NE(b, nullptr);
+        ring_seek(b, off, rbuffer);
+
+        ASSERT_EQ(buffer_set(b, wbuffer, rBufCharCnt), EM_OK) << "off=" << off;
+        EXPECT_EQ(buffer_used(b), (int16_t)rBufCharCnt) << "off=" << off;
+        EXPECT_EQ(buffer_writeable(b), 0) << "off=" << off;
+        EXPECT_EQ(buffer_set(b, wbuffer, 1), EM_ERR) << "off=" << off; // full, must reject
+
+        int16_t n = rBufCharCnt;
+        memset(rbuffer, 0xAA, BUFFER_SIZE);
+        ASSERT_EQ(buffer_get(b, rbuffer, &n), EM_OK) << "off=" << off;
+        EXPECT_EQ(n, (int16_t)rBufCharCnt) << "off=" << off;
+        EXPECT_EQ(memcmp(rbuffer, wbuffer, rBufCharCnt), 0) << "off=" << off;
+        EXPECT_EQ(b->state, BUFFER_READY) << "off=" << off;
+        buffer_free(b);
+    }
+}
+
+// The USB pattern: interleaved partial writes and reads of varying size, run
+// long enough to wrap the ring many times. The byte stream must come out as an
+// exact FIFO -- no duplicates, no drops, no injected zeros.
+TEST_F(RingBufferTest, StreamingFifoOrderAcrossManyWraps) {
+    const int total = 20000;
+    uint8_t next_write = 0, next_read = 0;
+    int written = 0, nread = 0;
+    uint8_t tmp[64];
+    unsigned seed = 12345;
+    auto rnd = [&seed](int mod) {
+        seed = seed * 1103515245u + 12345u;
+        return (int)((seed >> 16) % mod);
+    };
+
+    while (nread < total) {
+        int w = rnd(20) + 1;
+        const int space = buffer_writeable(buf);
+        if (w > space) w = space;
+        if (w > total - written) w = total - written;
+        if (w > 0) {
+            for (int i = 0; i < w; i++) tmp[i] = next_write++;
+            ASSERT_EQ(buffer_set(buf, tmp, w), EM_OK) << "written=" << written;
+            written += w;
+        }
+
+        int r = rnd(20) + 1;
+        const int avail = buffer_used(buf);
+        if (r > avail) r = avail;
+        if (r > 0) {
+            int16_t n = r;
+            memset(tmp, 0xAA, sizeof(tmp));
+            ASSERT_EQ(buffer_get(buf, tmp, &n), EM_OK) << "nread=" << nread;
+            ASSERT_EQ(n, r) << "nread=" << nread;
+            for (int i = 0; i < n; i++) {
+                ASSERT_EQ(tmp[i], next_read++) << "stream position " << (nread + i);
+            }
+            nread += n;
+        }
+        ASSERT_TRUE(w > 0 || r > 0) << "stalled at written=" << written << " nread=" << nread;
+    }
+}
+
+TEST_F(RingBufferTest, GetTillEndGuardsNull) {
+    EXPECT_EQ(buffer_get_till_end(nullptr), nullptr);
+}
+
+TEST_F(RingBufferTest, GetTillEndEmptyRingReportsNothing) {
+    buffer_t *tail = buffer_get_till_end(buf);
+    ASSERT_NE(tail, nullptr);
+    EXPECT_EQ(tail->used, 0);
+    EXPECT_EQ(tail->state, BUFFER_READY);
+}
+
+// The log-over-USB case: a 1024 byte ring carrying ~43 byte lines wraps roughly
+// every 24 lines. Consuming through buffer_get_till_end must reproduce the byte
+// stream exactly -- no injected zeros at the seam, no reads past the allocation.
+TEST(RingLogTest, LinesThroughGetTillEndSurviveManyWraps) {
+    const char *line = "0007831764: Do send         (c:21749, 1,  7)";
+    const int16_t len = (int16_t)strlen(line);
+    const int16_t ring = 1024;
+    buffer_t *b = buffer_new(ring, RING);
+    ASSERT_NE(b, nullptr);
+
+    std::string produced, consumed;
+    uint8_t sink[2048];
+
+    for (int i = 0; i < 500; i++) {
+        if (buffer_writeable(b) >= len) {
+            ASSERT_EQ(buffer_set(b, (const uint8_t *)line, len), EM_OK) << "line " << i;
+            produced.append(line, len);
+        }
+
+        // Zero-copy consume, exactly as a USB transfer would.
+        buffer_t *chunk = buffer_get_till_end(b);
+        ASSERT_NE(chunk, nullptr);
+        ASSERT_LE(chunk->used, ring - b->first)
+            << "line " << i << ": view runs past the allocation";
+        if (chunk->used > 0) {
+            consumed.append((const char *)chunk->mem, chunk->used);
+            int16_t n = chunk->used;
+            ASSERT_EQ(buffer_get(b, sink, &n), EM_OK) << "line " << i;
+            ASSERT_EQ(n, chunk->used) << "line " << i;
+        }
+    }
+    // drain the tail
+    while (buffer_used(b) > 0) {
+        buffer_t *chunk = buffer_get_till_end(b);
+        consumed.append((const char *)chunk->mem, chunk->used);
+        int16_t n = chunk->used;
+        ASSERT_EQ(buffer_get(b, sink, &n), EM_OK);
+    }
+
+    EXPECT_EQ(consumed.find('\0'), std::string::npos) << "a zero byte was injected into the stream";
+    EXPECT_EQ(consumed, produced);
+    buffer_free(b);
 }
 
 class BufferPoolTest : public ::testing::Test {
