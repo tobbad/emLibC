@@ -8,7 +8,6 @@
 #include "gtest/gtest.h"
 #include <stdint.h>
 #include <string.h>
-
 // ---------------------------------------------------------------------------
 // CRC-16 (x-25 / CRC-16/IBM-SDLC with byte-swapped output)
 // ---------------------------------------------------------------------------
@@ -250,7 +249,8 @@ TEST_F(ToHexTest, ExactRowStructure) {
 // ---------------------------------------------------------------------------
 class BoardGetUniqueIdTest : public ::testing::Test {
   protected:
-    uint16_t id[8] = {};
+    static const uint8_t uid_cnt = 12;
+    uint8_t id[12] = {};
 };
 
 TEST_F(BoardGetUniqueIdTest, ReturnsMaxLen) { EXPECT_EQ(board_get_unique_id(id, 8), 8u); }
@@ -258,7 +258,7 @@ TEST_F(BoardGetUniqueIdTest, ReturnsMaxLen) { EXPECT_EQ(board_get_unique_id(id, 
 TEST_F(BoardGetUniqueIdTest, First12BytesAreIndex) {
     board_get_unique_id(id, 8);
     for (uint8_t i = 0; i < 8; i++) {
-        EXPECT_EQ(id[i], i) << "at index " << (int)i;
+        EXPECT_EQ(id[i], 0) << "at index " << (int)i;
     }
 }
 

@@ -1,20 +1,18 @@
 /*
  * state_test.cpp
  */
-#include "state.h"
 #include "device.h"
+#include "state.h"
+#include "gtest/gtest.h"
 #include <cstdio>
 #include <stdint.h>
 #include <string.h>
-#include "gtest/gtest.h"
 
 // ---------------------------------------------------------------------------
 // Hilfsfunktion: prüft ob ein key_state_e-Rückgabewert ein Fehler ist.
 // state_get_key_by_lbl/idx liefern STATE_CNT als Fehlersentinel.
 // ---------------------------------------------------------------------------
-static inline bool is_key_err(int v) {
-    return (v < 0 || (key_state_e)v >= STATE_CNT);
-}
+static inline bool is_key_err(int v) { return (v < 0 || (key_state_e)v >= STATE_CNT); }
 
 // ---------------------------------------------------------------------------
 // Fixture: frisch initialisierter state
@@ -28,24 +26,23 @@ class StateTest : public ::testing::Test {
 // ---------------------------------------------------------------------------
 // state_init / state_reset
 // ---------------------------------------------------------------------------
-TEST(StateInitTest, NullPtrReturnsError) {
-    EXPECT_EQ(state_init(nullptr), EM_ERR);
-}
+TEST(StateInitTest, NullPtrReturnsError) { EXPECT_EQ(state_init(nullptr), EM_ERR); }
 
 TEST(StateInitTest, DefaultFieldsAfterInit) {
     state_t s;
+    cycle_t c;
+    system_state_e sync_state;
     ASSERT_EQ(state_init(&s), EM_OK);
-    EXPECT_EQ(s.first,      0);
-    EXPECT_EQ(s.cnt,        MAX_STATE_CNT);
-    EXPECT_EQ(s.dirty,      false);
+    EXPECT_EQ(s.first, 0);
+    EXPECT_EQ(s.cnt, MAX_STATE_CNT);
+    EXPECT_EQ(s.dirty, false);
     EXPECT_EQ(s.clabel.cmd, 0u);
     EXPECT_EQ(state_check(&s), EM_OK);
-    state_print(&s, "State", true);
+    state_print(&s, "State", true, &c);
     for (int8_t i = 0; i < MAX_STATE_CNT; i++) {
         key_state_e state = state_get_key_by_idx(&s, i);
         EXPECT_EQ(state, OFF) << "index " << (int)i;
     }
-
 }
 
 TEST(StateInitTest, LabelsAreHexDigits) {
@@ -83,32 +80,30 @@ TEST_F(StateTest, Ch2IdxFindsAllLabels) {
     }
 }
 
-TEST_F(StateTest, Ch2IdxMissingCharReturnsError) {
-    EXPECT_EQ(state_ch2idx(&state, '!'), EM_ERR);
-}
+TEST_F(StateTest, Ch2IdxMissingCharReturnsError) { EXPECT_EQ(state_ch2idx(&state, '!'), EM_ERR); }
 
 // ---------------------------------------------------------------------------
 // state_set / state_get (direkt)
 // ---------------------------------------------------------------------------
 TEST_F(StateTest, SetAndGetOFF) {
-    EXPECT_EQ(state_set(&state, 0, OFF),      EM_OK);
-    EXPECT_EQ(state_get(&state, 0),           (key_state_e)OFF);
+    EXPECT_EQ(state_set(&state, 0, OFF), EM_OK);
+    EXPECT_EQ(state_get(&state, 0), (key_state_e)OFF);
 }
 
 TEST_F(StateTest, SetAndGetBLINKING) {
     EXPECT_EQ(state_set(&state, 0, BLINKING), EM_OK);
-    EXPECT_EQ(state_get(&state, 0),           (key_state_e)BLINKING);
+    EXPECT_EQ(state_get(&state, 0), (key_state_e)BLINKING);
 }
 
 TEST_F(StateTest, SetAndGetON) {
-    EXPECT_EQ(state_set(&state, 0, ON),       EM_OK);
-    EXPECT_EQ(state_get(&state, 0),           (key_state_e)ON);
+    EXPECT_EQ(state_set(&state, 0, ON), EM_OK);
+    EXPECT_EQ(state_get(&state, 0), (key_state_e)ON);
 }
 
 TEST_F(StateTest, SetOutOfRangeReturnsError) {
-    EXPECT_EQ(state_set(&state, MAX_STATE_CNT-1, ON), EM_OK);
-    EXPECT_EQ(state_set(&state, MAX_STATE_CNT,   ON), EM_ERR);
-    EXPECT_EQ(state_set(&state, MAX_STATE_CNT+1, ON), EM_ERR);
+    EXPECT_EQ(state_set(&state, MAX_STATE_CNT - 1, ON), EM_OK);
+    EXPECT_EQ(state_set(&state, MAX_STATE_CNT, ON), EM_ERR);
+    EXPECT_EQ(state_set(&state, MAX_STATE_CNT + 1, ON), EM_ERR);
 }
 
 // ---------------------------------------------------------------------------
@@ -167,11 +162,11 @@ TEST_F(StateTest, PropagateSetsStateDirty) {
 // state_dirty / state_undirty
 // ---------------------------------------------------------------------------
 TEST_F(StateTest, SetDirtyAndUndirty) {
-    EXPECT_EQ(state_set_dirty(&state),   EM_OK);
-    EXPECT_EQ(state_get_dirty(&state),   true);
+    EXPECT_EQ(state_set_dirty(&state), EM_OK);
+    EXPECT_EQ(state_get_dirty(&state), true);
     EXPECT_EQ(state_set_undirty(&state), EM_OK);
-    EXPECT_EQ(state_get_dirty(&state),   false);
-    EXPECT_EQ(state.clabel.cmd,          0u);
+    EXPECT_EQ(state_get_dirty(&state), false);
+    EXPECT_EQ(state.clabel.cmd, 0u);
 }
 
 // ---------------------------------------------------------------------------
@@ -186,12 +181,14 @@ TEST_F(StateTest, LimitedRangePropagate) {
 
     for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {
         int stat = state_get_key_by_lbl(&state, state.label[i]);
-        if (is_key_err(stat)) continue;
+        if (is_key_err(stat))
+            continue;
         EXPECT_EQ(stat, (int)OFF);
 
         state_propagate_by_lbl(&state, state.label[i]);
         stat = state_get_key_by_idx(&state, i);
-        if (is_key_err(stat)) continue;
+        if (is_key_err(stat))
+            continue;
         EXPECT_EQ(stat, (int)BLINKING);
 
         state_propagate_by_idx(&state, i);
@@ -209,21 +206,21 @@ TEST_F(StateTest, LimitedRangePropagate) {
 class StateKeyDiffTest : public ::testing::Test {};
 
 TEST_F(StateKeyDiffTest, SameStateIsOFF) {
-    EXPECT_EQ(state_key_diff(OFF,      OFF),      OFF);
+    EXPECT_EQ(state_key_diff(OFF, OFF), OFF);
     EXPECT_EQ(state_key_diff(BLINKING, BLINKING), OFF);
-    EXPECT_EQ(state_key_diff(ON,       ON),       OFF);
+    EXPECT_EQ(state_key_diff(ON, ON), OFF);
 }
 
 TEST_F(StateKeyDiffTest, ForwardDiff) {
-    EXPECT_EQ(state_key_diff(OFF,      BLINKING), BLINKING);
-    EXPECT_EQ(state_key_diff(OFF,      ON),       ON);
-    EXPECT_EQ(state_key_diff(BLINKING, ON),       BLINKING);
+    EXPECT_EQ(state_key_diff(OFF, BLINKING), BLINKING);
+    EXPECT_EQ(state_key_diff(OFF, ON), ON);
+    EXPECT_EQ(state_key_diff(BLINKING, ON), BLINKING);
 }
 
 TEST_F(StateKeyDiffTest, WrapAroundDiff) {
     EXPECT_EQ(state_key_diff(BLINKING, OFF), ON);
-    EXPECT_EQ(state_key_diff(ON,       OFF), BLINKING);
-    EXPECT_EQ(state_key_diff(ON,       BLINKING), ON);
+    EXPECT_EQ(state_key_diff(ON, OFF), BLINKING);
+    EXPECT_EQ(state_key_diff(ON, BLINKING), ON);
 }
 
 // ---------------------------------------------------------------------------
@@ -233,7 +230,9 @@ class StateCopyMergeTest : public ::testing::Test {
   protected:
     state_t s1, s2, ref;
     void SetUp() override {
-        state_init(&s1); state_init(&s2); state_init(&ref);
+        state_init(&s1);
+        state_init(&s2);
+        state_init(&ref);
         // s1[i] = i/3 → OFF,OFF,OFF,BLI,BLI,BLI,ON,ON,ON
         // s2[i] = i%3 → OFF,BLI,ON, OFF,BLI,ON, OFF,BLI,ON
         for (uint8_t i = 0; i < 9; i++) {
@@ -249,31 +248,30 @@ TEST_F(StateCopyMergeTest, MergeResult) {
     bool resb;
     res = state_init(&check);
     EXPECT_EQ(res, EM_OK);
-    for (uint8_t nr=0;nr<MAX_STATE_CNT;nr++){
+    for (uint8_t nr = 0; nr < MAX_STATE_CNT; nr++) {
         res = state_reset(&check);
         EXPECT_EQ(res, EM_OK);
-    	res = state_set_key_by_idx(&check, nr , BLINKING);
+        res = state_set_key_by_idx(&check, nr, BLINKING);
         EXPECT_EQ(res, EM_OK);
-        //state_print(&ref, "ref", true);
+        // state_print(&ref, "ref", true);
         res = state_reset(&ref);
         EXPECT_EQ(res, EM_OK);
         resb = state_merge(&ref, &check);
         EXPECT_EQ(resb, 1);
-        res  = state_is_same(&check, &ref);
+        res = state_is_same(&check, &ref);
         EXPECT_EQ(res, EM_OK);
         res = state_reset(&check);
         EXPECT_EQ(res, EM_OK);
-    	res = state_set_key_by_idx(&check, nr , ON);
+        res = state_set_key_by_idx(&check, nr, ON);
         EXPECT_EQ(res, EM_OK);
         res = state_reset(&ref);
         EXPECT_EQ(res, EM_OK);
         resb = state_merge(&ref, &check);
         EXPECT_EQ(resb, 1);
-        res  = state_is_same(&check, &ref);
+        res = state_is_same(&check, &ref);
         EXPECT_EQ(res, EM_OK);
     }
 }
-
 
 TEST_F(StateCopyMergeTest, PropagateResult) {
     state_t prop;
@@ -327,6 +325,6 @@ TEST_F(StateCopyMergeTest, AddDiffConverges) {
 TEST_F(StateCopyMergeTest, IsSameDetectsOneDifference) {
     state_t copy;
     state_copy(&s1, &copy);
-    state_set_key_by_idx(&copy, 0, ON);  // flip one key
+    state_set_key_by_idx(&copy, 0, ON); // flip one key
     EXPECT_NE(state_is_same(&s1, &copy), EM_OK);
 }
