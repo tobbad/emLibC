@@ -146,6 +146,21 @@ uint16_t cycle_cycle(cycle_t *cycle){
     return cycle->cycle;
 }
 
+
+bool cycle_doSend(cycle_t *cycle){
+    uint16_t res = EM_ERR;
+    // clang-format off
+    if (!cycle) return res;
+    if (!cycle->init) return res;
+    // clang-format on
+    int8_t actSlot = cycle_act_slot(&cycle);
+    int8_t subSlot = cycle_act_sub_slot(&cycle);
+    res  = (actSlot == rb_system.slot-1);
+    res &= ((CYCLE_SUB_SLOT_CNT- subSlot) < cycle_press(&cycle));
+    return res;
+}
+}
+
 int8_t cycle_check_slot(int8_t slot) {
     if (((slot > 0) && (slot <= CYCLE_SLOT_CNT)) && (slot % 2 == 1)) {
         return slot;
