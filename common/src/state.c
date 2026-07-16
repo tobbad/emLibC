@@ -341,7 +341,7 @@ bool state_merge(state_t *inState, state_t *outState) {
     return outState->dirty;
 }
 
-em_msg state_print(const state_t *state, const char *title, bool doLong, cycle_t *cycle) {
+em_msg state_print(const state_t *state, const char *title, bool doLong, char *cycle_string) {
     // clang-format off
     em_msg res = EM_ERR;
     if (state_check(state)) return res;
@@ -379,9 +379,9 @@ em_msg state_print(const state_t *state, const char *title, bool doLong, cycle_t
     printf(NL);
 
     if (state->dirty && 0x01){
-        printf("Dirty                   %s" NL, cycle_string(cycle));
+        printf("Dirty                   %s" NL, cycle_string);
     } else {
-        printf("Not Dirty               %s" NL, cycle_string(cycle));
+        printf("Not Dirty               %s" NL, cycle_string);
     }
     if ((state->dirty >> 6) == 1) {
         printf("clable is cmd" NL);

@@ -161,8 +161,104 @@ bool cycle_doSend(cycle_t *cycle){
     int8_t actSlot = CYCLE_ACT_SLOT(cycle);
     int8_t subSlot = CYCLE_ACT_SUB_SLOT(cycle);
     res  =(actSlot== cycle->slot-1) && ((CYCLE_SUB_SLOT_CNT- subSlot) < cycle->press);
+    if (res){
+        printf("Do send?                %s"NL, cycle_string(cycle));
+    }
     return res;
 };
+
+#if 1==0
+int8_t cycle_handle_rx(cycle_t *cycle, AppliFrame_t *rxFrame){
+    uint16_t res = EM_ERR;
+     // clang-format off
+     if (!cycle) return res;
+     if (!cycle->init) return res;
+     if (!rxFrame) return res;
+     // clang-format on
+    int8_t rxSlot = AppliFrame_GetSlot(rxFrame);
+    int8_t diff   = cycle_difference(cycle, rxSlot);
+    bool   isAck  = AppliFrame_IsAck(rxFrame);
+
+    em_msg res    = cycle_check_slot(rxSlot);
+    if (res == EM_ERR) {
+        printf("Invalid rxSlot = %d"NL, rxSlot);
+        // rb_system.sync_state = SYNCHRONIZE_ERROR; Out of slot
+        return res;
+    }
+
+    switch (cycle->sync_state) {
+        case SYNCHRONIZE_READY: {
+            if (rxSlot == cycle->slot) {
+                cycle->sync_state = SYNCHRONIZE_ERROR;
+                printf("rxSlot %d is mine %d  %s" NL, rxSlot, cycle->slot, cycle_string(cycle));
+            } else {
+                rb_system.recv[rxSlot] = MIN(255, rb_system.recv[rxSlot] + 1);
+                cycle_sscnt_stop(cycle);
+                time_stop(rrxhdl, NULL);
+                printf("Cycle before            %s"NL, cycle_string(cycle));
+                if (cycle_set_slot(&cycle, rxSlot, SLAVE) ==EM_ERR) {
+                    printf("Can not set cycle role to slave"NL);
+                }
+                printf("subsslot cnt from detect to process %d"NL, cycle_sscnt_get(cycle));
+                printf("%s           %s SET ACT SLOT TO  %d" NL, idxa2str(&synca2str, rb_system.sync_state), cycle_string(cycle), rxSlot);
+            }
+        }
+        break;
+
+        case SYNCHRONIZE_DOING: {
+            cycle_sscnt_stop(&cycle);
+            time_stop(rrxhdl, NULL);
+            printf("SYNCHRONIZE_DOING       %s diff= %2d, rxSlot = %x"NL, cycle_string(cycle), diff, rxSlot);
+            if ((rxSlot == cycle->slot) && (!isAck)) {
+                cycle->sync_state = SYNCHRONIZE_ERROR;
+                printf("rxSlot %d is mine %d %s"NL, rxSlot, cycle->slot, cycle_string(cycle));
+            } else if (diff <= cycle_postss(cycle)) {
+                rb_system.recv[rxSlot] = MIN(254, rb_system.recv[rxSlot] + 1);
+                cycle->sync_state   = rb_check_sync();
+#if OPTION_VERBOSE == 1
+                printf("Receive slot (%d) matches %s  %s" NL, rxSlot, idxa2str(&synca2str, cycle->sync_state), cycle_string(&cycle));
+#endif
+
+            } else {
+#if OPTION_VERBOSE == 1
+                printf("Out of slot frame received (%d) matches %s  %s" NL, rxSlot, idxa2str(&synca2str, cycle->sync_state), cycle_string(&cycle));
+#endif
+                // rxSlot != cycle_act_slot(&cycle)
+                // rb_system.sync_state = SYNCHRONIZE_ERROR;
+                if (rxFrame->DataLen == FRAME_HEADER_SIZE) {
+                    AppliFrame_Print_Header(rxFrame, "Header                 ");
+                }
+            }
+        }
+        break;
+
+        case SYNCHRONIZE_LOCKED: {
+            cycle_sscnt_stop(cycle);
+            time_stop(rrxhdl, NULL);
+            int8_t diff = cycle_difference(cycle, rxSlot);
+            if ((rxSlot == cycle->slot) && (!isAck)) {
+                rb_system.sync_state = SYNCHRONIZE_ERROR;
+                printf("rxSlot %d is mine %d %s" NL, rxSlot, cycle->slot, cycle_string(cycle));
+                // Someone send in my slot
+            } else if (!(diff <= cycle_postss(cycle))){
+                printf("Slot missmatch rxSlot %X %s diff  = %d"NL, rxSlot, cycle_string(cycle), diff);
+                rb_system.recv[rxSlot] = MIN(255, rb_system.recv[rxSlot] + 1);
+            } else if (cycle_check_slot(rxSlot) >= 0) {
+                rb_system.recv[rxSlot] = MIN(255, rb_system.recv[rxSlot] + 1);
+            }
+
+        }
+
+        break;
+        default:
+#if OPTION_VERBOSE == 1
+            printf("Not covered state %s" NL, idxa2str(&synca2str, cycle->sync_state)); // do nothing
+#endif
+            ;
+    }
+    return rxSlot;
+}
+#endif
 int8_t cycle_check_slot(int8_t slot) {
     if (((slot > 0) && (slot <= CYCLE_SLOT_CNT)) && (slot % 2 == 1)) {
         return slot;
@@ -179,7 +275,7 @@ em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type){
     if (*cycle->sync_state == SYNCHRONIZE_LOCKED) return EM_OK;
     if (*cycle->sync_state < SYNCHRONIZE_READY) return res;
     if (cycle->role != NOT_SET) return res;
-    if ((ss_type < SLAVE) ||(ss_type>MASTER)) return res;
+    if ((ss_type < SLAVE) || (ss_type>MASTER)) return res;
     // clang-format on
     if ((*cycle->sync_state == SYNCHRONIZE_DOING) || (*cycle->sync_state == SYNCHRONIZE_READY)){
 #ifndef UNIT_TEST
@@ -208,6 +304,14 @@ em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type){
      }
 
      return res;
+}
+
+int8_t cycle_get_slot(cycle_t *cycle){
+    em_msg res = EM_ERR;
+    // clang-format off
+    if (!cycle) return res;
+    if (!cycle->init) return res;
+    return cycle->slot;
 }
 
 
