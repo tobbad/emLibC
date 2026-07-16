@@ -21,13 +21,14 @@ extern "C" {
 #include "math.h"
 #ifndef UNIT_TEST
 #include "hal_port.h"
-#else
-#include <stdio.h>
-#endif
+#ifdef UNIT_TEST
 #define STATIC
+#include <stdio.h>
+#else
+#define STATIC static
+#endif
 
 #define ELCNT(array) (array == 0) ? 0 : (sizeof((array)) / sizeof((array[0])))
-
 // #ifdef UNIT_TEST
 // #warning "Building emLibC with UNIT_TEST enabled"
 // #endif
