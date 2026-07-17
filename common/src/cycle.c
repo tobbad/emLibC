@@ -161,9 +161,11 @@ bool cycle_doSend(cycle_t *cycle){
     int8_t actSlot = CYCLE_ACT_SLOT(cycle);
     int8_t subSlot = CYCLE_ACT_SUB_SLOT(cycle);
     res  =(actSlot== cycle->slot-1) && ((CYCLE_SUB_SLOT_CNT- subSlot) < cycle->press);
+#if OPTION_VERBOSE == 1
     if (res){
         printf("Do send?                %s"NL, cycle_string(cycle));
     }
+#endif
     return res;
 };
 
@@ -285,18 +287,19 @@ em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type){
         cycle_reset(cycle);
         *cycle->sync_state = SYNCHRONIZE_DOING;
         if (ss_type==MASTER){
-            cycle_timer_add(cycle, 0);
-            cycle->subSlot = (slot * CYCLE_SUB_SLOT_CNT+CYCLE_MODULO+cycle_press(cycle))%CYCLE_MODULO;
+            //cycle_timer_add(cycle, 0);
+            cycle->subSlot = (slot * CYCLE_SUB_SLOT_CNT+CYCLE_MODULO-cycle_press(cycle))%CYCLE_MODULO;
             cycle->role = MASTER;
             res = EM_OK;
         } else{
-            cycle_timer_add(cycle, 0);
+            //cycle_timer_add(cycle, 0);
             cycle->subSlot = (slot * CYCLE_SUB_SLOT_CNT+CYCLE_MODULO+0)%CYCLE_MODULO;
             cycle->role = SLAVE;
             res = EM_OK;
         }
         cycle->actSlot = CYCLE_ACT_SLOT(cycle);
         cycle->sSlot   = CYCLE_ACT_SUB_SLOT(cycle);
+        cycle->cycle   = 0;
 #ifndef UNIT_TEST
          __set_PRIMASK(primask);     // restore (don't blindly __enable_irq())
 #endif
