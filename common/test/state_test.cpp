@@ -1,6 +1,7 @@
 /*
  * state_test.cpp
  */
+#include "cycle.h"
 #include "device.h"
 #include "state.h"
 #include "gtest/gtest.h"
@@ -38,7 +39,7 @@ TEST(StateInitTest, DefaultFieldsAfterInit) {
     EXPECT_EQ(s.dirty, false);
     EXPECT_EQ(s.clabel.cmd, 0u);
     EXPECT_EQ(state_check(&s), EM_OK);
-    state_print(&s, "State", true, &c);
+    state_print(&s, "State", true, cycle_string(&c));
     for (int8_t i = 0; i < MAX_STATE_CNT; i++) {
         key_state_e state = state_get_key_by_idx(&s, i);
         EXPECT_EQ(state, OFF) << "index " << (int)i;
