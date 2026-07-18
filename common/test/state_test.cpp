@@ -2,18 +2,18 @@
  * state_test.cpp
  */
 #include "cycle.h"
-#include "device.h"
 #include "state.h"
 #include "gtest/gtest.h"
 #include <cstdio>
 #include <stdint.h>
-#include <string.h>
 
 // ---------------------------------------------------------------------------
 // Hilfsfunktion: prüft ob ein key_state_e-Rückgabewert ein Fehler ist.
 // state_get_key_by_lbl/idx liefern STATE_CNT als Fehlersentinel.
 // ---------------------------------------------------------------------------
-static inline bool is_key_err(int v) { return (v < 0 || (key_state_e)v >= STATE_CNT); }
+namespace {
+bool is_key_err(int v) { return (v < 0 || (key_state_e)v >= STATE_CNT); }
+} // namespace
 
 // ---------------------------------------------------------------------------
 // Fixture: frisch initialisierter state

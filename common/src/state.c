@@ -47,7 +47,7 @@ em_msg state_check(const state_t *state) {
     // clang-format on
     res = EM_OK;
     return res;
- }
+}
 
 em_msg state_reset(state_t *state) {
     em_msg res = EM_ERR;
@@ -144,7 +144,7 @@ em_msg state_set_key_by_lbl(state_t *state, char lbl, key_state_e new_state) {
 
 key_state_e state_get_key_by_lbl(const state_t *state, char ch) {
     // clang-format off
-   em_msg res = STATE_CNT;
+   key_state_e res = STATE_CNT;
     if (state_check(state))  return res;
     int8_t idx = state_ch2idx(state, ch);
     if (idx < 0) return res;
@@ -182,7 +182,7 @@ em_msg state_propagate_by_lbl(state_t *state, char ch) {
     // clang-format off
     em_msg res = EM_ERR;
     if (state_check(state))return res;
-    uint8_t idx = state_ch2idx(state, ch);
+    int8_t idx = state_ch2idx(state, ch);
     if (idx == EM_ERR) return res;
     // clang-format on
     return (state_propagate(state, idx));
@@ -346,17 +346,17 @@ em_msg state_print(const state_t *state, const char *title, bool doLong, char *c
     em_msg res = EM_ERR;
     if (state_check(state)) return res;
     // clang-format on
-    if ((title != NULL)&&(doLong)) {
+    if ((title != NULL) && (doLong)) {
         printf("%s" NL, title);
     }
     if (doLong) {
         printf("first      = %d" NL, state->first);
         printf("cnt        = %d" NL, state->cnt);
-        printf("clabel     = 0x%04lx" NL, state->clabel.cmd);
+        printf("clabel     = 0x%04x" NL, state->clabel.cmd);
     }
-    if (doLong){
+    if (doLong) {
         printf("label      = ");
-    }else {
+    } else {
         printf("label = ");
     }
     for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
@@ -368,17 +368,17 @@ em_msg state_print(const state_t *state, const char *title, bool doLong, char *c
         }
     }
     printf(NL);
-    if (doLong){
-         printf("State      = ");
-     }else {
-         printf("State = ");
-     }
+    if (doLong) {
+        printf("State      = ");
+    } else {
+        printf("State = ");
+    }
     for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {
         printf("%s ", idxa2str(&state2str, state->state[i]));
     }
     printf(NL);
 
-    if (state->dirty && 0x01){
+    if (state->dirty && 0x01) {
         printf("Dirty                   %s" NL, cycle_string);
     } else {
         printf("Not Dirty               %s" NL, cycle_string);
