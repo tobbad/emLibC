@@ -41,9 +41,11 @@ em_msg state_init(state_t *state) {
 em_msg state_check(const state_t *state) {
     em_msg res = EM_ERR;
     // clang-format off
+    EM_RETURN_IF_NULL(state, res);
     if (state->first > MAX_STATE_CNT) return res;
     if (state->cnt > MAX_STATE_CNT) return res;
     if (state->first > state->cnt)  return res;
+    if (state->first + state->cnt > MAX_STATE_CNT) return res;
     // clang-format on
     res = EM_OK;
     return res;
@@ -90,7 +92,7 @@ em_msg state_set_state(const state_t *from, state_t *to) {
     if (state_check(to)) return res;
     if (state_check(from)) return res;
     // clang-format on
-    for (uint8_t oi = from->first, ii = to->first; oi <= from->first + from->cnt; oi++, ii++) {
+    for (uint8_t oi = from->first, ii = to->first; oi < from->first + from->cnt; oi++, ii++) {
         key_state_e fstate = state_get(from, oi);
         state_set(to, ii, fstate);
     }
@@ -134,8 +136,8 @@ em_msg state_set_key_by_lbl(state_t *state, char lbl, key_state_e new_state) {
     // clang-format off
     em_msg res = EM_ERR;
     if (state_check(state)) return res;
-    uint8_t nr = state_ch2idx(state, lbl);
-    printf("Map %c -> %d" NL, lbl, nr);
+    int8_t nr = state_ch2idx(state, lbl);
+    EM_GUARD_LOG("state_set_key_by_lbl");
     if (nr < 0) return res;
     // clang-format on
     res = state_set(state, nr, new_state);
@@ -167,7 +169,8 @@ em_msg state_propagate(state_t *state, uint8_t idx) {
     // clang-format off
     em_msg res = EM_ERR;
     if (state_check(state)) return res;
-    if (((idx < state->first) && (idx < state->first + state->cnt))) return res;
+    /* idx muss innerhalb [first, first+cnt) liegen -- sonst OOB auf state[idx]. */
+    if ((idx < state->first) || (idx >= state->first + state->cnt)) return res;
     // clang-format on
 #if OPTION_VERBOSE == 1
     printf("Propagate state %d" NL, idx);
@@ -264,6 +267,7 @@ em_msg state_add(state_t *ref, state_t *add) {
     em_msg res = EM_ERR;
     if (state_check(ref)) return res;
     if (state_check(add)) return res;
+    if (ref->cnt != add->cnt) return res; /* paralleler Zugriff add->state[a] */
     // clang-format on
     ref->dirty = false;
     add->clabel.cmd = ref->clabel.cmd;
@@ -283,6 +287,7 @@ em_msg state_is_same(state_t *last, state_t *this) {
     em_msg res = EM_ERR;
     if (state_check(last)) return res;
     if (state_check(this)) return res;
+    if (last->cnt != this->cnt) return res; /* paralleler Zugriff this->state[i2] */
     // clang-format on
     res = true;
     for (uint8_t i1 = last->first, i2 = this->first; i1 < last->first + last->cnt; i1++, i2++) {
@@ -302,6 +307,7 @@ em_msg state_diff(state_t *ref, state_t *state, state_t *diff) {
     if (state_check(ref)) return res;
     if (state_check(state)) return res;
     if (state_check(diff)) return res;
+    if ((ref->cnt != state->cnt) || (ref->cnt != diff->cnt)) return res;
     // clang-format on
     // printf("inState.cnt: %d, outState.cnt: %d"NL, instate->cnt,outstate->cnt);
     diff->dirty = false;
@@ -329,6 +335,7 @@ bool state_merge(state_t *inState, state_t *outState) {
     em_msg res = EM_ERR;
     if (state_check(inState)) return res;
     if (state_check(outState)) return res;
+    if (inState->cnt != outState->cnt) return res; /* paralleler Zugriff */
     // clang-format on
     outState->dirty = false;
     outState->clabel.cmd = inState->clabel.cmd;

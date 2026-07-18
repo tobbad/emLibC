@@ -136,7 +136,13 @@ int8_t cycle_act_sub_slot(cycle_t *cycle) {
     return CYCLE_ACT_SUB_SLOT(cycle);
 };
 
-char *cycle_role(cycle_t *cycle) { return idxa2str(&cyclea2str, cycle->role); }
+char *cycle_role(cycle_t *cycle) {
+    // clang-format off
+    if (!cycle) return "NA ";
+    if (!cycle->init) return "NA ";
+    // clang-format on
+    return idxa2str(&cyclea2str, cycle->role);
+}
 
 uint16_t cycle_cycle(cycle_t *cycle) {
     uint16_t res = EM_ERR;

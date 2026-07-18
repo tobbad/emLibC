@@ -82,6 +82,8 @@ static void serial_apply_change(clabel_u *lbl);
 em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     if (isio.init)
         return EM_ERR;
+    if (dev == NULL)
+        return EM_ERR;
     sio_t *init = dev;
     memset(&isio, 0, sizeof(isio_t));
     isio.uart = init->uart;
@@ -274,6 +276,8 @@ static em_msg serial_io_open(dev_handle_t devh, void *dev) {
 static em_msg serial_read(dev_handle_t hdl, uint8_t *buffer, int16_t *cnt) {
     if (!isio.init)
         return EM_ERR;
+    if ((buffer == NULL) || (cnt == NULL))
+        return EM_ERR;
     if (*cnt < 0)
         return EM_ERR;
     em_msg res = EM_OK;
@@ -326,6 +330,8 @@ static void serial_set_state(dev_handle_t dev, const state_t *state) { state_set
 
 static void serial_get_state(dev_handle_t dev, state_t *ret) {
     if (!isio.init)
+        return;
+    if (ret == NULL)
         return;
     isio.state.first = ret->first;
     isio.state.cnt = ret->cnt;
@@ -411,7 +417,7 @@ int8_t serial_waitForNumber(char **key) {
         lbl.str[i] = 0;
         new = NULL;
     }
-    if (strlen(str) == 0)
+    if ((str == NULL) || (strlen(str) == 0))
         return -1;
     uint8_t ctype = clable2type(&lbl);
     if (ctype == hexnum) {
@@ -464,6 +470,9 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *UartHandle) {
     /* Set transmission flag: transfer complete */
+    if (isio.cbuffer == NULL) {
+        return;
+    }
     isio.cbuffer->state = BUFFER_READY;
     // buffer_pool_return(isio.pool, isio.cbuffer);
     isio.cbuffer = NULL;

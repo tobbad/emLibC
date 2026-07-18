@@ -25,8 +25,12 @@ static i2c_t my_dev[I2C_HANDLLE_CNT + 1];
 
 i2c_handle li2c_init(I2C_HandleTypeDef *i2c_dev, uint8_t i2cAdr) {
     i2c_handle handle = 1;
-    while (my_dev[handle].i2c != NULL) {
+    /* my_dev[] fasst I2C_HANDLLE_CNT+1 Einträge -- nicht darüber hinaus laufen. */
+    while ((handle <= I2C_HANDLLE_CNT) && (my_dev[handle].i2c != NULL)) {
         handle++;
+    }
+    if (handle > I2C_HANDLLE_CNT) {
+        return 0; /* kein freier Slot */
     }
     my_dev[handle].i2c = i2c_dev;
     my_dev[handle].adr = i2cAdr;
@@ -34,7 +38,8 @@ i2c_handle li2c_init(I2C_HandleTypeDef *i2c_dev, uint8_t i2cAdr) {
 }
 
 em_msg i2c_write(i2c_handle i2c_h, uint8_t cnt, uint8_t *txbuffer) {
-    if ((i2c_h > 0) && (my_dev[i2c_h].i2c != NULL) && (cnt < MAX_TRANSFER_SIZE)) {
+    if ((i2c_h > 0) && (i2c_h <= I2C_HANDLLE_CNT) && (txbuffer != NULL) &&
+        (my_dev[i2c_h].i2c != NULL) && (cnt < MAX_TRANSFER_SIZE)) {
         uint8_t buffer[MAX_TRANSFER_SIZE];
         uint16_t adr = my_dev[i2c_h].adr | 0x01;
         HAL_I2C_Master_Transmit(my_dev[i2c_h].i2c, adr, txbuffer, cnt, 100);
@@ -47,7 +52,9 @@ em_msg i2c_write(i2c_handle i2c_h, uint8_t cnt, uint8_t *txbuffer) {
 }
 
 em_msg i2c_read(i2c_handle i2c_h, uint8_t cnt, uint8_t *rxbuffer) {
-    if ((i2c_h > 0) && (my_dev[i2c_h].i2c = NULL) && (cnt < MAX_TRANSFER_SIZE)) {
+    /* '==' statt '=' -- die Zuweisung nullte den Device-Pointer als Seiteneffekt. */
+    if ((i2c_h > 0) && (i2c_h <= I2C_HANDLLE_CNT) && (my_dev[i2c_h].i2c != NULL) &&
+        (cnt < MAX_TRANSFER_SIZE)) {
         uint16_t adr = my_dev[i2c_h].adr & 0xFE;
         UNUSED(adr);
     } else {

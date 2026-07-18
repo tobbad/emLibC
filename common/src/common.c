@@ -46,9 +46,13 @@ size_t board_get_unique_id(uint8_t *id, size_t max_len) {
     // STM32L476 UID Register: drei 32-bit Worte = 12 Bytes
     // RM0351 Rev.9, Section 49.1: "Unique device ID register (96 bits)"
     const uint8_t *uid = (const uint8_t *)UID_BASE; // UID_BASE = 0x1FFF7590 (definiert in stm32l476xx.h)
-    memcpy(id, uid, 12);
+    if (id == NULL) {
+        return 0;
+    }
+    size_t n = MIN((size_t)12U, max_len); // nie über den Zielpuffer hinaus kopieren
+    memcpy(id, uid, n);
     // Falls der Puffer größer als 12 Bytes ist: Rest mit 0 auffüllen
-    for (uint32_t i = 12U; i < max_len; i++) {
+    for (size_t i = n; i < max_len; i++) {
         id[i] = 0x00U;
     }
     return max_len;
@@ -58,8 +62,11 @@ size_t board_get_unique_id(uint8_t *id, size_t max_len) {
 size_t board_get_unique_id(uint8_t *id, size_t max_len) {
     // STM32L476 UID Register: drei 32-bit Worte = 12 Bytes
     // RM0351 Rev.9, Section 49.1: "Unique device ID register (96 bits)"
+    if (id == NULL) {
+        return 0;
+    }
     memset(id, 0, max_len);
-return max_len;
+    return max_len;
 }
 #endif
 
@@ -85,8 +92,15 @@ uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer, uint16_t buffer_s
     uint16_t abuf_idx = 0;
     uint16_t ava_size = out_size;
     int wr_size;
+    if ((out == NULL) || (buffer == NULL) || (out_size == 0)) {
+        return 0;
+    }
     for (uint32_t addr = 0; addr < buffer_size; addr += addr_inc) {
         wr_size = snprintf(&out[out_idx], ava_size, "0x%04X ", (unsigned int)addr);
+        if (wr_size < 0) {
+            wr_size = 0;
+        }
+        wr_size = MIN(wr_size, ava_size); /* Trunkierung: sonst ava_size-Underflow */
         out_idx += wr_size;
         ava_size -= wr_size;
         /*
@@ -194,6 +208,9 @@ char int2hchar(uint8_t nr) {
 
 type_e clable2type(clabel_u *lbl) {
     type_e res = nonasci;
+    if (lbl == NULL) {
+        return res;
+    }
     lbl->str[CMD_LEN - 1] = 0;
     uint8_t len = strlen(lbl->str);
 
@@ -223,7 +240,7 @@ type_e clable2type(clabel_u *lbl) {
 }
 
 int8_t hchar2int(char ch){
-    for (int8_t i=0;i<ASCIHEX_LEN+1;i++){
+    for (int8_t i=0;i<ASCIHEX_LEN;i++){ /* ascihex[] hat ASCIHEX_LEN Einträge */
         if (ascihex[i]==ch){
             return i;
         }
@@ -239,6 +256,9 @@ int16_t uint_pow(unsigned base, unsigned exp){
 }
 
 int8_t clabel2uint(clabel_u *lbl){
+    if (lbl == NULL) {
+        return -1;
+    }
     lbl->str[CMD_LEN - 1] = 0;
     uint8_t len = strlen(lbl->str);
     int8_t res = 0;
@@ -255,6 +275,9 @@ int8_t clabel2uint(clabel_u *lbl){
 
 // Not tested yet!!
 uint8_t modulo_sub(int8_t slot, int8_t oSlot, uint8_t modulo) {
+    if (modulo == 0) {
+        return 0; /* Division durch 0 vermeiden */
+    }
     if (slot > oSlot) {
         return (oSlot - slot);
     } else {
@@ -264,7 +287,8 @@ uint8_t modulo_sub(int8_t slot, int8_t oSlot, uint8_t modulo) {
 
 void print_buffer(const uint8_t *buffer, uint8_t size, const char *header) {
     if (!buffer) {
-        printf("Can not print NULL buffer");
+        printf("Can not print NULL buffer" NL);
+        return; /* sonst folgt unten ein NULL-Deref auf buffer[idx] */
     }
     if (header != NULL) {
         printf("%s size = %d", header, size);
@@ -301,6 +325,9 @@ void print_buffer(const uint8_t *buffer, uint8_t size, const char *header) {
     printf(NL);
 }
 char *idx2str(idx2str_t *map, uint8_t cnt, uint8_t idx) {
+    if (map == NULL) {
+        return "NA ";
+    }
     for (uint8_t i = 0; i < cnt; i++) {
         if (map[i].idx == idx) {
             char *ret = map[i].str;
@@ -310,7 +337,12 @@ char *idx2str(idx2str_t *map, uint8_t cnt, uint8_t idx) {
     return "NA ";
 }
 
-char *idxa2str(idxa2str_t *map, uint8_t idx) { return idx2str(map->entry, map->cnt, idx); }
+char *idxa2str(idxa2str_t *map, uint8_t idx) {
+    if ((map == NULL) || (map->entry == NULL)) {
+        return "NA ";
+    }
+    return idx2str(map->entry, map->cnt, idx);
+}
 
 uint32_t swap(uint32_t val) {
     uint32_t out = 0;

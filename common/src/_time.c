@@ -53,13 +53,13 @@ typedef struct timem_s {
 timem_t _time;
 
 em_msg time_check_hdl(time_handle_t hdl) {
-    em_msg res = EM_ERR;
-    uint8_t bitCnt = int8bit_cnt(hdl);
-    // clang-format off
-    if ((hdl >= 0) && (hdl < TIME_DEV_CNT)) return EM_OK;
-    if (bitCnt == 1) return EM_OK;
-    // clang-format on
-    return res;
+    /* hdl indiziert _time.time[] (Größe TIME_DEV_CNT) -- strikt begrenzen.
+     * (Frühere bitCnt==1-Klausel ließ Einzelbit-Handles >= TIME_DEV_CNT durch
+     *  -> OOB auf _time.time[hdl].) */
+    if ((hdl >= 0) && (hdl < TIME_DEV_CNT)) {
+        return EM_OK;
+    }
+    return EM_ERR;
 }
 
 void time_init() {
@@ -80,9 +80,11 @@ void time_init() {
 time_handle_t time_new(char *name) {
     // clang-format off
     if (!_time.init) return -1;
+    if (!name) return -1;
     // clang-format on
     uint8_t len = strlen((char *)name);
-    len = MIN(len, TIME_MEAS_CHAR_PER_LINE);
+    /* name-Feld ist LINE_CHAR gross -- nicht darüber hinaus kopieren. */
+    len = MIN(len, (uint8_t)(LINE_CHAR - 1));
     for (uint8_t hdl = 0; hdl < TIME_DEV_CNT; hdl++) {
         if ((_time.used & (1 << hdl)) == 0) {
             _time.used |= (1 << hdl);
@@ -162,7 +164,7 @@ void time_start(time_handle_t hdl, uint8_t count, uint8_t *ptr, cycle_t *cycle) 
     if (time_check_hdl(hdl) == EM_ERR) return;
     if (!_time.init) return;
     // clang-format on
-    uint8_t len = strlen((char *)ptr);
+    uint8_t len = (ptr != NULL) ? strlen((char *)ptr) : 0;
     len = MIN(len, TIME_MEAS_CHAR_PER_LINE);
     int64_t now_ns = NOW;
     if (_time.time[hdl].first_ns < 0) {
@@ -178,11 +180,14 @@ void time_start(time_handle_t hdl, uint8_t count, uint8_t *ptr, cycle_t *cycle) 
             count = strlen(str);
             len = MIN(count, TIME_MEAS_CHAR_PER_LINE);
             memcpy((void *)_time.time[hdl].measurement[_time.time[hdl].idx].line, str, len);
-        } else {
+        } else if (ptr != NULL) {
             len = MIN(count, TIME_MEAS_CHAR_PER_LINE);
             memcpy((uint8_t *)_time.time[hdl].measurement[_time.time[hdl].idx].line, ptr, len);
+        } else {
+            len = 0;
         }
-        _time.time[hdl].measurement[_time.time[hdl].idx].line[len + 1] = 0;
+        /* line[] hat TIME_MEAS_CHAR_PER_LINE+1 Bytes -> Terminator an [len]. */
+        _time.time[hdl].measurement[_time.time[hdl].idx].line[len] = 0;
         _time.time[hdl].measurement[_time.time[hdl].idx].start_ns = now_ns;
         _time.time[hdl].max_cnt += count;
     }
@@ -213,7 +218,7 @@ void time_stop(time_handle_t hdl, uint8_t *ptr) {
             uint8_t len = strlen((char *)ptr);
             len = MIN(len, TIME_MEAS_CHAR_PER_LINE);
             memcpy((uint8_t *)_time.time[hdl].measurement[_time.time[hdl].idx].line, ptr, len);
-            _time.time[hdl].measurement[_time.time[hdl].idx].line[len + 1] = 0;
+            _time.time[hdl].measurement[_time.time[hdl].idx].line[len] = 0;
         }
         int64_t now_ns = NOW;
         _time.time[hdl].measurement[_time.time[hdl].idx].stop_tx_ns = now_ns;

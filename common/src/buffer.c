@@ -10,37 +10,24 @@
 char *state2Str[BUFFER_CNT] = {(char *)&"BUFFER_READY", (char *)&"BUFFER_USED"};
 char *type2Str[BUFFER_CNT] = {(char *)&"LINEAR", (char *)&"RING"};
 
-#if OPTION_VERBOSE == 1
-em_msg buffer_check(const buffer_t *buffer, bool reduced) {
-    // clang-format off
-    int16_t res = EM_ERR;
-    if (!reduced){
-        if (!buffer || !buffer->mem) return res;
-    }
-    if (buffer->size==0) return res;
-    // clang-format on
-    return EM_OK;
-}
-#else
 em_msg buffer_check(const buffer_t *buffer, bool reduced) {
     int16_t res = EM_ERR;
     if (!buffer) {
-        printf("buffer is NULL" NL);
+        EM_GUARD_LOG("buffer is NULL");
         return res;
     }
     if (buffer->size == 0) {
-        printf("buffer->size is 0" NL);
+        EM_GUARD_LOG("buffer->size is 0");
         return res;
     }
     if (!reduced) {
         if (!buffer->mem) {
-            printf("buffer->mem is NULL" NL);
+            EM_GUARD_LOG("buffer->mem is NULL");
             return res;
         }
     }
     return EM_OK;
 }
-#endif
 
 buffer_t *buffer_new(uint16_t size, b_type_e type) {
     buffer_t *buffer = NULL;
@@ -134,11 +121,21 @@ int16_t buffer_transfer(buffer_t *from, buffer_t *to) {
             to->first = 0;
             to->used = n;
             to->state = BUFFER_USED;
-        } else {                  /* RING -> RING */
-            uint8_t scratch[len]; /* lokal statt globalem size/buffer (Bug 1) */
-            int16_t n = len;
-            buffer_get(from, scratch, &n);
-            buffer_set(to, scratch, n);
+        } else { /* RING -> RING */
+            /* Kein VLA (scratch[len] wäre bei großem 'used' ein Stack-Overflow):
+             * in Blöcken fester Größe umkopieren. Kapazität ist oben geprüft. */
+            uint8_t scratch[64];
+            int16_t remaining = len;
+            while (remaining > 0) {
+                int16_t n = MIN((int16_t)sizeof(scratch), remaining);
+                if (buffer_get(from, scratch, &n) != EM_OK || n <= 0) {
+                    break;
+                }
+                if (buffer_set(to, scratch, n) != EM_OK) {
+                    break;
+                }
+                remaining -= n;
+            }
         }
     }
 
@@ -176,9 +173,15 @@ em_msg buffer_clear(buffer_t *buffer) {
     return res;
 };
 
-int16_t buffer_used(const buffer_t *buffer) { return buffer->used; }
+int16_t buffer_used(const buffer_t *buffer) {
+    EM_RETURN_IF_NULL(buffer, 0);
+    return buffer->used;
+}
 
-int16_t buffer_writeable(const buffer_t *buffer) { return buffer->size - buffer->used; }
+int16_t buffer_writeable(const buffer_t *buffer) {
+    EM_RETURN_IF_NULL(buffer, 0);
+    return buffer->size - buffer->used;
+}
 
 em_msg buffer_tolower(buffer_t *buffer) {
     em_msg res = EM_ERR;
@@ -198,6 +201,8 @@ em_msg buffer_set(buffer_t *buffer, const uint8_t *data, int16_t size) {
     em_msg res = buffer_check(buffer, false);
     if (res == EM_ERR)
         return res;
+
+    EM_RETURN_IF_NULL(data, EM_ERR);
 
     if (size <= 0)
         return EM_ERR;
@@ -236,6 +241,9 @@ em_msg buffer_get(buffer_t *buffer, uint8_t *data, int16_t *size) {
     em_msg res = buffer_check(buffer, false);
     if (res == EM_ERR)
         return res;
+
+    EM_RETURN_IF_NULL(data, EM_ERR);
+    EM_RETURN_IF_NULL(size, EM_ERR);
 
     if (*size <= 0)
         return EM_ERR;
@@ -310,6 +318,7 @@ buffer_t *buffer_get_till_end(buffer_t *buffer) {
 }
 
 bool buffer_is_used(buffer_t *buffer) {
+    EM_RETURN_IF_NULL(buffer, false);
     return buffer->state == BUFFER_USED;
 }
 
@@ -327,7 +336,9 @@ void buffer_print(const buffer_t *buffer, char *title) {
     printf("buffer used         = %d" NL, buffer_used(buffer));
     printf("buffer writable     = %d" NL, buffer_writeable(buffer));
     printf("buffei id           = %d" NL, buffer->id);
-    printf("Buffer state is     = %s" NL, state2Str[buffer->state]);
-    printf("Buffer type is      = %s" NL, type2Str[buffer->type]);
+    printf("Buffer state is     = %s" NL,
+           (buffer->state < BUFFER_CNT) ? state2Str[buffer->state] : "?");
+    printf("Buffer type is      = %s" NL,
+           (buffer->type <= RING) ? type2Str[buffer->type] : "?");
     print_buffer(buffer->mem, buffer->size, "Full content");
 }

@@ -78,7 +78,9 @@ em_msg buffer_pool_return(buffer_pool_t *bp, buffer_t *buffer) {
         printf("buffer is  NULL" NL);
         return res;
     }
-    if (buffer->id > bp->buffer_cnt - 1) {
+    /* >= statt "> cnt-1": bei buffer_cnt==0 würde cnt-1 (uint8_t) zu 255
+     * unterlaufen und der OOB-Zugriff bp->buffer[buffer->id] wäre erlaubt. */
+    if (buffer->id >= bp->buffer_cnt) {
         printf("buffer is  larger allowed" NL);
         return EM_ERR;
     }

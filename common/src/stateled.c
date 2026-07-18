@@ -112,17 +112,25 @@ em_msg stateled_toggle_port() {
 void stateled_iterate() {
     // clang-format off
     if (!my_stateled.init) return;
+    if ((my_stateled.port == NULL) || (my_stateled.port->cnt == 0)) return;
     // clang-format on
     static uint8_t idx = 0;
     uint8_t last = idx;
-    idx = (idx + 1) % MAX_BUTTON_CNT;
+    /* modulo port->cnt (nicht MAX_BUTTON_CNT) -- sonst idx > pin[]-Grenze. */
+    idx = (idx + 1) % my_stateled.port->cnt;
     stateled_off(last);
     stateled_toggle_pin(idx);
 };
 
+/* led_nr indiziert das feste Feld gpio_port_t.pin[] -- gegen cnt absichern. */
+static bool stateled_pin_valid(uint8_t led_nr) {
+    return (my_stateled.port != NULL) && (led_nr < my_stateled.port->cnt);
+}
+
 em_msg stateled_on(uint8_t led_nr) {
     // clang-format off
     if (!my_stateled.init) return EM_ERR;
+    if (!stateled_pin_valid(led_nr)) return EM_ERR;
     // clang-format on
     return GpioPinWrite(&my_stateled.port->pin[led_nr], true);
 };
@@ -130,6 +138,7 @@ em_msg stateled_on(uint8_t led_nr) {
 em_msg stateled_off(uint8_t led_nr) {
     // clang-format off
     if (!my_stateled.init) return EM_ERR;
+    if (!stateled_pin_valid(led_nr)) return EM_ERR;
     // clang-format on
     return GpioPinWrite(&my_stateled.port->pin[led_nr], false);
 };
@@ -137,6 +146,7 @@ em_msg stateled_off(uint8_t led_nr) {
 em_msg stateled_toggle_pin(stateled_e led_nr) {
     // clang-format off
     if (!my_stateled.init) return EM_ERR;
+    if (!stateled_pin_valid((uint8_t)led_nr)) return EM_ERR;
     // clang-format on
     return GpioPinToggle(&my_stateled.port->pin[led_nr]);
 };
@@ -170,6 +180,9 @@ void stateled_show(system_state_e state) {
         } else {
             for (uint8_t i = 0; i < my_stateled.port->cnt; i++) {
                 int8_t stateNr = i + my_stateled.lstate.first;
+                if ((stateNr < 0) || (stateNr >= MAX_STATE_CNT)) {
+                    continue; /* sonst OOB auf lstate.state[stateNr] */
+                }
                 key_state_e tState = my_stateled.lstate.state[stateNr];
                 if (tState == ON) {
                     stateled_on(i);
