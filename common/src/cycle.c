@@ -7,6 +7,7 @@
 
 #include "cycle.h"
 #include "assert.h"
+#include "common.h"
 #ifndef UNIT_TEST
 #include "options.h"
 #include "stateled.h"
