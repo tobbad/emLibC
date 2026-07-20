@@ -100,10 +100,19 @@ em_msg   cycle_timer_add(cycle_t *cycle, int8_t add){
     preset = cycle->timer->Instance->ARR;
     // Reset the counter directly: no update event is generated, so no UIF is
     // raised and there is no spurious cycle_increment to guard against.
+    uint32_t cTime = cycle->timer->Instance->CNT;
     if (add >= 0){
-        cycle->timer->Instance->CNT = add;
+        if (cTime+add< preset){
+            cycle->timer->Instance->CNT = (add +cycle->timer->Instance->CNT)% preset;
+        } else{
+            cycle->timer->Instance->CNT = preset-1;
+        }
     } else {
-        cycle->timer->Instance->CNT = preset-add;
+        if (cTime<add){
+            cycle->timer->Instance->CNT = 0;
+        } else{
+            cycle->timer->Instance->CNT = (add +cycle->timer->Instance->CNT)% preset;
+        }
     }
 #endif
     return EM_OK;
@@ -292,8 +301,8 @@ em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type){
             cycle->role = MASTER;
             res = EM_OK;
         } else{
-            //cycle_timer_add(cycle, 0);
-            cycle->subSlot = (slot * CYCLE_SUB_SLOT_CNT+CYCLE_MODULO+0)%CYCLE_MODULO;
+            cycle_timer_add(cycle, 0);
+            cycle->subSlot = (slot * CYCLE_SUB_SLOT_CNT+CYCLE_MODULO-cycle_postss(cycle))%CYCLE_MODULO;
             cycle->role = SLAVE;
             res = EM_OK;
         }

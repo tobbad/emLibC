@@ -10,7 +10,7 @@ extern "C" {
 #if OPTION_SHOW_TIMING == 1
 #define REGUALR_STATELD  0 // Otherwise inverse flag to support 1 Active logic on pins
 #else
-#define REGUALR_STATELD  1 // Otherwise inverse flag to support 1 Active logic on pins
+#define REGUALR_STATELD  1 // Regular leds
 #endif
 
 #define EMLIB_VERBOSE   0 // Otherwise inverse flag to support 1 Active logic on pins
