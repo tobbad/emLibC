@@ -27,6 +27,9 @@ bool data_in = false;
 static void terminal_reset(dev_handle_t dev);
 
 static em_msg terminal_init(dev_handle_t handle, dev_type_e dev_type, void *serial) {
+    if (serial == NULL) {
+        return EM_ERR;
+    }
     terminal_reset(handle);
     _serial = *(sio_t *)serial;
     my_term.clabel.cmd = ZERO4;

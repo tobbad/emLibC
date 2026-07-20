@@ -57,6 +57,34 @@ typedef enum {
     EM_TRUE,
 } em_msg;
 
+/*
+ * Hardening guards. Every public entry point validates its inputs and returns
+ * a safe value instead of crashing on NULL / out-of-range arguments. The guards
+ * are silent by default; a diagnostic is emitted only when OPTION_VERBOSE == 1
+ * (see Core/Inc/options.h) so the firmware/ISR build stays free of printf cost.
+ */
+#ifndef OPTION_VERBOSE
+#define OPTION_VERBOSE 0
+#endif
+
+#if OPTION_VERBOSE == 1
+#define EM_GUARD_LOG(msg) printf("%s: %s" NL, __func__, (msg))
+#else
+#define EM_GUARD_LOG(msg) ((void)0)
+#endif
+
+/* Return `ret` (logging `#cond`) when `cond` holds -- the invalid-input case. */
+#define EM_RETURN_IF(cond, ret)                                                \
+    do {                                                                       \
+        if (cond) {                                                            \
+            EM_GUARD_LOG(#cond);                                               \
+            return (ret);                                                      \
+        }                                                                      \
+    } while (0)
+
+/* Common specialisation: bail out when a required pointer is NULL. */
+#define EM_RETURN_IF_NULL(ptr, ret) EM_RETURN_IF((ptr) == NULL, ret)
+
 typedef enum {
     SYNC_RESET,          // 0
     BOOT_UP,             // 1

@@ -128,11 +128,11 @@ TEST_F(CycleTest, SetSlotMasterPosition) {
     sync_state = SYNCHRONIZE_DOING; // DOING must also permit claiming
     ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, &sync_state, NULL), EM_OK);
 
-    // MASTER is offset by press against the slot start. NOTE: the code adds
-    // press (subSlot 27 for slot 3), so master sits *inside* its own slot --
-    // the old expectation here was slot*CNT - PRESS (21, i.e. press sub-slots
-    // *early*), which is what cycle_doSend's lead time implies. Sign unresolved.
-    const int16_t master_sub = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO + PRESS) % CYCLE_MODULO;
+    // MASTER leads the slot start by `press` sub-slots so its frame lands at the
+    // slot boundary: cycle_set_slot positions subSlot at slot*CNT - PRESS. This
+    // matches cycle_doSend's lead-time window (and the SLAVE case, which sits
+    // exactly at slot*CNT with no offset).
+    const int16_t master_sub = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - PRESS) % CYCLE_MODULO;
     ASSERT_EQ(cycle_set_slot(&c, slot, MASTER), EM_OK);
     EXPECT_EQ(sync_state, SYNCHRONIZE_DOING);
     EXPECT_EQ(c.subSlot, master_sub);

@@ -21,6 +21,11 @@ xpad_dev_t *mpy_xpad[DEVICE_CNT];
 
 static mkey_t reset_key = {.last = 1, .current = 1, .unstable = 0, .cnt = 0, .stable = true};
 
+/* devh indiziert my_xpad[]/mpy_xpad[] -- vor jedem Zugriff prüfen. */
+static bool xpad_devh_valid(dev_handle_t devh) {
+    return (devh >= 0) && (devh < DEVICE_CNT);
+}
+
 static xpad_dev_t default_xscan_dev = {
     .spalte =
         {
@@ -107,6 +112,8 @@ static void xpad_set_state(dev_handle_t devh, const state_t *state);
 static em_msg xpad_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     if (dev_type == DEV_TYPE_NA)
         return EM_ERR;
+    if (!xpad_devh_valid(devh))
+        return EM_ERR;
     const xpad_dev_t *device = (xpad_dev_t *)dev;
     my_xpad[devh].dev_type = dev_type;
     mpy_xpad[devh] = &my_xpad[devh];
@@ -180,7 +187,7 @@ static int8_t label2int8(char label) {
 }
 
 static void xpad_set_spalten_pin(dev_handle_t devh, uint8_t spalten_nr) {
-    if (mpy_xpad[devh] == NULL) {
+    if (!xpad_devh_valid(devh) || (mpy_xpad[devh] == NULL)) {
         printf("No valid handle on xpad_set_spalte" NL);
         return;
     }
@@ -191,7 +198,7 @@ static void xpad_set_spalten_pin(dev_handle_t devh, uint8_t spalten_nr) {
 }
 
 static void xpad_reset_spalten_pin(dev_handle_t devh, uint8_t spalten_nr) {
-    if (mpy_xpad[devh] == NULL) {
+    if (!xpad_devh_valid(devh) || (mpy_xpad[devh] == NULL)) {
         printf("No valid handle on xpad_set_spalte" NL);
         return;
     }
@@ -208,6 +215,9 @@ static void xpad_reset_key(mkey_t *key, uint8_t cnt) {
 }
 
 static uint16_t xpad_update_key(uint8_t devh, uint8_t index, bool pinVal) {
+    if (!xpad_devh_valid(devh) || (index >= MAX_BUTTON_CNT)) {
+        return 0; /* key[index]/state.label[index] sind auf MAX_BUTTON_CNT begrenzt */
+    }
     my_xpad[devh].key[index].current = pinVal;
     /*
     //	if (pinVal) {
@@ -278,7 +288,7 @@ uint16_t key2value(uint16_t value) {
 static int16_t xpad_eight_scan(dev_handle_t devh) {
     uint16_t res = 0;
     int16_t index = 0;
-    if (mpy_xpad[devh] == NULL) {
+    if (!xpad_devh_valid(devh) || (mpy_xpad[devh] == NULL)) {
         printf("No valid handle on read_row" NL);
         return false;
     }
@@ -295,6 +305,9 @@ static int16_t xpad_eight_scan(dev_handle_t devh) {
     if (res == 0)
         return -1;
     index = key2value(res);
+    if ((index < 0) || (index >= MAX_STATE_CNT)) {
+        return -1; /* key2value liefert 0xffff, wenn nichts passt -> label[] OOB */
+    }
     char ch = my_xpad[devh].state.label[index];
     index = label2int8(ch);
 #if EMLIB_VERBOSE == 1
@@ -304,7 +317,7 @@ static int16_t xpad_eight_scan(dev_handle_t devh) {
 }
 
 static int16_t xpad_spalten_scan(dev_handle_t devh) {
-    if (mpy_xpad[devh] == NULL) {
+    if (!xpad_devh_valid(devh) || (mpy_xpad[devh] == NULL)) {
         printf("No valid handle on scan" NL);
         return false;
     }
@@ -321,12 +334,15 @@ static int16_t xpad_spalten_scan(dev_handle_t devh) {
         res = res | (ir << (4 * s));
         xpad_set_spalten_pin(devh, s);
     }
+    if ((res < 0) || (res >= MAX_STATE_CNT)) {
+        return -1; /* label[] hat nur MAX_STATE_CNT Einträge */
+    }
     uint8_t ch = my_xpad[devh].state.label[res];
     return ch;
 }
 
 static uint16_t xpad_read_zeile(dev_handle_t devh, uint8_t spalten_nr) {
-    if (mpy_xpad[devh] == NULL) {
+    if (!xpad_devh_valid(devh) || (mpy_xpad[devh] == NULL)) {
         printf("No valid handle on read_zeile" NL);
         return 0;
     }
@@ -341,14 +357,20 @@ static uint16_t xpad_read_zeile(dev_handle_t devh, uint8_t spalten_nr) {
 }
 
 static void xpad_state(dev_handle_t devh, state_t *oState) {
-    if (mpy_xpad[devh] == NULL) {
+    if (!xpad_devh_valid(devh) || (mpy_xpad[devh] == NULL)) {
         printf("No valid handle on state" NL);
+        return;
+    }
+    if (oState == NULL) {
         return;
     }
     uint8_t oIdx = oState->first;
     oState->clabel.cmd = my_xpad[devh].state.clabel.cmd;
     uint8_t iIdx = my_xpad[devh].state.first;
     for (uint8_t i = 0; i < oState->cnt; i++, iIdx++, oIdx++) {
+        if ((oIdx >= MAX_STATE_CNT) || (iIdx >= MAX_STATE_CNT)) {
+            break; /* OOB auf state[]/label[] verhindern */
+        }
         if (oState->state[oIdx] != my_xpad[devh].state.state[iIdx]) {
             oState->state[oIdx] = my_xpad[devh].state.state[iIdx];
             oState->dirty = true;
@@ -359,7 +381,7 @@ static void xpad_state(dev_handle_t devh, state_t *oState) {
 }
 
 static em_msg xpad_diff(dev_handle_t devh, state_t *ref, state_t *diff) {
-    if (mpy_xpad[devh] == NULL) {
+    if (!xpad_devh_valid(devh) || (mpy_xpad[devh] == NULL)) {
         printf("No valid handle on state" NL);
         return EM_ERR;
     }
@@ -367,7 +389,7 @@ static em_msg xpad_diff(dev_handle_t devh, state_t *ref, state_t *diff) {
 }
 
 static em_msg xpad_add(dev_handle_t devh, state_t *add) {
-    if (mpy_xpad[devh] == NULL) {
+    if (!xpad_devh_valid(devh) || (mpy_xpad[devh] == NULL)) {
         printf("No valid handle on state" NL);
         return EM_ERR;
     }
@@ -375,14 +397,14 @@ static em_msg xpad_add(dev_handle_t devh, state_t *add) {
 }
 
 static bool xpad_isdirty(dev_handle_t devh) {
-    if (mpy_xpad[devh] == NULL) {
+    if (!xpad_devh_valid(devh) || (mpy_xpad[devh] == NULL)) {
         printf("No valid handle on state" NL);
         return false;
     }
     return my_xpad[devh].state.dirty;
 }
 static void xpad_undirty(dev_handle_t devh) {
-    if (mpy_xpad[devh] == NULL) {
+    if (!xpad_devh_valid(devh) || (mpy_xpad[devh] == NULL)) {
         printf("No valid handle on state" NL);
         return;
     }
@@ -391,7 +413,7 @@ static void xpad_undirty(dev_handle_t devh) {
 }
 
 static void xpad_reset(dev_handle_t devh) {
-    if (mpy_xpad[devh] == NULL) {
+    if (!xpad_devh_valid(devh) || (mpy_xpad[devh] == NULL)) {
         printf("No valid handle on reset" NL);
         return;
     }
@@ -400,7 +422,7 @@ static void xpad_reset(dev_handle_t devh) {
 }
 
 static void xpad_set_state(dev_handle_t devh, const state_t *to) {
-    if (mpy_xpad[devh] == NULL) {
+    if (!xpad_devh_valid(devh) || (mpy_xpad[devh] == NULL)) {
         printf("No valid handle on reset" NL);
         return;
     }

@@ -19,7 +19,8 @@ typedef struct packet_desc_t_ {
 static packet_desc_t pkt_dev[PACKET_DEV_COUNT];
 
 static bool packet_hdl_check(dev_handle_t pktHdl) {
-    if ((DEV_HANDLE_NOTDEFINED != pktHdl) && (pktHdl < PACKET_DEV_COUNT)) {
+    /* pktHdl indiziert pkt_dev[] -- untere UND obere Grenze prüfen. */
+    if ((pktHdl >= 0) && (pktHdl < PACKET_DEV_COUNT)) {
         return true;
     } else {
         return false;
@@ -55,7 +56,7 @@ em_msg packet_write(dev_handle_t pktHdl, buffer_t *data) {
     em_msg res = EM_ERR;
 
     if (packet_hdl_check(pktHdl)) {
-        if ((NULL != data->mem) && (NULL != data->pl)) {
+        if ((NULL != data) && (NULL != data->mem) && (NULL != data->pl)) {
             uint16_t pl_offset = data->pl - data->mem;
             // printf("Payload offset is %d/used = %d\n", pl_offset, data->used);
             if (pl_offset >= PACKET_HEADER_SIZE) {

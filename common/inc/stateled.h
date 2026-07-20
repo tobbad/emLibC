@@ -10,15 +10,15 @@
 #include "gpio_port.h"
 #include "state.h"
 
-typedef enum  {
-    led_0,
-    led_1,
-    led_2,
-    led_3,
-    led_4,
-    led_5,
-    led_6,
-    led_7,
+typedef enum  {// with REGUALR_STATELD  0
+    led_0,     // subslot 0
+    led_1,     // subslot 1
+    led_2,     // subslot 2
+    led_3,     // ss toggle
+    led_4,     // slot toggle
+    led_5,     // cycle tpggle
+    led_6,     // 1 when tx active
+    led_7,     // 1 when rx active
     led_fehler,
     led_normal,
 }stateled_e;

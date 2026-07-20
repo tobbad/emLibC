@@ -1,18 +1,19 @@
 /*
  * state_test.cpp
  */
-#include "device.h"
+#include "cycle.h"
 #include "state.h"
 #include "gtest/gtest.h"
 #include <cstdio>
 #include <stdint.h>
-#include <string.h>
 
 // ---------------------------------------------------------------------------
 // Hilfsfunktion: prüft ob ein key_state_e-Rückgabewert ein Fehler ist.
 // state_get_key_by_lbl/idx liefern STATE_CNT als Fehlersentinel.
 // ---------------------------------------------------------------------------
-static inline bool is_key_err(int v) { return (v < 0 || (key_state_e)v >= STATE_CNT); }
+namespace {
+bool is_key_err(int v) { return (v < 0 || (key_state_e)v >= STATE_CNT); }
+} // namespace
 
 // ---------------------------------------------------------------------------
 // Fixture: frisch initialisierter state
@@ -38,7 +39,7 @@ TEST(StateInitTest, DefaultFieldsAfterInit) {
     EXPECT_EQ(s.dirty, false);
     EXPECT_EQ(s.clabel.cmd, 0u);
     EXPECT_EQ(state_check(&s), EM_OK);
-    state_print(&s, "State", true, &c);
+    state_print(&s, "State", true, cycle_string(&c));
     for (int8_t i = 0; i < MAX_STATE_CNT; i++) {
         key_state_e state = state_get_key_by_idx(&s, i);
         EXPECT_EQ(state, OFF) << "index " << (int)i;

@@ -53,14 +53,18 @@ list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_SRC_DIR}/slip.c")
 list(REMOVE_ITEM COMMON_SRC_FILES "${COMMON_SRC_DIR}/packet.c")
 
 file(GLOB TEST_SRC_FILES "${COMMON_TEST_DIR}/*.cpp")
-list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/buffer_test.cpp")
-list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/device_test.cpp")
-list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/common_test.cpp")
-list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/packet_test.cpp")
+# slip.c nutzt die veraltete device-API und kompiliert nicht im Host-Build ->
+# slip_test bleibt deaktiviert.
 list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/slip_test.cpp")
-list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/simple_test.cpp")
-#list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/state_test.cpp")
-list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/cycle_test.cpp")
+# common_test referenziert str2uint(), das in common.h deklariert, aber nirgends
+# implementiert ist -> linkt nicht. Bleibt deaktiviert.
+list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/common_test.cpp")
+# device_test erwartet eine ältere device_t-Signatur (uint16_t counts) als die
+# aktuelle device.h -> kompiliert nicht. Bleibt deaktiviert.
+list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/device_test.cpp")
+# packet_test nutzt eine veraltete packet-API (mbuf, alte packet_open-Signatur)
+# -> kompiliert nicht. Bleibt deaktiviert.
+list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/packet_test.cpp")
 
 
 # Erstelle die Bibliothek

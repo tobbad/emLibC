@@ -93,7 +93,7 @@ slip_handle_e slip_start(device_t *dev, slip_function_t state) {
 
 em_msg slip_write(slip_handle_e hdl, const uint8_t *buffer, uint16_t length) {
     em_msg res = EM_ERR;
-    if ((hdl >= 0) && (hdl < SLIP_HANDLE_CNT)) {
+    if ((buffer != NULL) && (hdl >= 0) && (hdl < SLIP_HANDLE_CNT)) {
         uint8_t value;
         uint8_t map_size = codec[hdl].set == SLIP_ESC_SIMPLE_SET ? SLIP_SIMPLE_MAP_SIZE : SLIP_MAP_SIZE;
         if (codec[hdl].state == SLIP_STATE_ENCODE_STARTED) {
@@ -176,7 +176,8 @@ em_msg slip_write(slip_handle_e hdl, const uint8_t *buffer, uint16_t length) {
 
 uint16_t slip_end(slip_handle_e hdl) {
     uint16_t res = 0;
-    if ((NULL != codec[hdl].dev.write) && (hdl >= 0) && (hdl < SLIP_HANDLE_CNT)) {
+    /* hdl-Bereich VOR jedem codec[hdl]-Zugriff prüfen -- sonst OOB read. */
+    if ((hdl >= 0) && (hdl < SLIP_HANDLE_CNT) && (NULL != codec[hdl].dev.write)) {
         if (codec[hdl].function == SLIP_ENCODE) {
             uint8_t value = SLIP_PKT_LIMIT;
             codec[hdl].dev.write(codec[hdl].dev.user_data, &value, 1);

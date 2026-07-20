@@ -19,6 +19,12 @@ const device_t DEVICE_RESET = {
 };
 static device_t *my_devicesp[DEVICE_CNT];
 
+/* Handles index my_devicesp[]; reject anything outside [0, DEVICE_CNT) so no
+ * accessor ever reads or writes past the array. dev_handle_t is signed. */
+static bool device_hdl_valid(dev_handle_t hdl) {
+    return (hdl >= 0) && (hdl < DEVICE_CNT);
+}
+
 static uint8_t device_find_dev(const device_t *dev) {
     for (uint8_t i = 0; i < DEVICE_CNT; i++) {
         if (my_devicesp[i] == dev) {
@@ -37,12 +43,16 @@ dev_handle_t device_init(device_t *dev, void *user_data) {
     int8_t dev_nr = 0;
     if (dev != NULL) {
         dev_nr = device_find_dev(dev);
-        if (dev_nr > 0) {
+        if (device_hdl_valid(dev_nr)) {
             my_devicesp[dev_nr] = dev;
-            dev->open(dev_nr, user_data);
+            if (dev->open != NULL) {
+                dev->open(dev_nr, user_data);
+            }
+        } else {
+            dev_nr = 0;
         }
     } else {
-        printf("Cannot find device" NL);
+        EM_GUARD_LOG("Cannot find device");
     }
     return dev_nr;
 }
@@ -55,6 +65,7 @@ dev_handle_t device_init(device_t *dev, void *user_data) {
  */
 em_msg device_check(dev_handle_t hdl, dev_func_t dev_type) {
     bool is_ok = false;
+    EM_RETURN_IF(!device_hdl_valid(hdl), EM_ERR);
     const device_t *dev = my_devicesp[hdl];
     if (dev != NULL) {
         is_ok = ((NULL != dev->open) || ((dev_type & DEV_OPEN) == 0));
@@ -69,6 +80,7 @@ em_msg device_check(dev_handle_t hdl, dev_func_t dev_type) {
 
 em_msg device_reset(dev_handle_t hdl) {
     em_msg res = EM_ERR;
+    EM_RETURN_IF(!device_hdl_valid(hdl), res);
     device_t *dev = my_devicesp[hdl];
     if (dev != NULL) {
         *dev = DEVICE_RESET;
@@ -84,8 +96,10 @@ em_msg device_reset(dev_handle_t hdl) {
  * @return EM_ERR ie NULL device given or write function is NULL
  */
 em_msg device_write(dev_handle_t hdl, const uint8_t *buffer, int16_t cnt) {
-    device_t *dev = my_devicesp[hdl];
     em_msg res = EM_ERR;
+    EM_RETURN_IF(!device_hdl_valid(hdl), res);
+    EM_RETURN_IF_NULL(buffer, res);
+    device_t *dev = my_devicesp[hdl];
     if ((dev != NULL) && (NULL != dev->write)) {
         res = dev->write(hdl, buffer, cnt);
     }
@@ -94,6 +108,9 @@ em_msg device_write(dev_handle_t hdl, const uint8_t *buffer, int16_t cnt) {
 
 em_msg device_read(dev_handle_t hdl, uint8_t *buffer, int16_t *cnt) {
     em_msg res = EM_ERR;
+    EM_RETURN_IF(!device_hdl_valid(hdl), res);
+    EM_RETURN_IF_NULL(buffer, res);
+    EM_RETURN_IF_NULL(cnt, res);
     device_t *dev = my_devicesp[hdl];
     if ((dev != NULL) && (NULL != dev->read)) {
         res = dev->read(hdl, buffer, cnt);
@@ -102,6 +119,9 @@ em_msg device_read(dev_handle_t hdl, uint8_t *buffer, int16_t *cnt) {
 }
 
 void device_print(dev_handle_t hdl) {
+    if (!device_hdl_valid(hdl)) {
+        return;
+    }
     const device_t *dev = my_devicesp[hdl];
     if (dev != NULL) {
         printf("open     =  %p" NL, dev->open);

@@ -27,11 +27,15 @@ em_msg GpioCheckPin_isIn(gpio_pin_t *pin) { return pin->conf.Mode == GPIO_MODE_I
 em_msg GpioPinInit(gpio_pin_t *pin) {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
     uint8_t res = EM_ERR;
+    if (pin == NULL) {
+        printf("Got NULL pointer as pin " NL);
+        return res;
+    }
     if (pin->port == NULL) {
         printf("Got NULL pointer as port " NL);
         return res;
     }
-    if (pin != NULL) {
+    {
         if (pin->port == GPIOA) {
             __HAL_RCC_GPIOA_CLK_ENABLE();
         } else if (pin->port == GPIOB) {
