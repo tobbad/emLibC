@@ -16,17 +16,19 @@
 #ifndef UNIT_TEST
 typedef struct cycle_s {
     volatile int8_t subSlot; // actual sub slot
-    int8_t actSlot;
-    int8_t lSlot;
-    int8_t sSlot;
-    uint16_t cycle;
-    int8_t slot;
-    int8_t press;
-    int8_t postss;
+    int8_t    psubSlot;
+    int8_t    actSlot;
+    int8_t    lSlot;
+    int8_t    sSlot;
+    uint16_t  cycle;
+    int8_t    slot;
+    int8_t    press;
+    int8_t    postss;
     set_slot_e role;
-    int8_t ssCnt;
-    bool doMeasure;
-    bool cntErrror;
+    int8_t   ssCnt;
+    uint32_t timerCNT;
+    bool     doMeasure;
+    bool     cntErrror;
     system_state_e *sync_state;
     bool init;
     TIM_HandleTypeDef *timer;
@@ -63,6 +65,7 @@ em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, s
     cycle->sync_state = sync_state;
     cycle->init = true;
     cycle->role = NOT_SET;
+    cycle->psubSlot = 0;
     cycle->cntErrror = 0;
     cycle_sscnt_init(cycle);
     cycle_reset(cycle);
@@ -170,7 +173,7 @@ bool cycle_doSend(cycle_t *cycle) {
     // clang-format on
     int8_t actSlot = CYCLE_ACT_SLOT(cycle);
     int8_t subSlot = CYCLE_ACT_SUB_SLOT(cycle);
-    res = (actSlot == cycle->slot - 1) && ((CYCLE_SUB_SLOT_CNT - subSlot) < cycle->press);
+    res = (actSlot == cycle->slot - 1) && ((CYCLE_SUB_SLOT_CNT - subSlot) <= cycle->press);
 #if OPTION_VERBOSE == 1
     if (res) {
         printf("Do send?                %s" NL, cycle_string(cycle));
@@ -291,30 +294,19 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type) {
     if ((ss_type < SLAVE) || (ss_type>MASTER)) return res;
     // clang-format on
     if ((*cycle->sync_state == SYNCHRONIZE_DOING) || (*cycle->sync_state == SYNCHRONIZE_READY)) {
-#ifndef UNIT_TEST
-        uint32_t primask = __get_PRIMASK();
-        __disable_irq(); // block TIM1 update ISR for the whole update
-#endif
         cycle_reset(cycle);
         *cycle->sync_state = SYNCHRONIZE_DOING;
         if (ss_type == MASTER) {
-            // cycle_timer_add(cycle, 0);
-            cycle->subSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - cycle_press(cycle)) % CYCLE_MODULO;
+            cycle->timerCNT =  cycle->timer->Instance->CNT;
+            cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - cycle_press(cycle)) % CYCLE_MODULO;
             cycle->role = MASTER;
             res = EM_OK;
         } else{
-            cycle_timer_add(cycle, 0);
-            cycle->subSlot = (slot * CYCLE_SUB_SLOT_CNT+CYCLE_MODULO-cycle_postss(cycle))%CYCLE_MODULO;
+            cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT+CYCLE_MODULO-cycle_postss(cycle))%CYCLE_MODULO;
             cycle->role = SLAVE;
             res = EM_OK;
         }
-        cycle->actSlot = CYCLE_ACT_SLOT(cycle);
-        cycle->sSlot = CYCLE_ACT_SUB_SLOT(cycle);
-        cycle->cycle = 0;
-#ifndef UNIT_TEST
-        __set_PRIMASK(primask); // restore (don't blindly __enable_irq())
-#endif
-    }
+   }
 
     return res;
 }
@@ -439,13 +431,17 @@ void cycle_increment(cycle_t *cycle) {
         is_set = true;
     }
     if (is_set) {
+        if (cycle->psubSlot){
+            cycle->subSlot = cycle->psubSlot;
+            cycle->psubSlot = 0;
+        }
         cycle->subSlot++;
         cycle->subSlot = (cycle->subSlot % (CYCLE_SUB_SLOT_CNT * CYCLE_SLOT_CNT));
         cycle->actSlot = CYCLE_ACT_SLOT(cycle);
-        cycle->sSlot = CYCLE_ACT_SUB_SLOT(cycle);
+        cycle->sSlot   = CYCLE_ACT_SUB_SLOT(cycle);
 #if OPTION_SHOW_TIMING == 1
-        // stateled_set(cycle->sSlot);
-        stateled_toggle_pin(led_3);
+         stateled_set(cycle->sSlot);
+         stateled_toggle_pin(led_3);
 #endif
     }
     if (cycle->doMeasure) {
