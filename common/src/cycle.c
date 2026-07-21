@@ -107,7 +107,7 @@ em_msg cycle_timer_add(cycle_t *cycle, int8_t add) {
         if (cTime+add< preset){
             cycle->timer->Instance->CNT = (add +cycle->timer->Instance->CNT)% preset;
         } else{
-            cycle->timer->Instance->CNT = preset-1;
+            cycle->timer->Instance->CNT = preset-add;
         }
     } else {
         if (cTime<add){
@@ -275,6 +275,7 @@ int8_t cycle_handle_rx(cycle_t *cycle, AppliFrame_t *rxFrame) {
     return rxSlot;
 }
 #endif
+
 int8_t cycle_check_slot(int8_t slot) {
     if (((slot > 0) && (slot <= CYCLE_SLOT_CNT)) && (slot % 2 == 1)) {
         return slot;
@@ -290,8 +291,9 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type) {
     if (cycle_check_slot(slot)<0) return res;
     if (*cycle->sync_state == SYNCHRONIZE_LOCKED) return EM_OK;
     if (*cycle->sync_state < SYNCHRONIZE_READY) return res;
-    if (cycle->role != NOT_SET) return res;
     if ((ss_type < SLAVE) || (ss_type>MASTER)) return res;
+    if (cycle->role != NOT_SET) return res;
+    if (cycle->role==NOT_SET) cycle->role = ss_type;
     // clang-format on
     if ((*cycle->sync_state == SYNCHRONIZE_DOING) || (*cycle->sync_state == SYNCHRONIZE_READY)) {
         cycle_reset(cycle);
@@ -299,10 +301,12 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type) {
         if (ss_type == MASTER) {
             cycle->timerCNT =  cycle->timer->Instance->CNT;
             cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - cycle_press(cycle)) % CYCLE_MODULO;
+            cycle_timer_add(cycle, -1);
             cycle->role = MASTER;
             res = EM_OK;
         } else{
-            cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT+CYCLE_MODULO-cycle_postss(cycle))%CYCLE_MODULO;
+            cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT+CYCLE_MODULO/*-cycle_postss(cycle)*/)%CYCLE_MODULO;
+            cycle_timer_add(cycle, 0);
             cycle->role = SLAVE;
             res = EM_OK;
         }
