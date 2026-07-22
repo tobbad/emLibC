@@ -4,22 +4,34 @@
  *  Created on: 28.12.2019
  *      Author: badi
  */
+#include "hal_port.h"
 #include "_gpio.h"
 #include "common.h"
 #include "emLibC_options.h"
 #define GPIO_NUMBER 16
 em_msg GpioCheckPort(GPIO_TypeDef *port) {
     em_msg res = EM_OK;
+#ifdef GPIOA
     if (port == GPIOA)
         return res;
+#endif
+#ifdef GPIOB
     if (port == GPIOB)
         return res;
+#endif
+#ifdef GPIOC
     if (port == GPIOC)
         return res;
+#endif
+#ifdef GPIOD
     if (port == GPIOD)
         return res;
+#endif
+#ifdef GPIOH
     if (port == GPIOH)
         return res;
+#endif
+
     return EM_ERR;
 }
 em_msg GpioCheckPin_isIn(gpio_pin_t *pin) { return pin->conf.Mode == GPIO_MODE_INPUT; }
@@ -36,16 +48,27 @@ em_msg GpioPinInit(gpio_pin_t *pin) {
         return res;
     }
     {
-        if (pin->port == GPIOA) {
+        if (0) {
+#ifdef GPIOA
+        } else if (pin->port == GPIOA) {
             __HAL_RCC_GPIOA_CLK_ENABLE();
+#endif
+#ifdef GPIOB
         } else if (pin->port == GPIOB) {
             __HAL_RCC_GPIOB_CLK_ENABLE();
+#endif
+#ifdef GPIOC
         } else if (pin->port == GPIOC) {
             __HAL_RCC_GPIOC_CLK_ENABLE();
+#endif
+#ifdef GPIOD
         } else if (pin->port == GPIOD) {
             __HAL_RCC_GPIOD_CLK_ENABLE();
+#endif
+#ifdef GPIOH
         } else if (pin->port == GPIOH) {
             __HAL_RCC_GPIOH_CLK_ENABLE();
+#endif
         } else {
             printf("Unknown port 0x%8p" NL, pin->port);
             return res;
