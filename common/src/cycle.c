@@ -16,17 +16,17 @@
 #ifndef UNIT_TEST
 typedef struct cycle_s {
     volatile int8_t subSlot; // actual sub slot
-    int8_t    psubSlot;
+    int8_t    psubSlot;   // Pending subslot to be used on next cycle_increment
     int8_t    actSlot;
     int8_t    lSlot;
     int8_t    sSlot;
     uint16_t  cycle;
-    int8_t    slot;
+    int8_t    slot;      // Configured slot of device
     int8_t    press;
     int8_t    postss;
     set_slot_e role;
-    int8_t   ssCnt;
-    uint32_t timerCNT;
+    int8_t   ssCnt;     // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
+    uint32_t timerCNT;  // MCU cycle count when cycle count was set
     bool     doMeasure;
     bool     cntErrror;
     system_state_e *sync_state;
@@ -110,10 +110,11 @@ em_msg cycle_timer_add(cycle_t *cycle, int8_t add) {
             cycle->timer->Instance->CNT = preset-add;
         }
     } else {
-        if (cTime<add){
+        if (cTime+add < 0){
             cycle->timer->Instance->CNT = 0;
         } else{
-            cycle->timer->Instance->CNT = (add +cycle->timer->Instance->CNT)% preset;
+            cTime += add;
+            cycle->timer->Instance->CNT =cTime;
         }
     }
 #endif
@@ -292,16 +293,19 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type) {
     if (*cycle->sync_state == SYNCHRONIZE_LOCKED) return EM_OK;
     if (*cycle->sync_state < SYNCHRONIZE_READY) return res;
     if ((ss_type < SLAVE) || (ss_type>MASTER)) return res;
-    if (cycle->role != NOT_SET) return res;
-    if (cycle->role==NOT_SET) cycle->role = ss_type;
+    if (cycle->role != NOT_SET){
+        return res;
+    } else {
+        cycle->role = ss_type;
+    }
+    if (ss_type != cycle->role) return res;
     // clang-format on
     if ((*cycle->sync_state == SYNCHRONIZE_DOING) || (*cycle->sync_state == SYNCHRONIZE_READY)) {
-        cycle_reset(cycle);
         *cycle->sync_state = SYNCHRONIZE_DOING;
         if (ss_type == MASTER) {
             cycle->timerCNT =  cycle->timer->Instance->CNT;
             cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - cycle_press(cycle)) % CYCLE_MODULO;
-            cycle_timer_add(cycle, -1);
+            cycle_timer_add(cycle, 0);
             cycle->role = MASTER;
             res = EM_OK;
         } else{
@@ -444,7 +448,7 @@ void cycle_increment(cycle_t *cycle) {
         cycle->actSlot = CYCLE_ACT_SLOT(cycle);
         cycle->sSlot   = CYCLE_ACT_SUB_SLOT(cycle);
 #if OPTION_SHOW_TIMING == 1
-         stateled_set(cycle->sSlot);
+         //stateled_set(cycle->sSlot);
          stateled_toggle_pin(led_3);
 #endif
     }
@@ -460,7 +464,7 @@ void cycle_increment(cycle_t *cycle) {
         if (cycle->actSlot != cycle->lSlot) {
             cycle_once = false;
 #if OPTION_SHOW_TIMING == 1
-            // stateled_set(cycle->actSlot);
+            stateled_set(cycle->actSlot);
             stateled_toggle_pin(led_4);
 #endif
             cycle->lSlot = cycle->actSlot;
