@@ -38,20 +38,22 @@ typedef enum {
 extern idxa2str_t synca2str;
 #ifdef UNIT_TEST
 typedef struct cycle_s {
-    volatile int16_t  subSlot; // actual sub slot
-    int8_t            actSlot;
-    int8_t            lSlot;
-    int8_t            sSlot;
-    uint16_t          cycle;
-    int8_t            slot;
-    int8_t            press;
-    int8_t            postss;
-    set_slot_e        role;
-    int8_t            ssCnt;
-    bool              doMeasure;
-    bool              cntErrror;
-    system_state_e    *sync_state;
-    bool              init;
+    volatile int8_t subSlot; // actual sub slot
+    int8_t    psubSlot;   // Pending subslot to be used on next cycle_increment
+    int8_t    actSlot;
+    int8_t    lSlot;
+    int8_t    sSlot;
+    uint16_t  cycle;
+    int8_t    slot;      // Configured slot of device
+    int8_t    press;
+    int8_t    postss;
+    set_slot_e role;
+    int8_t   ssCnt;     // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
+    uint32_t timerCNT;  // MCU cycle count when cycle count was set
+    bool     doMeasure;
+    bool     cntErrror;
+    system_state_e *sync_state;
+    bool init;
     TIM_HandleTypeDef *timer;
 } cycle_t;
 #else

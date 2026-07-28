@@ -8,10 +8,10 @@
 #include "cycle.h"
 #include "assert.h"
 #include "common.h"
-#include "stm32l4xx_hal_tim.h"
 #ifndef UNIT_TEST
 #include "options.h"
 #include "stateled.h"
+#include "stm32l4xx_hal_tim.h"
 #endif
 
 #ifndef UNIT_TEST
@@ -310,7 +310,9 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type) {
     if ((*cycle->sync_state == SYNCHRONIZE_DOING) || (*cycle->sync_state == SYNCHRONIZE_READY)) {
         *cycle->sync_state = SYNCHRONIZE_DOING;
         if (ss_type == MASTER) {
+#ifndef UNIT_TEST
             cycle->timerCNT =  cycle->timer->Instance->CNT;
+#endif
             cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - cycle_press(cycle)) % CYCLE_MODULO;
             cycle->role = MASTER;
             res = EM_OK;
@@ -319,7 +321,9 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type) {
             cycle->role = SLAVE;
             res = EM_OK;
         }
+#ifndef UNIT_TEST
         __HAL_TIM_SET_COUNTER(cycle->timer, 0);
+#endif
    }
 
     return res;

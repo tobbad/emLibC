@@ -186,7 +186,7 @@ TEST_F(BufferTest, ResetWipesDataAndRewindsFirst) {
     EXPECT_EQ(buffer_used(buf), wsize);
     EXPECT_EQ(buf->state, BUFFER_USED);
 
-    EXPECT_EQ(buffer_reset(buf), EM_OK);
+    EXPECT_EQ(buffer_reset(buf), buf);
 
     EXPECT_EQ(buffer_used(buf), 0);
     EXPECT_EQ(buf->state, BUFFER_READY);
