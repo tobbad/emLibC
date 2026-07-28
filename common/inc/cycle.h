@@ -25,7 +25,7 @@ typedef enum {
     SS_CNT,
 } set_slot_e;
 
-#define CYCLE_SUB_SLOT_POW2 3
+#define CYCLE_SUB_SLOT_POW2  4
 #define CYCLE_SUB_SLOT_CNT   (1<<CYCLE_SUB_SLOT_POW2)
 #define CYCLE_SUB_SLOT_MASK  (CYCLE_SUB_SLOT_CNT-1)
 #define CYCLE_SUB_SLOT_SHIFT CYCLE_SUB_SLOT_POW2
@@ -38,7 +38,7 @@ typedef enum {
 extern idxa2str_t synca2str;
 #ifdef UNIT_TEST
 typedef struct cycle_s {
-    volatile int8_t   subSlot; // actual sub slot
+    volatile int16_t  subSlot; // actual sub slot
     int8_t            actSlot;
     int8_t            lSlot;
     int8_t            sSlot;

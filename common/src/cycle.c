@@ -8,6 +8,7 @@
 #include "cycle.h"
 #include "assert.h"
 #include "common.h"
+#include "stm32l4xx_hal_tim.h"
 #ifndef UNIT_TEST
 #include "options.h"
 #include "stateled.h"
@@ -89,37 +90,43 @@ em_msg cycle_reset(cycle_t *cycle) {
     res = EM_OK;
     return res;
 };
-
+#if 1==0
 em_msg cycle_timer_add(cycle_t *cycle, int8_t add) {
     em_msg res = EM_ERR;
-    int32_t preset;
+    int32_t cnt;
     // clang-format off
     if (!cycle) return res;
     if (!cycle->init) return res;
     if (!cycle->timer) return res;
     // clang-format on
 #ifndef UNIT_TEST
-    preset = cycle->timer->Instance->ARR;
+    __disable_irq();
+    cnt = cycle->timer->Instance->CNT;
     // Reset the counter directly: no update event is generated, so no UIF is
     // raised and there is no spurious cycle_increment to guard against.
-    uint32_t cTime = cycle->timer->Instance->CNT;
-    if (add >= 0){
-        if (cTime+add< preset){
-            cycle->timer->Instance->CNT = (add +cycle->timer->Instance->CNT)% preset;
+    uint32_t newTime = cycle->timer->Instance->ARR;
+    if (add==0) cTime=1;
+    if (add > 0){
+        if (cTime+add < preset){
+            cTime = (cTime-1);
         } else{
-            cycle->timer->Instance->CNT = preset-add;
+            cTime  += add;
         }
     } else {
         if (cTime+add < 0){
-            cycle->timer->Instance->CNT = 0;
+            cTime = 0;
         } else{
             cTime += add;
-            cycle->timer->Instance->CNT =cTime;
         }
     }
+    __HAL_TIM_SET_AUTORELOAD(cycle->timer, cTime);
+    SET_BIT(cycle->timer->Instance->EGR, TIM_EGR_UG);
+    //printf("add=%d  cTime=%lu"NL, add, cTime);
 #endif
+    __enable_irq();
     return EM_OK;
 };
+#endif
 
 char *cycle_string(cycle_t *cycle) {
     // clang-format off
@@ -174,7 +181,7 @@ bool cycle_doSend(cycle_t *cycle) {
     // clang-format on
     int8_t actSlot = CYCLE_ACT_SLOT(cycle);
     int8_t subSlot = CYCLE_ACT_SUB_SLOT(cycle);
-    res = (actSlot == cycle->slot - 1) && ((CYCLE_SUB_SLOT_CNT - subSlot) <= cycle->press);
+    res = (actSlot == cycle->slot - 1) && ((CYCLE_SUB_SLOT_CNT - subSlot) < cycle->press);
 #if OPTION_VERBOSE == 1
     if (res) {
         printf("Do send?                %s" NL, cycle_string(cycle));
@@ -305,15 +312,14 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type) {
         if (ss_type == MASTER) {
             cycle->timerCNT =  cycle->timer->Instance->CNT;
             cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - cycle_press(cycle)) % CYCLE_MODULO;
-            cycle_timer_add(cycle, 0);
             cycle->role = MASTER;
             res = EM_OK;
         } else{
             cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT+CYCLE_MODULO/*-cycle_postss(cycle)*/)%CYCLE_MODULO;
-            cycle_timer_add(cycle, 0);
             cycle->role = SLAVE;
             res = EM_OK;
         }
+        __HAL_TIM_SET_COUNTER(cycle->timer, 0);
    }
 
     return res;
