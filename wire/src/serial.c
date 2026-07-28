@@ -71,6 +71,8 @@
 
 static char rx_buf[RX_BUFFER_SIZE];
 static char tx_buf[TX_BUFFER_SIZE];
+buffer_t  *tx_buffer;
+
 #define POOL_SIZE 10
 
 time_handle_t srxhdl;
@@ -100,6 +102,7 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     isio.usb_drop_cnt = 0;
     memset(rx_buf, 0, RX_BUFFER_SIZE);
     memset(tx_buf, 0, TX_BUFFER_SIZE);
+    tx_buffer = buffer_new(TX_BUFFER_SIZE, LINEAR);
     isio.init = true;
     serial_mode_set(isio.mode | USE_DMA_RX);
     srxhdl = time_new("srxhdl");
@@ -159,67 +162,51 @@ volatile int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
     return rLen;
 }
 
+buffer_t * serial_formatOut(uint8_t *ptr, int32_t txLen){
+    int16_t len = 0;
+
+    static uint8_t gap_idx = 0;
+    uint32_t tick = 0;
+    if (isio.mode & TIMESTAMP) {
+        tick = HAL_GetTick();
+        len = sprintf((char *)tx_buf, "%010ld: ", tick);
+    }
+    if (isio.mode & GAP_DETECT) {
+        len += sprintf((char *)&tx_buf[len], " %x ", gap_idx);
+        gap_idx = (gap_idx + 1) % USE_DMA_TX;
+    }
+    uint16_t txLenAct = MIN(len+txLen, TX_BUFFER_SIZE);
+    int16_t free = TX_BUFFER_SIZE -( len + txLen + TRUCT_NL_LEN);
+
+    memcpy(&tx_buf[len], ptr, txLen);
+    len += txLen;
+    if (free <0) {
+        // Add Line end at last position
+        isio.ser_overflow++;
+        memcpy(&tx_buf[txLenAct - TRUCT_NL_LEN], &TRUNCT_NL, TRUCT_NL_LEN);
+    }
+    tx_buffer->mem = (uint8_t*)tx_buf;
+    tx_buffer->used = len;
+    return tx_buffer;
+}
+
 int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
     // clang-format off
     if (!isio.init) return EM_ERR;
+    if (!ptr) return EM_ERR;
     // clang-format on
     if (in_interrupt()) {
         // Save ptr, len
         return 0;
     }
-
-    int16_t len = 0;
-    static uint8_t gap_idx = 0;
-    uint32_t tick = 0;
-    if (isio.buffer[SIO_TX]->mem != NULL) {
-        buffer_reset(isio.buffer[SIO_TX]);
-        if (isio.mode & TIMESTAMP) {
-            uint32_t tick = HAL_GetTick();
-            len = sprintf((char *)isio.buffer[SIO_TX]->mem, "%010ld: ", tick);
-        }
-        if (isio.mode & GAP_DETECT) {
-            len += sprintf((char *)&isio.buffer[SIO_TX]->mem[len], " %x ", gap_idx);
-            gap_idx = (gap_idx + 1) % USE_DMA_TX;
-        }
-        uint16_t txLenAct = MIN(isio.buffer[SIO_TX]->size - len - TRUCT_NL_LEN, txLen);
-        memcpy(&isio.buffer[SIO_TX]->mem[len], ptr, txLenAct);
-        len += txLenAct;
-        if (txLen != txLenAct) {
-            // Trucate line
-            len += TRUCT_NL_LEN;
-            isio.ser_overflow++;
-            memcpy(&isio.buffer[SIO_TX]->mem[isio.buffer[SIO_TX]->size - TRUCT_NL_LEN], &TRUNCT_NL, TRUCT_NL_LEN);
-        }
-        isio.buffer[SIO_TX]->mem[len] = 0;
-        isio.buffer[SIO_TX]->used = len;
-        ptr = isio.buffer[SIO_TX]->mem;
-    } else {
-        if (isio.mode & TIMESTAMP) {
-            tick = HAL_GetTick();
-            len = sprintf((char *)&tx_buf, "%010ld: ", tick);
-        }
-        if (isio.mode & GAP_DETECT) {
-            gap_idx += sprintf((char *)&tx_buf, " %x ", gap_idx);
-            gap_idx = (gap_idx + 1) % USE_DMA_TX;
-        }
-        uint16_t txLenAct = MIN(TX_BUFFER_SIZE - len - TRUCT_NL_LEN, txLen);
-        memcpy(&isio.buffer[SIO_TX]->mem[len], ptr, txLenAct);
-        len += txLenAct;
-        if (txLen != txLenAct) {
-            // Add Line end at last position
-            isio.ser_overflow++;
-            len += TRUCT_NL_LEN;
-            memcpy(&isio.buffer[SIO_TX]->mem[isio.buffer[SIO_TX]->size - TRUCT_NL_LEN], &TRUNCT_NL, TRUCT_NL_LEN);
-        }
-        ptr = (uint8_t *)tx_buf;
-    }
+    buffer_t * buf = serial_formatOut(ptr, txLen);
     if (isio.mode & MEASURE_BYTE_PER_SECONDS) {
-        time_auto(stxhdl, len, ptr, isio.cycle);
-        return len;
+        time_auto(stxhdl, buf->used, buf->mem, isio.cycle);
+        return txLen;
     }
 #ifdef HAL_PCD_MODULE_ENABLED
     if (isio.mode & USE_USB) {
-        time_start(utxhdl, len, ptr, isio.cycle);
+        time_start(utxhdl, buf->used, buf->mem, isio.cycle);
 #ifdef USE_TINY_USB
         bool con = tud_cdc_connected();
         if (con) {
@@ -235,30 +222,31 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
         tud_cdc_write_flush();
         tud_task();
 #else
-        CDC_Transmit_FS(ptr, len);
+        CDC_Transmit_FS(buf->mem, buf->used);
 #endif
     }
 #endif
 
     if (isio.uart != NULL) {
         if (isio.mode | (USE_UART | RAW)) {
-            time_start(stxhdl, len, ptr, isio.cycle);
-            HAL_UART_Transmit(isio.uart, ptr, len, UART_TIMEOUT_MS);
+            if ( (buffer_transfer(buf, isio.buffer[SIO_TX]) == EM_ERR)) return EM_ERR;
+            time_start(stxhdl, isio.buffer[SIO_TX]->used, isio.buffer[SIO_TX]->mem, isio.cycle);
+            HAL_UART_Transmit(isio.uart, isio.buffer[SIO_TX]->mem , isio.buffer[SIO_TX]->used, UART_TIMEOUT_MS);
             time_stop(stxhdl, NULL);
             isio.ready[SIO_TX] = true;
-            return len;
+            return txLen;
         }
         if (isio.mode & USE_DMA_TX) { // does not work, needs a too large buffer
             if (isio.cbuffer != NULL) {
                 printf("UART TX overflow" NL);
                 isio.mode ^= USE_DMA_TX;
-                return len;
+                return txLen;
             }
             isio.cbuffer = buffer_pool_get(isio.pool);
             while (!ReadModify_write((int8_t *)&isio.cbuffer->state, 1)) { };
-            time_start(stxhdl, len, ptr, isio.cycle);
-            buffer_set(isio.cbuffer, ptr, len);
-            HAL_UART_Transmit_DMA(isio.uart, isio.cbuffer->mem, len);
+            time_start(stxhdl, isio.buffer[SIO_TX]->used, isio.buffer[SIO_TX]->mem, isio.cycle);
+            buffer_set(isio.cbuffer, isio.buffer[SIO_TX]->mem, isio.buffer[SIO_TX]->used);
+            HAL_UART_Transmit_DMA(isio.uart, isio.cbuffer->mem, isio.buffer[SIO_TX]->used);
             time_stop_su(stxhdl);
         }
     } else {

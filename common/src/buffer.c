@@ -41,11 +41,17 @@ buffer_t *buffer_new(uint16_t size, b_type_e type) {
         free(buffer);
         return NULL;
     }
+    return buffer_init(buffer, size, type);
+}
+
+buffer_t * buffer_init(buffer_t *buffer, uint16_t size, b_type_e type){
+    // clang-format off
+    if (!buffer) return NULL;
+    // clang-format off
     buffer->type = type;
     buffer->size = size;
     buffer->first = 0;
-    buffer_reset(buffer);
-    return buffer;
+    return buffer_reset(buffer);
 }
 
 em_msg buffer_free(buffer_t *buffer) {
@@ -73,12 +79,9 @@ buffer_t *buffer_new_buffer_t(buffer_t *buffer) {
     memset(buffer, 0, sizeof(buffer_t));
     buffer->mem = calloc(1, size);
     if (!buffer->mem) return NULL;
-    // clang-format on
-    buffer->type = type;
     buffer->size = size;
-    buffer->first = 0;
-    buffer_reset(buffer);
-    return buffer;
+   // clang-format on
+    return buffer_init(buffer, buffer->size, buffer->type);
 }
 
 int16_t buffer_transfer(buffer_t *from, buffer_t *to) {
@@ -145,10 +148,10 @@ int16_t buffer_transfer(buffer_t *from, buffer_t *to) {
     return EM_OK;
 }
 
-em_msg buffer_reset(buffer_t *buffer) {
+buffer_t  *buffer_reset(buffer_t *buffer) {
     // clang-format off
     em_msg res = buffer_check(buffer, false);
-    if (res == EM_ERR) return res;
+    if (res == EM_ERR) return NULL;
     // clang-format on
     memset(buffer->mem, 0, buffer->size);
     memset(buffer->lbl.str, 0, CMD_LEN);
@@ -157,8 +160,7 @@ em_msg buffer_reset(buffer_t *buffer) {
     buffer->used = 0;
     buffer->first = 0;
     buffer->id = 0;
-    res = EM_OK;
-    return res;
+    return buffer;
 }
 
 em_msg buffer_clear(buffer_t *buffer) {

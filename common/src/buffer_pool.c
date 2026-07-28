@@ -96,7 +96,8 @@ em_msg buffer_pool_return(buffer_pool_t *bp, buffer_t *buffer) {
         printf("Buffer is used" NL);
         return EM_ERR;
     }
-    return buffer_reset(buffer);
+    buffer_reset(buffer);
+    return EM_OK;
 }
 
 em_msg buffer_pool_print(buffer_pool_t *bp, char *title) {
