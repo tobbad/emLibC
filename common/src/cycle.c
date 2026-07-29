@@ -317,7 +317,7 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type) {
             cycle->role = MASTER;
             res = EM_OK;
         } else{
-            cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT+CYCLE_MODULO/*-cycle_postss(cycle)*/)%CYCLE_MODULO;
+            cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT+CYCLE_MODULO+- cycle_postss(cycle))%CYCLE_MODULO;
             cycle->role = SLAVE;
             res = EM_OK;
         }
