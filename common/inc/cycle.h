@@ -38,8 +38,8 @@ typedef enum {
 extern idxa2str_t synca2str;
 #ifdef UNIT_TEST
 typedef struct cycle_s {
-    volatile int8_t subSlot; // actual sub slot
-    int8_t    psubSlot;   // Pending subslot to be used on next cycle_increment
+    volatile uint8_t subSlot; // actual sub slot
+    uint8_t    psubSlot;   // Pending subslot to be used on next cycle_increment
     int8_t    actSlot;
     int8_t    lSlot;
     int8_t    sSlot;

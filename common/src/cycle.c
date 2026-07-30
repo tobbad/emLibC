@@ -16,8 +16,8 @@
 
 #ifndef UNIT_TEST
 typedef struct cycle_s {
-    volatile int8_t subSlot; // actual sub slot
-    int8_t    psubSlot;   // Pending subslot to be used on next cycle_increment
+    volatile uint8_t subSlot; // actual sub slot
+    uint8_t    psubSlot;   // Pending subslot to be used on next cycle_increment
     int8_t    actSlot;
     int8_t    lSlot;
     int8_t    sSlot;
@@ -317,7 +317,7 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type) {
             cycle->role = MASTER;
             res = EM_OK;
         } else{
-            cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT+CYCLE_MODULO+- cycle_postss(cycle))%CYCLE_MODULO;
+            cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT+CYCLE_MODULO + cycle_postss(cycle))%CYCLE_MODULO;
             cycle->role = SLAVE;
             res = EM_OK;
         }
@@ -395,6 +395,7 @@ int8_t cycle_difference(cycle_t *cycle, int8_t rxSlot) {
     const int16_t below = ((lower - cycle->subSlot) + CYCLE_MODULO) % CYCLE_MODULO;
     return (int8_t)((above < below) ? above : below);
 }
+
 void cycle_sscnt_init(cycle_t *cycle) {
     if (!cycle)
         return;
