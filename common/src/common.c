@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include "assert.h"
 #ifndef UNIT_TEST
 #include "core_cm4.h"
 #include "hal_port.h"
@@ -33,6 +34,34 @@ static idx2str_t sync2str[] = {
 idxa2str_t synca2str = {.cnt = ELCNT(sync2str), .entry = (idx2str_t *)&sync2str};
 #define ASCIHEX_LEN 16
 char ascihex[ASCIHEX_LEN] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+
+char nibble2char(uint8_t nr){
+    nr &= 0x0f;
+    if (nr<10){
+        return nr+'0';
+    } else {
+        nr= nr - 10+'a';
+    }
+}
+
+
+/**
+  * @brief  Convert Hex 32Bits value into char
+  * @param  value: value to convert
+  * @param  pbuf: pointer to the buffer
+  * @param  len: buffer length
+  * @retval None
+  */
+static void  int322unicode(uint32_t value, uint8_t * pbuf, uint8_t len){
+    uint8_t idx = 0;
+    for (idx = 0; idx < len; idx++) {
+        uint8_t shift = (8*(len-idx-1));
+        uint8_t val = value >> shift;
+        pbuf[2*idx]   = nibble2char(val>>4);
+        pbuf[2*idx+1] = nibble2char(val&0x0f);
+        pbuf[2*idx+2] = 0;
+    }
+}
 
 #ifndef UNIT_TEST
 /**
@@ -69,6 +98,19 @@ size_t board_get_unique_id(uint8_t *id, size_t max_len) {
     return max_len;
 }
 #endif
+
+char*  uniq_idstr(char* idstr, uint8_t len){
+    static const uint8_t idlen =  3;
+    uint32_t  id[idlen];
+    assert(len==idlen*4*2);
+    memset(idstr,0, idlen*4);
+    board_get_unique_id((uint8_t*)&id, idlen*4);
+    for (uint8_t i=0;i<idlen;i++){
+        uint32_t val= *(uint32_t*)&id[i];
+        int322unicode(val, (uint8_t*)&idstr[8*i], 4 );
+    }
+    return idstr;
+}
 
 uint32_t csss2uint32(uint32_t cycle, uint8_t slot, uint8_t sSlot) {
     uint32_t res = 0;
