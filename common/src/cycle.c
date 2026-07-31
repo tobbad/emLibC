@@ -17,19 +17,19 @@
 #ifndef UNIT_TEST
 typedef struct cycle_s {
     volatile uint8_t subSlot; // actual sub slot
-    uint8_t    psubSlot;   // Pending subslot to be used on next cycle_increment
-    int8_t    actSlot;
-    int8_t    lSlot;
-    int8_t    sSlot;
-    uint16_t  cycle;
-    int8_t    slot;      // Configured slot of device
-    int8_t    press;
-    int8_t    postss;
+    uint8_t psubSlot;         // Pending subslot to be used on next cycle_increment
+    int8_t actSlot;
+    int8_t lSlot;
+    int8_t sSlot;
+    uint16_t cycle;
+    int8_t slot; // Configured slot of device
+    int8_t press;
+    int8_t postss;
     set_slot_e role;
-    int8_t   ssCnt;     // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
-    uint32_t timerCNT;  // MCU cycle count when cycle count was set
-    bool     doMeasure;
-    bool     cntErrror;
+    int8_t ssCnt;      // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
+    uint32_t timerCNT; // MCU cycle count when cycle count was set
+    bool doMeasure;
+    bool cntErrror;
     system_state_e *sync_state;
     bool init;
     TIM_HandleTypeDef *timer;
@@ -90,7 +90,7 @@ em_msg cycle_reset(cycle_t *cycle) {
     res = EM_OK;
     return res;
 };
-#if 1==0
+#if 1 == 0
 em_msg cycle_timer_add(cycle_t *cycle, int8_t add) {
     em_msg res = EM_ERR;
     int32_t cnt;
@@ -105,23 +105,24 @@ em_msg cycle_timer_add(cycle_t *cycle, int8_t add) {
     // Reset the counter directly: no update event is generated, so no UIF is
     // raised and there is no spurious cycle_increment to guard against.
     uint32_t newTime = cycle->timer->Instance->ARR;
-    if (add==0) cTime=1;
-    if (add > 0){
-        if (cTime+add < preset){
-            cTime = (cTime-1);
-        } else{
-            cTime  += add;
+    if (add == 0)
+        cTime = 1;
+    if (add > 0) {
+        if (cTime + add < preset) {
+            cTime = (cTime - 1);
+        } else {
+            cTime += add;
         }
     } else {
-        if (cTime+add < 0){
+        if (cTime + add < 0) {
             cTime = 0;
-        } else{
+        } else {
             cTime += add;
         }
     }
     __HAL_TIM_SET_AUTORELOAD(cycle->timer, cTime);
     SET_BIT(cycle->timer->Instance->EGR, TIM_EGR_UG);
-    //printf("add=%d  cTime=%lu"NL, add, cTime);
+    // printf("add=%d  cTime=%lu"NL, add, cTime);
 #endif
     __enable_irq();
     return EM_OK;
@@ -311,20 +312,20 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type) {
         *cycle->sync_state = SYNCHRONIZE_DOING;
         if (ss_type == MASTER) {
 #ifndef UNIT_TEST
-            cycle->timerCNT =  cycle->timer->Instance->CNT;
+            cycle->timerCNT = cycle->timer->Instance->CNT;
 #endif
             cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - cycle_press(cycle)) % CYCLE_MODULO;
             cycle->role = MASTER;
             res = EM_OK;
-        } else{
-            cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT+CYCLE_MODULO + cycle_postss(cycle))%CYCLE_MODULO;
+        } else {
+            cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO + cycle_postss(cycle)) % CYCLE_MODULO;
             cycle->role = SLAVE;
             res = EM_OK;
         }
 #ifndef UNIT_TEST
         __HAL_TIM_SET_COUNTER(cycle->timer, 0);
 #endif
-   }
+    }
 
     return res;
 }
@@ -450,17 +451,17 @@ void cycle_increment(cycle_t *cycle) {
         is_set = true;
     }
     if (is_set) {
-        if (cycle->psubSlot){
+        if (cycle->psubSlot) {
             cycle->subSlot = cycle->psubSlot;
             cycle->psubSlot = 0;
         }
         cycle->subSlot++;
         cycle->subSlot = (cycle->subSlot % (CYCLE_SUB_SLOT_CNT * CYCLE_SLOT_CNT));
         cycle->actSlot = CYCLE_ACT_SLOT(cycle);
-        cycle->sSlot   = CYCLE_ACT_SUB_SLOT(cycle);
+        cycle->sSlot = CYCLE_ACT_SUB_SLOT(cycle);
 #if OPTION_SHOW_TIMING == 1
-         //stateled_set(cycle->sSlot);
-         stateled_toggle_pin(led_3);
+        // stateled_set(cycle->sSlot);
+        stateled_toggle_pin(led_3);
 #endif
     }
     if (cycle->doMeasure) {
