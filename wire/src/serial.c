@@ -47,6 +47,7 @@
 #ifdef HAL_PCD_MODULE_ENABLED
 #ifdef USE_TINY_USB
 #include "tusb.h"
+#include "tinyUSB.h"
 #else
 #include "usbd_cdc_if.h"
 #endif
@@ -210,14 +211,14 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
 #ifdef USE_TINY_USB
         bool con = tud_cdc_connected();
         if (con) {
-            uint8_t written = tud_cdc_write(ptr, len);
+            uint8_t written = tud_cdc_write(buf->mem, buf->used);
             time_stop_su(utxhdl);
-            if (written != len) {
-                isio.usb_drop_cnt += len;
+            if (written != buf->used) {
+                isio.usb_drop_cnt += buf->used;
                 time_stop(utxhdl, NULL);
             }
         } else {
-            isio.usb_drop_cnt += len;
+            isio.usb_drop_cnt += buf->used;
         }
         tud_cdc_write_flush();
         tud_task();
