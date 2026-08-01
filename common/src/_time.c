@@ -42,7 +42,10 @@ typedef struct time_single_s {
 
 typedef struct timem_s {
     time_single_t time[TIME_DEV_CNT];
-    uint8_t used;
+    /* Ein Bit je Handle. Muss mindestens TIME_DEV_CNT Bits fassen, sonst
+       laufen die oberen Slots ins Leere: (1 << hdl) wird beim Zurueckschreiben
+       abgeschnitten, der Slot gilt nie als belegt und wird mehrfach vergeben. */
+    uint16_t used;
     uint32_t clk_Hz;
     float ccnt2ns;
     int64_t init_ns;
@@ -105,7 +108,7 @@ void time_delete(time_handle_t hdl){
     // clang-format on
     if ( time_check_hdl(hdl) == EM_OK){
         printf("Delete handler %s (%d)"NL, _time.time[hdl].name, hdl);
-        _time.used  ^= hdl;
+        _time.used &= ~(1U << hdl); /* Bit des Handles loeschen, nicht die Nummer XORen */
     } else {
         printf("*** Cannot delete handler (%d)" NL, hdl);
     }
