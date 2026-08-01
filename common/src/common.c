@@ -102,7 +102,7 @@ size_t board_get_unique_id(uint8_t *id, size_t max_len) {
 char*  uniq_idstr(char* idstr, uint8_t len){
     static const uint8_t idlen =  3;
     uint32_t  id[idlen];
-    assert(len==idlen*4*2);
+    assert(len>=idlen*4*2+1);
     memset(idstr,0, idlen*4);
     board_get_unique_id((uint8_t*)&id, idlen*4);
     for (uint8_t i=0;i<idlen;i++){

@@ -220,8 +220,6 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
         } else {
             isio.usb_drop_cnt += buf->used;
         }
-        tud_cdc_write_flush();
-        tud_task();
 #else
         CDC_Transmit_FS(buf->mem, buf->used);
 #endif

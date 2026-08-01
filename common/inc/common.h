@@ -136,7 +136,9 @@ extern idxa2str_t synca2str;
  * xx   = Hex encoded data byte
  * a    = printable asci otherwise "."
  */
+#define UNIQ_ID_LEN 12 // 96 bit unique device id
 size_t board_get_unique_id(uint8_t *id, size_t max_len);
+// idstr braucht 2*UNIQ_ID_LEN+1 Bytes: je zwei Hex-Zeichen pro Byte, plus abschliessende 0
 char *uniq_idstr(char* idstr, uint8_t len);
 uint32_t csss2uint32(uint32_t cycle, uint8_t slot, uint8_t sSlot);
 uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer, uint16_t buffer_size, bool write_asci);
