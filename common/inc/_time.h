@@ -13,7 +13,7 @@
 #define TIME_MEAS_CNT 10
 #define TIME_MEAS_CHAR_PER_LINE 20
 #define TIME_MEAS_TIME_FIELD_LEN 12
-#define TIME_DEV_CNT 6
+#define TIME_DEV_CNT 10
 typedef int8_t  time_handle_t;
 
 typedef enum {
