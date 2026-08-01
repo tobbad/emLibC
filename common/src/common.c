@@ -40,7 +40,7 @@ char nibble2char(uint8_t nr){
     if (nr<10){
         return nr+'0';
     } else {
-        nr= nr - 10+'a';
+        return nr - 10+'A';
     }
 }
 
