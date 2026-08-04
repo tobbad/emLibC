@@ -47,6 +47,7 @@ typedef struct cycle_s {
     int8_t    slot;      // Configured slot of device
     int8_t    press;
     int8_t    postss;
+    int8_t    postrx;
     set_slot_e role;
     int8_t   ssCnt;     // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
     uint32_t timerCNT;  // MCU cycle count when cycle count was set
@@ -61,7 +62,7 @@ typedef struct cycle_s cycle_t;
 #endif
 extern cycle_t cycle;
 
-em_msg   cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, system_state_e *sync_state, TIM_HandleTypeDef *htim);
+em_msg   cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, uint8_t postrx, system_state_e *sync_state, TIM_HandleTypeDef *htim);
 em_msg   cycle_reset(cycle_t *cycle);
 em_msg   cycle_timer_add(cycle_t *cycle, int8_t add);
 size_t   cycle_size();
@@ -79,6 +80,7 @@ system_state_e   cycle_state(cycle_t *cycle);
 bool     cycle_isOk(cycle_t *cycle, int8_t rxSlot);
 int8_t   cycle_press(cycle_t *cycle);
 int8_t   cycle_postss(cycle_t *cycle);
+uint8_t  cycle_postrx(cycle_t *cycle);
 int8_t   cycle_difference(cycle_t *cycle, int8_t rxSlot);
 void     cycle_increment(cycle_t *cycle);
 void     cycle_sscnt_init(cycle_t *cycle);

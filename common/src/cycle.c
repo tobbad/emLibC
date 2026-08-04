@@ -25,6 +25,7 @@ typedef struct cycle_s {
     int8_t slot; // Configured slot of device
     int8_t press;
     int8_t postss;
+    int8_t postrx;
     set_slot_e role;
     int8_t ssCnt;      // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
     uint32_t timerCNT; // MCU cycle count when cycle count was set
@@ -52,7 +53,7 @@ cycle_t cycle;
 #define SLOT_PRINT_FMT "(c:%5d, %1x, %2d)" // length is 19
 #define SLOT_PRINT_FMT_STR "(c:     ,  ,   )"
 #define SLOT_PRINT_FMT_STR_LEN 16 + 2
-em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, system_state_e *sync_state,
+em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, uint8_t postrx, system_state_e *sync_state,
                   TIM_HandleTypeDef *htim) {
     em_msg res = EM_ERR;
     // clang-format off
@@ -61,6 +62,7 @@ em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, s
     // clang-format on
     cycle->press = press;
     cycle->postss = postss;
+    cycle->postrx = postrx;
     cycle->slot = my_slot;
     cycle->timer = htim;
     cycle->sync_state = sync_state;
@@ -378,6 +380,14 @@ int8_t cycle_postss(cycle_t *cycle) {
     // clang-format on
     return cycle->postss;
 }
+
+uint8_t   cycle_postrx(cycle_t *cycle){
+    // clang-format off
+    if (!cycle) return 0;
+    if (!cycle->init) return 0;
+    // clang-format on
+    return cycle->postrx;
+};
 
 int8_t cycle_difference(cycle_t *cycle, int8_t rxSlot) {
     // clang-format off

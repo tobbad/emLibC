@@ -44,6 +44,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+
 #ifdef HAL_PCD_MODULE_ENABLED
 #ifdef USE_TINY_USB
 #include "tusb.h"
@@ -203,9 +204,9 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
         time_auto(stxhdl, buf->used, buf->mem, isio.cycle);
         return txLen;
     }
-#ifdef HAL_PCD_MODULE_ENABLED
     if (isio.mode & USE_USB) {
         time_start(utxhdl, buf->used, buf->mem, isio.cycle);
+#ifdef HAL_PCD_MODULE_ENABLED
 #ifdef USE_TINY_USB
         bool con = tud_cdc_connected();
         if (con) {
@@ -218,11 +219,9 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
         } else {
             isio.usb_drop_cnt += buf->used;
         }
-#else
-        CDC_Transmit_FS(buf->mem, buf->used);
 #endif
-    }
 #endif
+   }
 
     if (isio.uart != NULL) {
         if (isio.mode | (USE_UART | RAW)) {
