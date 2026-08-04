@@ -48,8 +48,6 @@
 #ifdef USE_TINY_USB
 #include "tusb.h"
 #include "tinyUSB.h"
-#else
-#include "usbd_cdc_if.h"
 #endif
 #endif
 #if defined(STM32F303xC)
