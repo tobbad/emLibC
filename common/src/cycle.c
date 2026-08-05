@@ -202,7 +202,7 @@ int8_t cycle_handle_rx(cycle_t *cycle, AppliFrame_t *rxFrame) {
     em_msg res    = cycle_check_slot(rxSlot);
     if (res == EM_ERR) {
         printf("Invalid rxSlot = %d"NL, rxSlot);
-        // radio_state_get_sync_state(&rstate) = SYNCHRONIZE_ERROR; Out of slot
+        radio_state_set_sync_state(&rstate,SYNCHRONIZE_ERROR);
         return rxSlot;
     }
 
