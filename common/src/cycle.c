@@ -8,12 +8,13 @@
 #include "cycle.h"
 #include "assert.h"
 #include "common.h"
+#include "radio_state.h"
 #ifndef UNIT_TEST
 #include "options.h"
 #include "stateled.h"
 #include "stm32l4xx_hal_tim.h"
 #endif
-
+#include "app_x-cube-subg2.h"
 #ifndef UNIT_TEST
 typedef struct cycle_s {
     volatile uint8_t subSlot; // actual sub slot
@@ -193,106 +194,98 @@ bool cycle_doSend(cycle_t *cycle) {
     return res;
 };
 
-#if 1 == 0
 int8_t cycle_handle_rx(cycle_t *cycle, AppliFrame_t *rxFrame) {
-    uint16_t res = EM_ERR;
-    // clang-format off
-     if (!cycle) return res;
-     if (!cycle->init) return res;
-     if (!rxFrame) return res;
-    // clang-format on
     int8_t rxSlot = AppliFrame_GetSlot(rxFrame);
-    int8_t diff = cycle_difference(cycle, rxSlot);
-    bool isAck = AppliFrame_IsAck(rxFrame);
+    int8_t diff   = cycle_difference(cycle, rxSlot);
+    bool   isAck  = AppliFrame_IsAck(rxFrame);
 
-    em_msg res = cycle_check_slot(rxSlot);
+    em_msg res    = cycle_check_slot(rxSlot);
     if (res == EM_ERR) {
-        printf("Invalid rxSlot = %d" NL, rxSlot);
-        // rb_system.sync_state = SYNCHRONIZE_ERROR; Out of slot
-        return res;
+        printf("Invalid rxSlot = %d"NL, rxSlot);
+        // radio_state_get_sync_state(&rstate) = SYNCHRONIZE_ERROR; Out of slot
+        return rxSlot;
     }
 
-    switch (cycle->sync_state) {
-    case SYNCHRONIZE_READY: {
-        if (rxSlot == cycle->slot) {
-            cycle->sync_state = SYNCHRONIZE_ERROR;
-            printf("rxSlot %d is mine %d  %s" NL, rxSlot, cycle->slot, cycle_string(cycle));
-        } else {
-            rb_system.recv[rxSlot] = MIN(255, rb_system.recv[rxSlot] + 1);
+    switch (radio_state_get_sync_state(&rstate)) {
+        case SYNCHRONIZE_READY: {
+            if (rxSlot == cycle_get_slot(cycle)) {
+                radio_state_set_sync_state(&rstate,SYNCHRONIZE_ERROR);
+                printf("rxSlot %d is mine %d  %s" NL, rxSlot, cycle_get_slot(cycle), cycle_string(cycle));
+            } else {
+                if (cycle_check_slot(rxSlot) >= 0) {
+                    radio_state_inc_recv(&rstate, rxSlot);
+                    cycle_sscnt_stop(cycle);
+                    time_stop(rrxhdl, NULL);
+                    if (cycle_set_slot(cycle, rxSlot, SLAVE) == EM_ERR) {
+                        printf("Can not set cycle role to slave"NL);
+                    }
+                    printf("%s           %s SET ACT SLOT TO  %d" NL, idxa2str(&synca2str, radio_state_get_sync_state(&rstate)), cycle_string(cycle), rxSlot);
+                } else {
+                    printf("Invalid rxSlot %d %s" NL, rxSlot, cycle_string(cycle));
+                }
+            }
+        }
+        break;
+
+        case SYNCHRONIZE_DOING: {
             cycle_sscnt_stop(cycle);
             time_stop(rrxhdl, NULL);
-            printf("Cycle before            %s" NL, cycle_string(cycle));
-            if (cycle_set_slot(&cycle, rxSlot, SLAVE) == EM_ERR) {
-                printf("Can not set cycle role to slave" NL);
-            }
-            printf("subsslot cnt from detect to process %d" NL, cycle_sscnt_get(cycle));
-            printf("%s           %s SET ACT SLOT TO  %d" NL, idxa2str(&synca2str, rb_system.sync_state), cycle_string(cycle),
-                   rxSlot);
-        }
-    } break;
-
-    case SYNCHRONIZE_DOING: {
-        cycle_sscnt_stop(&cycle);
-        time_stop(rrxhdl, NULL);
-        printf("SYNCHRONIZE_DOING       %s diff= %2d, rxSlot = %x" NL, cycle_string(cycle), diff, rxSlot);
-        if ((rxSlot == cycle->slot) && (!isAck)) {
-            cycle->sync_state = SYNCHRONIZE_ERROR;
-            printf("rxSlot %d is mine %d %s" NL, rxSlot, cycle->slot, cycle_string(cycle));
-        } else if (diff <= cycle_postss(cycle)) {
-            rb_system.recv[rxSlot] = MIN(254, rb_system.recv[rxSlot] + 1);
-            cycle->sync_state = rb_check_sync();
+            //printf("SYNCHRONIZE_DOING       %s diff= %2d, rxSlot = %x"NL, cycle_string(cycle), diff, rxSlot);
+            if (rxSlot == cycle_get_slot(cycle)){
+                if (isAck){
+                    radio_state_set_sync_state(&rstate, SYNCHRONIZE_ERROR);
+                    printf("ACK in my Slot %x, rxSlot %x %s"NL, rxSlot, cycle_get_slot(cycle), cycle_string(cycle));
+                } else {
+                    printf("%s in rxSlot %x/my Slot %x %s"NL, AppliFrame_CmdStr(rxFrame), rxSlot, cycle_get_slot(cycle), cycle_string(cycle));
+                }
+            } else if (diff <= cycle_postrx(cycle)){
+                radio_state_inc_recv(&rstate, rxSlot);
+                //printf("%x++"NL, rxSlot);
+                radio_state_set_sync_state(&rstate, radio_state_sync(&rstate));
 #if OPTION_VERBOSE == 1
-            printf("Receive slot (%d) matches %s  %s" NL, rxSlot, idxa2str(&synca2str, cycle->sync_state),
-                   cycle_string(&cycle));
+                printf("Receive slot (%d) matches %s  %s" NL, rxSlot, idxa2str(&synca2str, radio_state_get_sync_state(&rstate)), cycle_string(cycle));
 #endif
 
-        } else {
+            } else if (diff > RECEIVED_THRESHOLD){
+                radio_state_inc_recve(&rstate, rxSlot);
+                radio_state_set_sync_state(&rstate, radio_state_sync(&rstate));
 #if OPTION_VERBOSE == 1
-            printf("Out of slot frame received (%d) matches %s  %s" NL, rxSlot, idxa2str(&synca2str, cycle->sync_state),
-                   cycle_string(&cycle));
+                printf("Out of slot frame received (%d) matches %s  %s" NL, rxSlot, idxa2str(&synca2str, radio_state_get_sync_state(&rstate)), cycle_string(cycle));
 #endif
-            // rxSlot != cycle_act_slot(&cycle)
-            // rb_system.sync_state = SYNCHRONIZE_ERROR;
-            if (rxFrame->DataLen == FRAME_HEADER_SIZE) {
-                AppliFrame_Print_Header(rxFrame, "Header                 ");
+            } else {
+                  radio_state_inc_recvd(&rstate, rxSlot);
+                  radio_state_set_sync_state(&rstate, radio_state_sync(&rstate));
+
             }
         }
-    } break;
+        break;
 
-    case SYNCHRONIZE_LOCKED: {
-        cycle_sscnt_stop(cycle);
-        time_stop(rrxhdl, NULL);
-        int8_t diff = cycle_difference(cycle, rxSlot);
-        if ((rxSlot == cycle->slot) && (!isAck)) {
-            rb_system.sync_state = SYNCHRONIZE_ERROR;
-            printf("rxSlot %d is mine %d %s" NL, rxSlot, cycle->slot, cycle_string(cycle));
-            // Someone send in my slot
-        } else if (!(diff <= cycle_postss(cycle))) {
-            printf("Slot missmatch rxSlot %X %s diff  = %d" NL, rxSlot, cycle_string(cycle), diff);
-            rb_system.recv[rxSlot] = MIN(255, rb_system.recv[rxSlot] + 1);
-        } else if (cycle_check_slot(rxSlot) >= 0) {
-            rb_system.recv[rxSlot] = MIN(255, rb_system.recv[rxSlot] + 1);
+        case SYNCHRONIZE_LOCKED: {
+            cycle_sscnt_stop(cycle);
+            time_stop(rrxhdl, NULL);
+            if ((rxSlot == cycle_get_slot(cycle)) && (!isAck)) {
+                radio_state_set_sync_state(&rstate, SYNCHRONIZE_ERROR);
+                printf("rxSlot %d is mine %d %s" NL, rxSlot, cycle_get_slot(cycle), cycle_string(cycle));
+                // Someone send in my slot
+            } else if (!(diff < cycle_postrx(cycle))){
+                radio_state_inc_recv(&rstate, rxSlot);
+            } else if ((diff > RECEIVED_THRESHOLD)) {
+                radio_state_inc_recv(&rstate, rxSlot);
+                printf("Slot missmatch rxSlot %X %s diff  = %d"NL, rxSlot, cycle_string(cycle), diff);
+            }
         }
 
-    }
-
-    break;
-    default:
+        break;
+        default:
 #if OPTION_VERBOSE == 1
-        printf("Not covered state %s" NL, idxa2str(&synca2str, cycle->sync_state)); // do nothing
+            printf("Not covered state %s" NL, idxa2str(&synca2str, radio_state_get_sync_state(&rstate))); // do nothing
 #endif
-        ;
+            ;
     }
-    return rxSlot;
-}
-#endif
+    //printf("Handle %x"NL, rxSlot);
+    return rxSlot;}
 
-int8_t cycle_check_slot(int8_t slot) {
-    if (((slot > 0) && (slot <= CYCLE_SLOT_CNT)) && (slot % 2 == 1)) {
-        return slot;
-    }
-    return -1;
-}
+
 
 em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type) {
     em_msg res = EM_ERR;
