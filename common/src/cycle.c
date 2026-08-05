@@ -280,7 +280,6 @@ int8_t cycle_handle_rx(cycle_t *cycle, AppliFrame_t *rxFrame) {
 #if OPTION_VERBOSE == 1
             printf("Not covered state %s" NL, idxa2str(&synca2str, radio_state_get_sync_state(&rstate))); // do nothing
 #endif
-            ;
     }
     //printf("Handle %x"NL, rxSlot);
     return rxSlot;
