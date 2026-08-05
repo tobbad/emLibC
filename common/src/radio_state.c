@@ -11,20 +11,20 @@
 radio_state_t  rstate;
 
 typedef struct radio_state_s{
-    system_state_e sync_state;
+    system_state_e *sync_state;
     uint8_t        activeSlots;
     int32_t        rssi[CYCLE_SLOT_CNT];
     uint8_t        recv[CYCLE_SLOT_CNT];
     uint8_t        recvd[CYCLE_SLOT_CNT];
     uint8_t        recve[CYCLE_SLOT_CNT];
     uint8_t        ack[CYCLE_SLOT_CNT];
-    bool           crc_err[CYCLE_SLOT_CNT];
+    bool           crc_err;
 } radio_state_t;
 
-em_msg radio_state_init(radio_state_t *state,  system_state_e sync_state){
+em_msg radio_state_init(radio_state_t *state,  system_state_e *sync_state){
     // clang-format off
     if (!state) return EM_ERR;
-    if (sync_state<=SYNC_CNT) return EM_ERR;
+    if (*sync_state>=SYNC_CNT) return EM_ERR;
     // clang-format on
     radio_state_reset(state);
     state->sync_state = sync_state;
@@ -81,12 +81,11 @@ em_msg radio_state_inc_ack(radio_state_t *state,  uint8_t idx){
     return EM_OK;
 };
 
-em_msg radio_state_inc_crc_err(radio_state_t *state,  uint8_t idx){
+em_msg radio_state_set_crc_err(radio_state_t *state){
     // clang-format off
     if (!state) return EM_ERR;
-    if (idx>=CYCLE_SLOT_CNT) return EM_ERR;
     // clang-format on
-    state->crc_err[idx] = MIN(255, state->crc_err[idx] + 1);
+    state->crc_err= true;
     return EM_OK;
 };
 
@@ -96,8 +95,8 @@ em_msg radio_state_print(radio_state_t *state){
     // clang-format on
     printf(" slot   recv  recvd  recve  crc_err  rssi"NL);
     for (uint8_t idx=0;idx<CYCLE_SLOT_CNT;idx++){
-        printf(" %2d     %2d     %2d     %2d     %2d      %3ld"NL, idx, state->recv[idx], state->recvd[idx], state->recve[idx], state->crc_err[idx], state->rssi[idx]);
-   }
+        printf(" %2d     %2d     %2d     %2d     %3s     %3ld"NL, idx, state->recv[idx], state->recvd[idx], state->recve[idx], state->crc_err==0?"Yes":"No ", state->rssi[idx]);
+    }
     printf("Active slots = %d"NL, state->activeSlots);
     return EM_OK;
 }
@@ -107,7 +106,7 @@ em_msg radio_state_set_sync_state(radio_state_t *state,  system_state_e sync_sta
     // clang-format off
     if (!state) return EM_ERR;
     // clang-format on
-    state->sync_state =sync_state;
+    *state->sync_state =sync_state;
     return EM_OK;
 };
 
@@ -115,7 +114,7 @@ system_state_e radio_state_get_sync_state(radio_state_t *state){
     // clang-format off
     if (!state) return EM_ERR;
     // clang-format on
-    return state->sync_state;
+    return *state->sync_state;
 };
 
 system_state_e radio_state_sync(radio_state_t *state){
@@ -134,5 +133,14 @@ system_state_e radio_state_sync(radio_state_t *state){
         return SYNCHRONIZE_LOCKED;
     }
     return SYNCHRONIZE_ERROR;
+}
+
+em_msg radio_state_print_rssi(radio_state_t *state, uint8_t min, uint8_t max){
+    // clang-format off
+    if (!state) return EM_ERR;
+    // clang-format on
+    for (uint8_t ch=min;ch<=max;ch++){
+        printf("Channel %2d = %ld"NL, ch, state->rssi[ch]);
+    }
 }
 

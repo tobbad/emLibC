@@ -32,7 +32,7 @@ typedef struct cycle_s {
     uint32_t timerCNT; // MCU cycle count when cycle count was set
     bool doMeasure;
     bool cntErrror;
-    system_state_e *sync_state;
+    radio_state_t *rstate;
     bool init;
     TIM_HandleTypeDef *timer;
 } cycle_t;
@@ -54,19 +54,19 @@ cycle_t cycle;
 #define SLOT_PRINT_FMT "(c:%5d, %1x, %2d)" // length is 19
 #define SLOT_PRINT_FMT_STR "(c:     ,  ,   )"
 #define SLOT_PRINT_FMT_STR_LEN 16 + 2
-em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, uint8_t postrx, system_state_e *sync_state,
+em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, uint8_t postrx, radio_state_t *rstate,
                   TIM_HandleTypeDef *htim) {
     em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
-    if (!sync_state) return res;
+    if (!rstate) return res;
     // clang-format on
     cycle->press = press;
     cycle->postss = postss;
     cycle->postrx = postrx;
     cycle->slot = my_slot;
     cycle->timer = htim;
-    cycle->sync_state = sync_state;
+    cycle->rstate = rstate;
     cycle->init = true;
     cycle->role = NOT_SET;
     cycle->psubSlot = 0;
@@ -293,8 +293,9 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type) {
     if (!cycle) return res;
     if (!cycle->init) return res;
     if (cycle_check_slot(slot)<0) return res;
-    if (*cycle->sync_state == SYNCHRONIZE_LOCKED) return EM_OK;
-    if (*cycle->sync_state < SYNCHRONIZE_READY) return res;
+    system_state_e state = radio_state_get_sync_state(&rstate);
+    if (state == SYNCHRONIZE_LOCKED) return EM_OK;
+    if (state < SYNCHRONIZE_READY) return res;
     if ((ss_type < SLAVE) || (ss_type>MASTER)) return res;
     if (cycle->role != NOT_SET){
         return res;
@@ -303,8 +304,8 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type) {
     }
     if (ss_type != cycle->role) return res;
     // clang-format on
-    if ((*cycle->sync_state == SYNCHRONIZE_DOING) || (*cycle->sync_state == SYNCHRONIZE_READY)) {
-        *cycle->sync_state = SYNCHRONIZE_DOING;
+     if ((state == SYNCHRONIZE_DOING) || (state == SYNCHRONIZE_READY) ||
+        (state == SYNCHRONIZE_ERROR) || (state == SYNCHRONIZE_LOCKED)) {
         if (ss_type == MASTER) {
 #ifndef UNIT_TEST
             cycle->timerCNT = cycle->timer->Instance->CNT;
@@ -339,24 +340,6 @@ int8_t cycle_get_slot(cycle_t *cycle) {
 }
 
 
-system_state_e   cycle_state(cycle_t *cycle){
-    system_state_e res = EM_ERR;
-    // clang-format off
-    if (!cycle) return res;
-    if (!cycle->init) return res;
-    return *cycle->sync_state;
-}
-
-bool cycle_isOk(cycle_t *cycle, int8_t rxSlot) {
-    // clang-format off
-    if (!cycle) return false;
-    if (!cycle->init) return false;
-    if (cycle_check_slot(rxSlot) < 0) return false;
-    // clang-format on
-    // OK when we sit close enough to rxSlot's window: the distance must stay
-    // below the press tolerance.
-    return cycle_difference(cycle, rxSlot) < cycle->press;
-}
 
 int8_t cycle_press(cycle_t *cycle) {
     // clang-format off
@@ -454,8 +437,9 @@ void cycle_increment(cycle_t *cycle) {
     // clang-format on
     static bool is_set = false;
     static uint8_t cycle_once = false;
-    if (*cycle->sync_state == SYNCHRONIZE) {
-        *cycle->sync_state = SYNCHRONIZE_READY;
+    system_state_e state = radio_state_get_sync_state(&rstate);
+    if (state == SYNCHRONIZE) {
+        radio_state_set_sync_state(&rstate, SYNCHRONIZE_READY);
         is_set = true;
     }
     if (is_set) {
@@ -479,8 +463,8 @@ void cycle_increment(cycle_t *cycle) {
             cycle->cntErrror = true;
         }
     }
-    if ((*cycle->sync_state == SYNCHRONIZE_DOING) || (*cycle->sync_state == SYNCHRONIZE_READY) ||
-        (*cycle->sync_state == SYNCHRONIZE_ERROR) || (*cycle->sync_state == SYNCHRONIZE_LOCKED)) {
+    if ((state == SYNCHRONIZE_DOING) || (state == SYNCHRONIZE_READY) ||
+        (state == SYNCHRONIZE_ERROR) || (state == SYNCHRONIZE_LOCKED)) {
         if (cycle->actSlot != cycle->lSlot) {
             cycle_once = false;
 #if OPTION_SHOW_TIMING == 1
