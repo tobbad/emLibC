@@ -71,6 +71,14 @@ em_msg radio_state_inc_recve(radio_state_t *state,  uint8_t idx){
     state->recve[idx] = MIN(255, state->recve[idx] + 1);
     return EM_OK;
 };
+uint8_t radio_state_get_recv(radio_state_t *state,  uint8_t idx){
+    // clang-format off
+    if (!state) return EM_ERR;
+    if (idx>=CYCLE_SLOT_CNT) return EM_ERR;
+    // clang-format on
+
+    return state->recv[idx] = MIN(255, state->recve[idx] + 1);;
+};
 
 em_msg radio_state_inc_ack(radio_state_t *state,  uint8_t idx){
     // clang-format off

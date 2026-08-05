@@ -283,9 +283,15 @@ int8_t cycle_handle_rx(cycle_t *cycle, AppliFrame_t *rxFrame) {
             ;
     }
     //printf("Handle %x"NL, rxSlot);
-    return rxSlot;}
+    return rxSlot;
+}
 
-
+int8_t cycle_check_slot(int8_t slot) {
+    if (((slot > 0) && (slot <= CYCLE_SLOT_CNT)) && (slot % 2 == 1)) {
+        return slot;
+    }
+    return -1;
+}
 
 em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type) {
     em_msg res = EM_ERR;
