@@ -150,5 +150,6 @@ em_msg radio_state_print_rssi(radio_state_t *state, uint8_t min, uint8_t max){
     for (uint8_t ch=min;ch<=max;ch++){
         printf("Channel %2d = %ld"NL, ch, state->rssi[ch]);
     }
+    return EM_OK;
 }
 
