@@ -187,6 +187,7 @@ bool cycle_doSend(cycle_t *cycle) {
     int8_t subSlot = CYCLE_ACT_SUB_SLOT(cycle);
     res = (actSlot == cycle->slot - 1) && ((CYCLE_SUB_SLOT_CNT - subSlot) < cycle->press);
 #if OPTION_VERBOSE == 1
+    res=1;
     if (res) {
         printf("Do send?                %s" NL, cycle_string(cycle));
     }
@@ -307,7 +308,6 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type) {
     } else {
         cycle->role = ss_type;
     }
-    if (ss_type != cycle->role) return res;
     // clang-format on
      if ((state == SYNCHRONIZE_DOING) || (state == SYNCHRONIZE_READY) ||
         (state == SYNCHRONIZE_ERROR) || (state == SYNCHRONIZE_LOCKED)) {

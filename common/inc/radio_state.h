@@ -13,7 +13,7 @@ typedef struct radio_state_s radio_state_t;
 
 extern radio_state_t  rstate;
 
-em_msg radio_state_init(radio_state_t *state,  system_state_e *sync_state);
+em_msg radio_state_init(radio_state_t *state);
 em_msg radio_state_reset(radio_state_t *state);
 em_msg radio_state_set_(radio_state_t *state,  uint8_t idx, int32_t dbm);
 em_msg radio_state_set_rssi(radio_state_t *state,  uint8_t idx, int32_t dbm);
