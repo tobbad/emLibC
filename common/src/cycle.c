@@ -202,7 +202,7 @@ int8_t cycle_handle_rx(cycle_t *cycle, AppliFrame_t *rxFrame) {
     em_msg res    = cycle_check_slot(rxSlot);
     if (res == EM_ERR) {
         printf("Invalid rxSlot = %d"NL, rxSlot);
-        // radio_state_get_sync_state(&rstate) = SYNCHRONIZE_ERROR; Out of slot
+        radio_state_set_sync_state(&rstate,SYNCHRONIZE_ERROR);
         return rxSlot;
     }
 
@@ -280,12 +280,17 @@ int8_t cycle_handle_rx(cycle_t *cycle, AppliFrame_t *rxFrame) {
 #if OPTION_VERBOSE == 1
             printf("Not covered state %s" NL, idxa2str(&synca2str, radio_state_get_sync_state(&rstate))); // do nothing
 #endif
-            ;
     }
     //printf("Handle %x"NL, rxSlot);
-    return rxSlot;}
+    return rxSlot;
+}
 
-
+int8_t cycle_check_slot(int8_t slot) {
+    if (((slot > 0) && (slot <= CYCLE_SLOT_CNT)) && (slot % 2 == 1)) {
+        return slot;
+    }
+    return -1;
+}
 
 em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type) {
     em_msg res = EM_ERR;
