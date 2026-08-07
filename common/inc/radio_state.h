@@ -15,7 +15,6 @@ extern radio_state_t  rstate;
 
 em_msg radio_state_init(radio_state_t *state);
 em_msg radio_state_reset(radio_state_t *state);
-em_msg radio_state_set_(radio_state_t *state,  uint8_t idx, int32_t dbm);
 em_msg radio_state_set_rssi(radio_state_t *state,  uint8_t idx, int32_t dbm);
 em_msg radio_state_inc_recv(radio_state_t *state,  uint8_t idx);
 uint8_t radio_state_get_recv(radio_state_t *state,  uint8_t idx);

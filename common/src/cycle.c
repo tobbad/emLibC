@@ -483,9 +483,11 @@ void cycle_increment(cycle_t *cycle) {
 #endif
                 cycle_once = true;
                 cycle->cycle += 1;
-                //                if (cycle->cycle%CYCLE_RESET_CNT==0){
-                //                    *cycle->sync_state = SYNCHRONIZE;
-                //                }
+/*
+                if (cycle->cycle%KEEP_ALIVE_CYCLE_CNT==0){
+                    radio_state_set_sync_state(&rstate, SYNCHRONIZE);
+                }
+*/
             }
         }
     }
