@@ -178,12 +178,21 @@ buffer_t * serial_formatOut(uint8_t *ptr, int32_t txLen){
     uint16_t txLenAct = MIN(len+txLen, TX_BUFFER_SIZE);
     int16_t free = TX_BUFFER_SIZE -( len + txLen + TRUCT_NL_LEN);
 
-    memcpy(&tx_buf[len], ptr, txLen);
-    len += txLen;
+    // Copy only what really fits.  txLenAct was computed but used solely for
+    // placing the truncation mark, while the copy itself took the full txLen:
+    // a printf() longer than TX_BUFFER_SIZE minus the timestamp wrote past
+    // tx_buf and ended in a HardFault instead of being truncated.
+    int32_t copy = (int32_t)TX_BUFFER_SIZE - len;
+    if (copy > txLen) copy = txLen;
+    if (copy < 0)     copy = 0;
+    memcpy(&tx_buf[len], ptr, (size_t)copy);
+    len += (int16_t)copy;
     if (free <0) {
         // Add Line end at last position
         isio.ser_overflow++;
         memcpy(&tx_buf[txLenAct - TRUCT_NL_LEN], &TRUNCT_NL, TRUCT_NL_LEN);
+        // ... and never report more bytes than tx_buf actually holds.
+        len = (int16_t)txLenAct;
     }
     tx_buffer->mem = (uint8_t*)tx_buf;
     tx_buffer->used = len;
