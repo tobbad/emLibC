@@ -38,6 +38,7 @@
 #include "_time.h"
 
 #define UART_TIMEOUT_MS 100
+#define USB_TIMEOUT_MS  100
 
 #ifndef TX_BUFFER_SIZE
 #define TX_BUFFER_SIZE 96

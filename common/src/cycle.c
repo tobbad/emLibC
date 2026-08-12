@@ -59,7 +59,10 @@ em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, u
     em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
-    if (!sync_state) return res;
+    if (!sync_state) {
+        printf("ERROR sync_state NOT DEFINED"NL);
+        return res;
+    }
     // clang-format on
     cycle->press = press;
     cycle->postss = postss;

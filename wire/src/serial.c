@@ -219,10 +219,23 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
 #ifdef USE_TINY_USB
         bool con = tud_cdc_connected();
         if (con) {
-            uint8_t written = tud_cdc_write(buf->mem, buf->used);
+            // tud_cdc_write() queues into a CFG_TUD_CDC_TX_BUFSIZE (64 B, full
+            // speed) ring buffer and can accept less than requested once it is
+            // full — a single formatted line (up to TX_BUFFER_SIZE=96 B) can
+            // already exceed that.  Flush and let tud_task() drain the FIFO to
+            // the wire, then retry the remainder, bounded so a host that stops
+            // reading cannot block this call forever.
+            uint32_t sent     = 0;
+            uint32_t deadline = HAL_GetTick() + USB_TIMEOUT_MS;
+            while (sent < (uint32_t)buf->used && con && HAL_GetTick() < deadline) {
+                sent += tud_cdc_write(buf->mem + sent, (uint32_t)buf->used - sent);
+                tud_cdc_write_flush();
+                tud_task();
+                con = tud_cdc_connected();
+            }
             time_stop_su(utxhdl);
-            if (written != buf->used) {
-                isio.usb_drop_cnt += buf->used;
+            if (sent != (uint32_t)buf->used) {
+                isio.usb_drop_cnt += (uint32_t)buf->used - sent;
                 time_stop(utxhdl, NULL);
             }
         } else {
