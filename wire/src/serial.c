@@ -214,9 +214,9 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
         return txLen;
     }
     if (isio.mode & USE_USB) {
-        time_start(utxhdl, buf->used, buf->mem, isio.cycle);
 #ifdef HAL_PCD_MODULE_ENABLED
 #ifdef USE_TINY_USB
+        time_start(utxhdl, buf->used, buf->mem, isio.cycle);
         bool con = tud_cdc_connected();
         if (con) {
             // tud_cdc_write() queues into a CFG_TUD_CDC_TX_BUFSIZE (64 B, full
