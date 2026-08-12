@@ -8,13 +8,13 @@
 #include "cycle.h"
 #include "assert.h"
 #include "common.h"
-#include "radio_state.h"
 #ifndef UNIT_TEST
 #include "options.h"
 #include "stateled.h"
 #include "stm32l4xx_hal_tim.h"
 #endif
 #include "app_x-cube-subg2.h"
+#include "main.h"
 #ifndef UNIT_TEST
 typedef struct cycle_s {
     volatile uint8_t subSlot; // actual sub slot
@@ -32,7 +32,7 @@ typedef struct cycle_s {
     uint32_t timerCNT; // MCU cycle count when cycle count was set
     bool doMeasure;
     bool cntErrror;
-    radio_state_t *rstate;
+    system_state_e *sync_state;
     bool init;
     TIM_HandleTypeDef *timer;
 } cycle_t;
@@ -54,19 +54,19 @@ cycle_t cycle;
 #define SLOT_PRINT_FMT "(c:%5d, %1x, %2d)" // length is 19
 #define SLOT_PRINT_FMT_STR "(c:     ,  ,   )"
 #define SLOT_PRINT_FMT_STR_LEN 16 + 2
-em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, uint8_t postrx, radio_state_t *rstate,
+em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, uint8_t postrx, system_state_e *sync_state,
                   TIM_HandleTypeDef *htim) {
     em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
-    if (!rstate) return res;
+    if (!sync_state) return res;
     // clang-format on
     cycle->press = press;
     cycle->postss = postss;
     cycle->postrx = postrx;
     cycle->slot = my_slot;
     cycle->timer = htim;
-    cycle->rstate = rstate;
+    cycle->sync_state = sync_state;
     cycle->init = true;
     cycle->role = NOT_SET;
     cycle->psubSlot = 0;
@@ -195,97 +195,6 @@ bool cycle_doSend(cycle_t *cycle) {
     return res;
 };
 
-int8_t cycle_handle_rx(cycle_t *cycle, AppliFrame_t *rxFrame) {
-    int8_t rxSlot = AppliFrame_GetSlot(rxFrame);
-    int8_t diff   = cycle_difference(cycle, rxSlot);
-    bool   isAck  = AppliFrame_IsAck(rxFrame);
-
-    em_msg res    = cycle_check_slot(rxSlot);
-    if (res == EM_ERR) {
-        printf("Invalid rxSlot = %d"NL, rxSlot);
-        radio_state_set_sync_state(&rstate,SYNCHRONIZE_ERROR);
-        return rxSlot;
-    }
-
-    switch (radio_state_get_sync_state(&rstate)) {
-        case SYNCHRONIZE_READY: {
-            if (rxSlot == cycle_get_slot(cycle)) {
-                radio_state_set_sync_state(&rstate,SYNCHRONIZE_ERROR);
-                printf("rxSlot %d is mine %d  %s" NL, rxSlot, cycle_get_slot(cycle), cycle_string(cycle));
-            } else {
-                if (cycle_check_slot(rxSlot) >= 0) {
-                    radio_state_inc_recv(&rstate, rxSlot);
-                    cycle_sscnt_stop(cycle);
-                    time_stop(rrxhdl, NULL);
-                    if (cycle_set_slot(cycle, rxSlot, SLAVE) == EM_ERR) {
-                        printf("Can not set cycle role to slave"NL);
-                    }
-                    printf("%s           %s SET ACT SLOT TO  %d" NL, idxa2str(&synca2str, radio_state_get_sync_state(&rstate)), cycle_string(cycle), rxSlot);
-                } else {
-                    printf("Invalid rxSlot %d %s" NL, rxSlot, cycle_string(cycle));
-                }
-            }
-        }
-        break;
-
-        case SYNCHRONIZE_DOING: {
-            cycle_sscnt_stop(cycle);
-            time_stop(rrxhdl, NULL);
-            //printf("SYNCHRONIZE_DOING       %s diff= %2d, rxSlot = %x"NL, cycle_string(cycle), diff, rxSlot);
-            if (rxSlot == cycle_get_slot(cycle)){
-                if (isAck){
-                    radio_state_set_sync_state(&rstate, SYNCHRONIZE_ERROR);
-                    printf("ACK in my Slot %x, rxSlot %x %s"NL, rxSlot, cycle_get_slot(cycle), cycle_string(cycle));
-                } else {
-                    printf("%s in rxSlot %x/my Slot %x %s"NL, AppliFrame_CmdStr(rxFrame), rxSlot, cycle_get_slot(cycle), cycle_string(cycle));
-                }
-            } else if (diff <= cycle_postrx(cycle)){
-                radio_state_inc_recv(&rstate, rxSlot);
-                //printf("%x++"NL, rxSlot);
-                radio_state_set_sync_state(&rstate, radio_state_sync(&rstate));
-#if OPTION_VERBOSE == 1
-                printf("Receive slot (%d) matches %s  %s" NL, rxSlot, idxa2str(&synca2str, radio_state_get_sync_state(&rstate)), cycle_string(cycle));
-#endif
-
-            } else if (diff > RECEIVED_THRESHOLD){
-                radio_state_inc_recve(&rstate, rxSlot);
-                radio_state_set_sync_state(&rstate, radio_state_sync(&rstate));
-#if OPTION_VERBOSE == 1
-                printf("Out of slot frame received (%d) matches %s  %s" NL, rxSlot, idxa2str(&synca2str, radio_state_get_sync_state(&rstate)), cycle_string(cycle));
-#endif
-            } else {
-                  radio_state_inc_recvd(&rstate, rxSlot);
-                  radio_state_set_sync_state(&rstate, radio_state_sync(&rstate));
-
-            }
-        }
-        break;
-
-        case SYNCHRONIZE_LOCKED: {
-            cycle_sscnt_stop(cycle);
-            time_stop(rrxhdl, NULL);
-            if ((rxSlot == cycle_get_slot(cycle)) && (!isAck)) {
-                radio_state_set_sync_state(&rstate, SYNCHRONIZE_ERROR);
-                printf("rxSlot %d is mine %d %s" NL, rxSlot, cycle_get_slot(cycle), cycle_string(cycle));
-                // Someone send in my slot
-            } else if (!(diff < cycle_postrx(cycle))){
-                radio_state_inc_recv(&rstate, rxSlot);
-            } else if ((diff > RECEIVED_THRESHOLD)) {
-                radio_state_inc_recv(&rstate, rxSlot);
-                printf("Slot missmatch rxSlot %X %s diff  = %d"NL, rxSlot, cycle_string(cycle), diff);
-            }
-        }
-
-        break;
-        default:
-#if OPTION_VERBOSE == 1
-            printf("Not covered state %s" NL, idxa2str(&synca2str, radio_state_get_sync_state(&rstate))); // do nothing
-#endif
-    }
-    //printf("Handle %x"NL, rxSlot);
-    return rxSlot;
-}
-
 int8_t cycle_check_slot(int8_t slot) {
     if (((slot > 0) && (slot <= CYCLE_SLOT_CNT)) && (slot % 2 == 1)) {
         return slot;
@@ -298,8 +207,12 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type) {
     // clang-format off
     if (!cycle) return res;
     if (!cycle->init) return res;
+    if (!sync_state) {
+        printf("ERROR sync_state NOT DEFINED"NL);
+        return res;
+    }
     if (cycle_check_slot(slot)<0) return res;
-    system_state_e state = radio_state_get_sync_state(&rstate);
+    system_state_e state = *sync_state;
     if (state == SYNCHRONIZE_LOCKED) return EM_OK;
     if (state < SYNCHRONIZE_READY) return res;
     if ((ss_type < SLAVE) || (ss_type>MASTER)) return res;
@@ -439,12 +352,13 @@ void cycle_increment(cycle_t *cycle) {
     // clang-format off
     if (!cycle) return;
     if (!cycle->init) return;
+    if (!sync_state) return;
     // clang-format on
     static bool is_set = false;
     static uint8_t cycle_once = false;
-    system_state_e state = radio_state_get_sync_state(&rstate);
+    system_state_e state = *sync_state;
     if (state == SYNCHRONIZE) {
-        radio_state_set_sync_state(&rstate, SYNCHRONIZE_READY);
+        *sync_state = SYNCHRONIZE_READY;
         is_set = true;
     }
     if (is_set) {

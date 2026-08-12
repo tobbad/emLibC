@@ -6,7 +6,7 @@
  */
 
 #include "radio_state.h"
-
+#include "main.h"
 
 radio_state_t  rstate;
 
@@ -109,11 +109,13 @@ em_msg radio_state_print(radio_state_t *state){
 }
 
 
-em_msg radio_state_set_sync_state(radio_state_t *state,  system_state_e sync_state){
+em_msg radio_state_set_sync_state(radio_state_t *state,  system_state_e _sync_state){
     // clang-format off
     if (!state) return EM_ERR;
+    if (_sync_state >= SYNC_CNT) return EM_ERR;
     // clang-format on
-    state->sync_state =sync_state;
+    *sync_state = _sync_state;
+    state->sync_state = _sync_state;
     return EM_OK;
 };
 

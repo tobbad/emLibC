@@ -15,9 +15,6 @@ extern "C" {
 typedef struct __TIM_HandleTypeDef {} TIM_HandleTypeDef;
 #endif
 #include "common.h"
-#include "AppliFrame.h"
-#include "system_definitions.h"
-#include "radio_state.h"
 
 typedef enum {
     NOT_SET,
@@ -63,8 +60,9 @@ typedef struct cycle_s cycle_t;
 #endif
 extern cycle_t cycle;
 
-em_msg   cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, uint8_t postrx, radio_state_t *rstate, TIM_HandleTypeDef *htim);
+
 em_msg   cycle_reset(cycle_t *cycle);
+em_msg   cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, uint8_t postrx,  system_state_e * system_state, TIM_HandleTypeDef *htim);
 em_msg   cycle_timer_add(cycle_t *cycle, int8_t add);
 size_t   cycle_size();
 char    *cycle_string(cycle_t *cycle);
@@ -73,7 +71,6 @@ char *   cycle_role(cycle_t *cycle);
 int8_t   cycle_act_sub_slot(cycle_t *cycle);
 uint16_t cycle_cycle(cycle_t *cycle);
 bool     cycle_doSend(cycle_t *cycle);
-int8_t   cycle_handle_rx(cycle_t *cycle, AppliFrame_t *rxFrame);
 int8_t   cycle_check_slot(int8_t slot);
 em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type);
 int8_t  cycle_get_slot(cycle_t *cycle);
