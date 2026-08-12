@@ -11,7 +11,6 @@
 radio_state_t  rstate;
 
 typedef struct radio_state_s{
-    system_state_e sync_state;
     uint8_t        activeSlots;
     int32_t        rssi[CYCLE_SLOT_CNT];
     uint8_t        recv[CYCLE_SLOT_CNT];
@@ -26,7 +25,7 @@ em_msg radio_state_init(radio_state_t *state){
     if (!state) return EM_ERR;
     // clang-format on
     radio_state_reset(state);
-    state->sync_state = SYNC_RESET;
+    *sync_state = SYNC_RESET;
     return EM_OK;
 };
 
@@ -108,23 +107,6 @@ em_msg radio_state_print(radio_state_t *state){
     return EM_OK;
 }
 
-
-em_msg radio_state_set_sync_state(radio_state_t *state,  system_state_e _sync_state){
-    // clang-format off
-    if (!state) return EM_ERR;
-    if (_sync_state >= SYNC_CNT) return EM_ERR;
-    // clang-format on
-    *sync_state = _sync_state;
-    state->sync_state = _sync_state;
-    return EM_OK;
-};
-
-system_state_e radio_state_get_sync_state(radio_state_t *state){
-    // clang-format off
-    if (!state) return EM_ERR;
-    // clang-format on
-    return state->sync_state;
-};
 
 system_state_e radio_state_sync(radio_state_t *state){
     uint16_t sum=0;

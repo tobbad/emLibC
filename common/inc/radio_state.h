@@ -23,8 +23,6 @@ em_msg radio_state_inc_recvd(radio_state_t *state, uint8_t idx);
 em_msg radio_state_inc_recve(radio_state_t *state, uint8_t idx);
 em_msg radio_state_inc_ack(radio_state_t *state, uint8_t idx);
 em_msg radio_state_set_crc_err(radio_state_t *state);
-em_msg radio_state_set_sync_state(radio_state_t *state, system_state_e sync_state);
-system_state_e radio_state_get_sync_state(radio_state_t *state);
 system_state_e radio_state_sync(radio_state_t *state);
 em_msg radio_state_print(radio_state_t *state);
 em_msg radio_state_print_rssi(radio_state_t *state, uint8_t min, uint8_t max);
