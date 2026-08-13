@@ -51,7 +51,7 @@ typedef struct cycle_s {
     uint32_t timerCNT;  // MCU cycle count when cycle count was set
     bool     doMeasure;
     bool     cntErrror;
-    system_state_e *sync_state;
+    system_state_e sync_state;
     bool init;
     TIM_HandleTypeDef *timer;
 } cycle_t;
@@ -62,7 +62,7 @@ extern cycle_t cycle;
 
 
 em_msg   cycle_reset(cycle_t *cycle);
-em_msg   cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, uint8_t postrx,  system_state_e * system_state, TIM_HandleTypeDef *htim);
+em_msg   cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, uint8_t postrx, TIM_HandleTypeDef *htim);
 em_msg   cycle_timer_add(cycle_t *cycle, int8_t add);
 size_t   cycle_size();
 char    *cycle_string(cycle_t *cycle);
@@ -74,7 +74,8 @@ bool     cycle_doSend(cycle_t *cycle);
 int8_t   cycle_check_slot(int8_t slot);
 em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type);
 int8_t  cycle_get_slot(cycle_t *cycle);
-system_state_e   cycle_state(cycle_t *cycle);
+em_msg   cycle_set_state(cycle_t *cycle, system_state_e state);
+system_state_e cycle_get_state(cycle_t *cycle);
 bool     cycle_isOk(cycle_t *cycle, int8_t rxSlot);
 int8_t   cycle_press(cycle_t *cycle);
 int8_t   cycle_postss(cycle_t *cycle);

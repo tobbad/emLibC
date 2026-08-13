@@ -25,7 +25,6 @@ em_msg radio_state_init(radio_state_t *state){
     if (!state) return EM_ERR;
     // clang-format on
     radio_state_reset(state);
-    *sync_state = SYNC_RESET;
     return EM_OK;
 };
 
