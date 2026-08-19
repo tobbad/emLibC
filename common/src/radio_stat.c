@@ -13,6 +13,7 @@ radio_stat_t  rstat;
 typedef struct radio_stat_s{
     uint8_t        activeSlots;
     int32_t        rssi[CYCLE_SLOT_CNT];
+    int32_t        send[CYCLE_SLOT_CNT];
     int32_t        recv[CYCLE_SLOT_CNT];
     int32_t        recvd[CYCLE_SLOT_CNT];
     int32_t        recve[CYCLE_SLOT_CNT];
@@ -58,6 +59,22 @@ uint32_t radio_stat_get_recv(radio_stat_t *stat,  uint8_t idx){
      if (idx>=CYCLE_SLOT_CNT) return EM_ERR;
      // clang-format on
      return stat->recv[idx];
+ }
+
+em_msg radio_stat_inc_send(radio_stat_t *stat,  uint8_t idx){
+    // clang-format off
+    if (!stat) return EM_ERR;
+    if (idx>=CYCLE_SLOT_CNT) return EM_ERR;
+    // clang-format on
+    stat->send[idx] = MIN(UINT32_MAX, stat->send[idx] + 1);
+    return EM_OK;
+}
+uint32_t radio_stat_get_send(radio_stat_t *stat,  uint8_t idx){
+    // clang-format off
+     if (!stat) return EM_ERR;
+     if (idx>=CYCLE_SLOT_CNT) return EM_ERR;
+     // clang-format on
+     return stat->send[idx];
  }
 
 em_msg radio_stat_inc_recvd(radio_stat_t *stat,  uint8_t idx){
@@ -124,9 +141,9 @@ em_msg radio_stat_print(radio_stat_t *stat){
     // clang-format off
     if (!stat) return EM_ERR;
     // clang-format on
-    printf(" slot   recv  reccd  sack  rack  crc_err  rssi"NL);
+    printf(" slot   send    recv   reccd    sack    rack  crc_err  rssi"NL);
     for (uint8_t idx=0;idx<CYCLE_SLOT_CNT;idx++){
-        printf("  %1d      %7ld     %7ld      %7ld      %7ld     %3s     %3ld"NL, idx, stat->recv[idx], stat->recvd[idx], stat->sack[idx], stat->rack[idx], stat->crc_err==0?"Yes":"No ", stat->rssi[idx]);
+        printf("  %2d %7ld %7ld %7ld %7ld %7ld    %3s    %3ld"NL, idx, stat->send[idx], stat->recv[idx], stat->recvd[idx], stat->sack[idx], stat->rack[idx], stat->crc_err==0?"Yes":"No ", stat->rssi[idx]);
     }
     printf("Active slots = %d"NL, stat->activeSlots);
     return EM_OK;

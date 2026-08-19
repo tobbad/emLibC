@@ -18,6 +18,8 @@ extern radio_stat_t rstat;
 em_msg   radio_stat_init(radio_stat_t *stat);
 em_msg   radio_stat_reset(radio_stat_t *stat);
 em_msg   radio_stat_set_rssi(radio_stat_t *stat, uint8_t idx, int32_t dbm);
+em_msg   radio_stat_inc_send(radio_stat_t *stat,  uint8_t idx);
+uint32_t radio_stat_get_send(radio_stat_t *stat,  uint8_t idx);
 em_msg   radio_stat_inc_recv(radio_stat_t *stat, uint8_t idx);
 uint32_t radio_stat_get_recv(radio_stat_t *stat, uint8_t idx);
 em_msg   radio_stat_inc_recvd(radio_stat_t *stat, uint8_t idx);
