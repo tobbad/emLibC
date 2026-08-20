@@ -24,7 +24,7 @@ static idx2str_t sync2str[] = {
     {.str = (char *)&"CHANNEL      ", .idx = CHANNEL},           /*!< Ask for CHANNEL */
     {.str = (char *)&"FREQBAND     ", .idx = FREQBAND},          /*!< Ask for FREQBAND */
     {.str = (char *)&"FREQ_OFFSET  ", .idx = FREQUENCY_OFFSET},  /*!< Ask for FREQUENCY_OFFSET */
-    {.str = (char *)&"SYNC         ", .idx = SYNCHRONIZE},       /*!< Start synchronize */
+    {.str = (char *)&"SYNCHRONIZE  ", .idx = SYNCHRONIZE},       /*!< Start synchronize */
     {.str = (char *)&"SYNC_READY   ", .idx = SYNCHRONIZE_READY}, /*!< Partly synchronized */
     {.str = (char *)&"SYNC_DOING   ", .idx = SYNCHRONIZE_DOING}, /*!< Partly synchronized */
     {.str = (char *)&"SYNC_ERROR   ", .idx = SYNCHRONIZE_ERROR}, /*!< Synchronizion error */
