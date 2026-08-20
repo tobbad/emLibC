@@ -28,6 +28,7 @@ typedef struct cycle_s {
     int8_t postss;
     int8_t postrx;
     set_slot_e role;
+    bool everSlave;    // once true, cycle_set_slot() never grants MASTER again -- see cycle_reset_role()
     int8_t ssCnt;      // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
     uint32_t timerCNT; // MCU cycle count when cycle count was set
     bool doMeasure;
@@ -68,6 +69,7 @@ em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, u
     cycle->sync_state = SYNC_RESET;
     cycle->init  = true;
     cycle->role = NOT_SET;
+    cycle->everSlave = false;
     cycle->psubSlot = 0;
     cycle->cntErrror = 0;
     cycle_sscnt_init(cycle);
@@ -167,6 +169,27 @@ char *cycle_role(cycle_t *cycle) {
     return idxa2str(&cyclea2str, cycle->role);
 }
 
+bool cycle_role_is_set(cycle_t *cycle) {
+    // clang-format off
+    if (!cycle) return false;
+    if (!cycle->init) return false;
+    // clang-format on
+    return cycle->role != NOT_SET;
+}
+
+void cycle_reset_role(cycle_t *cycle) {
+    // A forced resync (keep-alive, or a collision/SYNCHRONIZE_ERROR) is
+    // otherwise silently swallowed: cycle_set_slot() only recomputes
+    // psubSlot/timerCNT the *first* time it is called after role goes back
+    // to NOT_SET, so without this every later resync trigger is a no-op for
+    // timing purposes even though sync_state visibly changes.
+    // clang-format off
+    if (!cycle) return;
+    if (!cycle->init) return;
+    // clang-format on
+    cycle->role = NOT_SET;
+}
+
 system_state_e cycle_get_state(cycle_t *cycle) {
     uint16_t res = EM_ERR;
     // clang-format off
@@ -221,6 +244,18 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type) {
     if (cycle->sync_state == SYNCHRONIZE_LOCKED) return EM_OK;
     if (cycle->sync_state < SYNCHRONIZE_READY) return res;
     if ((ss_type < SLAVE) || (ss_type>MASTER)) return res;
+    // A device that has ever locked its timing onto a real peer must never
+    // fall back to self-referenced MASTER timing again: after
+    // cycle_reset_role() clears role to NOT_SET, MASTER and SLAVE otherwise
+    // race for whichever of "my own TX slot" or "the next RX" happens first
+    // -- silently trading a correct external reference for an uncorrected
+    // free-running one whenever the race goes the wrong way. Once everSlave
+    // is set, only a fresh SLAVE lock (an actual received frame) may claim
+    // the role again; MASTER stays available only for a device that has
+    // never received anyone, as a bootstrap fallback.
+    if ((ss_type == MASTER) && (cycle->everSlave)) {
+        return EM_OK;
+    }
     if (cycle->role != NOT_SET){
         return EM_OK;
     } else {
@@ -244,6 +279,7 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type) {
 
             }
             cycle->role = SLAVE;
+            cycle->everSlave = true;
             res = EM_OK;
         }
 #ifndef UNIT_TEST
@@ -401,6 +437,10 @@ void cycle_increment(cycle_t *cycle) {
                 cycle->cycle += 1;
                 if (cycle->cycle%KEEP_ALIVE_CYCLE_CNT==0){
                     cycle_set_state(cycle, SYNCHRONIZE);
+                    // Without this, cycle_set_slot()'s "role already set"
+                    // guard swallows every periodic resync — see
+                    // cycle_reset_role().
+                    cycle_reset_role(cycle);
                 }
             }
         }
