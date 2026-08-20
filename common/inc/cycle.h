@@ -37,23 +37,24 @@ extern idxa2str_t synca2str;
 #ifdef UNIT_TEST
 typedef struct cycle_s {
     volatile uint8_t subSlot; // actual sub slot
-    uint8_t    psubSlot;   // Pending subslot to be used on next cycle_increment
-    int8_t    actSlot;
-    int8_t    lSlot;
-    int8_t    sSlot;
-    uint16_t  cycle;
-    int8_t    slot;      // Configured slot of device
-    int8_t    press;
-    int8_t    postss;
-    int8_t    postrx;
-    set_slot_e role;
-    bool     everSlave; // once true, cycle_set_slot() never grants MASTER again -- see cycle_reset_role()
-    int8_t   ssCnt;     // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
-    uint32_t timerCNT;  // MCU cycle count when cycle count was set
-    bool     doMeasure;
-    bool     cntErrror;
-    system_state_e sync_state;
-    bool init;
+    uint8_t          psubSlot;         // Pending subslot to be used on next cycle_increment
+    int8_t           actSlot;
+    int8_t           lSlot;
+    int8_t           sSlot;
+    uint16_t         cycle;
+    int8_t           slot; // Configured slot of device
+    int8_t           press;
+    int8_t           postss;
+    int8_t           postrx;
+    set_slot_e       role;
+    bool             everSlave;    // once true, cycle_set_slot() never grants MASTER again -- see cycle_reset_role()
+    int8_t           ssCnt;      // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
+    uint32_t         timerCNT; // MCU cycle count when cycle count was set
+    bool             doMeasure;
+    bool             cntErrror;
+    system_state_e   sync_state;
+    bool             init;
+    bool             set;  // is set when cycle was finished
     TIM_HandleTypeDef *timer;
 } cycle_t;
 #else
@@ -85,6 +86,7 @@ int8_t   cycle_postss(cycle_t *cycle);
 uint8_t  cycle_postrx(cycle_t *cycle);
 int8_t   cycle_difference(cycle_t *cycle, int8_t rxSlot);
 void     cycle_increment(cycle_t *cycle);
+bool     cycle_is_set(cycle_t *cycle);
 void     cycle_sscnt_init(cycle_t *cycle);
 void     cycle_sscnt_start(cycle_t *cycle);
 void     cycle_sscnt_stop(cycle_t *cycle);

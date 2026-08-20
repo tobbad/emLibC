@@ -63,8 +63,8 @@ typedef enum {
  * are silent by default; a diagnostic is emitted only when OPTION_VERBOSE == 1
  * (see Core/Inc/options.h) so the firmware/ISR build stays free of printf cost.
  */
-#ifndef OPTION_VERBOSE
-#define OPTION_VERBOSE 0
+#if OPTION_VERBOSE ==0
+#define MOPTION_VERBOSE 0
 #endif
 
 #if OPTION_VERBOSE == 1

@@ -172,7 +172,7 @@ em_msg state_propagate(state_t *state, uint8_t idx) {
     /* idx muss innerhalb [first, first+cnt) liegen -- sonst OOB auf state[idx]. */
     if ((idx < state->first) || (idx >= state->first + state->cnt)) return res;
     // clang-format on
-#if OPTION_VERBOSE == 1
+#if MOPTION_VERBOSE == 1
     printf("Propagate state %d" NL, idx);
 #endif
     state->state[idx] = (state->state[idx] + 1) % STATE_CNT;
