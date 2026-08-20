@@ -400,7 +400,7 @@ void cycle_increment(cycle_t *cycle) {
                 cycle_once = true;
                 cycle->cycle += 1;
                 if (cycle->cycle%KEEP_ALIVE_CYCLE_CNT==0){
-                    radio_state_set_sync_state(&rstate, SYNCHRONIZE);
+                    cycle_set_state(cycle, SYNCHRONIZE);
                 }
             }
         }
