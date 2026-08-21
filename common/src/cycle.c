@@ -34,8 +34,8 @@ typedef struct cycle_s {
     bool             doMeasure;
     bool             cntErrror;
     system_state_e   sync_state;
-    bool init;
-    bool set;  // is set when cycle was finished
+    bool             init;
+    bool             set;  // is set when cycle was finished
     TIM_HandleTypeDef *timer;
 } cycle_t;
 #endif
