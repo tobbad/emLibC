@@ -230,7 +230,6 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
             while (sent < (uint32_t)buf->used && con && HAL_GetTick() < deadline) {
                 sent += tud_cdc_write(buf->mem + sent, (uint32_t)buf->used - sent);
                 tud_cdc_write_flush();
-                tud_task();
                 con = tud_cdc_connected();
             }
             time_stop_su(utxhdl);

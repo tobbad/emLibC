@@ -18,7 +18,7 @@
 #ifndef UNIT_TEST
 typedef struct cycle_s {
     volatile uint8_t subSlot; // actual sub slot
-    uint8_t          psubSlot;         // Pending subslot to be used on next cycle_increment
+    int8_t           psubSlot;         // Pending subslot to be used on next cycle_increment
     int8_t           actSlot;
     int8_t           lSlot;
     int8_t           sSlot;
@@ -27,7 +27,7 @@ typedef struct cycle_s {
     int8_t           press;
     int8_t           postss;
     int8_t           postrx;
-    set_slot_e       role;
+    dev_role_e       role;
     bool             everSlave;    // once true, cycle_set_slot() never grants MASTER again -- see cycle_reset_role()
     int8_t           ssCnt;      // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
     uint32_t         timerCNT; // MCU cycle count when cycle count was set
@@ -162,7 +162,16 @@ int8_t cycle_act_sub_slot(cycle_t *cycle) {
     return CYCLE_ACT_SUB_SLOT(cycle);
 };
 
-char *cycle_role(cycle_t *cycle) {
+
+dev_role_e cycle_role(cycle_t *cycle) {
+    // clang-format off
+    if (!cycle) return SS_CNT;
+    if (!cycle->init) return SS_CNT;
+    // clang-format on
+    return cycle->role;
+}
+
+char *cycle_role_str(cycle_t *cycle) {
     // clang-format off
     if (!cycle) return "NA ";
     if (!cycle->init) return "NA ";
@@ -236,7 +245,7 @@ int8_t cycle_check_slot(int8_t slot) {
     return -1;
 }
 
-em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type) {
+em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
     em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
@@ -258,8 +267,9 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type) {
         return EM_OK;
     }
     if (cycle->role != NOT_SET){
-        return EM_OK;
-    } else {
+        if (cycle->role != ss_type){
+            return EM_ERR;
+        }
         cycle->role = ss_type;
     }
     // clang-format on
@@ -277,7 +287,6 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, set_slot_e ss_type) {
                 cycle->psubSlot = ((slot-1) * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO + cycle_postss(cycle)) % CYCLE_MODULO;
             } else {
                 cycle->psubSlot = ((slot-1) * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO + (CYCLE_SUB_SLOT_CNT-cycle_postss(cycle))) % CYCLE_MODULO;
-
             }
             cycle->role = SLAVE;
             cycle->everSlave = true;
@@ -472,6 +481,6 @@ em_msg cycle_print(cycle_t *cycle, char *title) {
     printf("actSlot    = %x" NL, cycle_act_slot(cycle));
     printf("actSubSlot = %d" NL, cycle_act_sub_slot(cycle));
     printf("cycle      = %d" NL, cycle_get_state(cycle));
-    printf("role       = %s" NL, cycle_role(cycle));
+    printf("role       = %s" NL, cycle_role_str(cycle));
     return EM_OK;
 }
