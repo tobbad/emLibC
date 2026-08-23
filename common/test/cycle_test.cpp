@@ -303,7 +303,6 @@ TEST_F(CycleTest, CycleDifference) {
                  EXPECT_EQ(got, expected_difference((int16_t)ss, rx)) << "subSlot=" << ss << " rxSlot=" << (int)rx;
                  EXPECT_LE(got, CYCLE_MODULO / 2);     // the shorter way round, so at most half the ring
              }
-             return ;
         }
 
     }
@@ -329,4 +328,9 @@ TEST_F(CycleTest, CycleDifferenceIsSymmetric) {
             EXPECT_EQ(below, n) << "slot=" << (int)slot << " n=" << n;
         }
     }
+}
+
+TEST_F(CycleTest, SlaveResync) {
+    cycle_t c{0};
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, &timerPtr), EM_OK);
 }
