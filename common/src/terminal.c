@@ -7,7 +7,6 @@
 #include "common.h"
 #include "device.h"
 #include "keyboard.h"
-#include "main.h"
 #include "serial.h"
 #include "state.h"
 // clang-format off

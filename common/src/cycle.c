@@ -13,12 +13,10 @@
 #include "stateled.h"
 #include "stm32l4xx_hal_tim.h"
 #endif
-#include "app_x-cube-subg2.h"
-#include "main.h"
 #ifndef UNIT_TEST
 typedef struct cycle_s {
     volatile uint8_t subSlot; // actual sub slot
-    int8_t           psubSlot;         // Pending subslot to be used on next cycle_increment
+    uint8_t           psubSlot;         // Pending subslot to be used on next cycle_increment
     int8_t           actSlot;
     int8_t           lSlot;
     int8_t           sSlot;
@@ -44,7 +42,9 @@ static idx2str_t cycle2str[] = {
     {.str = (char *)&"SLAVE ", .idx = SLAVE},  /*!< Device is slave */
     {.str = (char *)&"MASTER", .idx = MASTER}, /*!< Device is master */
 };
-
+#ifndef KEEP_ALIVE_CYCLE_VALUE
+#define KEEP_ALIVE_CYCLE_VALUE 8
+#endif
 idxa2str_t cyclea2str = {.cnt = ELCNT(cycle2str), .entry = (idx2str_t *)&cycle2str};
 
 #define CYCLE_ACT_SUB_SLOT(_cycle) (((_cycle)->subSlot) & CYCLE_SUB_SLOT_MASK)
@@ -56,24 +56,27 @@ cycle_t cycle;
 #define SLOT_PRINT_FMT "(c:%5d, %1x, %2d)" // length is 19
 #define SLOT_PRINT_FMT_STR "(c:     ,  ,   )"
 #define SLOT_PRINT_FMT_STR_LEN 16 + 2
-em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, uint8_t postrx,
-                  TIM_HandleTypeDef *htim) {
+em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, uint8_t postrx, TIM_HandleTypeDef *htim) {
     em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
+    if (!htim)  return res;
+    if (cycle_check_slot(my_slot)<0)  return res;
     // clang-format on
-    cycle->press = press;
+    memset(cycle, 0, sizeof(cycle_t));
+    cycle->press  = press;
     cycle->postss = postss;
     cycle->postrx = postrx;
     cycle->slot   = my_slot;
     cycle->timer  = htim;
     cycle->sync_state = SYNC_RESET;
-    cycle->init  = true;
     cycle->role = NOT_SET;
     cycle->everSlave = false;
+    cycle->subSlot = 0;
     cycle->psubSlot = 0;
     cycle->cntErrror = 0;
     cycle_sscnt_init(cycle);
+    cycle->init  = true;
     cycle_reset(cycle);
     res = EM_OK;
     return res;
@@ -87,9 +90,10 @@ em_msg cycle_reset(cycle_t *cycle) {
     if (!cycle) return res;
     if (!cycle->init) return res;
     // clang-format on
-    cycle->subSlot = 0;
+    cycle->subSlot = cycle->slot*CYCLE_SUB_SLOT_CNT-cycle->press;
+    cycle->psubSlot = 0;
     cycle->sSlot = 0;
-    cycle->actSlot = 0;
+    cycle->actSlot = CYCLE_ACT_SLOT(cycle);
     cycle->lSlot = 0;
     cycle->cycle = 0;
     res = EM_OK;
@@ -201,7 +205,7 @@ void cycle_reset_role(cycle_t *cycle) {
 }
 
 system_state_e cycle_get_state(cycle_t *cycle) {
-    uint16_t res = EM_ERR;
+    em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
     if (!cycle->init) return res;
@@ -210,10 +214,11 @@ system_state_e cycle_get_state(cycle_t *cycle) {
 }
 
 em_msg cycle_set_state(cycle_t *cycle, system_state_e state ) {
-    uint16_t res = EM_ERR;
+    em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
     if (!cycle->init) return res;
+    if (state >= SYNC_CNT) return res;
     // clang-format on
     cycle->sync_state = state;
     res = EM_OK;
@@ -221,7 +226,7 @@ em_msg cycle_set_state(cycle_t *cycle, system_state_e state ) {
 }
 
 bool cycle_doSend(cycle_t *cycle) {
-    uint16_t res = EM_ERR;
+    em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
     if (!cycle->init) return res;
@@ -251,8 +256,6 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
     if (!cycle) return res;
     if (!cycle->init) return res;
     if (cycle_check_slot(slot)<0) return res;
-    if (cycle->sync_state == SYNCHRONIZE_LOCKED) return EM_OK;
-    if (cycle->sync_state < SYNCHRONIZE_READY) return res;
     if ((ss_type < SLAVE) || (ss_type>MASTER)) return res;
     // A device that has ever locked its timing onto a real peer must never
     // fall back to self-referenced MASTER timing again: after
@@ -266,32 +269,23 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
     if ((ss_type == MASTER) && (cycle->everSlave)) {
         return EM_OK;
     }
-    if (cycle->role != NOT_SET){
-        if (cycle->role != ss_type){
-            return EM_ERR;
-        }
+    if (cycle->role == NOT_SET){
         cycle->role = ss_type;
     }
-    // clang-format on
-     if ((cycle->sync_state == SYNCHRONIZE_DOING) || (cycle->sync_state == SYNCHRONIZE_READY) ||
-        (cycle->sync_state == SYNCHRONIZE_ERROR) || (cycle->sync_state == SYNCHRONIZE_LOCKED)) {
-        if (ss_type == MASTER) {
+    if ((cycle->sync_state == SYNCHRONIZE) || (cycle->sync_state == SYNCHRONIZE_READY)  ||
+        (cycle->sync_state == SYNCHRONIZE_DOING) || (cycle->sync_state == SYNCHRONIZE_ERROR) ||
+        (cycle->sync_state == SYNCHRONIZE_LOCKED)) {
+            if (cycle->role == MASTER) {
 #ifndef UNIT_TEST
-            cycle->timerCNT = cycle->timer->Instance->CNT;
+                cycle->timerCNT = cycle->timer->Instance->CNT;
 #endif
-            cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - cycle_press(cycle)) % CYCLE_MODULO;
-            cycle->role = MASTER;
-            res = EM_OK;
-        } else {
-            if (cycle_postss(cycle)>0){
-                cycle->psubSlot = ((slot-1) * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO + cycle_postss(cycle)) % CYCLE_MODULO;
+                cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - cycle_press(cycle)) % CYCLE_MODULO;
+                res = EM_OK;
             } else {
-                cycle->psubSlot = ((slot-1) * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO + (CYCLE_SUB_SLOT_CNT-cycle_postss(cycle))) % CYCLE_MODULO;
+                cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - cycle_press(cycle)) % CYCLE_MODULO;
+                cycle->everSlave = true;
+                res = EM_OK;
             }
-            cycle->role = SLAVE;
-            cycle->everSlave = true;
-            res = EM_OK;
-        }
 #ifndef UNIT_TEST
         __HAL_TIM_SET_COUNTER(cycle->timer, 0);
 #endif
@@ -333,10 +327,10 @@ uint8_t   cycle_postrx(cycle_t *cycle){
     return cycle->postrx;
 };
 
-int8_t cycle_difference(cycle_t *cycle, int8_t rxSlot) {
+uint8_t cycle_difference(cycle_t *cycle, int8_t rxSlot) {
     // clang-format off
-    if (!cycle) return 0;
-    if (!cycle->init) return 0;
+    if (!cycle) return EM_ERR;
+    if (!cycle->init) return EM_ERR;
     // clang-format on
     // Positive sub-slot distance from the current position to rxSlot's window,
     // with
@@ -353,7 +347,7 @@ int8_t cycle_difference(cycle_t *cycle, int8_t rxSlot) {
     }
     const int16_t above = ((cycle->subSlot - upper) + CYCLE_MODULO) % CYCLE_MODULO;
     const int16_t below = ((lower - cycle->subSlot) + CYCLE_MODULO) % CYCLE_MODULO;
-    return (int8_t)((above < below) ? above : below);
+    return ((above < below) ? above : below);
 }
 
 void cycle_sscnt_init(cycle_t *cycle) {
@@ -410,28 +404,28 @@ void cycle_increment(cycle_t *cycle) {
         is_set = true;
     }
     if (is_set) {
-        if (cycle->psubSlot) {
+        if (cycle->psubSlot>0) {
             cycle->subSlot = cycle->psubSlot;
             cycle->psubSlot = 0;
         }
-        cycle->subSlot++;
-        cycle->subSlot = (cycle->subSlot % (CYCLE_SUB_SLOT_CNT * CYCLE_SLOT_CNT));
-        cycle->actSlot = CYCLE_ACT_SLOT(cycle);
-        cycle->sSlot = CYCLE_ACT_SUB_SLOT(cycle);
+        if ((cycle->sync_state == SYNCHRONIZE_DOING) || (cycle->sync_state == SYNCHRONIZE_READY) ||
+            (cycle->sync_state == SYNCHRONIZE_ERROR) || (cycle->sync_state == SYNCHRONIZE_LOCKED)) {
+            cycle->subSlot++;
+            cycle->subSlot = (cycle->subSlot % (CYCLE_SUB_SLOT_CNT * CYCLE_SLOT_CNT));
+            cycle->actSlot = CYCLE_ACT_SLOT(cycle);
+            cycle->sSlot = CYCLE_ACT_SUB_SLOT(cycle);
 #if OPTION_SHOW_TIMING == 1
         // stateled_set(cycle->sSlot);
-        stateled_toggle_pin(led_3);
+            stateled_toggle_pin(led_3);
 #endif
-    }
-    if (cycle->doMeasure) {
-        int8_t lss = cycle->ssCnt;
-        cycle->ssCnt++;
-        if (cycle->ssCnt < lss) {
-            cycle->cntErrror = true;
         }
-    }
-    if ((cycle->sync_state == SYNCHRONIZE_DOING) || (cycle->sync_state == SYNCHRONIZE_READY) ||
-        (cycle->sync_state == SYNCHRONIZE_ERROR) || (cycle->sync_state == SYNCHRONIZE_LOCKED)) {
+        if (cycle->doMeasure) {
+            int8_t lss = cycle->ssCnt;
+            cycle->ssCnt++;
+            if (cycle->ssCnt < lss) {
+                cycle->cntErrror = true;
+            }
+        }
         if (cycle->actSlot != cycle->lSlot) {
             cycle_once = false;
 #if OPTION_SHOW_TIMING == 1
@@ -457,6 +451,7 @@ void cycle_increment(cycle_t *cycle) {
         }
     }
 }
+
 bool     cycle_is_set(cycle_t *cycle){
     bool res = false;
     // clang-format off

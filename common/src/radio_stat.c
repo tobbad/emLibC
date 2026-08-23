@@ -6,7 +6,6 @@
  */
 
 #include "radio_stat.h"
-#include "main.h"
 
 radio_stat_t  rstat;
 

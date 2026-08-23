@@ -36,8 +36,8 @@ typedef enum {
 extern idxa2str_t synca2str;
 #ifdef UNIT_TEST
 typedef struct cycle_s {
-    volatile uint16_t subSlot; // actual sub slot
-    int8_t           psubSlot;         // Pending subslot to be used on next cycle_increment
+    volatile uint8_t subSlot; // actual sub slot
+    uint8_t          psubSlot;         // Pending subslot to be used on next cycle_increment
     int8_t           actSlot;
     int8_t           lSlot;
     int8_t           sSlot;
@@ -81,11 +81,10 @@ em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type);
 int8_t  cycle_get_slot(cycle_t *cycle);
 em_msg   cycle_set_state(cycle_t *cycle, system_state_e state);
 system_state_e cycle_get_state(cycle_t *cycle);
-bool     cycle_isOk(cycle_t *cycle, int8_t rxSlot);
 int8_t   cycle_press(cycle_t *cycle);
 int8_t   cycle_postss(cycle_t *cycle);
 uint8_t  cycle_postrx(cycle_t *cycle);
-int8_t   cycle_difference(cycle_t *cycle, int8_t rxSlot);
+uint8_t   cycle_difference(cycle_t *cycle, int8_t rxSlot);
 void     cycle_increment(cycle_t *cycle);
 bool     cycle_is_set(cycle_t *cycle);
 void     cycle_sscnt_init(cycle_t *cycle);
