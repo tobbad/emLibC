@@ -22,11 +22,11 @@ typedef struct cycle_s {
     int8_t           sSlot;
     uint16_t         cycle;
     int8_t           slot; // Configured slot of device
+    int8_t           master;
     int8_t           press;
     int8_t           postss;
     int8_t           postrx;
     dev_role_e       role;
-    bool             everSlave;    // once true, cycle_set_slot() never grants MASTER again -- see cycle_reset_role()
     int8_t           ssCnt;      // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
     uint32_t         timerCNT; // MCU cycle count when cycle count was set
     bool             doMeasure;
@@ -68,10 +68,10 @@ em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, u
     cycle->postss = postss;
     cycle->postrx = postrx;
     cycle->slot   = my_slot;
+    cycle->master  = -1;
     cycle->timer  = htim;
     cycle->sync_state = SYNC_RESET;
     cycle->role = NOT_SET;
-    cycle->everSlave = false;
     cycle->subSlot = 0;
     cycle->psubSlot = 0;
     cycle->cntErrror = 0;
@@ -262,13 +262,10 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
     // cycle_reset_role() clears role to NOT_SET, MASTER and SLAVE otherwise
     // race for whichever of "my own TX slot" or "the next RX" happens first
     // -- silently trading a correct external reference for an uncorrected
-    // free-running one whenever the race goes the wrong way. Once everSlave
+    // free-running one whenever the race goes the wrong way. Once isSlave
     // is set, only a fresh SLAVE lock (an actual received frame) may claim
     // the role again; MASTER stays available only for a device that has
     // never received anyone, as a bootstrap fallback.
-    if ((ss_type == MASTER) && (cycle->everSlave)) {
-        return EM_OK;
-    }
     if (cycle->role == NOT_SET){
         cycle->role = ss_type;
     }
@@ -280,10 +277,13 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
                 cycle->timerCNT = cycle->timer->Instance->CNT;
 #endif
                 cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - cycle_press(cycle)) % CYCLE_MODULO;
+                cycle->master   = slot;
                 res = EM_OK;
             } else {
                 cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - cycle_press(cycle)) % CYCLE_MODULO;
-                cycle->everSlave = true;
+                if(cycle->master == -1){
+                    cycle->master =slot;
+                }
                 res = EM_OK;
             }
 #ifndef UNIT_TEST
@@ -442,9 +442,6 @@ void cycle_increment(cycle_t *cycle) {
                 cycle->set = true;
                 if (cycle->cycle%KEEP_ALIVE_CYCLE_VALUE==0){
                     cycle_set_state(cycle, SYNCHRONIZE);
-                    // Without this, cycle_set_slot()'s "role already set"
-                    // guard swallows every periodic resync — see
-                    // cycle_reset_role().
                     cycle_reset_role(cycle);
                 }
             }
@@ -476,6 +473,7 @@ em_msg cycle_print(cycle_t *cycle, char *title) {
     printf("actSlot    = %x" NL, cycle_act_slot(cycle));
     printf("actSubSlot = %d" NL, cycle_act_sub_slot(cycle));
     printf("cycle      = %d" NL, cycle_get_state(cycle));
-    printf("role       = %s" NL, cycle_role_str(cycle));
+    printf("my role    = %s" NL, cycle_role_str(cycle));
+    printf("master is  = %d" NL, cycle->master);
     return EM_OK;
 }

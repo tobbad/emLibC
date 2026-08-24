@@ -18,6 +18,7 @@ typedef struct radio_stat_s{
     int32_t        recve[CYCLE_SLOT_CNT];
     int32_t        rack[CYCLE_SLOT_CNT];
     int32_t        sack[CYCLE_SLOT_CNT];
+    int32_t        master;
     bool           crc_err;
 } radio_stat_t;
 
@@ -128,6 +129,19 @@ uint32_t radio_stat_get_rack(radio_stat_t *stat,  uint8_t idx){
     return stat->rack[idx];
 }
 
+em_msg   radio_stat_inc_master(radio_stat_t *stat){
+    // clang-format off
+    if (!stat) return EM_ERR;
+    // clang-format on
+    stat->master= MIN(CYCLE_MASTER_LOOSE*CYCLE_KEEP_ALIVE_CYCLE_CNT, stat->master + 1);
+}
+uint32_t radio_stat_get_master(radio_stat_t *stat){
+    // clang-format off
+    if (!stat) return EM_ERR;
+    // clang-format on
+    return stat->master;
+}
+
 em_msg radio_stat_set_crc_err(radio_stat_t *stat){
     // clang-format off
     if (!stat) return EM_ERR;
@@ -174,6 +188,7 @@ em_msg radio_stat_print_rssi(radio_stat_t *stat, uint8_t min, uint8_t max){
     for (uint8_t ch=min;ch<=max;ch++){
         printf("Channel %2d = %ld"NL, ch, stat->rssi[ch]);
     }
+    printf("System Master is %d"NL, stat->master);
     return EM_OK;
 }
 

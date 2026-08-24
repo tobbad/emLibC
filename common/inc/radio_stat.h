@@ -28,6 +28,9 @@ em_msg   radio_stat_inc_rack(radio_stat_t *stat, uint8_t idx);
 uint32_t radio_stat_get_rack(radio_stat_t *stat, uint8_t idx);
 em_msg   radio_stat_inc_sack(radio_stat_t *stat, uint8_t idx);
 uint32_t radio_stat_get_sack(radio_stat_t *stat, uint8_t idx);
+em_msg   radio_stat_inc_master(radio_stat_t *stat);
+uint32_t radio_stat_get_master(radio_stat_t *stat);
+
 em_msg   radio_stat_set_crc_err(radio_stat_t *stat);
 system_state_e radio_stat_sync(radio_stat_t *stat);
 em_msg   radio_stat_print(radio_stat_t *stat);
