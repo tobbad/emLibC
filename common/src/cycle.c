@@ -225,6 +225,15 @@ em_msg cycle_set_state(cycle_t *cycle, system_state_e state ) {
     return res;
 }
 
+int8_t cycle_get_master(cycle_t *cycle) {
+    em_msg res = EM_ERR;
+    // clang-format off
+    if (!cycle) return res;
+    if (!cycle->init) return res;
+    // clang-format on
+    return cycle->master;
+}
+
 bool cycle_doSend(cycle_t *cycle) {
     em_msg res = EM_ERR;
     // clang-format off
