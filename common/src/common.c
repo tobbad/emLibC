@@ -304,6 +304,7 @@ int8_t clabel2uint(clabel_u *lbl){
     lbl->str[CMD_LEN - 1] = 0;
     uint8_t len = strlen(lbl->str);
     int8_t res = 0;
+    if (isalpha(lbl->str[0])) return -1;
     for (int8_t i= 0;i <len ;i++){
         int8_t digit = hchar2int(lbl->str[i]);
         if (digit>=0){
