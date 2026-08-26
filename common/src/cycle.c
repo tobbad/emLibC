@@ -23,6 +23,8 @@ typedef struct cycle_s {
     uint16_t         cycle;
     int8_t           slot; // Configured slot of device
     int8_t           master;
+    bool             isMaster;
+    uint16_t         masterAge; // frame cycles since the network was last heard from
     int8_t           press;
     int8_t           postss;
     int8_t           postrx;
@@ -69,6 +71,7 @@ em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, u
     cycle->postrx = postrx;
     cycle->slot   = my_slot;
     cycle->master  = -1;
+    cycle->isMaster  = false;
     cycle->timer  = htim;
     cycle->sync_state = SYNC_RESET;
     cycle->role = NOT_SET;
@@ -192,16 +195,28 @@ bool cycle_role_is_set(cycle_t *cycle) {
 }
 
 void cycle_reset_role(cycle_t *cycle) {
-    // A forced resync (keep-alive, or a collision/SYNCHRONIZE_ERROR) is
-    // otherwise silently swallowed: cycle_set_slot() only recomputes
-    // psubSlot/timerCNT the *first* time it is called after role goes back
-    // to NOT_SET, so without this every later resync trigger is a no-op for
-    // timing purposes even though sync_state visibly changes.
+    // The one "drop the role" primitive: it puts the device back into the
+    // state it boots in, so the next frame heard re-elects a master
+    // (cycle_master_seen). The master watchdog in cycle_increment() calls it
+    // after CYCLE_MASTER_LOOSE_CYCLE_CNT silent frame cycles.
+    //
+    // A forced resync is otherwise silently swallowed: cycle_set_slot() only
+    // recomputes psubSlot/timerCNT the *first* time it is called after role
+    // goes back to NOT_SET, so without this every later resync trigger is a
+    // no-op for timing purposes even though sync_state visibly changes.
+    //
+    // isMaster has to go with it. It is the one-shot guard against a master
+    // re-latching onto its own timing (see cycle_set_slot); keeping it across
+    // a drop would mean no device is ever elected master twice, and the
+    // network dies at the first timeout.
     // clang-format off
     if (!cycle) return;
     if (!cycle->init) return;
     // clang-format on
-    cycle->role = NOT_SET;
+    cycle->role      = NOT_SET;
+    cycle->isMaster  = false;
+    cycle->master    = -1;
+    cycle->masterAge = 0;
 }
 
 system_state_e cycle_get_state(cycle_t *cycle) {
@@ -266,15 +281,22 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
     if (!cycle->init) return res;
     if (cycle_check_slot(slot)<0) return res;
     if ((ss_type < SLAVE) || (ss_type>MASTER)) return res;
-    // A device that has ever locked its timing onto a real peer must never
-    // fall back to self-referenced MASTER timing again: after
-    // cycle_reset_role() clears role to NOT_SET, MASTER and SLAVE otherwise
-    // race for whichever of "my own TX slot" or "the next RX" happens first
-    // -- silently trading a correct external reference for an uncorrected
-    // free-running one whenever the race goes the wrong way. Once isSlave
-    // is set, only a fresh SLAVE lock (an actual received frame) may claim
-    // the role again; MASTER stays available only for a device that has
-    // never received anyone, as a bootstrap fallback.
+    // MASTER is a one-shot bootstrap claim, for a device that has not heard
+    // anyone yet. A master derives the cycle from its own TX slot, so latching
+    // it a second time recomputes psubSlot and resets the timer counter
+    // against that same self-reference -- shifting the phase every slave has
+    // synced to, for no gain. cycle->isMaster records that the claim happened
+    // and is released only by cycle_reset_role(), i.e. by the master watchdog
+    // in cycle_increment() -- so the role is claimable once per election, and
+    // a device can be elected again after a timeout has torn the old master
+    // down. SLAVE claims are never latched: a slave re-syncs on every frame
+    // it receives from its master.
+    //
+    // The guard sits in the MASTER branch below and keys off cycle->role, not
+    // ss_type, so a latched master cannot demote onto a peer it finally hears
+    // -- the SLAVE claim is rejected too (SlaveClaimRejectedAfterMasterLatch).
+    // Demotion is the watchdog's job alone, which keeps one path for it
+    // instead of racing an RX against a timeout.
     if (cycle->role == NOT_SET){
         cycle->role = ss_type;
     }
@@ -282,6 +304,8 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
         (cycle->sync_state == SYNCHRONIZE_DOING) || (cycle->sync_state == SYNCHRONIZE_ERROR) ||
         (cycle->sync_state == SYNCHRONIZE_LOCKED)) {
             if (cycle->role == MASTER) {
+                if (cycle->isMaster) return EM_ERR;
+                cycle->isMaster = true;
 #ifndef UNIT_TEST
                 cycle->timerCNT = cycle->timer->Instance->CNT;
 #endif
@@ -292,11 +316,51 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
                 cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - cycle_press(cycle)) % CYCLE_MODULO;
                 res = EM_OK;
             }
+            // A successful claim is proof the network is there: restart the
+            // watchdog so the fresh role gets a full CYCLE_MASTER_LOOSE_CYCLE_CNT.
+            cycle->masterAge = 0;
 #ifndef UNIT_TEST
         __HAL_TIM_SET_COUNTER(cycle->timer, 0);
 #endif
     }
 
+    return res;
+}
+
+// RX path entry point: a frame arrived in sub-slot window rxSlot.
+//
+// It kicks the master watchdog, and elects a master when there is none. What
+// counts as proof that the network is still there depends on the role:
+//   NOT_SET -- nobody is master (boot, or the watchdog just fired). The first
+//              sender heard wins the election: it becomes cycle->master and we
+//              latch our own timing onto its slot as SLAVE.
+//   SLAVE   -- only a frame from cycle->master counts. Accepting any frame
+//              would keep a partitioned group alive with no master in it.
+//   MASTER  -- any frame counts. A master is its own timing reference and
+//              never hears itself, so requiring its own slot here would time
+//              a perfectly healthy master out every CYCLE_MASTER_LOOSE_CYCLE_CNT
+//              cycles.
+// Returns EM_OK when the frame kicked the watchdog, EM_ERR when it was
+// ignored (wrong slot for a slave) or the election could not be latched.
+em_msg cycle_master_seen(cycle_t *cycle, int8_t rxSlot) {
+    em_msg res = EM_ERR;
+    // clang-format off
+    if (!cycle) return res;
+    if (!cycle->init) return res;
+    if (cycle_check_slot(rxSlot)<0) return res;
+    // clang-format on
+    if (cycle->role == NOT_SET) {
+        res = cycle_set_slot(cycle, rxSlot, SLAVE);
+        if (res == EM_OK) {
+            cycle->master = rxSlot;
+        }
+        return res;
+    }
+    if ((cycle->role == SLAVE) && (rxSlot != cycle->master)) {
+        return res;
+    }
+    cycle->masterAge = 0;
+    res = EM_OK;
     return res;
 }
 
@@ -446,6 +510,17 @@ void cycle_increment(cycle_t *cycle) {
                 cycle_once = true;
                 cycle->cycle += 1;
                 cycle->set = true;
+                // Master watchdog. Every device that holds a role ages here;
+                // cycle_master_seen() resets the age on every frame that proves
+                // the network is still there. Running dry means the master is
+                // gone (or, for a master, that nobody is left listening), so the
+                // role is dropped and the next frame heard elects a new master.
+                if (cycle->role != NOT_SET) {
+                    cycle->masterAge++;
+                    if (cycle->masterAge >= CYCLE_MASTER_LOOSE_CYCLE_CNT) {
+                        cycle_reset_role(cycle);
+                    }
+                }
                 if (cycle->cycle%KEEP_ALIVE_CYCLE_VALUE==0){
                     cycle_set_state(cycle, SYNCHRONIZE);
                 }

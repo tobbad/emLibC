@@ -37,6 +37,9 @@ extern idxa2str_t synca2str;
 #define CYCLE_KEEP_ALIVE_CYCLE_CNT (uint16_t)8 // is set so that at least once in a KEEP_ALIVE_CYCLE_CNT Frame cycle a frame is sent
 #define CYCLE_MASTER_LOOSE 3 // After CYCLE_MASTER_LOOSE*CYCLE_KEEP_ALIVE_CYCLE_CNT a MASTER loooses its slave role and all slave set their role to
                              // NOT_SET. Then when the first Packet is received the Device sending in this slot becomes the new MASTER.
+// Frame cycles a role survives without proof that the network is still there.
+// Kicked by cycle_master_seen(), counted down in cycle_increment().
+#define CYCLE_MASTER_LOOSE_CYCLE_CNT (uint16_t)(CYCLE_MASTER_LOOSE * CYCLE_KEEP_ALIVE_CYCLE_CNT)
 
 #ifdef UNIT_TEST
 typedef struct cycle_s {
@@ -48,6 +51,8 @@ typedef struct cycle_s {
     uint16_t         cycle;
     int8_t           slot; // Configured slot of device
     int8_t           master;
+    bool             isMaster;
+    uint16_t         masterAge; // frame cycles since the network was last heard from
     int8_t           press;
     int8_t           postss;
     int8_t           postrx;
@@ -84,6 +89,7 @@ int8_t   cycle_check_slot(int8_t slot);
 em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type);
 int8_t   cycle_get_slot(cycle_t *cycle);
 int8_t   cycle_get_master(cycle_t *cycle);
+em_msg   cycle_master_seen(cycle_t *cycle, int8_t rxSlot);
 em_msg   cycle_set_state(cycle_t *cycle, system_state_e state);
 system_state_e cycle_get_state(cycle_t *cycle);
 int8_t   cycle_press(cycle_t *cycle);

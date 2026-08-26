@@ -77,9 +77,11 @@ TEST_F(CycleTest, SetSlotSlaveRole) {
     ASSERT_EQ(cycle_set_state(&c, (system_state_e)-1), EM_ERR);
     ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
     EXPECT_EQ(cycle_get_state(&c), SYNCHRONIZE);
+
     EXPECT_EQ(c.psubSlot, 0);
     EXPECT_EQ(c.role, NOT_SET);
     EXPECT_EQ(c.subSlot, ms);
+
     ASSERT_EQ(cycle_set_slot(&c, my_slot-2, SLAVE), EM_OK);
     EXPECT_EQ(c.sync_state, SYNCHRONIZE);
     EXPECT_EQ(c.role, SLAVE);
@@ -106,16 +108,246 @@ TEST_F(CycleTest, SetSlotMasterRole) {
     EXPECT_EQ(c.role, NOT_SET);
     EXPECT_EQ(c.subSlot, ms);
     ASSERT_EQ(cycle_set_slot(&c, my_slot-2, MASTER), EM_OK);
+    ASSERT_EQ(cycle_set_slot(&c, my_slot-2, SLAVE), EM_ERR);
     EXPECT_EQ(c.sync_state, SYNCHRONIZE);
     EXPECT_EQ(c.role, MASTER);
     EXPECT_EQ(c.subSlot, ms);
     EXPECT_EQ(c.psubSlot, (my_slot-2)*CYCLE_SUB_SLOT_CNT-PRESS);
+    ASSERT_EQ(cycle_set_slot(&c, my_slot-2, MASTER), EM_ERR);
+
     cycle_increment(&c);
     EXPECT_EQ(c.sync_state, SYNCHRONIZE_READY);
     EXPECT_STREQ(cycle_role_str(&c), "MASTER");
     EXPECT_EQ(c.subSlot, (my_slot-2)*CYCLE_SUB_SLOT_CNT);
     EXPECT_EQ(c.psubSlot, 0);
 
+}
+
+// ---------------------------------------------------------------------------
+// The MASTER latch (c.isMaster). A MASTER is its own timing reference, so the
+// claim is one-shot: it is taken on the first successful call and never given
+// back by cycle_set_slot. The three tests below pin what that costs.
+// ---------------------------------------------------------------------------
+
+// SLAVE never touches the latch, so a slave keeps re-syncing on every received
+// frame -- the normal case. Guards against "fixing" the latch by hoisting it
+// out of the MASTER branch, which would freeze every slave after its first lock.
+TEST_F(CycleTest, SlaveClaimsAreNotLatched) {
+    cycle_t c{0};
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, &timerPtr), EM_OK);
+    ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
+    for (int8_t slot = 1; slot < CYCLE_SLOT_CNT; slot += 2) {
+        ASSERT_EQ(cycle_set_slot(&c, slot, SLAVE), EM_OK) << "slot=" << (int)slot;
+        EXPECT_FALSE(c.isMaster);
+        EXPECT_EQ(c.role, SLAVE);
+        EXPECT_EQ(c.psubSlot, slot * CYCLE_SUB_SLOT_CNT - PRESS) << "slot=" << (int)slot;
+    }
+}
+
+// cycle_reset_role() is the one "drop the role" primitive, and it releases the
+// latch with the role: the claim is one-shot per election, not per cycle_init.
+// Without this the network would die at the first timeout -- no device could
+// ever be elected master a second time.
+TEST_F(CycleTest, ResetRoleReleasesMasterLatch) {
+    cycle_t c{0};
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, &timerPtr), EM_OK);
+    ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
+    ASSERT_EQ(cycle_set_slot(&c, my_slot, MASTER), EM_OK);
+    ASSERT_TRUE(c.isMaster);
+    ASSERT_EQ(c.master, my_slot);
+
+    cycle_reset_role(&c);
+    EXPECT_EQ(c.role, NOT_SET);
+    EXPECT_FALSE(c.isMaster) << "the latch must go with the role, or re-election is impossible";
+    EXPECT_EQ(c.master, -1) << "nobody is master until the next election";
+    EXPECT_EQ(c.masterAge, 0);
+
+    // The dropped device is a candidate again -- either by claiming MASTER
+    // itself, or (see MasterSeen*) by hearing someone else first.
+    EXPECT_EQ(cycle_set_slot(&c, my_slot, MASTER), EM_OK);
+    EXPECT_TRUE(c.isMaster);
+    EXPECT_EQ(c.master, my_slot);
+}
+
+// A master that finally receives a real frame cannot sync onto it: the branch
+// tests c.role, not ss_type, so the latch swallows the SLAVE claim too. This
+// pins current behaviour -- if a master should be allowed to demote onto an
+// external reference, this is the test that has to change.
+TEST_F(CycleTest, SlaveClaimRejectedAfterMasterLatch) {
+    cycle_t c{0};
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, &timerPtr), EM_OK);
+    ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
+    ASSERT_EQ(cycle_set_slot(&c, my_slot, MASTER), EM_OK);
+    const uint8_t latched = c.psubSlot;
+
+    EXPECT_EQ(cycle_set_slot(&c, my_slot + 2, SLAVE), EM_ERR);
+    EXPECT_EQ(c.role, MASTER);
+    EXPECT_EQ(c.psubSlot, latched) << "the rejected claim must not move the timing";
+    EXPECT_EQ(c.master, my_slot);
+}
+
+// ---------------------------------------------------------------------------
+// Master watchdog and re-election.
+//
+// A role survives CYCLE_MASTER_LOOSE_CYCLE_CNT (CYCLE_MASTER_LOOSE *
+// CYCLE_KEEP_ALIVE_CYCLE_CNT == 24) frame cycles without proof that the network
+// is still there. cycle_master_seen() supplies that proof from the RX path and
+// elects a master when there is none; cycle_increment() ages the counter at the
+// frame-cycle boundary and drops the role via cycle_reset_role() when it runs
+// dry. Together: a master that goes quiet is torn down everywhere, and the next
+// device heard becomes the new master.
+// ---------------------------------------------------------------------------
+
+// Drives cycle_increment() until c->cycle has advanced by `cycles` frame
+// cycles. One frame cycle is CYCLE_MODULO sub-slot ticks; the cap only keeps a
+// broken increment from hanging the suite.
+static void advance_frame_cycles(cycle_t *c, int cycles) {
+    const uint16_t target = (uint16_t)(c->cycle + cycles);
+    const int      cap    = (cycles + 2) * CYCLE_MODULO;
+    for (int i = 0; (i < cap) && (c->cycle != target); i++) {
+        cycle_increment(c);
+    }
+    ASSERT_EQ(c->cycle, target) << "cycle_increment did not advance " << cycles << " frame cycles";
+}
+
+// Latches a fresh cycle_t as SLAVE of `masterSlot` through the election path.
+static void elect(cycle_t *c, int8_t masterSlot) {
+    ASSERT_EQ(cycle_master_seen(c, masterSlot), EM_OK);
+    ASSERT_EQ(c->role, SLAVE);
+    ASSERT_EQ(c->master, masterSlot);
+}
+
+// A master with nobody left to hear tears itself down -- exactly at the
+// timeout, not before. Without this the slot stays occupied by a device the
+// others can no longer reach.
+TEST_F(CycleTest, MasterAgesOutWhenAlone) {
+    cycle_t c{0};
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, &timerPtr), EM_OK);
+    ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
+    ASSERT_EQ(cycle_set_slot(&c, my_slot, MASTER), EM_OK);
+    ASSERT_EQ(c.masterAge, 0);
+
+    advance_frame_cycles(&c, CYCLE_MASTER_LOOSE_CYCLE_CNT - 1);
+    EXPECT_EQ(c.role, MASTER) << "the role has to hold right up to the timeout";
+    EXPECT_TRUE(c.isMaster);
+    EXPECT_EQ(c.masterAge, CYCLE_MASTER_LOOSE_CYCLE_CNT - 1);
+
+    advance_frame_cycles(&c, 1);
+    EXPECT_EQ(c.role, NOT_SET);
+    EXPECT_FALSE(c.isMaster);
+    EXPECT_EQ(c.master, -1);
+    EXPECT_EQ(c.masterAge, 0);
+}
+
+// The normal case: a slave that keeps hearing its master never ages out, no
+// matter how long the link stays up.
+TEST_F(CycleTest, MasterSeenKeepsSlaveAlive) {
+    const int8_t masterSlot = 1;
+    cycle_t      c{0};
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, &timerPtr), EM_OK);
+    ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
+    elect(&c, masterSlot);
+
+    for (int i = 0; i < 4 * CYCLE_MASTER_LOOSE_CYCLE_CNT; i++) {
+        advance_frame_cycles(&c, 1);
+        ASSERT_EQ(cycle_master_seen(&c, masterSlot), EM_OK) << "frame cycle " << i;
+        ASSERT_EQ(c.role, SLAVE) << "frame cycle " << i;
+        ASSERT_EQ(c.masterAge, 0) << "frame cycle " << i;
+    }
+    EXPECT_EQ(c.master, masterSlot);
+}
+
+// Traffic from anyone else is not proof the master is alive: a slave in a
+// partition that lost the master must still time out, however busy the channel.
+TEST_F(CycleTest, SlaveIgnoresFramesFromOtherSlots) {
+    const int8_t masterSlot = 1;
+    const int8_t otherSlot  = 5;
+    cycle_t      c{0};
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, &timerPtr), EM_OK);
+    ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
+    elect(&c, masterSlot);
+
+    for (int i = 0; i < CYCLE_MASTER_LOOSE_CYCLE_CNT - 1; i++) {
+        advance_frame_cycles(&c, 1);
+        ASSERT_EQ(cycle_master_seen(&c, otherSlot), EM_ERR) << "frame cycle " << i;
+        ASSERT_EQ(c.role, SLAVE) << "frame cycle " << i;
+    }
+    EXPECT_EQ(c.masterAge, CYCLE_MASTER_LOOSE_CYCLE_CNT - 1) << "the noise must not have kicked the watchdog";
+
+    advance_frame_cycles(&c, 1);
+    EXPECT_EQ(c.role, NOT_SET);
+    EXPECT_EQ(c.master, -1);
+}
+
+// A master hears everyone but itself, so for it any frame is proof the network
+// is still there. Requiring its own slot would time out a healthy master every
+// 24 cycles and churn the election forever.
+TEST_F(CycleTest, MasterWatchdogAcceptsAnyFrame) {
+    const int8_t otherSlot = 5;
+    cycle_t      c{0};
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, &timerPtr), EM_OK);
+    ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
+    ASSERT_EQ(cycle_set_slot(&c, my_slot, MASTER), EM_OK);
+    ASSERT_NE(otherSlot, c.master);
+
+    for (int i = 0; i < 2 * CYCLE_MASTER_LOOSE_CYCLE_CNT; i++) {
+        advance_frame_cycles(&c, 1);
+        ASSERT_EQ(cycle_master_seen(&c, otherSlot), EM_OK) << "frame cycle " << i;
+        ASSERT_EQ(c.role, MASTER) << "frame cycle " << i;
+    }
+    EXPECT_TRUE(c.isMaster);
+    EXPECT_EQ(c.master, my_slot) << "hearing a slave must not move the master slot";
+}
+
+// The point of the whole mechanism: once the old master has aged out, the first
+// device heard becomes the new one and the cycle re-latches onto its slot.
+TEST_F(CycleTest, FirstFrameAfterTimeoutElectsSender) {
+    const int8_t oldMaster = 1;
+    const int8_t newMaster = 5;
+    cycle_t      c{0};
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, &timerPtr), EM_OK);
+    ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
+    elect(&c, oldMaster);
+
+    advance_frame_cycles(&c, CYCLE_MASTER_LOOSE_CYCLE_CNT);
+    ASSERT_EQ(c.role, NOT_SET) << "the old master has to be gone first";
+
+    EXPECT_EQ(cycle_master_seen(&c, newMaster), EM_OK);
+    EXPECT_EQ(c.role, SLAVE);
+    EXPECT_EQ(c.master, newMaster);
+    EXPECT_EQ(c.masterAge, 0);
+    EXPECT_EQ(c.psubSlot, newMaster * CYCLE_SUB_SLOT_CNT - PRESS) << "timing must re-latch onto the new master";
+}
+
+// The other half of re-election: a device that timed out as MASTER may claim
+// the role again. The isMaster latch is per election, not per cycle_init.
+TEST_F(CycleTest, TimedOutMasterCanClaimAgain) {
+    cycle_t c{0};
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, &timerPtr), EM_OK);
+    ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
+    ASSERT_EQ(cycle_set_slot(&c, my_slot, MASTER), EM_OK);
+
+    advance_frame_cycles(&c, CYCLE_MASTER_LOOSE_CYCLE_CNT);
+    ASSERT_EQ(c.role, NOT_SET);
+
+    EXPECT_EQ(cycle_set_slot(&c, my_slot, MASTER), EM_OK);
+    EXPECT_EQ(c.role, MASTER);
+    EXPECT_TRUE(c.isMaster);
+    EXPECT_EQ(c.master, my_slot);
+    EXPECT_EQ(c.masterAge, 0) << "the fresh claim restarts the watchdog";
+}
+
+// A device with no role does not age: nothing to lose, and masterAge must not
+// run away while it waits for the first frame.
+TEST_F(CycleTest, RolelessCycleDoesNotAge) {
+    cycle_t c{0};
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, &timerPtr), EM_OK);
+    ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
+    ASSERT_EQ(c.role, NOT_SET);
+
+    advance_frame_cycles(&c, 2 * CYCLE_MASTER_LOOSE_CYCLE_CNT);
+    EXPECT_EQ(c.role, NOT_SET);
+    EXPECT_EQ(c.masterAge, 0);
 }
 
 // ---------------------------------------------------------------------------
