@@ -290,9 +290,6 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
                 res = EM_OK;
             } else {
                 cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - cycle_press(cycle)) % CYCLE_MODULO;
-                if(cycle->master == -1){
-                    cycle->master =slot;
-                }
                 res = EM_OK;
             }
 #ifndef UNIT_TEST
@@ -451,7 +448,6 @@ void cycle_increment(cycle_t *cycle) {
                 cycle->set = true;
                 if (cycle->cycle%KEEP_ALIVE_CYCLE_VALUE==0){
                     cycle_set_state(cycle, SYNCHRONIZE);
-                    cycle_reset_role(cycle);
                 }
             }
         }
