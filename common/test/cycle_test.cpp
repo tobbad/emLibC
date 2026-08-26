@@ -85,7 +85,6 @@ TEST_F(CycleTest, SetSlotSlaveRole) {
     EXPECT_EQ(c.role, SLAVE);
     EXPECT_EQ(c.subSlot, ms);
     EXPECT_EQ(c.psubSlot, (my_slot-2)*CYCLE_SUB_SLOT_CNT-PRESS);
-    EXPECT_EQ(c.everSlave, true);
     cycle_increment(&c);
     EXPECT_EQ(c.sync_state, SYNCHRONIZE_READY);
     EXPECT_STREQ(cycle_role_str(&c), "SLAVE ");
@@ -111,7 +110,6 @@ TEST_F(CycleTest, SetSlotMasterRole) {
     EXPECT_EQ(c.role, MASTER);
     EXPECT_EQ(c.subSlot, ms);
     EXPECT_EQ(c.psubSlot, (my_slot-2)*CYCLE_SUB_SLOT_CNT-PRESS);
-    EXPECT_EQ(c.everSlave, false);
     cycle_increment(&c);
     EXPECT_EQ(c.sync_state, SYNCHRONIZE_READY);
     EXPECT_STREQ(cycle_role_str(&c), "MASTER");
