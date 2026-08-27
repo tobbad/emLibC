@@ -50,6 +50,7 @@ typedef struct cycle_s {
     int8_t           sSlot;
     uint16_t         cycle;
     int8_t           slot; // Configured slot of device
+    bool             isSlave;
     int8_t           master;
     bool             isMaster;
     uint16_t         masterAge; // frame cycles since the network was last heard from

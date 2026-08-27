@@ -22,6 +22,7 @@ typedef struct cycle_s {
     int8_t           sSlot;
     uint16_t         cycle;
     int8_t           slot; // Configured slot of device
+    bool             isSlave;
     int8_t           master;
     bool             isMaster;
     uint16_t         masterAge; // frame cycles since the network was last heard from
@@ -71,7 +72,8 @@ em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, u
     cycle->postrx = postrx;
     cycle->slot   = my_slot;
     cycle->master  = -1;
-    cycle->isMaster  = false;
+    cycle->isSlave = false;
+    cycle->isMaster= false;
     cycle->timer  = htim;
     cycle->sync_state = SYNC_RESET;
     cycle->role = NOT_SET;
@@ -313,7 +315,9 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
                 cycle->master   = slot;
                 res = EM_OK;
             } else {
+            	if (cycle->isSlave) return EM_ERR;
                 cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - cycle_press(cycle)) % CYCLE_MODULO;
+                cycle->isSlave = true;
                 res = EM_OK;
             }
             // A successful claim is proof the network is there: restart the
