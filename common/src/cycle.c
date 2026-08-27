@@ -313,6 +313,8 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
 #endif
                 cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - cycle_press(cycle)) % CYCLE_MODULO;
                 cycle->master   = slot;
+                cycle->isSlave = true;
+
                 res = EM_OK;
             } else {
             	if (cycle->isSlave) return EM_ERR;
