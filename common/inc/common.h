@@ -36,8 +36,9 @@ extern "C" {
 #define NL NEWLINE
 #define TRUNCT_NL "*" NL
 #define TRUCT_NL_LEN strlen(TRUNCT_NL)
-#define LINE_LENGTH 96 // FIXME -> CHAR_PER_LINE
-#define MAX_BUTTON_CNT 16
+#define MAX_BUTTON_CNT  16
+#define CYCLE_POSITION  24
+#define DEFAULT_CHAR_NULL  (char*)&"ISNULL"
 
 #ifndef MIN
 #define MIN(a, b) ((a) <= (b) ? (a) : (b))

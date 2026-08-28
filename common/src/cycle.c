@@ -6,6 +6,7 @@
  */
 
 #include "cycle.h"
+#include "serial.h"
 #include "assert.h"
 #include "common.h"
 #ifndef UNIT_TEST
@@ -56,9 +57,9 @@ idxa2str_t cyclea2str = {.cnt = ELCNT(cycle2str), .entry = (idx2str_t *)&cycle2s
 
 cycle_t cycle;
 
-#define SLOT_PRINT_FMT "(c:%5d, %1x, %2d)" // length is 19
-#define SLOT_PRINT_FMT_STR "(c:     ,  ,   )"
+#define SLOT_PRINT_FMT     "(c:%5d, %1x, %2d)" // length is 19
 #define SLOT_PRINT_FMT_STR_LEN 16 + 2
+
 em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, uint8_t postrx, TIM_HandleTypeDef *htim) {
     em_msg res = EM_ERR;
     // clang-format off
@@ -145,13 +146,42 @@ em_msg cycle_timer_add(cycle_t *cycle, int8_t add) {
 
 char *cycle_string(cycle_t *cycle) {
     // clang-format off
-    if (!cycle) return NULL;
-    if (!cycle->init) return NULL;
+    if (!cycle) return DEFAULT_CHAR_NULL;
+    if (!cycle->init) return DEFAULT_CHAR_NULL;
     // clang-format on
     static char rStr[SLOT_PRINT_FMT_STR_LEN];
     snprintf(rStr, SLOT_PRINT_FMT_STR_LEN, SLOT_PRINT_FMT, cycle->cycle, CYCLE_ACT_SLOT(cycle), CYCLE_ACT_SUB_SLOT(cycle));
     return rStr;
 }
+
+char *cycle_text_char(cycle_t *cycle, const char * text) {
+    // clang-format off
+    if (!cycle) return DEFAULT_CHAR_NULL;
+    if (!cycle->init) return DEFAULT_CHAR_NULL;
+    if (!text) return DEFAULT_CHAR_NULL;
+    // clang-format on
+    uint8_t text_len= strlen(text);
+    static char rbuf[TX_BUFFER_SIZE];
+    char * cycle_str = cycle_string(cycle);
+    memset(rbuf, ' ', TX_BUFFER_SIZE);
+    text_len = MIN(text_len, CYCLE_POSITION);
+    memcpy(rbuf, text, text_len);
+    memcpy(&rbuf[CYCLE_POSITION], cycle_str, strlen(cycle_str));
+    text_len =  CYCLE_POSITION+strlen(cycle_str)+1;
+    rbuf[text_len] =0;
+    return rbuf;
+}
+em_msg   cycle_text_print(cycle_t *cycle, const char * text){
+    em_msg res = EM_ERR;
+    // clang-format off
+    if (!cycle) return res;
+    if (!cycle->init) return res;
+    if (!text) return res;
+    // clang-format on
+    char * line= cycle_text_char(cycle, text);
+    printf("%s"NL, line);
+    return EM_OK;
+};
 
 int8_t cycle_act_slot(cycle_t *cycle) {
     em_msg res = EM_ERR;

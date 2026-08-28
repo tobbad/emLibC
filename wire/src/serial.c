@@ -352,9 +352,7 @@ static void serial_apply_change(clabel_u *lbl) {
         int8_t res = clabel2uint(lbl);
         if (res>= 0) {
             if (!state_get_dirty(&isio.state)) {
-                if  (res>=0) {
-                    state_propagate_by_idx(&isio.state, res);
-                }
+                state_propagate_by_idx(&isio.state, res);
                 isio.state.clabel.cmd = lbl->cmd;
             }
         }

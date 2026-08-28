@@ -6,6 +6,7 @@
  */
 
 #include "state.h"
+#include "serial.h"
 #include "assert.h"
 #include "common.h"
 #include "options.h"
@@ -348,18 +349,18 @@ bool state_merge(state_t *inState, state_t *outState) {
     return outState->dirty;
 }
 
-em_msg state_print(const state_t *state, const char *title, bool doLong, char *cycle_string) {
+em_msg state_print(const state_t *state, const char *title, bool doLong, cycle_t *cycle) {
     // clang-format off
     em_msg res = EM_ERR;
     if (state_check(state)) return res;
     // clang-format on
     if ((title != NULL) && (doLong)) {
-        printf("%s" NL, title);
+        cycle_text_print(cycle, title);
     }
     if (doLong) {
         printf("first      = %d" NL, state->first);
         printf("cnt        = %d" NL, state->cnt);
-        printf("clabel     = 0x%04x" NL, state->clabel.cmd);
+        printf("clabel     = 0x%04lx" NL, state->clabel.cmd);
     }
     if (doLong) {
         printf("label      = ");
@@ -386,9 +387,9 @@ em_msg state_print(const state_t *state, const char *title, bool doLong, char *c
     printf(NL);
 
     if (state->dirty && 0x01) {
-        printf("Dirty                   %s" NL, cycle_string);
+        printf("Dirty" NL);
     } else {
-        printf("Not Dirty               %s" NL, cycle_string);
+        printf("Not Dirty" NL);
     }
     if ((state->dirty >> 6) == 1) {
         printf("clable is cmd" NL);

@@ -78,6 +78,8 @@ em_msg   cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss,
 em_msg   cycle_timer_add(cycle_t *cycle, int8_t add);
 size_t   cycle_size();
 char    *cycle_string(cycle_t *cycle);
+char    *cycle_text_char(cycle_t *cycle, const char * text);
+em_msg   cycle_text_print(cycle_t *cycle, const char * text);
 int8_t   cycle_act_slot(cycle_t *cycle);
 dev_role_e cycle_role(cycle_t *cycle);
 char *   cycle_role_str(cycle_t *cycle);

@@ -34,7 +34,7 @@ typedef struct time_single_s {
     int64_t last_start_ns;
     int64_t first_ns;
     int64_t last_ns; // This is set, when maximal baudrate was achived
-    float max_baud;
+    float   max_baud;
     int32_t max_cnt;
     uint8_t mode;
     uint8_t name[LINE_CHAR];
