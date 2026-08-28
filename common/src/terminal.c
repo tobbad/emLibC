@@ -6,6 +6,7 @@
  */
 #include "common.h"
 #include "device.h"
+#include "serial.h"
 #include "keyboard.h"
 #include "serial.h"
 #include "state.h"
@@ -121,8 +122,8 @@ kybd_t terminal_dev = {.init = &terminal_init,
 };
 
 int8_t terminal_waitForNumber(char **key) {
-    static char buffer[LINE_LENGTH];
-    memset(buffer, 0, LINE_LENGTH);
+    static char buffer[TX_BUFFER_SIZE];
+    memset(buffer, 0, TX_BUFFER_SIZE);
     HAL_StatusTypeDef status;
     char ch[3] = {0xFF, 0, 0}; // only one is needed
     bool stay = true;
