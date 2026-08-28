@@ -194,7 +194,7 @@ buffer_t * serial_formatOut(uint8_t *ptr, int32_t txLen){
         // ... and never report more bytes than tx_buf actually holds.
         len = (int16_t)txLenAct;
     }
-    tx_buffer->mem = (uint8_t*)tx_buf;
+    memcpy(tx_buffer->mem, tx_buf, len);
     tx_buffer->used = len;
     return tx_buffer;
 }
@@ -208,6 +208,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
         // Save ptr, len
         return 0;
     }
+    if (txLen>TX_BUFFER_SIZE) return txLen;
     buffer_t * buf = serial_formatOut(ptr, txLen);
     if (isio.mode & MEASURE_BYTE_PER_SECONDS) {
         time_auto(stxhdl, buf->used, buf->mem, isio.cycle);

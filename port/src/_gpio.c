@@ -35,6 +35,7 @@ em_msg GpioCheckPort(GPIO_TypeDef *port) {
     return EM_ERR;
 }
 em_msg GpioCheckPin_isIn(gpio_pin_t *pin) { return pin->conf.Mode == GPIO_MODE_INPUT; }
+em_msg GpioCheckPin_isOut(gpio_pin_t *pin) { return (pin->conf.Mode&MODE_OUTPUT); }
 
 em_msg GpioPinInit(gpio_pin_t *pin) {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
