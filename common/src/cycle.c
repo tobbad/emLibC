@@ -199,6 +199,7 @@ em_msg   cycle_text_print_s(cycle_t *cycle, const char * text, char * str){
 
 em_msg   cycle_text_print_v(cycle_t *cycle, const char * text, void *data){
     char uint32[] = "%d";
+    char x32[]    = "%x";
     em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
@@ -207,6 +208,8 @@ em_msg   cycle_text_print_v(cycle_t *cycle, const char * text, void *data){
     // clang-format on
     char buf[TX_BUFFER_SIZE];
     if (strstr(text, uint32) != NULL){
+        snprintf(buf, TX_BUFFER_SIZE, text, *(uint32_t*)data);
+    } else if (strstr(text, x32) != NULL){
         snprintf(buf, TX_BUFFER_SIZE, text, *(uint32_t*)data);
     }
     char * line= cycle_text_char(cycle, text);
