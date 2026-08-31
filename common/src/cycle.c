@@ -23,8 +23,8 @@ typedef struct cycle_s {
     int8_t           sSlot;
     uint16_t         cycle;
     int8_t           slot; // Configured slot of device
-    bool             isSlave;
     int8_t           master;
+    bool             isSlave;
     bool             isMaster;
     uint16_t         masterAge; // frame cycles since the network was last heard from
     int8_t           press;
@@ -72,9 +72,9 @@ em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, u
     cycle->postss = postss;
     cycle->postrx = postrx;
     cycle->slot   = my_slot;
-    cycle->master  = -1;
-    cycle->isSlave = false;
+    cycle->master = -1;
     cycle->isMaster= false;
+    cycle->isSlave= false;
     cycle->timer  = htim;
     cycle->sync_state = SYNC_RESET;
     cycle->role = NOT_SET;
@@ -283,6 +283,7 @@ void cycle_reset_role(cycle_t *cycle) {
     // clang-format on
     cycle->role      = NOT_SET;
     cycle->isMaster  = false;
+    cycle->isSlave   = false;
     cycle->master    = -1;
     cycle->masterAge = 0;
 }
@@ -377,20 +378,25 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
 #ifndef UNIT_TEST
                 cycle->timerCNT = cycle->timer->Instance->CNT;
 #endif
-                cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - cycle_press(cycle)) % CYCLE_MODULO;
-                cycle->master   = slot;
-                cycle->isSlave = true;
-
-                res = EM_OK;
+                if (cycle->master   != slot){
+					cycle->master   = slot;
+					cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - cycle_press(cycle)) % CYCLE_MODULO;
+					// A successful claim is proof the network is there: restart the
+					// watchdog so the fresh role gets a full CYCLE_MASTER_LOOSE_CYCLE_CNT.
+		            cycle->masterAge = 0;
+		            cycle->isSlave = false;
+					return EM_OK;
+            	}
+                res = EM_ERR;
             } else {
-            	if (cycle->isSlave) return EM_ERR;
-                cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - cycle_press(cycle)) % CYCLE_MODULO;
-                cycle->isSlave = true;
-                res = EM_OK;
+            	if ((cycle->master == -1)&&(!cycle->isSlave)){
+            		cycle->isSlave = true;
+					cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - cycle_press(cycle)) % CYCLE_MODULO;
+					return EM_OK;
+				}
+            	return EM_ERR;
+
             }
-            // A successful claim is proof the network is there: restart the
-            // watchdog so the fresh role gets a full CYCLE_MASTER_LOOSE_CYCLE_CNT.
-            cycle->masterAge = 0;
 #ifndef UNIT_TEST
         __HAL_TIM_SET_COUNTER(cycle->timer, 0);
 #endif
