@@ -134,7 +134,9 @@ em_msg   radio_stat_inc_master(radio_stat_t *stat){
     if (!stat) return EM_ERR;
     // clang-format on
     stat->master= MIN(CYCLE_MASTER_LOOSE*CYCLE_KEEP_ALIVE_CYCLE_CNT, stat->master + 1);
+    return EM_OK;
 }
+
 uint32_t radio_stat_get_master(radio_stat_t *stat){
     // clang-format off
     if (!stat) return EM_ERR;
@@ -188,7 +190,7 @@ em_msg radio_stat_print_rssi(radio_stat_t *stat, uint8_t min, uint8_t max){
     for (uint8_t ch=min;ch<=max;ch++){
         printf("Channel %2d = %ld"NL, ch, stat->rssi[ch]);
     }
-    printf("System Master is %d"NL, stat->master);
+    printf("System Master is %ld"NL, stat->master);
     return EM_OK;
 }
 
