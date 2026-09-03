@@ -390,6 +390,7 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
                 res = EM_ERR;
             } else {
             	if ((cycle->master == -1)&&(!cycle->isSlave)){
+            		cycle->master  = slot;
             		cycle->isSlave = true;
 					cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - cycle_press(cycle)) % CYCLE_MODULO;
 					return EM_OK;
@@ -595,9 +596,9 @@ void cycle_increment(cycle_t *cycle) {
                 // role is dropped and the next frame heard elects a new master.
                 if (cycle->role != NOT_SET) {
                     cycle->masterAge++;
-                    if (cycle->masterAge >= CYCLE_MASTER_LOOSE_CYCLE_CNT) {
-                        cycle_reset_role(cycle);
-                    }
+//                    if (cycle->masterAge >= CYCLE_MASTER_LOOSE_CYCLE_CNT) {
+//                        cycle_reset_role(cycle);
+//                    }
                 }
                 if (cycle->cycle%KEEP_ALIVE_CYCLE_VALUE==0){
                     cycle_set_state(cycle, SYNCHRONIZE);
