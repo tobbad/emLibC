@@ -34,7 +34,7 @@ extern "C" {
 #define NEWLINE "\r\n"
 #define NEW_LINE_LEN strlen(NEWLINE)
 #define NL NEWLINE
-#define TRUNCT_NL "*" NL
+#define TRUNCT_NL "?" NL
 #define TRUCT_NL_LEN strlen(TRUNCT_NL)
 #define MAX_BUTTON_CNT  16
 #define CYCLE_POSITION  24
