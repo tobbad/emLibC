@@ -601,9 +601,12 @@ void cycle_increment(cycle_t *cycle) {
 //                    }
                 }
                 if (cycle->cycle%KEEP_ALIVE_CYCLE_VALUE==0){
+                    if (cycle_role(cycle)== SLAVE){
+                      	cycle_reset_role(cycle);
+                    }
                     cycle_set_state(cycle, SYNCHRONIZE);
                 }
-            }
+           }
         }
     }
 }
