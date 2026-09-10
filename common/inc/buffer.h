@@ -51,6 +51,7 @@ buffer_t * buffer_init(buffer_t *buffer, uint16_t size, b_type_e type);
 int16_t buffer_transfer(buffer_t *from, buffer_t *to);
 buffer_t *buffer_reset(buffer_t *buffer);
 em_msg buffer_clear(buffer_t *buffer);
+em_msg buffer_strip(buffer_t *buffer);
 em_msg buffer_tolower(buffer_t *buffer);
 em_msg buffer_set(buffer_t *buffer, const uint8_t *data, int16_t size);
 em_msg buffer_get(buffer_t *buffer, uint8_t *data, int16_t *size);

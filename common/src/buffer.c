@@ -174,6 +174,17 @@ em_msg buffer_clear(buffer_t *buffer) {
     memset(buffer->lbl.str, 0, CMD_LEN);
     return res;
 };
+em_msg buffer_strip(buffer_t *buffer) {
+    // clang-format off
+    em_msg res = buffer_check(buffer, false);
+    if (res == EM_ERR) return res;
+    // clang-format on
+    for (uint16_t i = 0;i<buffer->used;i++){
+    	if (buffer->mem[i] == NL[0]) buffer->mem[i]=' ';
+    	if (buffer->mem[i] == NL[1]) buffer->mem[i]=' ';
+    }
+    return EM_OK;
+};
 
 int16_t buffer_used(const buffer_t *buffer) {
     EM_RETURN_IF_NULL(buffer, 0);
