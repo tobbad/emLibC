@@ -180,8 +180,8 @@ em_msg buffer_strip(buffer_t *buffer) {
     if (res == EM_ERR) return res;
     // clang-format on
     for (uint16_t i = 0;i<buffer->used;i++){
-    	if (buffer->mem[i] == NL[0]) buffer->mem[i]=' ';
-    	if (buffer->mem[i] == NL[1]) buffer->mem[i]=' ';
+    	if (buffer->mem[i] == NL[0]) buffer->mem[i]=0;
+    	if (buffer->mem[i] == NL[1]) buffer->mem[i]=0;
     }
     return EM_OK;
 };
