@@ -25,26 +25,17 @@ static mkey_t reset_key = {.last = 1, .current = 1, .unstable = 0, .cnt = 0, .st
 static bool xpad_devh_valid(dev_handle_t devh) {
     return (devh >= 0) && (devh < DEVICE_CNT);
 }
-
+// clang-format off
 static xpad_dev_t default_xscan_dev = {
     .spalte =
         {
             // Output
             .cnt = SPALTEN_CNT,
-            .pin =
-                {
-                    {.port = GPIOA,
-                     .pin = GPIO_PIN_0,
-                     .conf = {.Mode = GPIO_MODE_OUTPUT_PP, .Pull = GPIO_PULLUP}}, // spalte 1
-                    {.port = GPIOA,
-                     .pin = GPIO_PIN_4,
-                     .conf = {.Mode = GPIO_MODE_OUTPUT_PP, .Pull = GPIO_PULLUP}}, // spalte 2
-                    {.port = GPIOB,
-                     .pin = GPIO_PIN_3,
-                     .conf = {.Mode = GPIO_MODE_OUTPUT_PP, .Pull = GPIO_PULLUP}}, // spalte 3
-                    {.port = GPIOC,
-                     .pin = GPIO_PIN_1,
-                     .conf = {.Mode = GPIO_MODE_OUTPUT_PP, .Pull = GPIO_PULLUP}}, // spalte 4
+            .pin = {
+                    {.port = GPIOA, .pin = GPIO_PIN_0, .conf = {.Mode = GPIO_MODE_OUTPUT_PP, .Pull = GPIO_PULLUP}}, // spalte 1
+                    {.port = GPIOA, .pin = GPIO_PIN_4, .conf = {.Mode = GPIO_MODE_OUTPUT_PP, .Pull = GPIO_PULLUP}}, // spalte 2
+                    {.port = GPIOB, .pin = GPIO_PIN_3, .conf = {.Mode = GPIO_MODE_OUTPUT_PP, .Pull = GPIO_PULLUP}}, // spalte 3
+                    {.port = GPIOC, .pin = GPIO_PIN_1, .conf = {.Mode = GPIO_MODE_OUTPUT_PP, .Pull = GPIO_PULLUP}}, // spalte 4
                 },
         },
     .zeile =
@@ -53,15 +44,9 @@ static xpad_dev_t default_xscan_dev = {
             .cnt = ZEILEN_CNT,
             .pin =
                 {
-                    {.port = GPIOA,
-                     .pin = GPIO_PIN_10,
-                     .conf =
-                         {
-                             .Mode = GPIO_MODE_INPUT,
-                             .Pull = GPIO_PULLUP,
-                         }},                                                                                     // zeilen 1
-                    {.port = GPIOB, .pin = GPIO_PIN_3, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // zeilen 2
-                    {.port = GPIOB, .pin = GPIO_PIN_5, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // zeilen 3
+                    {.port = GPIOA, .pin = GPIO_PIN_10, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}}, // zeile 1                                                                                   // zeilen 1
+                    {.port = GPIOB, .pin = GPIO_PIN_3,  .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}}, // zeilen 2
+                    {.port = GPIOB, .pin = GPIO_PIN_5,  .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}}, // zeilen 3
                     {.port = GPIOB, .pin = GPIO_PIN_10, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}}, // zeilen 4
                 },
         },
@@ -104,6 +89,8 @@ static xpad_dev_t default_eight_dev = {
             .first = 0,
         },
 };
+// clang-format on
+
 static void xpad_reset(dev_handle_t devh);
 static void xpad_reset_key(mkey_t *key, uint8_t cnt);
 static uint16_t xpad_read_zeile(dev_handle_t devh, uint8_t spalten_nr);
@@ -257,9 +244,8 @@ static uint16_t xpad_update_key(uint8_t devh, uint8_t index, bool pinVal) {
         my_xpad[devh].key[index].stable = pinVal;
         // printf("Reached index %d logi level %d (pinVal=%d)"NL, index,STABLE_CNT, pinVal);
         if (my_xpad[devh].key[index].stable) {
-            state_propagate_by_idx(&my_xpad[devh].state, index);
+            state_propagate_by_lbl(&my_xpad[devh].state, label);
             // my_xpad[devh].state.dirty = true;
-            my_xpad[devh].state.dirty = true;
             // printf("Pushed   Key @ (index =%d, z=%d, s=%d, value = %c)" NL, index, z, s, label);
         } else {
             // printf("Released Key @ (index =%d, z=%d, s=%d, value = %c)"NL, index, z s, label);
@@ -308,11 +294,10 @@ static int16_t xpad_eight_scan(dev_handle_t devh) {
     if ((index < 0) || (index >= MAX_STATE_CNT)) {
         return -1; /* key2value liefert 0xffff, wenn nichts passt -> label[] OOB */
     }
+    char line[TX_BUFFER_SIZE];
     char ch = my_xpad[devh].state.label[index];
-    index = label2int8(ch);
-#if EMLIB_VERBOSE == 1
-    printf("Got Keyscan 0x%04x, index %d, label %c" NL, res, index, ch);
-#endif
+    snprintf(line, TX_BUFFER_SIZE , "Received 8key: \"%c\"", ch);
+    cycle_text_print(&cycle, line);
     return index;
 }
 

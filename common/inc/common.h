@@ -30,6 +30,12 @@ extern "C" {
 // #ifdef UNIT_TEST
 // #warning "Building emLibC with UNIT_TEST enabled"
 // #endif
+#ifndef TX_BUFFER_SIZE
+#define TX_BUFFER_SIZE 96
+#endif
+#ifndef RX_BUFFER_SIZE
+#define RX_BUFFER_SIZE 20
+#endif
 
 #define NEWLINE "\r\n"
 #define NEW_LINE_LEN strlen(NEWLINE)

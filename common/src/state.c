@@ -314,8 +314,6 @@ em_msg state_diff(state_t *ref, state_t *state, state_t *diff) {
     diff->dirty = false;
     if (ref->clabel.cmd != state->clabel.cmd) {
         ref->clabel.cmd = state->clabel.cmd;
-        diff->clabel.cmd = state->clabel.cmd;
-        diff->dirty = true;
     }
     for (uint8_t ri = ref->first, si = state->first; ri < ref->first + ref->cnt; ri++, si++) {
         if (ref->state[ri] != state->state[si]) {
