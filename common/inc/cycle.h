@@ -44,7 +44,7 @@ extern idxa2str_t synca2str;
 #ifdef UNIT_TEST
 typedef struct cycle_s {
     volatile uint8_t subSlot; // actual sub slot
-    uint8_t          psubSlot;         // Pending subslot to be used on next cycle_increment
+    int8_t          psubSlot;         // Pending subslot to be used on next cycle_increment
     int8_t           actSlot;
     int8_t           lSlot;
     int8_t           sSlot;
@@ -74,7 +74,7 @@ extern cycle_t cycle;
 
 
 em_msg   cycle_reset(cycle_t *cycle);
-em_msg   cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, uint8_t postrx, TIM_HandleTypeDef *htim);
+em_msg   cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, uint8_t postrx, uint8_t kaCnt, TIM_HandleTypeDef *htim);
 em_msg   cycle_timer_add(cycle_t *cycle, int8_t add);
 size_t   cycle_size();
 char    *cycle_string(cycle_t *cycle);
@@ -89,6 +89,9 @@ bool     cycle_role_is_set(cycle_t *cycle);
 void     cycle_reset_role(cycle_t *cycle);
 int8_t   cycle_act_sub_slot(cycle_t *cycle);
 uint16_t cycle_cycle(cycle_t *cycle);
+em_msg   cycle_dec_ka(cycle_t *cycle);
+em_msg   cycle_reset_ka(cycle_t *cycle);
+bool     cycle_is_ka(cycle_t *cycle);
 bool     cycle_doSend(cycle_t *cycle);
 int8_t   cycle_check_slot(int8_t slot);
 em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type);
@@ -100,9 +103,9 @@ system_state_e cycle_get_state(cycle_t *cycle);
 int8_t   cycle_press(cycle_t *cycle);
 int8_t   cycle_postss(cycle_t *cycle);
 uint8_t  cycle_postrx(cycle_t *cycle);
-uint8_t   cycle_difference(cycle_t *cycle, int8_t rxSlot);
+uint8_t  cycle_difference(cycle_t *cycle, int8_t rxSlot);
 void     cycle_increment(cycle_t *cycle);
-bool     cycle_is_set(cycle_t *cycle);
+bool     cycle_ask_set(cycle_t *cycle);
 void     cycle_sscnt_init(cycle_t *cycle);
 void     cycle_sscnt_start(cycle_t *cycle);
 void     cycle_sscnt_stop(cycle_t *cycle);

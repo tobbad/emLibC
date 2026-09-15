@@ -17,7 +17,7 @@
 #ifndef UNIT_TEST
 typedef struct cycle_s {
     volatile uint8_t subSlot; // actual sub slot
-    uint8_t           psubSlot;         // Pending subslot to be used on next cycle_increment
+    int8_t           psubSlot;         // Pending subslot to be used on next cycle_increment
     int8_t           actSlot;
     int8_t           lSlot;
     int8_t           sSlot;
@@ -32,7 +32,9 @@ typedef struct cycle_s {
     int8_t           postrx;
     dev_role_e       role;
     int8_t           ssCnt;      // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
-    uint32_t         timerCNT; // MCU cycle count when cycle count was set
+    int8_t           kaCnt;      // Set Keep alive counter
+    int8_t           _kaCnt;     // Keep alive counter
+    uint32_t         timerCNT;   // MCU cycle count when cycle count was set
     bool             doMeasure;
     bool             cntErrror;
     system_state_e   sync_state;
@@ -60,7 +62,7 @@ cycle_t cycle;
 #define SLOT_PRINT_FMT     "(c:%5d, %1x, %2d)" // length is 19
 #define SLOT_PRINT_FMT_STR_LEN 16 + 2
 
-em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, uint8_t postrx, TIM_HandleTypeDef *htim) {
+em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, uint8_t postrx, uint8_t kaCnt, TIM_HandleTypeDef *htim) {
     em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
@@ -75,6 +77,8 @@ em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, u
     cycle->master = -1;
     cycle->isMaster= false;
     cycle->isSlave= false;
+    cycle->kaCnt = kaCnt;
+    cycle->_kaCnt = kaCnt;
     cycle->timer  = htim;
     cycle->sync_state = SYNC_RESET;
     cycle->role = NOT_SET;
@@ -227,6 +231,29 @@ int8_t cycle_act_slot(cycle_t *cycle) {
     // clang-format on
     return CYCLE_ACT_SLOT(cycle);
 };
+
+// Decrement keep alive
+em_msg cycle_dec_ka(cycle_t *cycle) {
+    em_msg res = EM_ERR;
+    // clang-format off
+    if (!cycle) return res;
+    if (!cycle->init) return res;
+    // clang-format on
+    cycle->_kaCnt--;
+    cycle->kaCnt=   = MAX(0, cycle->kaCnt);
+    return EM_OK;
+};
+
+em_msg cycle_reset_ka(cycle_t *cycle) {
+	em_msg res = EM_ERR;
+	// clang-format off
+	if (!cycle) return res;
+	if (!cycle->init) return res;
+	// clang-format on
+	cycle->_kaCnt = cycle->kaCnt;
+	return EM_OK;
+}
+
 
 int8_t cycle_act_sub_slot(cycle_t *cycle) {
     em_msg res = EM_ERR;
@@ -550,9 +577,8 @@ void cycle_increment(cycle_t *cycle) {
     static uint8_t cycle_once = false;
     if (cycle->sync_state == SYNCHRONIZE) {
         cycle->sync_state = SYNCHRONIZE_READY;
-        is_set = true;
     }
-    if (is_set) {
+    if (cycle->sync_state >= SYNCHRONIZE_READY) {
         if (cycle->psubSlot>0) {
             cycle->subSlot = cycle->psubSlot;
             cycle->psubSlot = 0;
@@ -582,7 +608,7 @@ void cycle_increment(cycle_t *cycle) {
             stateled_toggle_pin(led_4);
 #endif
             cycle->lSlot = cycle->actSlot;
-            if (((cycle->actSlot == 0) && (is_set) && (!cycle_once))) {
+            if (((cycle->actSlot == 0) && (cycle->sync_state >= SYNCHRONIZE_READY) && (!cycle_once))) {
 #if OPTION_SHOW_TIMING == 1
                 stateled_toggle_pin(led_5);
 #endif
@@ -618,7 +644,11 @@ bool     cycle_is_set(cycle_t *cycle){
     if (!cycle->init) return res;
     // clang-format on
     bool state = cycle->set;
-    cycle->set = false;
+    if (state){
+    	cycle->set = false;
+    	return state;
+
+    }
     return state;
 };
 
@@ -637,5 +667,6 @@ em_msg cycle_print(cycle_t *cycle, char *title) {
     printf("cycle      = %d" NL, cycle_get_state(cycle));
     printf("my role    = %s" NL, cycle_role_str(cycle));
     printf("master is  = %d" NL, cycle->master);
+    printf("master age = %d" NL, cycle->masterAge);
     return EM_OK;
 }

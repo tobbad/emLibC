@@ -16,8 +16,8 @@ typedef struct radio_stat_s{
     int32_t        recv[CYCLE_SLOT_CNT];
     int32_t        recvd[CYCLE_SLOT_CNT];
     int32_t        recve[CYCLE_SLOT_CNT];
-    int32_t        rack[CYCLE_SLOT_CNT];
-    int32_t        sack[CYCLE_SLOT_CNT];
+    int32_t        txack;
+    int32_t        rxack;
     int32_t        master;
     bool           crc_err;
 } radio_stat_t;
@@ -95,16 +95,8 @@ uint32_t radio_stat_get_recd(radio_stat_t *stat,  uint8_t idx){
      return stat->recvd[idx];
  }
 
-em_msg radio_stat_inc_rack(radio_stat_t *stat,  uint8_t idx){
-    // clang-format off
-    if (!stat) return EM_ERR;
-    if (idx>=CYCLE_SLOT_CNT) return EM_ERR;
-    // clang-format on
-    stat->rack[idx] = MIN(UINT32_MAX, stat->rack[idx] + 1);
-    return EM_OK;
-};
 
-uint32_t radio_stat_get_sack(radio_stat_t *stat,  uint8_t idx){
+uint32_t radio_stat_get_txack(radio_stat_t *stat,  uint8_t idx){
     // clang-format off
     if (!stat) return EM_ERR;
     if (idx>=CYCLE_SLOT_CNT) return EM_ERR;
@@ -112,7 +104,7 @@ uint32_t radio_stat_get_sack(radio_stat_t *stat,  uint8_t idx){
     return stat->sack[idx];
 }
 
-em_msg radio_stat_inc_sack(radio_stat_t *stat,  uint8_t idx){
+em_msg radio_stat_inc_txack(radio_stat_t *stat,  uint8_t idx){
     // clang-format off
     if (!stat) return EM_ERR;
     if (idx>=CYCLE_SLOT_CNT) return EM_ERR;
@@ -121,13 +113,22 @@ em_msg radio_stat_inc_sack(radio_stat_t *stat,  uint8_t idx){
     return EM_OK;
 };
 
-uint32_t radio_stat_get_rack(radio_stat_t *stat,  uint8_t idx){
+uint32_t radio_stat_get_rxack(radio_stat_t *stat,  uint8_t idx){
     // clang-format off
     if (!stat) return EM_ERR;
     if (idx>=CYCLE_SLOT_CNT) return EM_ERR;
     // clang-format on
     return stat->rack[idx];
 }
+em_msg radio_stat_inc_rxack(radio_stat_t *stat,  uint8_t idx){
+    // clang-format off
+    if (!stat) return EM_ERR;
+    if (idx>=CYCLE_SLOT_CNT) return EM_ERR;
+    // clang-format on
+    stat->rack[idx] = MIN(UINT32_MAX, stat->rack[idx] + 1);
+    return EM_OK;
+};
+
 
 em_msg   radio_stat_inc_master(radio_stat_t *stat){
     // clang-format off
@@ -158,7 +159,7 @@ em_msg radio_stat_print(radio_stat_t *stat){
     // clang-format on
     printf(" slot   send    recv   reccd    sack    rack  crc_err  rssi"NL);
     for (uint8_t idx=0;idx<CYCLE_SLOT_CNT;idx++){
-        printf("  %2d %7ld %7ld %7ld %7ld %7ld    %3s    %3ld"NL, idx, stat->send[idx], stat->recv[idx], stat->recvd[idx], stat->sack[idx], stat->rack[idx], stat->crc_err==0?"Yes":"No ", stat->rssi[idx]);
+        printf("  %2d %7ld %7ld %7ld %7ld %7ld    %3s    %3ld"NL, idx, stat->send[idx], stat->recv[idx], stat->recvd[idx], stat->txack[idx], stat->rxack[idx], stat->crc_err==0?"Yes":"No ", stat->rssi[idx]);
     }
     printf("Active slots = %d"NL, stat->activeSlots);
     return EM_OK;

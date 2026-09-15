@@ -26,8 +26,10 @@ em_msg   radio_stat_inc_recvd(radio_stat_t *stat, uint8_t idx);
 uint32_t radio_stat_get_recvd(radio_stat_t *stat, uint8_t idx);
 em_msg   radio_stat_inc_rack(radio_stat_t *stat, uint8_t idx);
 uint32_t radio_stat_get_rack(radio_stat_t *stat, uint8_t idx);
-em_msg   radio_stat_inc_sack(radio_stat_t *stat, uint8_t idx);
-uint32_t radio_stat_get_sack(radio_stat_t *stat, uint8_t idx);
+em_msg   radio_stat_inc_txack(radio_stat_t *stat, uint8_t idx);
+uint32_t radio_stat_get_txack(radio_stat_t *stat, uint8_t idx);
+em_msg   radio_stat_inc_rxack(radio_stat_t *stat, uint8_t idx);
+uint32_t radio_stat_get_rxack(radio_stat_t *stat, uint8_t idx);
 em_msg   radio_stat_inc_master(radio_stat_t *stat);
 uint32_t radio_stat_get_master(radio_stat_t *stat);
 
