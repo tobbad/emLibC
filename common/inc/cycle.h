@@ -33,6 +33,12 @@ typedef enum {
 #define CYCLE_SLOT_MASK (CYCLE_SLOT_CNT-1)
 #define CYCLE_SLOT_SHIFT (CYCLE_SLOT_POW2)
 #define CYCLE_MODULO (CYCLE_SUB_SLOT_CNT*CYCLE_SLOT_CNT)
+// Half the ring: cycle_difference() folds its result into
+// [-CYCLE_MODULO_HALF, CYCLE_MODULO_HALF).
+#define CYCLE_MODULO_HALF (CYCLE_MODULO/2)
+// Out-of-band result of cycle_difference() for a NULL or uninitialised cycle.
+// Outside the folded range, so it cannot collide with a valid distance.
+#define CYCLE_DIFF_INVALID INT16_MIN
 extern idxa2str_t synca2str;
 #define CYCLE_KEEP_ALIVE_CYCLE_CNT (uint16_t)8 // is set so that at least once in a KEEP_ALIVE_CYCLE_CNT Frame cycle a frame is sent
 #define CYCLE_MASTER_LOOSE 3 // After CYCLE_MASTER_LOOSE*CYCLE_KEEP_ALIVE_CYCLE_CNT a MASTER loooses its slave role and all slave set their role to
@@ -44,14 +50,14 @@ extern idxa2str_t synca2str;
 #ifdef UNIT_TEST
 typedef struct cycle_s {
     volatile uint8_t subSlot; // actual sub slot
-    int8_t          psubSlot;         // Pending subslot to be used on next cycle_increment
+    int8_t           psubSlot;         // Pending subslot to be used on next cycle_increment
     int8_t           actSlot;
     int8_t           lSlot;
     int8_t           sSlot;
     uint16_t         cycle;
     int8_t           slot; // Configured slot of device
-    bool             isSlave;
     int8_t           master;
+    bool             isSlave;
     bool             isMaster;
     uint16_t         masterAge; // frame cycles since the network was last heard from
     int8_t           press;
@@ -59,7 +65,9 @@ typedef struct cycle_s {
     int8_t           postrx;
     dev_role_e       role;
     int8_t           ssCnt;      // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
-    uint32_t         timerCNT; // MCU cycle count when cycle count was set
+    int8_t           kaCnt;      // Set Keep alive counter
+    int8_t           _kaCnt;     // Keep alive counter
+    uint32_t         timerCNT;   // MCU cycle count when cycle count was set
     bool             doMeasure;
     bool             cntErrror;
     system_state_e   sync_state;
@@ -103,7 +111,7 @@ system_state_e cycle_get_state(cycle_t *cycle);
 int8_t   cycle_press(cycle_t *cycle);
 int8_t   cycle_postss(cycle_t *cycle);
 uint8_t  cycle_postrx(cycle_t *cycle);
-uint8_t  cycle_difference(cycle_t *cycle, int8_t rxSlot);
+int16_t  cycle_difference(cycle_t *cycle, int8_t rxSlot);
 void     cycle_increment(cycle_t *cycle);
 bool     cycle_ask_set(cycle_t *cycle);
 void     cycle_sscnt_init(cycle_t *cycle);

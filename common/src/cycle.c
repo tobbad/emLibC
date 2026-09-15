@@ -6,7 +6,6 @@
  */
 
 #include "cycle.h"
-#include "serial.h"
 #include "assert.h"
 #include "common.h"
 #ifndef UNIT_TEST
@@ -240,7 +239,7 @@ em_msg cycle_dec_ka(cycle_t *cycle) {
     if (!cycle->init) return res;
     // clang-format on
     cycle->_kaCnt--;
-    cycle->kaCnt =   MAX(0, cycle->kaCnt);
+    cycle->_kaCnt =   MAX(0, cycle->kaCnt);
     return EM_OK;
 };
 
@@ -512,27 +511,25 @@ uint8_t   cycle_postrx(cycle_t *cycle){
     return cycle->postrx;
 };
 
-uint8_t cycle_difference(cycle_t *cycle, int8_t rxSlot) {
+int16_t cycle_difference(cycle_t *cycle, int8_t rxSlot) {
     // clang-format off
-    if (!cycle) return EM_ERR;
-    if (!cycle->init) return EM_ERR;
+    if (!cycle) return CYCLE_DIFF_INVALID;
+    if (!cycle->init) return CYCLE_DIFF_INVALID;
     // clang-format on
-    // Positive sub-slot distance from the current position to rxSlot's window,
-    // with
-    //   lower = rxSlot*CYCLE_SUB_SLOT_CNT
-    //   upper = (rxSlot+1)*CYCLE_SUB_SLOT_CNT.
-    // Inside [lower, upper) -> 0. Outside, the cycle is a ring of CYCLE_MODULO
-    // sub-slots, so take the shorter way round:
-    //   min((subSlot - upper) mod CYCLE_MODULO, (lower - subSlot) mod CYCLE_MODULO)
-    // Always >= 0, never more than CYCLE_MODULO/2.
-    const int16_t lower = (int16_t)rxSlot * CYCLE_SUB_SLOT_CNT;
-    const int16_t upper = ((int16_t)rxSlot + 1) * CYCLE_SUB_SLOT_CNT;
-    if ((cycle->subSlot >= lower) && (cycle->subSlot < upper)) {
-        return 0; // inside the window
-    }
-    const int16_t above = ((cycle->subSlot - upper) + CYCLE_MODULO) % CYCLE_MODULO;
-    const int16_t below = ((lower - cycle->subSlot) + CYCLE_MODULO) % CYCLE_MODULO;
-    return ((above < below) ? above : below);
+    // Signed sub-slot distance from the lower edge of rxSlot's window to the
+    // current position, with
+    //   lower = rxSlot*CYCLE_SUB_SLOT_CNT.
+    // The cycle is a ring of CYCLE_MODULO sub-slots, so the raw difference is
+    // folded onto the shorter way round, into [-CYCLE_MODULO_HALF, CYCLE_MODULO_HALF):
+    //   > 0  we are past the edge, that many sub-slots
+    //   == 0 exactly on the edge
+    //   < 0  the edge is still that many sub-slots ahead
+    // rxSlot is masked to a valid slot, so no caller can push lower off the ring.
+    const int16_t lower = (int16_t)(rxSlot & CYCLE_SLOT_MASK) * CYCLE_SUB_SLOT_CNT;
+    const int16_t delta = (int16_t)cycle->subSlot - lower;
+    // delta is in [-(CYCLE_MODULO-CYCLE_SUB_SLOT_CNT), CYCLE_MODULO), so one
+    // CYCLE_MODULO is not enough to make the operand of % non-negative.
+    return (int16_t)(((delta + CYCLE_MODULO + CYCLE_MODULO_HALF) % CYCLE_MODULO) - CYCLE_MODULO_HALF);
 }
 
 void cycle_sscnt_init(cycle_t *cycle) {
@@ -630,9 +627,9 @@ void cycle_increment(cycle_t *cycle) {
                 // role is dropped and the next frame heard elects a new master.
                 if (cycle->role != NOT_SET) {
                     cycle->masterAge++;
-//                    if (cycle->masterAge >= CYCLE_MASTER_LOOSE_CYCLE_CNT) {
-//                        cycle_reset_role(cycle);
-//                    }
+                    if (cycle->masterAge >= CYCLE_MASTER_LOOSE_CYCLE_CNT) {
+                        cycle_reset_role(cycle);
+                    }
                 }
                 if (cycle->cycle%KEEP_ALIVE_CYCLE_VALUE==0){
                     if (cycle_role(cycle)== SLAVE){

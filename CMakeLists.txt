@@ -216,6 +216,7 @@ option(DEBUG "Aktiviere die benutzerdefinierte Funktion" ON)
 # Pfade zur Bibliothek
 set(COMMON_SRC_DIR "${CMAKE_SOURCE_DIR}/common/src")
 set(COMMON_INC_DIR "${CMAKE_SOURCE_DIR}/common/inc")
+set(WIRE_INC_DIR "${CMAKE_SOURCE_DIR}/wire/inc")
 set(PROJECT_INC_DIR "${CMAKE_SOURCE_DIR}/../../Core/Inc")
 set(COMMON_TEST_DIR "${CMAKE_SOURCE_DIR}/common/test")
 
@@ -278,7 +279,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 target_compile_definitions(cut PRIVATE $<$<BOOL:UNIT_TEST>:>)
-target_include_directories(cut PUBLIC ${COMMON_INC_DIR}  ${PROJECT_INC_DIR})
+target_include_directories(cut PUBLIC ${COMMON_INC_DIR} ${WIRE_INC_DIR} ${PROJECT_INC_DIR})
 
 # Füge die Compiler-Definition hinzu, wenn USE_CUSTOM_FEATURE aktiviert ist
 if(DEBUG)
@@ -294,6 +295,7 @@ get_target_property(CUT_DEFS cut COMPILE_DEFINITIONS)
 message(STATUS "cut COMPILE_DEFINITIONS = ${CUT_DEFS}")
 message(STATUS "cut files         : ${COMMON_SRC_FILES}")
 message(STATUS "common inc folder : ${COMMON_INC_DIR}")
+message(STATUS "wire inc folder   : ${WIRE_INC_DIR}")
 message(STATUS "inc folder        : ${PROJECT_INC_DIR}")
 
 # Erstelle eine ausführbare Datei für jeden Test
@@ -307,7 +309,7 @@ foreach(TEST_FILE ${TEST_SRC_FILES})
     )
 
     target_include_directories(${TEST_NAME}
-        PRIVATE ${COMMON_INC_DIR} ${GOOGLETEST_DIR} ${GTEST} )
+        PRIVATE ${COMMON_INC_DIR} ${WIRE_INC_DIR} ${GOOGLETEST_DIR} ${GTEST} )
 
     target_compile_definitions(${TEST_NAME} PRIVATE UNIT_TEST)
     target_link_libraries(${TEST_NAME} cut gtest gtest_main pthread)

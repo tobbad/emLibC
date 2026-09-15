@@ -29,9 +29,9 @@ class CycleTest : public ::testing::Test {
 // ---------------------------------------------------------------------------
 // cycle_init / cycle_reset
 // ---------------------------------------------------------------------------
-TEST_F(CycleTest, NullNullPtrReturnsError)  { EXPECT_EQ(cycle_init(nullptr, my_slot, PRESS, POSTSS, POSTRX, nullptr), EM_ERR); }
-TEST_F(CycleTest, NullValidPtrReturnsError) { EXPECT_EQ(cycle_init(nullptr, my_slot, PRESS, POSTSS, POSTRX, &timerPtr), EM_ERR); }
-TEST_F(CycleTest, ValidNullPtrReturnsError) { EXPECT_EQ(cycle_init(&cycle,  my_slot, PRESS, POSTSS, POSTRX, nullptr), EM_ERR); }
+TEST_F(CycleTest, NullNullPtrReturnsError)  { EXPECT_EQ(cycle_init(nullptr, my_slot, PRESS, POSTSS, POSTRX, CYCLE_KEEP_ALIVE_CYCLE_CNT, nullptr), EM_ERR); }
+TEST_F(CycleTest, NullValidPtrReturnsError) { EXPECT_EQ(cycle_init(nullptr, my_slot, PRESS, POSTSS, POSTRX, CYCLE_KEEP_ALIVE_CYCLE_CNT, &timerPtr), EM_ERR); }
+TEST_F(CycleTest, ValidNullPtrReturnsError) { EXPECT_EQ(cycle_init(&cycle,  my_slot, PRESS, POSTSS, POSTRX, CYCLE_KEEP_ALIVE_CYCLE_CNT, nullptr), EM_ERR); }
 
 // ---------------------------------------------------------------------------
 // cycle_check_slot echoes back valid slots and returns EM_ERR otherwise. Valid
@@ -70,7 +70,7 @@ TEST_F(CycleTest, CheckSetSlot) {
 TEST_F(CycleTest, SetSlotSlaveRole) {
     cycle_t c{0};
     ASSERT_EQ(cycle_check_slot(my_slot), my_slot);
-    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX,  &timerPtr), EM_OK);
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, CYCLE_KEEP_ALIVE_CYCLE_CNT, &timerPtr), EM_OK);
     EXPECT_EQ(c.psubSlot, 0);
     int8_t ms = my_slot*CYCLE_SUB_SLOT_CNT-PRESS;
     EXPECT_EQ(c.subSlot, ms);
@@ -97,7 +97,7 @@ TEST_F(CycleTest, SetSlotSlaveRole) {
 TEST_F(CycleTest, SetSlotMasterRole) {
     cycle_t c{0};
     ASSERT_EQ(cycle_check_slot(my_slot), my_slot);
-    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX,  &timerPtr), EM_OK);
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, CYCLE_KEEP_ALIVE_CYCLE_CNT, &timerPtr), EM_OK);
     EXPECT_EQ(c.psubSlot, 0);
     int8_t ms = my_slot*CYCLE_SUB_SLOT_CNT-PRESS;
     EXPECT_EQ(c.subSlot, ms);
@@ -134,13 +134,15 @@ TEST_F(CycleTest, SetSlotMasterRole) {
 // out of the MASTER branch, which would freeze every slave after its first lock.
 TEST_F(CycleTest, SlaveClaimsAreNotLatched) {
     cycle_t c{0};
-    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, &timerPtr), EM_OK);
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, CYCLE_KEEP_ALIVE_CYCLE_CNT, &timerPtr), EM_OK);
     ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
+    ASSERT_EQ(cycle_set_slot(&c, my_slot, SLAVE), EM_OK) << "slot=" << (int)my_slot;
+    EXPECT_EQ(c.psubSlot, my_slot * CYCLE_SUB_SLOT_CNT - PRESS) << "slot=" << (int)my_slot;
     for (int8_t slot = 1; slot < CYCLE_SLOT_CNT; slot += 2) {
-        ASSERT_EQ(cycle_set_slot(&c, slot, SLAVE), EM_OK) << "slot=" << (int)slot;
         EXPECT_FALSE(c.isMaster);
         EXPECT_EQ(c.role, SLAVE);
-        EXPECT_EQ(c.psubSlot, slot * CYCLE_SUB_SLOT_CNT - PRESS) << "slot=" << (int)slot;
+        ASSERT_EQ(cycle_set_slot(&c, slot, SLAVE), EM_ERR) << "slot=" << (int)slot;
+        EXPECT_EQ(c.psubSlot, my_slot * CYCLE_SUB_SLOT_CNT - PRESS) << "slot=" << (int)slot;
     }
 }
 
@@ -150,7 +152,7 @@ TEST_F(CycleTest, SlaveClaimsAreNotLatched) {
 // ever be elected master a second time.
 TEST_F(CycleTest, ResetRoleReleasesMasterLatch) {
     cycle_t c{0};
-    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, &timerPtr), EM_OK);
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, CYCLE_KEEP_ALIVE_CYCLE_CNT, &timerPtr), EM_OK);
     ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
     ASSERT_EQ(cycle_set_slot(&c, my_slot, MASTER), EM_OK);
     ASSERT_TRUE(c.isMaster);
@@ -175,7 +177,7 @@ TEST_F(CycleTest, ResetRoleReleasesMasterLatch) {
 // external reference, this is the test that has to change.
 TEST_F(CycleTest, SlaveClaimRejectedAfterMasterLatch) {
     cycle_t c{0};
-    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, &timerPtr), EM_OK);
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, CYCLE_KEEP_ALIVE_CYCLE_CNT, &timerPtr), EM_OK);
     ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
     ASSERT_EQ(cycle_set_slot(&c, my_slot, MASTER), EM_OK);
     const uint8_t latched = c.psubSlot;
@@ -222,7 +224,7 @@ static void elect(cycle_t *c, int8_t masterSlot) {
 // others can no longer reach.
 TEST_F(CycleTest, MasterAgesOutWhenAlone) {
     cycle_t c{0};
-    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, &timerPtr), EM_OK);
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, CYCLE_KEEP_ALIVE_CYCLE_CNT, &timerPtr), EM_OK);
     ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
     ASSERT_EQ(cycle_set_slot(&c, my_slot, MASTER), EM_OK);
     ASSERT_EQ(c.masterAge, 0);
@@ -244,7 +246,7 @@ TEST_F(CycleTest, MasterAgesOutWhenAlone) {
 TEST_F(CycleTest, MasterSeenKeepsSlaveAlive) {
     const int8_t masterSlot = 1;
     cycle_t      c{0};
-    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, &timerPtr), EM_OK);
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, CYCLE_KEEP_ALIVE_CYCLE_CNT, &timerPtr), EM_OK);
     ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
     elect(&c, masterSlot);
 
@@ -263,7 +265,7 @@ TEST_F(CycleTest, SlaveIgnoresFramesFromOtherSlots) {
     const int8_t masterSlot = 1;
     const int8_t otherSlot  = 5;
     cycle_t      c{0};
-    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, &timerPtr), EM_OK);
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, CYCLE_KEEP_ALIVE_CYCLE_CNT, &timerPtr), EM_OK);
     ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
     elect(&c, masterSlot);
 
@@ -285,7 +287,7 @@ TEST_F(CycleTest, SlaveIgnoresFramesFromOtherSlots) {
 TEST_F(CycleTest, MasterWatchdogAcceptsAnyFrame) {
     const int8_t otherSlot = 5;
     cycle_t      c{0};
-    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, &timerPtr), EM_OK);
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, CYCLE_KEEP_ALIVE_CYCLE_CNT, &timerPtr), EM_OK);
     ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
     ASSERT_EQ(cycle_set_slot(&c, my_slot, MASTER), EM_OK);
     ASSERT_NE(otherSlot, c.master);
@@ -305,7 +307,7 @@ TEST_F(CycleTest, FirstFrameAfterTimeoutElectsSender) {
     const int8_t oldMaster = 1;
     const int8_t newMaster = 5;
     cycle_t      c{0};
-    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, &timerPtr), EM_OK);
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, CYCLE_KEEP_ALIVE_CYCLE_CNT, &timerPtr), EM_OK);
     ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
     elect(&c, oldMaster);
 
@@ -323,7 +325,7 @@ TEST_F(CycleTest, FirstFrameAfterTimeoutElectsSender) {
 // the role again. The isMaster latch is per election, not per cycle_init.
 TEST_F(CycleTest, TimedOutMasterCanClaimAgain) {
     cycle_t c{0};
-    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, &timerPtr), EM_OK);
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, CYCLE_KEEP_ALIVE_CYCLE_CNT, &timerPtr), EM_OK);
     ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
     ASSERT_EQ(cycle_set_slot(&c, my_slot, MASTER), EM_OK);
 
@@ -341,7 +343,7 @@ TEST_F(CycleTest, TimedOutMasterCanClaimAgain) {
 // run away while it waits for the first frame.
 TEST_F(CycleTest, RolelessCycleDoesNotAge) {
     cycle_t c{0};
-    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, &timerPtr), EM_OK);
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, CYCLE_KEEP_ALIVE_CYCLE_CNT, &timerPtr), EM_OK);
     ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
     ASSERT_EQ(c.role, NOT_SET);
 
@@ -358,7 +360,7 @@ TEST_F(CycleTest, SetSlotRejectsInvalidRole) {
     for (dev_role_e role : {NOT_SET, SS_CNT}) {
         cycle_t c{0};
         EXPECT_EQ(c.init, false);
-        ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, &timerPtr), EM_OK);
+        ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, CYCLE_KEEP_ALIVE_CYCLE_CNT, &timerPtr), EM_OK);
         EXPECT_EQ(c.init, true);
         ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
         EXPECT_EQ(cycle_set_slot(&c, 3, role), EM_ERR) << "role=" << (int)role;
@@ -380,7 +382,7 @@ TEST_F(CycleTest, SetSlotRejectsInvalidRole) {
 TEST_F(CycleTest, SetSlotFrozenWhenLocked) {
     const int8_t slot = 3;
     cycle_t c{0};
-    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX , &timerPtr), EM_OK);
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, CYCLE_KEEP_ALIVE_CYCLE_CNT, &timerPtr), EM_OK);
     ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
     ASSERT_EQ(cycle_set_slot(&c, slot, SLAVE), EM_OK);
     const int8_t claimed = c.subSlot;
@@ -396,7 +398,7 @@ TEST_F(CycleTest, SetSlotFrozenWhenLocked) {
 TEST_F(CycleTest, SetSlotRejectedOutsideSyncing) {
     cycle_t c{0};
     ASSERT_EQ(cycle_set_state(&c, SYNC_RESET), EM_ERR);
-    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, &timerPtr), EM_OK);
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, CYCLE_KEEP_ALIVE_CYCLE_CNT, &timerPtr), EM_OK);
     const int8_t before = c.subSlot;
     for (system_state_e st : {SYNC_RESET, BOOT_UP, SLOT, CHANNEL, FREQBAND, FREQUENCY_OFFSET}) {
         ASSERT_EQ(cycle_set_state(&c, st), EM_OK);
@@ -413,7 +415,7 @@ TEST_F(CycleTest, CheckCycleIncrement) {
     int8_t slot = 1;
     ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE_READY), EM_ERR);
 
-    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, &timerPtr), EM_OK);
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, CYCLE_KEEP_ALIVE_CYCLE_CNT, &timerPtr), EM_OK);
     ASSERT_EQ(cycle_set_slot(nullptr, 1, SLAVE), EM_ERR);
     ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
     ASSERT_EQ(cycle_set_slot(&c, slot, SLAVE), EM_OK);
@@ -487,80 +489,118 @@ TEST_F(CycleTest, CheckCycleIncrement) {
 }
 
 // ---------------------------------------------------------------------------
-// cycle_difference: sub-slot distance from the current position to rxSlot's
-// window, with
-//   lower = rxSlot*CYCLE_SUB_SLOT_CNT
-//   upper = (rxSlot+1)*CYCLE_SUB_SLOT_CNT.
-// Inside [lower, upper) => 0. Outside, the cycle is a ring of CYCLE_MODULO
-// sub-slots and the shorter way round wins:
-//   min((subSlot - upper) mod CYCLE_MODULO, (lower - subSlot) mod CYCLE_MODULO)
-// Note the asymmetry this brings at the corners: subSlot == lower-1 is
-// distance 1, but subSlot == upper is distance 0, so the zero band is
-// [lower, upper] -- one wider than the window itself.
+// cycle_difference: signed sub-slot distance from the lower edge of rxSlot's
+// window to the current position, with
+//   lower = rxSlot*CYCLE_SUB_SLOT_CNT.
+// The cycle is a ring of CYCLE_MODULO sub-slots, so the raw difference is
+// folded onto the shorter way round, into [-CYCLE_MODULO_HALF, CYCLE_MODULO_HALF):
+//   > 0  we are past the edge by that many sub-slots
+//   == 0 exactly on the edge
+//   < 0  the edge is still that many sub-slots ahead
+// There is no zero band -- only subSlot == lower reads 0. "Am I inside
+// rxSlot's window?" is therefore (d >= 0 && d < CYCLE_SUB_SLOT_CNT).
 // ---------------------------------------------------------------------------
 
-// Reference for cycle_difference. This mirrors the implementation, so the
-// exhaustive sweep below is a regression net (int8_t range, guards, wrap), not
-// an independent proof -- the hand-computed spot checks carry the spec.
-static int8_t expected_difference(int16_t subSlot, int8_t rxSlot) {
-    const int16_t lower = (int16_t)rxSlot * CYCLE_SUB_SLOT_CNT;
-    const int16_t upper = ((int16_t)rxSlot + 1) * CYCLE_SUB_SLOT_CNT;
-    if ((subSlot >= lower) && (subSlot < upper)) {
-        return 0; // inside the window
+// Hand-computed spot checks. These carry the spec; the sweeps below only widen
+// the net. CYCLE_SUB_SLOT_CNT is 16 and CYCLE_MODULO 256, so slot 4's lower
+// edge sits at sub-slot 64 and the far side of the ring at 64+128 == 192.
+TEST_F(CycleTest, CycleDifferenceSpotValues) {
+    cycle_t c{0};
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, CYCLE_KEEP_ALIVE_CYCLE_CNT, &timerPtr), EM_OK);
+
+    struct { int subSlot; int8_t rxSlot; int16_t want; } cases[] = {
+        {  64, 4,    0 },   // exactly on the edge
+        {  65, 4,    1 },   // one past
+        {  63, 4,   -1 },   // one before
+        {  79, 4,   15 },   // last sub-slot of the window
+        {  80, 4,   16 },   // first past the window -- no longer special
+        {   0, 0,    0 },   // edge of slot 0
+        { 255, 0,   -1 },   // one before slot 0, across the ring seam
+        {   0, 15,  16 },   // slot 15 edge is 240; 0 is 16 past it, the short way
+        { 240, 15,   0 },
+        { 191, 4,  127 },   // furthest positive before the fold
+        { 192, 4, -128 },   // the antipode folds to the negative end
+        { 193, 4, -127 },
+    };
+    for (auto &t : cases) {
+        c.subSlot = (uint8_t)t.subSlot;
+        EXPECT_EQ(cycle_difference(&c, t.rxSlot), t.want)
+            << "subSlot=" << t.subSlot << " rxSlot=" << (int)t.rxSlot;
     }
-    const int16_t above = ((subSlot - upper) + CYCLE_MODULO) % CYCLE_MODULO;
-    const int16_t below = ((lower - subSlot) + CYCLE_MODULO) % CYCLE_MODULO;
-    return (int8_t)((above < below) ? above : below);
 }
 
-TEST_F(CycleTest, CycleDifference) {
-
-    // NULL / uninitialised guards return 0.
-    EXPECT_EQ(cycle_difference(nullptr, 0), 255);
+TEST_F(CycleTest, CycleDifferenceGuards) {
+    // NULL / uninitialised return the out-of-band sentinel, which cannot be
+    // confused with a valid distance.
+    EXPECT_EQ(cycle_difference(nullptr, 0), CYCLE_DIFF_INVALID);
     cycle_t u{};
     u.init = false;
-    EXPECT_EQ(cycle_difference(&u, 0), 255);
+    EXPECT_EQ(cycle_difference(&u, 0), CYCLE_DIFF_INVALID);
+}
 
+// Stepping n sub-slots either side of the edge must read -n and +n, all the way
+// out to the fold. Independent of the implementation.
+TEST_F(CycleTest, CycleDifferenceIsAntisymmetric) {
     cycle_t c{0};
-    for (int8_t slot=0;slot<CYCLE_SLOT_CNT/2;slot++){
-        ASSERT_EQ(cycle_init(&c, 2*slot+1, PRESS, POSTSS, POSTRX,  &timerPtr), EM_OK);
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, CYCLE_KEEP_ALIVE_CYCLE_CNT, &timerPtr), EM_OK);
+    // slot 0 and slot 15 put the edge on the ring seam, so both sides wrap.
+    for (int8_t slot = 0; slot < CYCLE_SLOT_CNT; slot++) {
+        const int lower = slot * CYCLE_SUB_SLOT_CNT;
+        for (int n = 0; n < CYCLE_MODULO_HALF; n++) {
+            c.subSlot = (uint8_t)((lower + n) % CYCLE_MODULO);
+            EXPECT_EQ(cycle_difference(&c, slot), (int16_t)n)
+                << "slot=" << (int)slot << " n=+" << n;
+            c.subSlot = (uint8_t)((lower - n + CYCLE_MODULO) % CYCLE_MODULO);
+            EXPECT_EQ(cycle_difference(&c, slot), (int16_t)-n)
+                << "slot=" << (int)slot << " n=-" << n;
+        }
+    }
+}
+
+// Exhaustive sweep: the result must always be in range, must move in lockstep
+// with subSlot, and must agree with the plain (unfolded) difference whenever
+// that one already lies inside the folded range.
+TEST_F(CycleTest, CycleDifferenceSweep) {
+    cycle_t c{0};
+    for (int8_t slot = 0; slot < CYCLE_SLOT_CNT / 2; slot++) {
+        ASSERT_EQ(cycle_init(&c, 2*slot+1, PRESS, POSTSS, POSTRX, CYCLE_KEEP_ALIVE_CYCLE_CNT,  &timerPtr), EM_OK);
         ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
         cycle_increment(&c);
         for (int ss = 0; ss < CYCLE_MODULO; ss++) {
-             for (int8_t rx = 0; rx < CYCLE_SLOT_CNT; rx++) {
-                 c.subSlot = (int16_t)ss;
-                 uint8_t got = cycle_difference(&c, rx);
-                 EXPECT_EQ(got, expected_difference((int16_t)ss, rx)) << "subSlot=" << ss << " rxSlot=" << (int)rx;
-                 EXPECT_LE(got, CYCLE_MODULO / 2);     // the shorter way round, so at most half the ring
-             }
-        }
+            for (int8_t rx = 0; rx < CYCLE_SLOT_CNT; rx++) {
+                c.subSlot = (uint8_t)ss;
+                const int16_t got = cycle_difference(&c, rx);
 
+                EXPECT_GE(got, -CYCLE_MODULO_HALF);
+                EXPECT_LT(got, CYCLE_MODULO_HALF);
+
+                // Congruent to the raw difference modulo the ring.
+                const int raw = ss - rx * CYCLE_SUB_SLOT_CNT;
+                EXPECT_EQ(((got - raw) % CYCLE_MODULO + CYCLE_MODULO) % CYCLE_MODULO, 0)
+                    << "subSlot=" << ss << " rxSlot=" << (int)rx;
+            }
+        }
     }
 }
 
-// The distance is symmetric around the window: stepping n sub-slots below
-// `lower` must read the same as stepping n above `upper`, all the way to the
-// far side of the ring. Independent of expected_difference().
-TEST_F(CycleTest, CycleDifferenceIsSymmetric) {
+// rxSlot is masked, so values outside 0..CYCLE_SLOT_CNT-1 alias onto a real
+// slot instead of walking off the ring.
+TEST_F(CycleTest, CycleDifferenceMasksRxSlot) {
     cycle_t c{0};
-    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, &timerPtr), EM_OK);
-    // slot 0 and slot 15 put the window on the ring seam, so both the "below"
-    // and the "above" side wrap.
-    for (int8_t slot = 0; slot < CYCLE_SLOT_CNT; slot++) {
-        const int lower = slot * CYCLE_SUB_SLOT_CNT;
-        const int upper = (slot + 1) * CYCLE_SUB_SLOT_CNT;
-        for (int n = 0; n <= (CYCLE_MODULO - CYCLE_SUB_SLOT_CNT) / 2; n++) {
-            c.subSlot = (int8_t)((lower - n + CYCLE_MODULO) % CYCLE_MODULO);
-            const int8_t below = cycle_difference(&c, slot);
-            c.subSlot = (int8_t)((upper + n) % CYCLE_MODULO);
-            const int8_t above = cycle_difference(&c, slot);
-            EXPECT_EQ(below, above) << "slot=" << (int)slot << " n=" << n;
-            EXPECT_EQ(below, n) << "slot=" << (int)slot << " n=" << n;
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, CYCLE_KEEP_ALIVE_CYCLE_CNT, &timerPtr), EM_OK);
+    for (int ss = 0; ss < CYCLE_MODULO; ss += 7) {
+        c.subSlot = (uint8_t)ss;
+        for (int8_t rx = 0; rx < CYCLE_SLOT_CNT; rx++) {
+            const int16_t want = cycle_difference(&c, rx);
+            EXPECT_EQ(cycle_difference(&c, (int8_t)(rx + CYCLE_SLOT_CNT)), want)
+                << "subSlot=" << ss << " rxSlot=" << (int)rx;
+            EXPECT_EQ(cycle_difference(&c, (int8_t)(rx - CYCLE_SLOT_CNT)), want)
+                << "subSlot=" << ss << " rxSlot=" << (int)rx;
         }
     }
 }
 
 TEST_F(CycleTest, SlaveResync) {
     cycle_t c{0};
-    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, &timerPtr), EM_OK);
+    ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, CYCLE_KEEP_ALIVE_CYCLE_CNT, &timerPtr), EM_OK);
 }

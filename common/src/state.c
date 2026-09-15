@@ -6,7 +6,6 @@
  */
 
 #include "state.h"
-#include "serial.h"
 #include "assert.h"
 #include "common.h"
 #include "options.h"
