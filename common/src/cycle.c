@@ -240,8 +240,17 @@ em_msg cycle_dec_ka(cycle_t *cycle) {
     if (!cycle->init) return res;
     // clang-format on
     cycle->_kaCnt--;
-    cycle->kaCnt=   = MAX(0, cycle->kaCnt);
+    cycle->kaCnt =   MAX(0, cycle->kaCnt);
     return EM_OK;
+};
+
+bool cycle_is_ka(cycle_t *cycle) {
+    em_msg res = EM_ERR;
+    // clang-format off
+    if (!cycle) return res;
+    if (!cycle->init) return res;
+    // clang-format on
+    return cycle->kaCnt ==0;
 };
 
 em_msg cycle_reset_ka(cycle_t *cycle) {
@@ -573,7 +582,6 @@ void cycle_increment(cycle_t *cycle) {
     if (!cycle) return;
     if (!cycle->init) return;
     // clang-format on
-    static bool is_set = false;
     static uint8_t cycle_once = false;
     if (cycle->sync_state == SYNCHRONIZE) {
         cycle->sync_state = SYNCHRONIZE_READY;
@@ -637,7 +645,7 @@ void cycle_increment(cycle_t *cycle) {
     }
 }
 
-bool     cycle_is_set(cycle_t *cycle){
+bool cycle_ask_set(cycle_t *cycle){
     bool res = false;
     // clang-format off
     if (!cycle) return res;

@@ -16,9 +16,10 @@ typedef struct radio_stat_s{
     int32_t        recv[CYCLE_SLOT_CNT];
     int32_t        recvd[CYCLE_SLOT_CNT];
     int32_t        recve[CYCLE_SLOT_CNT];
-    int32_t        txack;
-    int32_t        rxack;
+    int32_t        txack[CYCLE_SLOT_CNT];
+    int32_t        rxack[CYCLE_SLOT_CNT];
     int32_t        master;
+    uint32_t       txTimeout;
     bool           crc_err;
 } radio_stat_t;
 
@@ -101,7 +102,7 @@ uint32_t radio_stat_get_txack(radio_stat_t *stat,  uint8_t idx){
     if (!stat) return EM_ERR;
     if (idx>=CYCLE_SLOT_CNT) return EM_ERR;
     // clang-format on
-    return stat->sack[idx];
+    return stat->txack[idx];
 }
 
 em_msg radio_stat_inc_txack(radio_stat_t *stat,  uint8_t idx){
@@ -109,7 +110,7 @@ em_msg radio_stat_inc_txack(radio_stat_t *stat,  uint8_t idx){
     if (!stat) return EM_ERR;
     if (idx>=CYCLE_SLOT_CNT) return EM_ERR;
     // clang-format on
-    stat->sack[idx] = MIN(UINT32_MAX, stat->sack[idx] + 1);
+    stat->txack[idx] = MIN(UINT32_MAX, stat->txack[idx] + 1);
     return EM_OK;
 };
 
@@ -118,16 +119,26 @@ uint32_t radio_stat_get_rxack(radio_stat_t *stat,  uint8_t idx){
     if (!stat) return EM_ERR;
     if (idx>=CYCLE_SLOT_CNT) return EM_ERR;
     // clang-format on
-    return stat->rack[idx];
+    return stat->rxack[idx];
 }
+
 em_msg radio_stat_inc_rxack(radio_stat_t *stat,  uint8_t idx){
     // clang-format off
     if (!stat) return EM_ERR;
     if (idx>=CYCLE_SLOT_CNT) return EM_ERR;
     // clang-format on
-    stat->rack[idx] = MIN(UINT32_MAX, stat->rack[idx] + 1);
+    stat->rxack[idx] = MIN(UINT32_MAX, stat->rxack[idx] + 1);
     return EM_OK;
 };
+
+em_msg   radio_stat_inc_tx_timeout(radio_stat_t *stat){
+    // clang-format off
+    if (!stat) return EM_ERR;
+    // clang-format on
+    stat->master= MIN(CYCLE_MASTER_LOOSE*CYCLE_KEEP_ALIVE_CYCLE_CNT, stat->master + 1);
+    return EM_OK;
+
+}
 
 
 em_msg   radio_stat_inc_master(radio_stat_t *stat){
