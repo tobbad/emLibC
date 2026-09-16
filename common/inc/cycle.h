@@ -41,7 +41,7 @@ typedef enum {
 #define CYCLE_DIFF_INVALID INT16_MIN
 extern idxa2str_t synca2str;
 #define CYCLE_KEEP_ALIVE_CYCLE_CNT (uint16_t)16 // is set so that at least once in a KEEP_ALIVE_CYCLE_CNT Frame cycle a frame is sent
-#define CYCLE_MASTER_LOOSE 3 // After CYCLE_MASTER_LOOSE*CYCLE_KEEP_ALIVE_CYCLE_CNT a MASTER loooses its slave role and all slave set their role to
+#define CYCLE_MASTER_LOOSE 3 // After CYCLE_MASTER_LOOSE*CYCLE_KEEP_ALIVE_CYCLE_CNT a MASTER loooses its master role and all slave set their role to
                              // NOT_SET. Then when the first Packet is received the Device sending in this slot becomes the new MASTER.
 // Frame cycles a role survives without proof that the network is still there.
 // Kicked by cycle_master_seen(), counted down in cycle_increment().

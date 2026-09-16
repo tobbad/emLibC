@@ -16,6 +16,26 @@
 #define POSTRX 3
 #define ACT_SLOT(_cycle) (((_cycle)->subSlot >> CYCLE_SUB_SLOT_SHIFT) & CYCLE_SLOT_MASK)
 
+// Drives cycle_increment() until c->cycle has advanced by `cycles` frame
+// cycles. One frame cycle is CYCLE_MODULO sub-slot ticks; the cap only keeps a
+// broken increment from hanging the suite.
+static void advance_frame_cycles(cycle_t *c, int cycles) {
+    const uint16_t target = (uint16_t)(c->cycle + cycles);
+    const int cap = (cycles + 2) * CYCLE_MODULO;
+    for (int i = 0; (i < cap) && (c->cycle != target); i++) {
+        cycle_increment(c);
+    }
+    ASSERT_EQ(c->cycle, target) << "cycle_increment did not advance " << cycles << " frame cycles";
+}
+
+// Latches a fresh cycle_t as SLAVE of `masterSlot` through the election path.
+static void elect(cycle_t *c, int8_t masterSlot) {
+    ASSERT_EQ(cycle_master_seen(c, masterSlot), EM_OK);
+    ASSERT_EQ(c->role, SLAVE);
+    ASSERT_EQ(c->master, masterSlot);
+}
+
+
 static int8_t my_slot = 3;
 class CycleTest : public ::testing::Test {
   protected:
@@ -75,27 +95,38 @@ TEST_F(CycleTest, CheckSetSlot) {
 TEST_F(CycleTest, SetSlotSlaveRole) {
     cycle_t c{0};
     ASSERT_EQ(cycle_check_slot(my_slot), my_slot);
+    int8_t ms = my_slot * CYCLE_SUB_SLOT_CNT - PRESS;
     ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, CYCLE_KEEP_ALIVE_CYCLE_CNT, &timerPtr), EM_OK);
     EXPECT_EQ(c.psubSlot, 0);
-    int8_t ms = my_slot * CYCLE_SUB_SLOT_CNT - PRESS;
     EXPECT_EQ(c.subSlot, ms);
     ASSERT_EQ(cycle_set_state(&c, (system_state_e)-1), EM_ERR);
     ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
     EXPECT_EQ(cycle_get_state(&c), SYNCHRONIZE);
-
     EXPECT_EQ(c.psubSlot, 0);
     EXPECT_EQ(c.role, NOT_SET);
     EXPECT_EQ(c.subSlot, ms);
 
-    ASSERT_EQ(cycle_set_slot(&c, my_slot - 2, SLAVE), EM_OK);
+    ASSERT_EQ(cycle_set_slot(&c, (my_slot - 2) , SLAVE),  EM_OK);
+    EXPECT_STREQ(cycle_role_str(&c), "SLAVE ");
+
+    ASSERT_EQ(cycle_set_slot(&c, (my_slot - 2) , MASTER), EM_ERR);
+    EXPECT_EQ(c.master, (my_slot - 2));
+    EXPECT_EQ(c.isMaster, false);
+    EXPECT_EQ(c.isSlave,  true);
     EXPECT_EQ(c.sync_state, SYNCHRONIZE);
+    EXPECT_EQ(ms, my_slot * CYCLE_SUB_SLOT_CNT - PRESS);
     EXPECT_EQ(c.role, SLAVE);
     EXPECT_EQ(c.subSlot, ms);
-    EXPECT_EQ(c.psubSlot, (my_slot - 2) * CYCLE_SUB_SLOT_CNT - PRESS);
-    cycle_increment(&c);
+    EXPECT_EQ(c.psubSlot, (my_slot - 2)* CYCLE_SUB_SLOT_CNT - PRESS);
+    EXPECT_EQ(cycle_get_state(&c), SYNCHRONIZE);
+
+    EXPECT_EQ(c.skip_cnt,  0);
+    for (uint8_t i=0;i<2*CYCLE_SUB_SLOT_CNT;i++){
+        cycle_increment(&c);
+    }
     EXPECT_EQ(c.sync_state, SYNCHRONIZE_READY);
     EXPECT_STREQ(cycle_role_str(&c), "SLAVE ");
-    EXPECT_EQ(c.subSlot, (my_slot - 2) * CYCLE_SUB_SLOT_CNT);
+    EXPECT_EQ(c.subSlot, my_slot* CYCLE_SUB_SLOT_CNT- PRESS+1 );
     EXPECT_EQ(c.psubSlot, 0);
 }
 
@@ -111,19 +142,25 @@ TEST_F(CycleTest, SetSlotMasterRole) {
     EXPECT_EQ(cycle_get_state(&c), SYNCHRONIZE);
     EXPECT_EQ(c.psubSlot, 0);
     EXPECT_EQ(c.role, NOT_SET);
-    EXPECT_EQ(c.subSlot, ms);
     ASSERT_EQ(cycle_set_slot(&c, my_slot - 2, MASTER), EM_OK);
     ASSERT_EQ(cycle_set_slot(&c, my_slot - 2, SLAVE), EM_ERR);
     EXPECT_EQ(c.sync_state, SYNCHRONIZE);
     EXPECT_EQ(c.role, MASTER);
+    EXPECT_EQ(c.isMaster, true);
+    EXPECT_EQ(c.isSlave,  false);
     EXPECT_EQ(c.subSlot, ms);
     EXPECT_EQ(c.psubSlot, (my_slot - 2) * CYCLE_SUB_SLOT_CNT - PRESS);
-    ASSERT_EQ(cycle_set_slot(&c, my_slot - 2, MASTER), EM_ERR);
 
-    cycle_increment(&c);
+    for (uint8_t i=0;i<2*CYCLE_SUB_SLOT_CNT;i++){
+        EXPECT_EQ(c.subSlot, ms);
+        cycle_increment(&c);
+        EXPECT_EQ(c.skip_cnt, 2*CYCLE_SUB_SLOT_CNT-i-1);
+    }
+    EXPECT_EQ(c.skip_cnt, 0);
+
     EXPECT_EQ(c.sync_state, SYNCHRONIZE_READY);
     EXPECT_STREQ(cycle_role_str(&c), "MASTER");
-    EXPECT_EQ(c.subSlot, (my_slot - 2) * CYCLE_SUB_SLOT_CNT);
+    EXPECT_EQ(c.subSlot, my_slot * CYCLE_SUB_SLOT_CNT);
     EXPECT_EQ(c.psubSlot, 0);
 }
 
@@ -204,24 +241,6 @@ TEST_F(CycleTest, SlaveClaimRejectedAfterMasterLatch) {
 // device heard becomes the new master.
 // ---------------------------------------------------------------------------
 
-// Drives cycle_increment() until c->cycle has advanced by `cycles` frame
-// cycles. One frame cycle is CYCLE_MODULO sub-slot ticks; the cap only keeps a
-// broken increment from hanging the suite.
-static void advance_frame_cycles(cycle_t *c, int cycles) {
-    const uint16_t target = (uint16_t)(c->cycle + cycles);
-    const int cap = (cycles + 2) * CYCLE_MODULO;
-    for (int i = 0; (i < cap) && (c->cycle != target); i++) {
-        cycle_increment(c);
-    }
-    ASSERT_EQ(c->cycle, target) << "cycle_increment did not advance " << cycles << " frame cycles";
-}
-
-// Latches a fresh cycle_t as SLAVE of `masterSlot` through the election path.
-static void elect(cycle_t *c, int8_t masterSlot) {
-    ASSERT_EQ(cycle_master_seen(c, masterSlot), EM_OK);
-    ASSERT_EQ(c->role, SLAVE);
-    ASSERT_EQ(c->master, masterSlot);
-}
 
 // A master with nobody left to hear tears itself down -- exactly at the
 // timeout, not before. Without this the slot stays occupied by a device the
@@ -427,18 +446,19 @@ TEST_F(CycleTest, CheckCycleIncrement) {
     ASSERT_EQ(c.subSlot, my_slot * CYCLE_SUB_SLOT_CNT - PRESS);
     ASSERT_EQ(cycle_get_state(&c), SYNCHRONIZE);
     ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE_DOING), EM_OK);
-    // Before a SYNCHRONIZE edge cycle_increment must not advance subSlot,
-    // whatever (pre-sync) state it observes, and must leave that state alone.
-    cycle_increment(&c);
+    for (uint8_t i=0;i<(my_slot- slot)*CYCLE_SUB_SLOT_CNT;i++){
+        cycle_increment(&c);
+        ASSERT_EQ(c._pDiff,   (my_slot-slot)* CYCLE_SUB_SLOT_CNT );
+        ASSERT_EQ(c.skip_cnt,   (my_slot- slot)*CYCLE_SUB_SLOT_CNT-i-1 );
+    }
     ASSERT_EQ(c.sync_state, SYNCHRONIZE_DOING);
-    ASSERT_EQ(c.subSlot, slot * CYCLE_SUB_SLOT_CNT - PRESS + 1);
+    ASSERT_EQ(c.subSlot, my_slot * CYCLE_SUB_SLOT_CNT - PRESS + 1);
     ASSERT_EQ(c.psubSlot, 0);
-    ASSERT_EQ(c.subSlot, slot * CYCLE_SUB_SLOT_CNT - PRESS + 1);
     for (system_state_e st : {BOOT_UP, SLOT, FREQBAND, FREQUENCY_OFFSET}) {
-        ASSERT_EQ(c.subSlot, slot * CYCLE_SUB_SLOT_CNT - PRESS + 1);
+        ASSERT_EQ(c.subSlot, my_slot * CYCLE_SUB_SLOT_CNT - PRESS + 1);
         ASSERT_EQ(cycle_set_state(&c, st), EM_OK);
         cycle_increment(&c);
-        ASSERT_EQ(c.subSlot, slot * CYCLE_SUB_SLOT_CNT - PRESS + 1);
+        ASSERT_EQ(c.subSlot, my_slot * CYCLE_SUB_SLOT_CNT - PRESS + 1);
         ASSERT_EQ(c.sync_state, st);
     }
 
@@ -449,9 +469,12 @@ TEST_F(CycleTest, CheckCycleIncrement) {
     // difference, unresolved.
     ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
     cycle_reset_role(&c);
-    ASSERT_EQ(cycle_set_slot(&c, slot, SLAVE), EM_ERR);
+    ASSERT_EQ(cycle_set_slot(&c, slot, SLAVE), EM_OK);
     ASSERT_EQ(c.psubSlot, slot * CYCLE_SUB_SLOT_CNT - PRESS);
+
     cycle_increment(&c);
+    ASSERT_EQ(c.skip_cnt, 0);
+    ASSERT_EQ(c._pDiff,   0);
     ASSERT_EQ(c.subSlot, slot * CYCLE_SUB_SLOT_CNT - PRESS + 1);
     ASSERT_EQ(c.psubSlot, 0);
 

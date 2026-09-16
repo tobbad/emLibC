@@ -72,21 +72,21 @@ em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, u
     if (cycle_check_slot(my_slot)<0)  return res;
     // clang-format on
     memset(cycle, 0, sizeof(cycle_t));
-    cycle->press = press;
-    cycle->postss = postss;
-    cycle->postrx = postrx;
-    cycle->slot = my_slot;
-    cycle->master = -1;
-    cycle->isMaster = false;
-    cycle->isSlave = false;
-    cycle->kaCnt = kaCnt;
-    cycle->_kaCnt = kaCnt;
-    cycle->timer = htim;
+    cycle->press      = press;
+    cycle->postss     = postss;
+    cycle->postrx     = postrx;
+    cycle->slot       = my_slot;
+    cycle->master     = -1;
+    cycle->isMaster   = false;
+    cycle->isSlave    = false;
+    cycle->kaCnt      = kaCnt;
+    cycle->_kaCnt     = kaCnt;
+    cycle->timer      = htim;
     cycle->sync_state = SYNC_RESET;
-    cycle->role = NOT_SET;
-    cycle->subSlot = 0;
-    cycle->psubSlot = 0;
-    cycle->cntErrror = 0;
+    cycle->role       = NOT_SET;
+    cycle->subSlot    = 0;
+    cycle->psubSlot   = 0;
+    cycle->cntErrror  = 0;
     cycle_sscnt_init(cycle);
     cycle->init = true;
     cycle_reset(cycle);
@@ -315,10 +315,10 @@ void cycle_reset_role(cycle_t *cycle) {
     if (!cycle) return;
     if (!cycle->init) return;
     // clang-format on
-    cycle->role = NOT_SET;
+    cycle->role     = NOT_SET;
     cycle->isMaster = false;
-    cycle->isSlave = false;
-    cycle->master = -1;
+    cycle->isSlave  = false;
+    cycle->master   = -1;
     cycle->masterAge = 0;
 }
 
@@ -429,14 +429,16 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
 					// A successful claim is proof the network is there: restart the
 					// watchdog so the fresh role gets a full CYCLE_MASTER_LOOSE_CYCLE_CNT.
 		            cycle->masterAge = 0;
-		            cycle->isSlave = false;
+                    cycle->isSlave   = false;
+                    cycle->isMaster  = true;
 					return EM_OK;
             	}
                 res = EM_ERR;
-            } else {
+            } else if (cycle->role == SLAVE)  {
             	cycle->master  = slot;
             	if (!cycle->isSlave){
-            		cycle->isSlave = true;
+                    cycle->isSlave  = true;
+                    cycle->isMaster = false;
 					cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - cycle_press(cycle)) % CYCLE_MODULO;
 					return EM_OK;
 				}
@@ -596,8 +598,8 @@ void cycle_increment(cycle_t *cycle) {
     }
     if (cycle->sync_state >= SYNCHRONIZE_READY) {
         if (cycle->psubSlot > 0) {
-     	cycle->skip_cnt = 0;
-       	cycle->_pDiff = cycle->subSlot-cycle->psubSlot;
+            cycle->skip_cnt = 0;
+            cycle->_pDiff = cycle->subSlot-cycle->psubSlot;
         	if (cycle->_pDiff<=0){
                 cycle->subSlot = cycle->psubSlot;
         	} else{
@@ -645,12 +647,12 @@ void cycle_increment(cycle_t *cycle) {
                 // the network is still there. Running dry means the master is
                 // gone (or, for a master, that nobody is left listening), so the
                 // role is dropped and the next frame heard elects a new master.
-//                if (cycle->role != NOT_SET) {
-//                    cycle->masterAge++;
-//                    if (cycle->masterAge >= CYCLE_MASTER_LOOSE_CYCLE_CNT) {
-//                        cycle_reset_role(cycle);
-//                    }
-//                }
+                if (cycle->role != NOT_SET) {
+                    cycle->masterAge++;
+                    if (cycle->masterAge >= CYCLE_MASTER_LOOSE_CYCLE_CNT) {
+                        cycle_reset_role(cycle);
+                    }
+                }
                 if (cycle->cycle % KEEP_ALIVE_CYCLE_VALUE == 0) {
                     if (cycle_role(cycle) == SLAVE) {
                         cycle_reset_role(cycle);
