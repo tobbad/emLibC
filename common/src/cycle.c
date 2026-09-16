@@ -16,7 +16,9 @@
 #ifndef UNIT_TEST
 typedef struct cycle_s {
     volatile uint8_t subSlot; // actual sub slot
-    int8_t psubSlot;          // Pending subslot to be used on next cycle_increment
+    int16_t psubSlot;   //  Pendig difference subslot value
+    int16_t _pDiff;     //  Difference between now and rxSlot >0 increases subSlot <0 set as skip count (calculate in cycle_increment)
+    int16_t skip_cnt;   //  Skip count to not incresse the subslot count to intorduce zero time subslots
     int8_t actSlot;
     int8_t lSlot;
     int8_t sSlot;
@@ -238,7 +240,7 @@ em_msg cycle_dec_ka(cycle_t *cycle) {
     if (!cycle->init) return res;
     // clang-format on
     cycle->_kaCnt--;
-    cycle->_kaCnt = MAX(0, cycle->kaCnt);
+    cycle->_kaCnt = MAX(0, cycle->_kaCnt);
     return EM_OK;
 };
 
@@ -248,7 +250,7 @@ bool cycle_is_ka(cycle_t *cycle) {
     if (!cycle) return res;
     if (!cycle->init) return res;
     // clang-format on
-    return cycle->kaCnt == 0;
+    return cycle->_kaCnt == 0;
 };
 
 em_msg cycle_reset_ka(cycle_t *cycle) {
@@ -375,6 +377,17 @@ int8_t cycle_check_slot(int8_t slot) {
     return -1;
 }
 
+
+
+int8_t cycle_get_pdiff(cycle_t *cycle){
+	em_msg res = EM_ERR;
+	// clang-format off
+	if (!cycle) return 0xFF;
+	if (!cycle->init) return 0xFF;
+    // clang-format on
+	return cycle->subSlot-cycle->psubSlot;
+}
+
 em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
     em_msg res = EM_ERR;
     // clang-format off
@@ -438,6 +451,15 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
     return res;
 }
 
+int8_t cycle_get_slot(cycle_t *cycle) {
+    em_msg res = EM_ERR;
+    // clang-format off
+    if (!cycle) return res;
+    if (!cycle->init) return res;
+    // clang-format on
+    return cycle->slot;
+}
+
 // RX path entry point: a frame arrived in sub-slot window rxSlot.
 //
 // It kicks the master watchdog, and elects a master when there is none. What
@@ -473,14 +495,6 @@ em_msg cycle_master_seen(cycle_t *cycle, int8_t rxSlot) {
     cycle->masterAge = 0;
     res = EM_OK;
     return res;
-}
-
-int8_t cycle_get_slot(cycle_t *cycle) {
-    em_msg res = EM_ERR;
-    // clang-format off
-    if (!cycle) return res;
-    if (!cycle->init) return res;
-    return cycle->slot;
 }
 
 
@@ -582,12 +596,21 @@ void cycle_increment(cycle_t *cycle) {
     }
     if (cycle->sync_state >= SYNCHRONIZE_READY) {
         if (cycle->psubSlot > 0) {
-            cycle->subSlot = cycle->psubSlot;
+     	cycle->skip_cnt = 0;
+       	cycle->_pDiff = cycle->subSlot-cycle->psubSlot;
+        	if (cycle->_pDiff<=0){
+                cycle->subSlot = cycle->psubSlot;
+        	} else{
+        		cycle->skip_cnt = cycle->_pDiff;
+        	}
             cycle->psubSlot = 0;
         }
         if ((cycle->sync_state == SYNCHRONIZE_DOING) || (cycle->sync_state == SYNCHRONIZE_READY) ||
             (cycle->sync_state == SYNCHRONIZE_ERROR) || (cycle->sync_state == SYNCHRONIZE_LOCKED)) {
-            cycle->subSlot++;
+        	cycle->skip_cnt = MAX(cycle->skip_cnt-- , 0);
+        	if (cycle->skip_cnt==0){
+        		cycle->subSlot++;
+        	}
             cycle->subSlot = (cycle->subSlot % (CYCLE_SUB_SLOT_CNT * CYCLE_SLOT_CNT));
             cycle->actSlot = CYCLE_ACT_SLOT(cycle);
             cycle->sSlot = CYCLE_ACT_SUB_SLOT(cycle);
@@ -622,12 +645,12 @@ void cycle_increment(cycle_t *cycle) {
                 // the network is still there. Running dry means the master is
                 // gone (or, for a master, that nobody is left listening), so the
                 // role is dropped and the next frame heard elects a new master.
-                if (cycle->role != NOT_SET) {
-                    cycle->masterAge++;
-                    if (cycle->masterAge >= CYCLE_MASTER_LOOSE_CYCLE_CNT) {
-                        cycle_reset_role(cycle);
-                    }
-                }
+//                if (cycle->role != NOT_SET) {
+//                    cycle->masterAge++;
+//                    if (cycle->masterAge >= CYCLE_MASTER_LOOSE_CYCLE_CNT) {
+//                        cycle_reset_role(cycle);
+//                    }
+//                }
                 if (cycle->cycle % KEEP_ALIVE_CYCLE_VALUE == 0) {
                     if (cycle_role(cycle) == SLAVE) {
                         cycle_reset_role(cycle);

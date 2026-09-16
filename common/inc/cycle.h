@@ -40,7 +40,7 @@ typedef enum {
 // Outside the folded range, so it cannot collide with a valid distance.
 #define CYCLE_DIFF_INVALID INT16_MIN
 extern idxa2str_t synca2str;
-#define CYCLE_KEEP_ALIVE_CYCLE_CNT (uint16_t)8 // is set so that at least once in a KEEP_ALIVE_CYCLE_CNT Frame cycle a frame is sent
+#define CYCLE_KEEP_ALIVE_CYCLE_CNT (uint16_t)16 // is set so that at least once in a KEEP_ALIVE_CYCLE_CNT Frame cycle a frame is sent
 #define CYCLE_MASTER_LOOSE 3 // After CYCLE_MASTER_LOOSE*CYCLE_KEEP_ALIVE_CYCLE_CNT a MASTER loooses its slave role and all slave set their role to
                              // NOT_SET. Then when the first Packet is received the Device sending in this slot becomes the new MASTER.
 // Frame cycles a role survives without proof that the network is still there.
@@ -50,29 +50,32 @@ extern idxa2str_t synca2str;
 #ifdef UNIT_TEST
 typedef struct cycle_s {
     volatile uint8_t subSlot; // actual sub slot
-    int8_t           psubSlot;         // Pending subslot to be used on next cycle_increment
-    int8_t           actSlot;
-    int8_t           lSlot;
-    int8_t           sSlot;
-    uint16_t         cycle;
-    int8_t           slot; // Configured slot of device
-    int8_t           master;
-    bool             isSlave;
-    bool             isMaster;
-    uint16_t         masterAge; // frame cycles since the network was last heard from
-    int8_t           press;
-    int8_t           postss;
-    int8_t           postrx;
-    dev_role_e       role;
-    int8_t           ssCnt;      // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
-    int8_t           kaCnt;      // Set Keep alive counter
-    int8_t           _kaCnt;     // Keep alive counter
-    uint32_t         timerCNT;   // MCU cycle count when cycle count was set
-    bool             doMeasure;
-    bool             cntErrror;
-    system_state_e   sync_state;
-    bool             init;
-    bool             set;  // is set when cycle was finished
+    int16_t psubSlot;   //  Pendig difference subslot value
+    int16_t pDiff;      //  Pendig difference between now and rxSlot is reset after usage >0 increases subSlot <0 set as skip count
+    int16_t _pDiff;     //  Pendig difference between now and rxSlot is reset after usage >0 increases subSlot <0 set as skip count
+    int16_t skip_cnt;   //  Skip count to not incresse the subslot count to intorduce zero time subslots
+    int8_t actSlot;
+    int8_t lSlot;
+    int8_t sSlot;
+    uint16_t cycle;
+    int8_t slot; // Configured slot of device
+    int8_t master;
+    bool isSlave;
+    bool isMaster;
+    uint16_t masterAge; // frame cycles since the network was last heard from
+    int8_t press;
+    int8_t postss;
+    int8_t postrx;
+    dev_role_e role;
+    int8_t ssCnt;      // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
+    int8_t kaCnt;      // Set Keep alive counter
+    int8_t _kaCnt;     // Keep alive counter
+    uint32_t timerCNT; // MCU cycle count when cycle count was set
+    bool doMeasure;
+    bool cntErrror;
+    system_state_e sync_state;
+    bool init;
+    bool set; // is set when cycle was finished
     TIM_HandleTypeDef *timer;
 } cycle_t;
 #else
@@ -104,6 +107,7 @@ bool     cycle_doSend(cycle_t *cycle);
 int8_t   cycle_check_slot(int8_t slot);
 em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type);
 int8_t   cycle_get_slot(cycle_t *cycle);
+int8_t   cycle_get_pdiff(cycle_t *cycle);
 int8_t   cycle_get_master(cycle_t *cycle);
 em_msg   cycle_master_seen(cycle_t *cycle, int8_t rxSlot);
 em_msg   cycle_set_state(cycle_t *cycle, system_state_e state);
