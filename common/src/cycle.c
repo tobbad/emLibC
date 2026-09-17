@@ -641,6 +641,7 @@ void cycle_increment(cycle_t *cycle) {
 #endif
                 cycle_once = true;
                 cycle->cycle += 1;
+                cycle->cycle = (cycle->cycle%KEEP_ALIVE_CYCLE_VALUE);
                 cycle->set = true;
                 // Master watchdog. Every device that holds a role ages here;
                 // cycle_master_seen() resets the age on every frame that proves
@@ -653,7 +654,7 @@ void cycle_increment(cycle_t *cycle) {
 //                        cycle_reset_role(cycle);
 //                    }
                 }
-                if (cycle->cycle % KEEP_ALIVE_CYCLE_VALUE == 0) {
+                if (cycle->cycle == 0) {
                     if (cycle_role(cycle) == SLAVE) {
                         cycle_reset_role(cycle);
                     }
