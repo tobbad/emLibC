@@ -649,9 +649,9 @@ void cycle_increment(cycle_t *cycle) {
                 // role is dropped and the next frame heard elects a new master.
                 if (cycle->role != NOT_SET) {
                     cycle->masterAge++;
-                    if (cycle->masterAge >= CYCLE_MASTER_LOOSE_CYCLE_CNT) {
-                        cycle_reset_role(cycle);
-                    }
+//                    if (cycle->masterAge >= CYCLE_MASTER_LOOSE_CYCLE_CNT) {
+//                        cycle_reset_role(cycle);
+//                    }
                 }
                 if (cycle->cycle % KEEP_ALIVE_CYCLE_VALUE == 0) {
                     if (cycle_role(cycle) == SLAVE) {
