@@ -12,7 +12,7 @@
 // state_get_key_by_lbl/idx liefern STATE_CNT als Fehlersentinel.
 // ---------------------------------------------------------------------------
 namespace {
-bool is_key_err(int v) { return (v < 0 || (key_state_e)v >= STATE_CNT); }
+bool is_key_err(int v) { return (v < 0 || (key_state_e)v >= KEY_STATE_CNT); }
 } // namespace
 
 // ---------------------------------------------------------------------------

@@ -9,12 +9,14 @@
 #define INC_STATE_H_
 #include "common.h"
 #include "cycle.h"
+#include "state.h"
 #include "emLibC_options.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef enum __attribute__((packed)) { OFF, BLINKING, ON, STATE_CNT } key_state_e;
+typedef enum __attribute__((packed)) { OFF, BLINKING, ON, KEY_STATE_CNT } key_state_e;
+extern idxa2str_t kstatea2str ;
 
 extern char key2char[][4];
 
@@ -112,6 +114,7 @@ em_msg state_init(state_t *state);
 em_msg state_reset(state_t *state);
 em_msg state_set_first(state_t *state, uint8_t cnt);
 em_msg state_set(state_t *state, uint8_t nr, key_state_e);
+char * state_key_string( key_state_e nr);
 key_state_e state_get(const state_t *state, uint8_t nr);
 em_msg state_set_state(const state_t *from, state_t *to);
 em_msg state_check(const state_t *state);

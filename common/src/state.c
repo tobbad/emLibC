@@ -14,13 +14,14 @@
 uint32_t HAL_GetTick() { return 1; };
 #endif
 
-static idx2str_t cmd[] = {
+static idx2str_t kstate[KEY_STATE_CNT+1] = {
     {.str = "OFF", .idx = OFF},
     {.str = "BLI", .idx = BLINKING},
     {.str = "ON ", .idx = ON},
     {.str = "NA ", .idx = 0xff},
 };
-idxa2str_t state2str = {.cnt = 4, .entry = (idx2str_t *)&cmd};
+
+idxa2str_t kstatea2str = {.cnt = KEY_STATE_CNT+1, .entry = (idx2str_t *)&kstate};
 
 em_msg state_init(state_t *state) {
     em_msg res = EM_ERR;
@@ -77,6 +78,13 @@ em_msg state_set(state_t *state, uint8_t nr, key_state_e ns) {
     return EM_OK;
 }
 
+char * state_key_string( key_state_e nr) {
+    em_msg res = EM_ERR;
+    // clang-format off
+    // clang-format on
+    return idxa2str(&kstatea2str, nr);
+}
+
 key_state_e state_get(const state_t *state, uint8_t nr) {
     em_msg res = EM_ERR;
     // clang-format off
@@ -105,14 +113,14 @@ key_state_e state_key_diff(key_state_e state1, key_state_e state2) {
     if (state1 == state2) return OFF;
     if (state2 > state1) return (state2 - state1);
     // clang-format on
-    return (state2 + STATE_CNT - state1); // state2 < state1
+    return (state2 + ON+1 - state1); // state2 < state1
 }
 
 em_msg state_set_key_by_idx(state_t *state, uint8_t nr, key_state_e new_state) {
     // clang-format off
     em_msg res = EM_ERR;
     if (state_check(state)) return res;
-    if (new_state >= STATE_CNT) return res;
+    if (new_state > ON) return res;
     // clang-format on
     state_set(state, nr, new_state);
     res = EM_OK;
@@ -146,7 +154,7 @@ em_msg state_set_key_by_lbl(state_t *state, char lbl, key_state_e new_state) {
 
 key_state_e state_get_key_by_lbl(const state_t *state, char ch) {
     // clang-format off
-   key_state_e res = STATE_CNT;
+   key_state_e res = KEY_STATE_CNT;
     if (state_check(state))  return res;
     int8_t idx = state_ch2idx(state, ch);
     if (idx < 0) return res;
@@ -158,7 +166,7 @@ key_state_e state_get_key_by_lbl(const state_t *state, char ch) {
 
 key_state_e state_get_key_by_idx(const state_t *state, uint8_t idx) {
     // clang-format off
-    key_state_e res = STATE_CNT;
+    key_state_e res = KEY_STATE_CNT;
     if (state_check(state)) return res;
     // clang-format on
     res = state_get(state, idx);
@@ -175,7 +183,7 @@ em_msg state_propagate(state_t *state, uint8_t idx) {
 #if MOPTION_VERBOSE == 1
     printf("Propagate state %d" NL, idx);
 #endif
-    state->state[idx] = (state->state[idx] + 1) % STATE_CNT;
+    state->state[idx] = (state->state[idx] + 1) % KEY_STATE_CNT;
     state->dirty = true;
     res = EM_OK;
     return res;
@@ -379,7 +387,7 @@ em_msg state_print(const state_t *state, const char *title, bool doLong, cycle_t
         printf("State = ");
     }
     for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {
-        printf("%s ", idxa2str(&state2str, state->state[i]));
+        printf("%s ", state_key_string(state->state[i]));
     }
     printf(NL);
 

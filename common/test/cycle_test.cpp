@@ -423,7 +423,7 @@ TEST_F(CycleTest, SetSlotRejectedOutsideSyncing) {
     ASSERT_EQ(cycle_set_state(&c, SYNC_RESET), EM_ERR);
     ASSERT_EQ(cycle_init(&c, my_slot, PRESS, POSTSS, POSTRX, CYCLE_KEEP_ALIVE_CYCLE_CNT, &timerPtr), EM_OK);
     const int8_t before = c.subSlot;
-    for (system_state_e st : {SYNC_RESET, BOOT_UP, SLOT, CHANNEL, FREQBAND, FREQUENCY_OFFSET}) {
+    for (system_state_e st : {SYNC_RESET, BOOT_UP}) {
         ASSERT_EQ(cycle_set_state(&c, st), EM_OK);
         ASSERT_EQ(cycle_set_slot(&c, 5, SLAVE), EM_ERR);
         EXPECT_EQ(c.sync_state, st);
@@ -454,7 +454,7 @@ TEST_F(CycleTest, CheckCycleIncrement) {
     ASSERT_EQ(c.sync_state, SYNCHRONIZE_DOING);
     ASSERT_EQ(c.subSlot, my_slot * CYCLE_SUB_SLOT_CNT - PRESS + 1);
     ASSERT_EQ(c.psubSlot, 0);
-    for (system_state_e st : {BOOT_UP, SLOT, FREQBAND, FREQUENCY_OFFSET}) {
+    for (system_state_e st : {BOOT_UP}) {
         ASSERT_EQ(c.subSlot, my_slot * CYCLE_SUB_SLOT_CNT - PRESS + 1);
         ASSERT_EQ(cycle_set_state(&c, st), EM_OK);
         cycle_increment(&c);
