@@ -19,9 +19,9 @@ typedef struct cycle_s {
     int16_t psubSlot;   //  Pendig difference subslot value
     int16_t _pDiff;     //  Difference between now and rxSlot >0 increases subSlot <0 set as skip count (calculate in cycle_increment)
     int16_t skip_cnt;   //  Skip count to not incresse the subslot count to intorduce zero time subslots
-    int8_t actSlot;
-    int8_t lSlot;
-    int8_t sSlot;
+    int8_t  actSlot;
+    int8_t  lSlot;
+    int8_t  sSlot;
     uint16_t cycle;
     int8_t slot; // Configured slot of device
     int8_t master;
@@ -385,7 +385,7 @@ int8_t cycle_get_pdiff(cycle_t *cycle){
 	if (!cycle) return 0xFF;
 	if (!cycle->init) return 0xFF;
     // clang-format on
-	return cycle->subSlot-cycle->psubSlot;
+	return cycle->_pDiff;
 }
 
 em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
