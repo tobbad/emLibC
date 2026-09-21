@@ -53,7 +53,6 @@ typedef struct cycle_s {
     int16_t psubSlot;   //  Pendig difference subslot value
     int16_t pDiff;      //  Pendig difference between now and rxSlot is reset after usage >0 increases subSlot <0 set as skip count
     int16_t _pDiff;     //  Pendig difference between now and rxSlot is reset after usage >0 increases subSlot <0 set as skip count
-    int16_t skip_cnt;   //  Skip count to not incresse the subslot count to intorduce zero time subslots
     int8_t actSlot;
     int8_t lSlot;
     int8_t sSlot;

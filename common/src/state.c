@@ -79,9 +79,6 @@ em_msg state_set(state_t *state, uint8_t nr, key_state_e ns) {
 }
 
 char * state_key_string( key_state_e nr) {
-    em_msg res = EM_ERR;
-    // clang-format off
-    // clang-format on
     return idxa2str(&kstatea2str, nr);
 }
 

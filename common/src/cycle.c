@@ -18,7 +18,6 @@ typedef struct cycle_s {
     volatile uint8_t subSlot; // actual sub slot
     int16_t psubSlot;   //  Pendig difference subslot value
     int16_t _pDiff;     //  Difference between now and rxSlot >0 increases subSlot <0 set as skip count (calculate in cycle_increment)
-    int16_t skip_cnt;   //  Skip count to not incresse the subslot count to intorduce zero time subslots
     int8_t  actSlot;
     int8_t  lSlot;
     int8_t  sSlot;
@@ -597,22 +596,12 @@ void cycle_increment(cycle_t *cycle) {
         cycle->sync_state = SYNCHRONIZE_READY;
     }
     if (cycle->sync_state >= SYNCHRONIZE_READY) {
-        if (cycle->psubSlot > 0) {
-            cycle->skip_cnt = 0;
-            cycle->_pDiff = cycle->subSlot-cycle->psubSlot;
-        	if (cycle->_pDiff<=0){
-                cycle->subSlot = cycle->psubSlot;
-        	} else{
-        		cycle->skip_cnt = cycle->_pDiff;
-        	}
-            cycle->psubSlot = 0;
+        if (cycle->psubSlot  > 0) {
+             cycle->subSlot = cycle->psubSlot;
         }
         if ((cycle->sync_state == SYNCHRONIZE_DOING) || (cycle->sync_state == SYNCHRONIZE_READY) ||
             (cycle->sync_state == SYNCHRONIZE_ERROR) || (cycle->sync_state == SYNCHRONIZE_LOCKED)) {
-        	cycle->skip_cnt = MAX(cycle->skip_cnt-- , 0);
-        	if (cycle->skip_cnt==0){
-        		cycle->subSlot++;
-        	}
+        	cycle->subSlot++;
             cycle->subSlot = (cycle->subSlot % (CYCLE_SUB_SLOT_CNT * CYCLE_SLOT_CNT));
             cycle->actSlot = CYCLE_ACT_SLOT(cycle);
             cycle->sSlot = CYCLE_ACT_SUB_SLOT(cycle);
@@ -629,12 +618,12 @@ void cycle_increment(cycle_t *cycle) {
             }
         }
         if (cycle->actSlot != cycle->lSlot) {
+            cycle->lSlot = cycle->actSlot;
             cycle_once = false;
 #if OPTION_SHOW_TIMING == 1
             stateled_set(cycle->actSlot);
             stateled_toggle_pin(led_4);
 #endif
-            cycle->lSlot = cycle->actSlot;
             if (((cycle->actSlot == 0) && (cycle->sync_state >= SYNCHRONIZE_READY) && (!cycle_once))) {
 #if OPTION_SHOW_TIMING == 1
                 stateled_toggle_pin(led_5);
