@@ -15,9 +15,8 @@
 #endif
 #ifndef UNIT_TEST
 typedef struct cycle_s {
-    volatile uint8_t subSlot; // actual sub slot
+    volatile int16_t subSlot; // actual sub slot
     int16_t psubSlot;   //  Pendig difference subslot value
-    int16_t _pDiff;     //  Difference between now and rxSlot >0 increases subSlot <0 set as skip count (calculate in cycle_increment)
     int8_t  actSlot;
     int8_t  lSlot;
     int8_t  sSlot;
@@ -27,6 +26,7 @@ typedef struct cycle_s {
     bool isSlave;
     bool isMaster;
     uint16_t masterAge; // frame cycles since the network was last heard from
+    uint16_t slaveAge;  // iterates over slave cycles till role is resetted
     int8_t press;
     int8_t postss;
     int8_t postrx;
@@ -317,8 +317,6 @@ void cycle_reset_role(cycle_t *cycle) {
     cycle->role     = NOT_SET;
     cycle->isMaster = false;
     cycle->isSlave  = false;
-    cycle->master   = -1;
-    cycle->masterAge = 0;
 }
 
 system_state_e cycle_get_state(cycle_t *cycle) {
@@ -377,15 +375,6 @@ int8_t cycle_check_slot(int8_t slot) {
 }
 
 
-
-int8_t cycle_get_pdiff(cycle_t *cycle){
-	em_msg res = EM_ERR;
-	// clang-format off
-	if (!cycle) return 0xFF;
-	if (!cycle->init) return 0xFF;
-    // clang-format on
-	return cycle->_pDiff;
-}
 
 em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
     em_msg res = EM_ERR;
@@ -493,7 +482,10 @@ em_msg cycle_master_seen(cycle_t *cycle, int8_t rxSlot) {
     if ((cycle->role == SLAVE) && (rxSlot != cycle->master)) {
         return res;
     }
+    // Both watchdogs are kicked: the frame is proof the network is there,
+    // whichever role we currently hold.
     cycle->masterAge = 0;
+    cycle->slaveAge  = 0;
     res = EM_OK;
     return res;
 }
@@ -586,21 +578,60 @@ uint8_t cycle_sscnt_get(cycle_t *cycle) {
     return EM_ERR;
 };
 
+// Role watchdog, called exactly once per frame cycle from cycle_increment().
+//
+// Every device that holds a role ages here; cycle_master_seen() resets the age
+// on every frame that proves the network is still there. Running dry means the
+// master is gone (or, for a master, that nobody is left listening), so the role
+// is dropped and the next frame heard elects a new master.
+//
+// The two roles get different budgets: a slave must notice a dead master fast
+// (CYCLE_SLAVE_KEEP_ALIVE_CYCLE_CNT), while a master may sit quiet much longer
+// before it concludes it is alone (CYCLE_MASTER_LOOSE_CYCLE_CNT).
+// (plain `static`, not the STATIC macro: common.h only defines STATIC in its
+// UNIT_TEST branch, so STATIC does not compile in the firmware build.)
+static void cycle_age_role(cycle_t *cycle) {
+    uint16_t *age   = NULL;
+    uint16_t  limit = 0;
+    switch (cycle_role(cycle)) {
+    case MASTER:
+        age   = &cycle->masterAge;
+        limit = CYCLE_MASTER_LOOSE_CYCLE_CNT;
+        break;
+    case SLAVE:
+        age   = &cycle->slaveAge;
+        limit = CYCLE_SLAVE_KEEP_ALIVE_CYCLE_CNT;
+        break;
+    default:
+        // No role to lose -- nothing ages until the next election.
+        return;
+    }
+    (*age)++;
+    if (*age < limit) {
+        return;
+    }
+    // Clear both ages, not just the one that ran dry: the role is gone, so the
+    // next election has to start from a clean watchdog either way.
+    cycle->masterAge = 0;
+    cycle->slaveAge  = 0;
+    cycle_reset_role(cycle);
+    cycle_set_state(cycle, SYNCHRONIZE);
+}
+
 void cycle_increment(cycle_t *cycle) {
     // clang-format off
     if (!cycle) return;
     if (!cycle->init) return;
     // clang-format on
-    static uint8_t cycle_once = false;
     if (cycle->sync_state == SYNCHRONIZE) {
         cycle->sync_state = SYNCHRONIZE_READY;
     }
     if (cycle->sync_state >= SYNCHRONIZE_READY) {
         if (cycle->psubSlot  > 0) {
              cycle->subSlot = cycle->psubSlot;
+             cycle->psubSlot =0;
         }
-        if ((cycle->sync_state == SYNCHRONIZE_DOING) || (cycle->sync_state == SYNCHRONIZE_READY) ||
-            (cycle->sync_state == SYNCHRONIZE_ERROR) || (cycle->sync_state == SYNCHRONIZE_LOCKED)) {
+        if (cycle->sync_state >= SYNCHRONIZE_READY) {
         	cycle->subSlot++;
             cycle->subSlot = (cycle->subSlot % (CYCLE_SUB_SLOT_CNT * CYCLE_SLOT_CNT));
             cycle->actSlot = CYCLE_ACT_SLOT(cycle);
@@ -618,38 +649,24 @@ void cycle_increment(cycle_t *cycle) {
             }
         }
         if (cycle->actSlot != cycle->lSlot) {
-            cycle->lSlot = cycle->actSlot;
-            cycle_once = false;
 #if OPTION_SHOW_TIMING == 1
             stateled_set(cycle->actSlot);
             stateled_toggle_pin(led_4);
 #endif
-            if (((cycle->actSlot == 0) && (cycle->sync_state >= SYNCHRONIZE_READY) && (!cycle_once))) {
+            // actSlot only ever changes on a slot boundary, and the boundary
+            // into slot 0 is the frame-cycle boundary -- the one place per
+            // CYCLE_MODULO sub-slot ticks that may bump cycle->cycle and age a
+            // role. (An earlier version aged on subSlot == CYCLE_MODULO-1,
+            // which is never a slot boundary, so the watchdog never ran.)
+            if ((cycle->actSlot == 0) && (cycle->sync_state >= SYNCHRONIZE)) {
 #if OPTION_SHOW_TIMING == 1
                 stateled_toggle_pin(led_5);
 #endif
-                cycle_once = true;
                 cycle->cycle += 1;
-                cycle->cycle = (cycle->cycle%KEEP_ALIVE_CYCLE_VALUE);
                 cycle->set = true;
-                // Master watchdog. Every device that holds a role ages here;
-                // cycle_master_seen() resets the age on every frame that proves
-                // the network is still there. Running dry means the master is
-                // gone (or, for a master, that nobody is left listening), so the
-                // role is dropped and the next frame heard elects a new master.
-                if (cycle->role != NOT_SET) {
-                    cycle->masterAge++;
-//                    if (cycle->masterAge >= CYCLE_MASTER_LOOSE_CYCLE_CNT) {
-//                        cycle_reset_role(cycle);
-//                    }
-                }
-                if (cycle->cycle == 0) {
-                    if (cycle_role(cycle) == SLAVE) {
-                        cycle_reset_role(cycle);
-                    }
-                    cycle_set_state(cycle, SYNCHRONIZE);
-                }
+                cycle_age_role(cycle);
             }
+            cycle->lSlot = cycle->actSlot;
         }
     }
 }

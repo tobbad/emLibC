@@ -135,7 +135,7 @@ em_msg   radio_stat_inc_tx_timeout(radio_stat_t *stat){
     // clang-format off
     if (!stat) return EM_ERR;
     // clang-format on
-    stat->master= MIN(CYCLE_MASTER_LOOSE*CYCLE_KEEP_ALIVE_CYCLE_CNT, stat->master + 1);
+    stat->master= MIN(CYCLE_MASTER_LOOSE*CYCLE_MASTER_KEEP_ALIVE_CYCLE_CNT, stat->master + 1);
     return EM_OK;
 
 }
@@ -145,7 +145,7 @@ em_msg   radio_stat_inc_master(radio_stat_t *stat){
     // clang-format off
     if (!stat) return EM_ERR;
     // clang-format on
-    stat->master= MIN(CYCLE_MASTER_LOOSE*CYCLE_KEEP_ALIVE_CYCLE_CNT, stat->master + 1);
+    stat->master= MIN(CYCLE_MASTER_LOOSE*CYCLE_MASTER_KEEP_ALIVE_CYCLE_CNT, stat->master + 1);
     return EM_OK;
 }
 

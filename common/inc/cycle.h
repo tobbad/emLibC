@@ -40,19 +40,19 @@ typedef enum {
 // Outside the folded range, so it cannot collide with a valid distance.
 #define CYCLE_DIFF_INVALID INT16_MIN
 extern idxa2str_t synca2str;
-#define CYCLE_KEEP_ALIVE_CYCLE_CNT (uint16_t)16 // is set so that at least once in a KEEP_ALIVE_CYCLE_CNT Frame cycle a frame is sent
-#define CYCLE_MASTER_LOOSE 3 // After CYCLE_MASTER_LOOSE*CYCLE_KEEP_ALIVE_CYCLE_CNT a MASTER loooses its master role and all slave set their role to
+#define CYCLE_MASTER_KEEP_ALIVE_CYCLE_CNT (uint16_t)16 // is set so that at least once in a KEEP_ALIVE_CYCLE_CNT Frame cycle a frame is sent
+#define CYCLE_SLAVE_KEEP_ALIVE_CYCLE_CNT (uint16_t)3 // is set so that at least once in a KEEP_ALIVE_CYCLE_CNT Frame cycle a frame is sent
+#define CYCLE_MASTER_LOOSE 3 // After CYCLE_MASTER_LOOSE*CYCLE_MASTER_KEEP_ALIVE_CYCLE_CNT a MASTER loooses its master role and all slave set their role to
                              // NOT_SET. Then when the first Packet is received the Device sending in this slot becomes the new MASTER.
 // Frame cycles a role survives without proof that the network is still there.
 // Kicked by cycle_master_seen(), counted down in cycle_increment().
-#define CYCLE_MASTER_LOOSE_CYCLE_CNT (uint16_t)(CYCLE_MASTER_LOOSE * CYCLE_KEEP_ALIVE_CYCLE_CNT)
+#define CYCLE_MASTER_LOOSE_CYCLE_CNT (uint16_t)(CYCLE_MASTER_LOOSE * CYCLE_MASTER_KEEP_ALIVE_CYCLE_CNT)
 
 #ifdef UNIT_TEST
 typedef struct cycle_s {
-    volatile uint8_t subSlot; // actual sub slot
+    volatile int16_t subSlot; // actual sub slot
     int16_t psubSlot;   //  Pendig difference subslot value
     int16_t pDiff;      //  Pendig difference between now and rxSlot is reset after usage >0 increases subSlot <0 set as skip count
-    int16_t _pDiff;     //  Pendig difference between now and rxSlot is reset after usage >0 increases subSlot <0 set as skip count
     int8_t actSlot;
     int8_t lSlot;
     int8_t sSlot;
@@ -62,6 +62,7 @@ typedef struct cycle_s {
     bool isSlave;
     bool isMaster;
     uint16_t masterAge; // frame cycles since the network was last heard from
+    uint16_t slaveAge; // frame cycles since the network was last heard from
     int8_t press;
     int8_t postss;
     int8_t postrx;
@@ -106,7 +107,6 @@ bool     cycle_doSend(cycle_t *cycle);
 int8_t   cycle_check_slot(int8_t slot);
 em_msg   cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type);
 int8_t   cycle_get_slot(cycle_t *cycle);
-int8_t   cycle_get_pdiff(cycle_t *cycle);
 int8_t   cycle_get_master(cycle_t *cycle);
 em_msg   cycle_master_seen(cycle_t *cycle, int8_t rxSlot);
 em_msg   cycle_set_state(cycle_t *cycle, system_state_e state);

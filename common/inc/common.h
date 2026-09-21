@@ -95,12 +95,12 @@ typedef enum {
 typedef enum {
     SYNC_RESET,          // 0
     BOOT_UP,             // 1
-    SYNCHRONIZE,         // 6
-    SYNCHRONIZE_READY,   // 7
-    SYNCHRONIZE_DOING,   // 8
-    SYNCHRONIZE_ERROR,   // 9
-    SYNCHRONIZE_LOCKED,  // 10
-    SYNC_CNT             // 12
+    SYNCHRONIZE,         // 2
+    SYNCHRONIZE_READY,   // 3
+    SYNCHRONIZE_DOING,   // 4
+    SYNCHRONIZE_ERROR,   // 5
+    SYNCHRONIZE_LOCKED,  // 5
+    SYNC_CNT             // 7
 } system_state_e;
 
 typedef union {
