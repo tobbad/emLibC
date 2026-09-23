@@ -228,7 +228,8 @@ static uint16_t xpad_update_key(uint8_t devh, uint8_t index, bool pinVal) {
         if (my_xpad[devh].key[index].current == my_xpad[devh].key[index].last) {
             my_xpad[devh].key[index].cnt++;
             if (pinVal != false) {
-                // printf("Increased index %d to %d (pinVal=%d)"NL, index, my_xpad[devh].key[index].cnt, pinVal);
+                char label = my_xpad[devh].state.label[index];
+                printf("Increased index %d (%s) to %d (pinVal=%d)"NL, index, label, my_xpad[devh].key[index].cnt, pinVal);
             }
         } else {
             // printf("Reset index %d from %d (pinVal=%d)"NL, index,
