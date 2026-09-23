@@ -44,6 +44,7 @@ typedef struct buffer_s {
 em_msg buffer_check(const buffer_t *buffer, bool reduced);
 em_msg buffer_free(buffer_t *buffer);
 int16_t buffer_writeable(const buffer_t *buffer);
+static bool buffer_try_claim(buffer_t *b);
 int16_t buffer_used(const buffer_t *buffer);
 buffer_t *buffer_new(uint16_t size, b_type_e type);
 buffer_t *buffer_new_buffer_t(buffer_t *buffer);

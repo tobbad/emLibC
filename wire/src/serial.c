@@ -95,7 +95,7 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     isio.buffer[SIO_RX] = buffer_new_buffer_t(init->buffer[SIO_RX]);
     isio.buffer[SIO_TX] = buffer_new_buffer_t(init->buffer[SIO_TX]);
     state_init(&isio.state);
-    // isio.pool =buffer_pool_new(POOL_SIZE, TX_BUFFER_SIZE, LINEAR);
+    isio.pool =buffer_pool_new(POOL_SIZE, TX_BUFFER_SIZE, LINEAR, RING);
     isio.cbuffer = NULL;
     isio.ser_overflow = 0;
     isio.cTxBytePerSecond = 0;
@@ -245,10 +245,9 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
 #endif
 #endif
    }
-
     if (isio.uart != NULL) {
-        if (isio.mode | (USE_UART | RAW)) {
-            if ( (buffer_transfer(buf, isio.buffer[SIO_TX]) == EM_ERR)) return EM_ERR;
+        if ( (buffer_transfer(buf, isio.buffer[SIO_TX]) == EM_ERR)) return EM_ERR;
+        if (isio.mode & (USE_UART )) {
             time_start(stxhdl, isio.buffer[SIO_TX]->used, isio.buffer[SIO_TX]->mem, isio.cycle);
             HAL_UART_Transmit(isio.uart, isio.buffer[SIO_TX]->mem , isio.buffer[SIO_TX]->used, UART_TIMEOUT_MS);
             time_stop(stxhdl, NULL);
@@ -257,11 +256,14 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
         }
         if (isio.mode & USE_DMA_TX) { // does not work, needs a too large buffer
             if (isio.cbuffer != NULL) {
-                printf("UART TX overflow" NL);
                 isio.mode ^= USE_DMA_TX;
                 return txLen;
             }
             isio.cbuffer = buffer_pool_get(isio.pool);
+            if (!isio.cbuffer) {
+                isio.usb_drop_cnt += isio.buffer[SIO_TX]->used;
+                return txLen;
+            }
             while (!ReadModify_write((int8_t *)&isio.cbuffer->state, 1)) { };
             time_start(stxhdl, isio.buffer[SIO_TX]->used, isio.buffer[SIO_TX]->mem, isio.cycle);
             buffer_set(isio.cbuffer, isio.buffer[SIO_TX]->mem, isio.buffer[SIO_TX]->used);

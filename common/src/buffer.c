@@ -84,6 +84,12 @@ buffer_t *buffer_new_buffer_t(buffer_t *buffer) {
     return buffer_init(buffer, buffer->size, buffer->type);
 }
 
+/* returns false if the buffer was not free */
+static bool buffer_try_claim(buffer_t *b) {
+    if (__LDREXB((uint8_t *)&b->state) != BUFFER_READY) { __CLREX(); return false; }
+    return __STREXB(BUFFER_USED, (uint8_t *)&b->state) == 0;
+}
+
 int16_t buffer_transfer(buffer_t *from, buffer_t *to) {
     em_msg res = buffer_check(from, false);
     if (res == EM_ERR)

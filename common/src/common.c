@@ -396,18 +396,3 @@ int8_t int8bit_cnt(int8_t val){
     }
     return cnt;
 }
-
-bool ReadModify_write(int8_t *mem, int8_t add) {
-#ifndef UNIT_TEST
-    do {
-        uint8_t val = __LDREXB((uint8_t *)mem);
-        if (0 == __STREXB((val + add), (uint8_t *)mem)) {
-            __DMB();
-            return true;
-        }
-    } while (true);
-#else
-    *mem += add;
-    return true;
-#endif
-};
