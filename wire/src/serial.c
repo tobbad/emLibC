@@ -256,15 +256,14 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
         }
         if (isio.mode & USE_DMA_TX) { // does not work, needs a too large buffer
             if (isio.cbuffer != NULL) {
-                isio.mode ^= USE_DMA_TX;
+                isio.mode &=   ~USE_DMA_TX;
                 return txLen;
             }
             isio.cbuffer = buffer_pool_get(isio.pool);
             if (!isio.cbuffer) {
-                isio.usb_drop_cnt += isio.buffer[SIO_TX]->used;
+                isio.ser_overflow += isio.buffer[SIO_TX]->used;
                 return txLen;
             }
-            while (!ReadModify_write((int8_t *)&isio.cbuffer->state, 1)) { };
             time_start(stxhdl, isio.buffer[SIO_TX]->used, isio.buffer[SIO_TX]->mem, isio.cycle);
             buffer_set(isio.cbuffer, isio.buffer[SIO_TX]->mem, isio.buffer[SIO_TX]->used);
             HAL_UART_Transmit_DMA(isio.uart, isio.cbuffer->mem, isio.buffer[SIO_TX]->used);
