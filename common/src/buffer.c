@@ -54,6 +54,7 @@ buffer_t * buffer_init(buffer_t *buffer, uint16_t size, b_type_e type){
     return buffer_reset(buffer);
 }
 
+
 em_msg buffer_free(buffer_t *buffer) {
     // clang-format off
     em_msg res = buffer_check(buffer, false);
@@ -85,7 +86,7 @@ buffer_t *buffer_new_buffer_t(buffer_t *buffer) {
 }
 
 /* returns false if the buffer was not free */
-static bool buffer_try_claim(buffer_t *b) {
+bool buffer_try_claim(buffer_t *b) {
     if (__LDREXB((uint8_t *)&b->state) != BUFFER_READY) { __CLREX(); return false; }
     return __STREXB(BUFFER_USED, (uint8_t *)&b->state) == 0;
 }

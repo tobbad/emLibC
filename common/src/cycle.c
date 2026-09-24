@@ -631,7 +631,7 @@ void cycle_increment(cycle_t *cycle) {
     }
     if (cycle->sync_state >= SYNCHRONIZE_READY) {
         if (cycle->psubSlot  > 0) {
-             cycle->subSlot = cycle->psubSlot;
+             cycle->subSlot = cycle->psubSlot+1;
              cycle->psubSlot = 0;
              stateled_on(cycle_update);
              stateled_off(cycle_update);
@@ -640,7 +640,6 @@ void cycle_increment(cycle_t *cycle) {
              } else if (cycle->role==SLAVE){
             	 cycle->timer->Instance->CNT= 0;
              }
-             cycle->cycle = 0;
         }
 		cycle->subSlot++;
 		cycle->subSlot = (cycle->subSlot % (CYCLE_SUB_SLOT_CNT * CYCLE_SLOT_CNT));
