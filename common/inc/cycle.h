@@ -67,7 +67,7 @@ typedef struct cycle_s {
     int8_t postss;
     int8_t postrx;
     dev_role_e role;
-    int8_t ssCnt;      // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
+    uint16_t ssCnt;    // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
     int8_t kaCnt;      // Set Keep alive counter
     int8_t _kaCnt;     // Keep alive counter
     uint32_t timerCNT; // MCU cycle count when cycle count was set
@@ -120,7 +120,7 @@ bool     cycle_ask_set(cycle_t *cycle);
 void     cycle_sscnt_init(cycle_t *cycle);
 void     cycle_sscnt_start(cycle_t *cycle);
 void     cycle_sscnt_stop(cycle_t *cycle);
-uint8_t  cycle_sscnt_get(cycle_t *cycle);
+uint16_t  cycle_sscnt_get(cycle_t *cycle);
 em_msg   cycle_print(cycle_t *cycle, char *title);
 
 #ifdef __cplusplus

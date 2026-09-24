@@ -31,7 +31,7 @@ typedef struct cycle_s {
     int8_t postss;
     int8_t postrx;
     dev_role_e role;
-    int8_t ssCnt;      // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
+    uint16_t ssCnt;    // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
     int8_t kaCnt;      // Set Keep alive counter
     int8_t _kaCnt;     // Keep alive counter
     uint32_t timerCNT; // MCU cycle count when cycle count was set
@@ -314,7 +314,9 @@ void cycle_reset_role(cycle_t *cycle) {
     if (!cycle) return;
     if (!cycle->init) return;
     // clang-format on
-    cycle->role     = NOT_SET;
+    if (cycle->isSlave){
+        cycle->role     = NOT_SET;
+    }
     cycle->isMaster = false;
     cycle->isSlave  = false;
 }
@@ -411,7 +413,8 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
 #ifndef UNIT_TEST
                 cycle->timerCNT = cycle->timer->Instance->CNT;
 #endif
-                if (cycle->master   != slot){
+                if (cycle->master  != slot){
+                	cycle->timerCNT = 0;
 					cycle->master   = slot;
 					cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - cycle_press(cycle)) % CYCLE_MODULO;
 					// A successful claim is proof the network is there: restart the
@@ -567,7 +570,7 @@ void cycle_sscnt_stop(cycle_t *cycle) {
     cycle->doMeasure = false;
 }
 
-uint8_t cycle_sscnt_get(cycle_t *cycle) {
+uint16_t cycle_sscnt_get(cycle_t *cycle) {
     if (!cycle)
         return -1;
     if (!cycle->init)
@@ -629,18 +632,24 @@ void cycle_increment(cycle_t *cycle) {
     if (cycle->sync_state >= SYNCHRONIZE_READY) {
         if (cycle->psubSlot  > 0) {
              cycle->subSlot = cycle->psubSlot;
-             cycle->psubSlot =0;
+             cycle->psubSlot = 0;
+             stateled_on(cycle_update);
+             stateled_off(cycle_update);
+             if (cycle->role==MASTER){
+            	 ;
+             } else if (cycle->role==SLAVE){
+            	 cycle->timer->Instance->CNT= 0;
+             }
+             cycle->cycle = 0;
         }
-        if (cycle->sync_state >= SYNCHRONIZE_READY) {
-        	cycle->subSlot++;
-            cycle->subSlot = (cycle->subSlot % (CYCLE_SUB_SLOT_CNT * CYCLE_SLOT_CNT));
-            cycle->actSlot = CYCLE_ACT_SLOT(cycle);
-            cycle->sSlot = CYCLE_ACT_SUB_SLOT(cycle);
+		cycle->subSlot++;
+		cycle->subSlot = (cycle->subSlot % (CYCLE_SUB_SLOT_CNT * CYCLE_SLOT_CNT));
+		cycle->actSlot = CYCLE_ACT_SLOT(cycle);
+		cycle->sSlot   = CYCLE_ACT_SUB_SLOT(cycle);
 #if OPTION_SHOW_TIMING == 1
-            // stateled_set(cycle->sSlot);
-            stateled_toggle_pin(led_3);
+		stateled_set(cycle->subSlot);
+		stateled_toggle_pin(ss_toggle);
 #endif
-        }
         if (cycle->doMeasure) {
             int8_t lss = cycle->ssCnt;
             cycle->ssCnt++;
@@ -650,8 +659,8 @@ void cycle_increment(cycle_t *cycle) {
         }
         if (cycle->actSlot != cycle->lSlot) {
 #if OPTION_SHOW_TIMING == 1
-            stateled_set(cycle->actSlot);
-            stateled_toggle_pin(led_4);
+            //stateled_set(cycle->actSlot);
+            stateled_toggle_pin(slot_toggle);
 #endif
             // actSlot only ever changes on a slot boundary, and the boundary
             // into slot 0 is the frame-cycle boundary -- the one place per
@@ -660,7 +669,7 @@ void cycle_increment(cycle_t *cycle) {
             // which is never a slot boundary, so the watchdog never ran.)
             if ((cycle->actSlot == 0) && (cycle->sync_state >= SYNCHRONIZE)) {
 #if OPTION_SHOW_TIMING == 1
-                stateled_toggle_pin(led_5);
+                stateled_toggle_pin(cycle_toggle);
 #endif
                 cycle->cycle += 1;
                 cycle->set = true;
