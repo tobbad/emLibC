@@ -50,8 +50,8 @@ extern idxa2str_t synca2str;
 
 #ifdef UNIT_TEST
 typedef struct cycle_s {
-    volatile int16_t subSlot; // actual sub slot
-    int16_t psubSlot;   //  Pendig difference subslot value
+    volatile uint8_t subSlot; // actual sub slot
+    uint8_t psubSlot;   //  Pendig difference subslot value
     int16_t pDiff;      //  Pendig difference between now and rxSlot is reset after usage >0 increases subSlot <0 set as skip count
     int8_t actSlot;
     int8_t lSlot;

@@ -15,9 +15,9 @@
 #endif
 #ifndef UNIT_TEST
 typedef struct cycle_s {
-    volatile int16_t subSlot; // actual sub slot
-    int16_t psubSlot;   //  Pendig difference subslot value
-    int8_t  actSlot;
+	volatile uint8_t subSlot; // actual sub slot
+	uint8_t psubSlot;   //  Pendig difference subslot value
+	int8_t  actSlot;
     int8_t  lSlot;
     int8_t  sSlot;
     uint16_t cycle;
@@ -59,7 +59,7 @@ idxa2str_t cyclea2str = {.cnt = ELCNT(cycle2str), .entry = (idx2str_t *)&cycle2s
 
 cycle_t cycle;
 
-#define SLOT_PRINT_FMT "(c:%5d, %1x, %2d)" // length is 19
+#define SLOT_PRINT_FMT "(c:%5d, %1x, %1x)" // length is 19
 #define SLOT_PRINT_FMT_STR_LEN 16 + 2
 
 em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, uint8_t postrx, uint8_t kaCnt,
@@ -71,9 +71,9 @@ em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, u
     if (cycle_check_slot(my_slot)<0)  return res;
     // clang-format on
     memset(cycle, 0, sizeof(cycle_t));
-    cycle->press      = press;
-    cycle->postss     = postss;
-    cycle->postrx     = postrx;
+    cycle->press      = abs(press);
+    cycle->postss     = abs(postss);
+    cycle->postrx     = abs(postrx);
     cycle->slot       = my_slot;
     cycle->master     = -1;
     cycle->isMaster   = false;
@@ -110,6 +110,7 @@ em_msg cycle_reset(cycle_t *cycle) {
     res = EM_OK;
     return res;
 };
+
 #if 1 == 0
 em_msg cycle_timer_add(cycle_t *cycle, int8_t add) {
     em_msg res = EM_ERR;
@@ -631,15 +632,10 @@ void cycle_increment(cycle_t *cycle) {
     }
     if (cycle->sync_state >= SYNCHRONIZE_READY) {
         if (cycle->psubSlot  > 0) {
-             cycle->subSlot = cycle->psubSlot+1;
+             cycle->subSlot = cycle->psubSlot;
              cycle->psubSlot = 0;
              stateled_on(cycle_update);
              stateled_off(cycle_update);
-             if (cycle->role==MASTER){
-            	 ;
-             } else if (cycle->role==SLAVE){
-            	 cycle->timer->Instance->CNT= 0;
-             }
         }
 		cycle->subSlot++;
 		cycle->subSlot = (cycle->subSlot % (CYCLE_SUB_SLOT_CNT * CYCLE_SLOT_CNT));
