@@ -16,12 +16,20 @@ uint32_t HAL_GetTick() { return 1; };
 
 static idx2str_t kstate[KEY_STATE_CNT+1] = {
     {.str = "OFF", .idx = OFF},
-    {.str = "BLI", .idx = BLINKING},
+    {.str = "BL ", .idx = BLINKING},
     {.str = "ON ", .idx = ON},
-    {.str = "NA ", .idx = 0xff},
+    {.str = "   ", .idx = KEY_STATE_CNT},
 };
 
-idxa2str_t kstatea2str = {.cnt = KEY_STATE_CNT+1, .entry = (idx2str_t *)&kstate};
+static idx2str_t kstate_s[KEY_STATE_CNT+1] = {
+    {.str = "OF", .idx = OFF},
+    {.str = "BL", .idx = BLINKING},
+    {.str = "ON", .idx = ON},
+    {.str = "  ", .idx = KEY_STATE_CNT},
+};
+
+idxa2str_t kstatea2str =  {.cnt = KEY_STATE_CNT+1, .entry = (idx2str_t *)&kstate};
+idxa2str_t kstateas2str = {.cnt = KEY_STATE_CNT+1, .entry = (idx2str_t *)&kstate_s};
 
 em_msg state_init(state_t *state) {
     em_msg res = EM_ERR;
@@ -80,6 +88,10 @@ em_msg state_set(state_t *state, uint8_t nr, key_state_e ns) {
 
 char * state_key_string( key_state_e nr) {
     return idxa2str(&kstatea2str, nr);
+}
+
+char * state_keys_string( key_state_e nr) {
+    return idxa2str(&kstateas2str, nr);
 }
 
 key_state_e state_get(const state_t *state, uint8_t nr) {
@@ -402,7 +414,7 @@ em_msg state_print(const state_t *state, const char *title, bool doLong, cycle_t
     return res;
 }
 
-em_msg state_get_dirty(state_t *state) {
+bool state_get_dirty(state_t *state) {
     // clang-format off
     em_msg res = EM_ERR;
     if (state_check(state))  return res;

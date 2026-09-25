@@ -163,10 +163,10 @@ buffer_t  *buffer_reset(buffer_t *buffer) {
     memset(buffer->mem, 0, buffer->size);
     memset(buffer->lbl.str, 0, CMD_LEN);
     buffer->pl = buffer->mem;
-    buffer->state = BUFFER_READY;
     buffer->used = 0;
     buffer->first = 0;
     buffer->id = 0;
+    buffer->state = BUFFER_READY;
     return buffer;
 }
 

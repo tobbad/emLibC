@@ -61,9 +61,10 @@ buffer_t *buffer_pool_get(buffer_pool_t *bp) {
     for (uint8_t i = 0; i < bp->buffer_cnt; i++) {
         if (!buffer_is_used(bp->buffer[i])) {
             buffer = bp->buffer[i];
-            buffer->id = i;
+            buffer_reset(buffer);
             buffer->state = BUFFER_USED;
-            return buffer;
+            buffer->id = i;
+           return buffer;
         }
     }
     return NULL;
@@ -84,19 +85,19 @@ em_msg buffer_pool_return(buffer_pool_t *bp, buffer_t *buffer) {
         printf("buffer is  larger allowed" NL);
         return EM_ERR;
     }
-
+    if (buffer->state == BUFFER_USED) {
+        printf("Buffer is used" NL);
+        return EM_ERR;
+    }
     /* Pointer prüfen (gehört der Buffer wirklich zum Pool?) */
     if (bp->buffer[buffer->id] != buffer) {
         printf("buffer id do not match" NL);
         printf("bp->buffer[buffer->id]: %p" NL, bp->buffer[buffer->id]);
         printf("buffer                : %p" NL, buffer);
         return EM_ERR;
+    } else{
+        return EM_OK;
     }
-    if (buffer->state == BUFFER_USED) {
-        printf("Buffer is used" NL);
-        return EM_ERR;
-    }
-    buffer_reset(buffer);
     return EM_OK;
 }
 

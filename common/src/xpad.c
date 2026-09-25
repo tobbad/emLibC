@@ -92,7 +92,7 @@ static xpad_dev_t default_eight_dev = {
 // clang-format on
 
 static void xpad_reset(dev_handle_t devh);
-static void xpad_reset_key(mkey_t *key, uint8_t cnt);
+static void xpad_set_key(mkey_t *key, uint8_t cnt);
 static uint16_t xpad_read_zeile(dev_handle_t devh, uint8_t spalten_nr);
 static void xpad_set_state(dev_handle_t devh, const state_t *state);
 
@@ -138,7 +138,7 @@ static em_msg xpad_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     } else {
         my_xpad[devh].zeile.cnt = 1;
     }
-    xpad_reset_key(my_xpad[devh].key, MAX_BUTTON_CNT);
+    xpad_set_key(my_xpad[devh].key, MAX_BUTTON_CNT);
     return EM_OK;
 }
 
@@ -194,7 +194,7 @@ static void xpad_reset_spalten_pin(dev_handle_t devh, uint8_t spalten_nr) {
     return;
 }
 
-static void xpad_reset_key(mkey_t *key, uint8_t cnt) {
+static void xpad_set_key(mkey_t *key, uint8_t cnt) {
     for (uint8_t i = 0; i < cnt; i++) {
         key[i] = reset_key;
     }
@@ -215,6 +215,7 @@ static uint16_t xpad_update_key(uint8_t devh, uint8_t index, bool pinVal) {
     uint8_t z = index_2_zei(&my_xpad[devh], index);
     uint8_t s = index_2_spa(&my_xpad[devh], index);
     uint8_t res = 0;
+    char label;
     //	if (my_xpad[devh].key[index].current ^ my_xpad[devh].key[index].last) {
     //		printf("Detected Key @ (index =%d) with label %c"NL, index, my_xpad[devh].state.label[index]);
     //	}
@@ -228,8 +229,8 @@ static uint16_t xpad_update_key(uint8_t devh, uint8_t index, bool pinVal) {
         if (my_xpad[devh].key[index].current == my_xpad[devh].key[index].last) {
             my_xpad[devh].key[index].cnt++;
             if (pinVal != false) {
-                char label = my_xpad[devh].state.label[index];
-                printf("Increased index %d (%s) to %d (pinVal=%d)"NL, index, label, my_xpad[devh].key[index].cnt, pinVal);
+                label = my_xpad[devh].state.label[index];
+                //printf("Increased index %d (%s) to %d (pinVal=%d)"NL, index, label, my_xpad[devh].key[index].cnt, pinVal);
             }
         } else {
             // printf("Reset index %d from %d (pinVal=%d)"NL, index,
@@ -240,7 +241,7 @@ static uint16_t xpad_update_key(uint8_t devh, uint8_t index, bool pinVal) {
     if (my_xpad[devh].key[index].cnt > STABLE_CNT) {
         // We got a stable state
         my_xpad[devh].key[index].unstable = false;
-        char label = my_xpad[devh].state.label[index];
+        label = my_xpad[devh].state.label[index];
         my_xpad[devh].key[index].last = pinVal;
         my_xpad[devh].key[index].stable = pinVal;
         // printf("Reached index %d logi level %d (pinVal=%d)"NL, index,STABLE_CNT, pinVal);
@@ -250,7 +251,6 @@ static uint16_t xpad_update_key(uint8_t devh, uint8_t index, bool pinVal) {
             // printf("Pushed   Key @ (index =%d, z=%d, s=%d, value = %c)" NL, index, z, s, label);
         } else {
             // printf("Released Key @ (index =%d, z=%d, s=%d, value = %c)"NL, index, z s, label);
-            // ,
             my_xpad[devh].key[index].cnt = 0;
         }
         res = res | (pinVal << z);
