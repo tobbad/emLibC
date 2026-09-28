@@ -13,7 +13,6 @@
 typedef struct radio_stat_s radio_stat_t;
 #define ACTIVE_SLOT_USAGE 0
 
-extern radio_stat_t rstat;
 
 em_msg   radio_stat_init(radio_stat_t *stat);
 em_msg   radio_stat_reset(radio_stat_t *stat);
