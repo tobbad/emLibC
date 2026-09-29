@@ -634,8 +634,12 @@ void cycle_increment(cycle_t *cycle) {
     }
     if (cycle->sync_state >= SYNCHRONIZE_READY) {
         if (cycle->psubSlot  > 0) {
-             cycle->subSlot = cycle->psubSlot;
-             cycle->psubSlot = 0;
+            if (cycle->role==MASTER)
+                cycle->subSlot = CYCLE_SUB_SLOT_CNT-1;
+            else if (cycle->role==SLAVE){
+                cycle->subSlot = cycle->psubSlot;
+            }
+            cycle->psubSlot = 0;
 #ifndef UNIT_TEST
              stateled_on(cycle_update);
              stateled_off(cycle_update);
