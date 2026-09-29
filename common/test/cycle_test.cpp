@@ -154,14 +154,14 @@ TEST_F(CycleTest, SetSlotMasterRole) {
     cycle_increment(&c);
     EXPECT_EQ(c.subSlot, (my_slot - 2) * CYCLE_SUB_SLOT_CNT- PRESS +1);
     EXPECT_EQ(c.psubSlot, 0);
-
-    for (uint8_t i = 0; i < 2 * CYCLE_SUB_SLOT_CNT; i++) {
+    uint8_t i;
+    for ( i = 0; i < 2 * CYCLE_SUB_SLOT_CNT; i++) {
         cycle_increment(&c);
         EXPECT_EQ(c.subSlot, (my_slot - 2) * CYCLE_SUB_SLOT_CNT - PRESS + 2 + i);
         EXPECT_EQ(c.psubSlot, 0);
     }
     EXPECT_EQ(c.sync_state, SYNCHRONIZE_DOING);
-    EXPECT_EQ(c.subSlot, my_slot * CYCLE_SUB_SLOT_CNT - 1);
+    EXPECT_EQ(c.subSlot, (my_slot - 2) * CYCLE_SUB_SLOT_CNT - PRESS + 2 + i);
     EXPECT_EQ(c.psubSlot, 0);
 }
 #if 0
