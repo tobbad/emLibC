@@ -107,6 +107,8 @@ em_msg cycle_reset(cycle_t *cycle) {
     cycle->actSlot = CYCLE_ACT_SLOT(cycle);
     cycle->lSlot = 0;
     cycle->cycle = 0;
+    cycle->master =-1;
+    cycle->role = NOT_SET;
     res = EM_OK;
     return res;
 };
@@ -415,8 +417,8 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
                 cycle->timerCNT = cycle->timer->Instance->CNT;
 #endif
                 if (cycle->master  != slot){
+                    cycle->master  = slot;
                 	cycle->timerCNT = 0;
-					cycle->master   = slot;
 					cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - cycle_press(cycle)) % CYCLE_MODULO;
 					// A successful claim is proof the network is there: restart the
 					// watchdog so the fresh role gets a full CYCLE_MASTER_LOOSE_CYCLE_CNT.
@@ -634,8 +636,11 @@ void cycle_increment(cycle_t *cycle) {
         if (cycle->psubSlot  > 0) {
              cycle->subSlot = cycle->psubSlot;
              cycle->psubSlot = 0;
+#ifndef UNIT_TEST
              stateled_on(cycle_update);
              stateled_off(cycle_update);
+
+#endif
         }
 		cycle->subSlot++;
 		cycle->subSlot = (cycle->subSlot % (CYCLE_SUB_SLOT_CNT * CYCLE_SLOT_CNT));
