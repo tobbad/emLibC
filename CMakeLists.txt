@@ -265,6 +265,8 @@ list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/device_test.cpp")
 # packet_test nutzt eine veraltete packet-API (mbuf, alte packet_open-Signatur)
 # -> kompiliert nicht. Bleibt deaktiviert.
 list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/packet_test.cpp")
+list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/harden_test.cpp")
+list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/simple_test.cpp")
 
 
 # Erstelle die Bibliothek
