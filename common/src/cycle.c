@@ -16,30 +16,30 @@
 #ifndef UNIT_TEST
 typedef struct cycle_s {
 	volatile uint8_t subSlot; // actual sub slot
-	uint8_t psubSlot;   //  Pendig difference subslot value
-	int8_t  actSlot;
-    int8_t  lSlot;
-    int8_t  sSlot;
+	uint8_t  psubSlot;   //  Pendig difference subslot value
+	int8_t   actSlot;
+    int8_t   lSlot;
+    int8_t   sSlot;
     uint16_t cycle;
-    int8_t slot; // Configured slot of device
-    int8_t master;
-    bool isSlave;
-    bool isMaster;
+    int8_t   slot; // Configured slot of device
+    int8_t   master;
+    bool     isSlave;
+    bool     isMaster;
     uint16_t masterAge; // frame cycles since the network was last heard from
     uint16_t slaveAge;  // iterates over slave cycles till role is resetted
-    int8_t press;
-    int8_t postss;
-    int8_t postrx;
+    int8_t   tx_ss;
+    int8_t   rx_ss;
+    int8_t   postrx;
     dev_role_e role;
     uint16_t ssCnt;    // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
-    int8_t kaCnt;      // Set Keep alive counter
+    int8_t  kaCnt;     // Set Keep alive counter
     int8_t _kaCnt;     // Keep alive counter
     uint32_t timerCNT; // MCU cycle count when cycle count was set
-    bool doMeasure;
-    bool cntErrror;
+    bool     doMeasure;
+    bool     cntErrror;
     system_state_e sync_state;
-    bool init;
-    bool set; // is set when cycle was finished
+    bool     init;
+    bool     set; // is set when cycle was finished
     TIM_HandleTypeDef *timer;
 } cycle_t;
 #endif
@@ -62,8 +62,7 @@ cycle_t cycle;
 #define SLOT_PRINT_FMT "(c:%5d, %1x, %1x)" // length is 19
 #define SLOT_PRINT_FMT_STR_LEN 16 + 2
 
-em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, uint8_t postrx, uint8_t kaCnt,
-                  TIM_HandleTypeDef *htim) {
+em_msg   cycle_init(cycle_t *cycle, int8_t my_slot, int8_t tx_ss, int8_t rx_ss, uint8_t postrx, uint8_t kaCnt, TIM_HandleTypeDef *htim){
     em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
@@ -71,8 +70,8 @@ em_msg cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, u
     if (cycle_check_slot(my_slot)<0)  return res;
     // clang-format on
     memset(cycle, 0, sizeof(cycle_t));
-    cycle->press      = abs(press);
-    cycle->postss     = abs(postss);
+    cycle->tx_ss      = tx_ss;
+    cycle->rx_ss      = rx_ss;
     cycle->postrx     = abs(postrx);
     cycle->slot       = my_slot;
     cycle->master     = -1;
@@ -101,7 +100,7 @@ em_msg cycle_reset(cycle_t *cycle) {
     if (!cycle) return res;
     if (!cycle->init) return res;
     // clang-format on
-    cycle->subSlot = cycle->slot * CYCLE_SUB_SLOT_CNT - cycle->press;
+    cycle->subSlot = cycle->slot * CYCLE_SUB_SLOT_CNT + cycle->rx_ss;
     cycle->psubSlot = 0;
     cycle->sSlot = 0;
     cycle->actSlot = CYCLE_ACT_SLOT(cycle);
@@ -362,7 +361,7 @@ bool cycle_doSend(cycle_t *cycle) {
     // clang-format on
     int8_t actSlot = CYCLE_ACT_SLOT(cycle);
     int8_t subSlot = CYCLE_ACT_SUB_SLOT(cycle);
-    res = (actSlot == cycle->slot - 1) && ((CYCLE_SUB_SLOT_CNT - subSlot) < cycle->press);
+    res = (actSlot == cycle->slot - 1) && ((CYCLE_SUB_SLOT_CNT - subSlot) < abs(cycle->tx_ss));
 #if MOPTION_VERBOSE == 1
     res = 1;
     if (res) {
@@ -419,7 +418,7 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
                 if (cycle->master  != slot){
                     cycle->master  = slot;
                 	cycle->timerCNT = 0;
-					cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - cycle_press(cycle)) % CYCLE_MODULO;
+					cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO + cycle_tx_ss(cycle)) % CYCLE_MODULO;
 					// A successful claim is proof the network is there: restart the
 					// watchdog so the fresh role gets a full CYCLE_MASTER_LOOSE_CYCLE_CNT.
 		            cycle->masterAge = 0;
@@ -433,7 +432,7 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
             	if (!cycle->isSlave){
                     cycle->isSlave  = true;
                     cycle->isMaster = false;
-					cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - cycle_press(cycle)) % CYCLE_MODULO;
+					cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO + cycle_rx_ss(cycle)) % CYCLE_MODULO;
 					return EM_OK;
 				}
             	return EM_ERR;
@@ -497,20 +496,20 @@ em_msg cycle_master_seen(cycle_t *cycle, int8_t rxSlot) {
 }
 
 
-int8_t cycle_press(cycle_t *cycle) {
+int8_t cycle_tx_ss(cycle_t *cycle) {
     // clang-format off
     if (!cycle) return 0;
     if (!cycle->init) return 0;
     // clang-format on
-    return cycle->press;
+    return cycle->tx_ss;
 }
 
-int8_t cycle_postss(cycle_t *cycle) {
+int8_t cycle_rx_ss(cycle_t *cycle) {
     // clang-format off
     if (!cycle) return 0;
     if (!cycle->init) return 0;
     // clang-format on
-    return cycle->postss;
+    return cycle->rx_ss;
 }
 
 uint8_t cycle_postrx(cycle_t *cycle) {
@@ -635,7 +634,7 @@ void cycle_increment(cycle_t *cycle) {
     if (cycle->sync_state >= SYNCHRONIZE_READY) {
         if (cycle->psubSlot  > 0) {
             if (cycle->role==MASTER)
-                cycle->subSlot = CYCLE_SUB_SLOT_CNT-1;
+                cycle->subSlot = (cycle->slot*CYCLE_SUB_SLOT_CNT)-1;
             else if (cycle->role==SLAVE){
                 cycle->subSlot = cycle->psubSlot;
             }
@@ -651,7 +650,7 @@ void cycle_increment(cycle_t *cycle) {
 		cycle->actSlot = CYCLE_ACT_SLOT(cycle);
 		cycle->sSlot   = CYCLE_ACT_SUB_SLOT(cycle);
 #if OPTION_SHOW_TIMING == 1
-		stateled_set(cycle->subSlot);
+		//stateled_set(cycle->subSlot);
 		stateled_toggle_pin(ss_toggle);
 #endif
         if (cycle->doMeasure) {
@@ -663,7 +662,7 @@ void cycle_increment(cycle_t *cycle) {
         }
         if (cycle->actSlot != cycle->lSlot) {
 #if OPTION_SHOW_TIMING == 1
-            //stateled_set(cycle->actSlot);
+            stateled_set(cycle->actSlot);
             stateled_toggle_pin(slot_toggle);
 #endif
             // actSlot only ever changes on a slot boundary, and the boundary

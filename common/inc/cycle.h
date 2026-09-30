@@ -64,11 +64,11 @@ typedef struct cycle_s {
     uint16_t masterAge; // frame cycles since the network was last heard from
     uint16_t slaveAge; // frame cycles since the network was last heard from
     int8_t press;
-    int8_t postss;
-    int8_t postrx;
+    int8_t tx_ss;
+    int8_t rx_ss;
     dev_role_e role;
     uint16_t ssCnt;    // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
-    int8_t kaCnt;      // Set Keep alive counter
+    int8_t  kaCnt;     // Set Keep alive counter
     int8_t _kaCnt;     // Keep alive counter
     uint32_t timerCNT; // MCU cycle count when cycle count was set
     bool doMeasure;
@@ -85,7 +85,7 @@ extern cycle_t cycle;
 
 
 em_msg   cycle_reset(cycle_t *cycle);
-em_msg   cycle_init(cycle_t *cycle, int8_t my_slot, int8_t press, int8_t postss, uint8_t postrx, uint8_t kaCnt, TIM_HandleTypeDef *htim);
+em_msg   cycle_init(cycle_t *cycle, int8_t my_slot, int8_t master_ss, int8_t slave_ss, uint8_t postrx, uint8_t kaCnt, TIM_HandleTypeDef *htim);
 em_msg   cycle_timer_add(cycle_t *cycle, int8_t add);
 size_t   cycle_size();
 char    *cycle_string(cycle_t *cycle);
@@ -111,8 +111,8 @@ int8_t   cycle_get_master(cycle_t *cycle);
 em_msg   cycle_master_seen(cycle_t *cycle, int8_t rxSlot);
 em_msg   cycle_set_state(cycle_t *cycle, system_state_e state);
 system_state_e cycle_get_state(cycle_t *cycle);
-int8_t   cycle_press(cycle_t *cycle);
-int8_t   cycle_postss(cycle_t *cycle);
+int8_t   cycle_tx_ss(cycle_t *cycle);
+int8_t   cycle_rx_ss(cycle_t *cycle);
 uint8_t  cycle_postrx(cycle_t *cycle);
 int16_t  cycle_difference(cycle_t *cycle, int8_t rxSlot);
 void     cycle_increment(cycle_t *cycle);
