@@ -87,7 +87,7 @@ typedef struct cycle_s cycle_t;
 extern cycle_t cycle;
 
 em_msg cycle_reset(cycle_t *cycle);
-em_msg cycle_init(cycle_t *cycle, int8_t master_ss, int8_t slave_ss, uint8_t postrx, uint8_t kaCnt, TIM_HandleTypeDef *htim);
+em_msg cycle_init(cycle_t *cycle, int8_t slot, int8_t master_ss, int8_t slave_ss, uint8_t postrx, uint8_t kaCnt, TIM_HandleTypeDef *htim);
 em_msg cycle_timer_add(cycle_t *cycle, int8_t add);
 size_t cycle_size();
 char *cycle_string(cycle_t *cycle);

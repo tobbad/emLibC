@@ -62,7 +62,7 @@ cycle_t cycle;
 #define SLOT_PRINT_FMT "(c:%5d, %1x, %1x)" // length is 19
 #define SLOT_PRINT_FMT_STR_LEN 16 + 2
 
-em_msg cycle_init(cycle_t *cycle, int8_t tx_ss, int8_t rx_ss, uint8_t postrx, uint8_t kaCnt, TIM_HandleTypeDef *htim) {
+em_msg cycle_init(cycle_t *cycle, int8_t slot, int8_t tx_ss, int8_t rx_ss, uint8_t postrx, uint8_t kaCnt, TIM_HandleTypeDef *htim) {
     em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
@@ -74,12 +74,13 @@ em_msg cycle_init(cycle_t *cycle, int8_t tx_ss, int8_t rx_ss, uint8_t postrx, ui
     cycle->postrx   = abs(postrx);
     cycle->kaCnt    = kaCnt;
     cycle->timer    = htim;
+    cycle->slot     = slot;
     cycle->sync_state = SYNC_RESET;
     cycle->cntErrror= 0;
+    cycle->init = true;
     cycle_sscnt_init(cycle);
     cycle_reset_ka(cycle);
     cycle_reset(cycle);
-    cycle->init = true;
     res = EM_OK;
     return res;
 };
@@ -100,7 +101,6 @@ em_msg cycle_reset(cycle_t *cycle) {
     cycle->slaveAge  = 0;
     cycle->masterAge = 0;
     cycle->master    = SLOT_NOT_SET;
-
     res = EM_OK;
     return res;
 };
@@ -310,9 +310,9 @@ void cycle_reset_role(cycle_t *cycle) {
     if (!cycle) return;
     if (!cycle->init) return;
     // clang-format on
-    // if (cycle->isSlave){
-    cycle->role = NOT_SET;
-    //}
+     if (cycle->isSlave){
+    	 cycle->role = NOT_SET;
+    }
     cycle->isMaster = false;
     cycle->isSlave = false;
 }
@@ -410,7 +410,6 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
                     cycle->timerCNT = 0;
                     cycle_reset(cycle);
                     cycle->master   = slot;
-                    cycle->slot     = slot;
                     cycle->psubSlot = (cycle->slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO + cycle_tx_ss(cycle)) % CYCLE_MODULO;
                     cycle->masterAge = 0;
                     cycle->isSlave   = false;
@@ -420,9 +419,8 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
                 res = EM_ERR;
             } else if (cycle->role == SLAVE)  {
                 if (!cycle->isSlave){ // set it once or reset
-                    cycle->slot     = slot;
                     cycle_reset(cycle);
-                    cycle->psubSlot = (cycle->slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO + cycle_rx_ss(cycle)) % CYCLE_MODULO;
+                    cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO + cycle_rx_ss(cycle)) % CYCLE_MODULO;
                     cycle->slaveAge = 0;
                     cycle->isSlave  = true;
                     cycle->isMaster = false;
