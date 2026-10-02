@@ -53,9 +53,11 @@ static idx2str_t cycle2str[] = {
 #endif
 idxa2str_t cyclea2str = {.cnt = ELCNT(cycle2str), .entry = (idx2str_t *)&cycle2str};
 
-#define CYCLE_ACT_SUB_SLOT(_cycle) (((_cycle)->subSlot) & CYCLE_SUB_SLOT_MASK)
+#define CYCLE_ACT_SUB_SLOT_N(ss)      (((ss) >> CYCLE_SUB_SLOT_SHIFT) & CYCLE_SLOT_MASK)
+#define CYCLE_ACT_SUB_SLOT(_cycle)    (CYCLE_ACT_SUB_SLOT_N((_cycle)->subSlot))
 
-#define CYCLE_ACT_SLOT(_cycle) (((_cycle)->subSlot >> CYCLE_SUB_SLOT_SHIFT) & CYCLE_SLOT_MASK)
+#define CYCLE_ACT_SLOT_N(ss)         ((ss)  & CYCLE_SLOT_MASK)
+#define CYCLE_ACT_SLOT(_cycle)       (CYCLE_ACT_SLOT_N((_cycle)->subSlot))
 
 cycle_t cycle;
 
@@ -632,6 +634,7 @@ void cycle_increment(cycle_t *cycle) {
                 assert(1);
             }
             cycle->psubSlot = 0;
+            cycle->lSlot = CYCLE_ACT_SLOT_N(cycle->subSlot)-1;
 #ifndef UNIT_TEST
             stateled_on(cycle_update);
             stateled_off(cycle_update);
