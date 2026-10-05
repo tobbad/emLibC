@@ -17,7 +17,7 @@ static int8_t my_slot = 3;
 #define DEFAULT_TX (my_slot * CYCLE_SUB_SLOT_CNT + TX_SS)
 #define DEFAULT_RX (my_slot * CYCLE_SUB_SLOT_CNT + RX_SS)
 #define POSTRX 3
-#define ACT_SLOT(_cycle) (((_cycle)->subSlot >> CYCLE_SUB_SLOT_SHIFT) & CYCLE_SLOT_MASK)
+#define ACT_SLOT(_cycle) ((_cycle)->subSlot / CYCLE_SUB_SLOT_CNT)
 
 // Drives cycle_increment() until c->cycle has advanced by `cycles` frame
 // cycles. One frame cycle is CYCLE_MODULO sub-slot ticks; the cap only keeps a
@@ -58,6 +58,21 @@ TEST_F(CycleTest, NullValidPtrReturnsError) {
 TEST_F(CycleTest, ValidNullPtrReturnsError) {
     EXPECT_EQ(cycle_init(&cycle, TX_SS, RX_SS, POSTRX, CYCLE_MASTER_KEEP_ALIVE_CYCLE_CNT, nullptr), EM_ERR);
 }
+// The CYCLE_ACT_* macros split subSlot into slot (upper nibble) and sub-slot
+// (lower nibble). Checked against plain arithmetic, not against the macros.
+TEST_F(CycleTest, ActSlotMacros) {
+    EXPECT_EQ(CYCLE_ACT_SLOT_N(223), 13);
+    EXPECT_EQ(CYCLE_ACT_SUB_SLOT_N(223), 15);
+    for (int ss = 0; ss < CYCLE_MODULO; ss++) {
+        ASSERT_EQ(CYCLE_ACT_SLOT_N(ss), ss / CYCLE_SUB_SLOT_CNT) << "ss=" << ss;
+        ASSERT_EQ(CYCLE_ACT_SUB_SLOT_N(ss), ss % CYCLE_SUB_SLOT_CNT) << "ss=" << ss;
+    }
+    cycle_t c{0};
+    c.subSlot = 223;
+    EXPECT_EQ(CYCLE_ACT_SLOT(&c), 13);
+    EXPECT_EQ(CYCLE_ACT_SUB_SLOT(&c), 15);
+}
+
 // ---------------------------------------------------------------------------
 // cycle_check_slot echoes back valid slots and returns EM_ERR otherwise. Valid
 // are the odd slots 1..CYCLE_SLOT_CNT-1; 0, even slots and anything out of
@@ -574,7 +589,9 @@ TEST_F(CycleTest, CheckCycleSlaveIncrement) {
             cycle_increment(&c);
             ASSERT_EQ(c.sync_state, SYNCHRONIZE_READY)  << " (ss+1) = " << (uint16_t)(ss+1) << " actSlot = "<< (uint32_t)cycle_act_slot(&c) << " cycle = " << cycle;
             ASSERT_EQ(c.subSlot, (ss+1)%CYCLE_MODULO)   << " (ss+1) = " << (uint16_t)(ss+1) << " actSlot = "<< (uint32_t)cycle_act_slot(&c) << " cycle = " << cycle;
-            ASSERT_EQ(c.actSlot, CYCLE_ACT_SLOT_N(ss+1))<< " (ss+1) = " << (uint16_t)(ss+1) << " actSlot = "<< (uint32_t)cycle_act_slot(&c)  << " cycle = " << cycle;
+            // Expected values are computed independently of the CYCLE_ACT_* macros.
+            ASSERT_EQ(c.actSlot, ((ss+1)%CYCLE_MODULO) / CYCLE_SUB_SLOT_CNT)<< " (ss+1) = " << (uint16_t)(ss+1) << " actSlot = "<< (uint32_t)cycle_act_slot(&c)  << " cycle = " << cycle;
+            ASSERT_EQ(c.sSlot, (ss+1) % CYCLE_SUB_SLOT_CNT)<< " (ss+1) = " << (uint16_t)(ss+1) << " sSlot = "<< (uint32_t)c.sSlot  << " cycle = " << cycle;
         }
         // The wrap at the end of the inner loop aged the role by one frame
         // cycle; a frame from the master resets it. Without that kick the
@@ -660,7 +677,9 @@ TEST_F(CycleTest, CheckCycleMasterIncrement) {
             ASSERT_EQ(c.actSlot, c.lSlot);
             ASSERT_EQ(c.sync_state, SYNCHRONIZE_READY)  << " (ss+1) = " << (uint16_t)(ss+1) << " actSlot = "<< (uint32_t)cycle_act_slot(&c) << " cycle = " << cycle;
             ASSERT_EQ(c.subSlot, (ss+1)%CYCLE_MODULO)   << " (ss+1) = " << (uint16_t)(ss+1) << " actSlot = "<< (uint32_t)cycle_act_slot(&c) << " cycle = " << cycle;
-            ASSERT_EQ(c.actSlot, CYCLE_ACT_SLOT_N(ss+1))<< " (ss+1) = " << (uint16_t)(ss+1) << " actSlot = "<< (uint32_t)cycle_act_slot(&c)  << " cycle = " << cycle;
+            // Expected values are computed independently of the CYCLE_ACT_* macros.
+            ASSERT_EQ(c.actSlot, ((ss+1)%CYCLE_MODULO) / CYCLE_SUB_SLOT_CNT)<< " (ss+1) = " << (uint16_t)(ss+1) << " actSlot = "<< (uint32_t)cycle_act_slot(&c)  << " cycle = " << cycle;
+            ASSERT_EQ(c.sSlot, (ss+1) % CYCLE_SUB_SLOT_CNT)<< " (ss+1) = " << (uint16_t)(ss+1) << " sSlot = "<< (uint32_t)c.sSlot  << " cycle = " << cycle;
         }
         // The wrap at the end of the inner loop aged the role by one frame
         // cycle; any valid frame resets it. Without that kick the watchdog

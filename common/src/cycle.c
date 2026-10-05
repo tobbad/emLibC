@@ -52,11 +52,15 @@ static idx2str_t cycle2str[] = {
 #define KEEP_ALIVE_CYCLE_VALUE 8
 #endif
 idxa2str_t cyclea2str = {.cnt = ELCNT(cycle2str), .entry = (idx2str_t *)&cycle2str};
+#ifndef UNIT_TEST
+// subSlot packs the position in the frame cycle: the upper nibble is the slot,
+// the lower nibble the sub-slot within it (e.g. 223 = 0xDF -> slot 13, sub-slot 15).
+#define CYCLE_ACT_SUB_SLOT_N(ss)   (((ss) >> CYCLE_SUB_SLOT_SHIFT) & CYCLE_SUB_SLOT_MASK)
+#define CYCLE_ACT_SUB_SLOT(_cycle) (CYCLE_ACT_SUB_SLOT_N((_cycle)->subSlot))
+#define CYCLE_ACT_SLOT_N(ss)       (((ss) >> CYCLE_SLOT_SHIFT) & CYCLE_SLOT_MASK)
+#define CYCLE_ACT_SLOT(_cycle)     (CYCLE_ACT_SLOT_N((_cycle)->subSlot))
+#endif
 
-#define CYCLE_ACT_SUB_SLOT_N(ss)      (((ss) >> CYCLE_SUB_SLOT_SHIFT) & CYCLE_SLOT_MASK)
-#define CYCLE_ACT_SUB_SLOT(_cycle)    (CYCLE_ACT_SUB_SLOT_N((_cycle)->subSlot))
-#define CYCLE_ACT_SLOT_N(ss)         ((ss)  & CYCLE_SLOT_MASK)
-#define CYCLE_ACT_SLOT(_cycle)       (CYCLE_ACT_SLOT_N((_cycle)->subSlot))
 
 cycle_t cycle;
 
@@ -555,7 +559,7 @@ int16_t cycle_difference(cycle_t *cycle, int8_t rxSlot) {
     //   < 0  we are lower the lower edge,
     // rxSlot is masked to a valid slot, so no caller can push lower off the ring.
     const int16_t lower = (int16_t)(rxSlot & CYCLE_SLOT_MASK) * CYCLE_SUB_SLOT_CNT;
-    const int16_t upper = (int16_t)(rxSlot & CYCLE_SLOT_MASK+1) * CYCLE_SUB_SLOT_CNT;
+    const int16_t upper = (int16_t)((rxSlot & CYCLE_SLOT_MASK) + 1) * CYCLE_SUB_SLOT_CNT;
     if ((cycle->subSlot >= lower) && (cycle->subSlot < upper)) {
         return 0; // inside the window
     }
