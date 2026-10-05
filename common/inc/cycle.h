@@ -13,10 +13,10 @@ extern "C" {
 #include "hal_port.h"
 #else
 typedef struct __TIM_HandleTypeDef {} TIM_HandleTypeDef;
-#define CYCLE_ACT_SUB_SLOT_N(ss)   (((ss) & CYCLE_SUB_SLOT_MASK))
-#define CYCLE_ACT_SUB_SLOT(_cycle) CYCLE_ACT_SUB_SLOT_N((cycle)->subSlot)
-#define CYCLE_ACT_SLOT_N(ss)       ((((ss) >> CYCLE_SUB_SLOT_SHIFT) & CYCLE_SLOT_MASK))
-#define CYCLE_ACT_SLOT(_cycle)     CYCLE_ACT_SLOT_N((_cycle)->subSlot)
+#define CYCLE_ACT_SUB_SLOT_N(ss)      (((ss) >> CYCLE_SUB_SLOT_SHIFT) & CYCLE_SLOT_MASK)
+#define CYCLE_ACT_SUB_SLOT(_cycle)    (CYCLE_ACT_SUB_SLOT_N((_cycle)->subSlot))
+#define CYCLE_ACT_SLOT_N(ss)         ((ss)  & CYCLE_SLOT_MASK)
+#define CYCLE_ACT_SLOT(_cycle)       (CYCLE_ACT_SLOT_N((_cycle)->subSlot))
 
 #endif
 #include "common.h"
@@ -32,7 +32,7 @@ typedef enum {
 #define CYCLE_SUB_SLOT_POW2 4
 #define CYCLE_SUB_SLOT_CNT (1 << CYCLE_SUB_SLOT_POW2)
 #define CYCLE_SUB_SLOT_MASK (CYCLE_SUB_SLOT_CNT - 1)
-#define CYCLE_SUB_SLOT_SHIFT CYCLE_SUB_SLOT_POW2
+#define CYCLE_SUB_SLOT_SHIFT 0
 
 #define CYCLE_SLOT_POW2 4
 #define CYCLE_SLOT_CNT (1 << CYCLE_SLOT_POW2)
@@ -46,10 +46,10 @@ typedef enum {
 // Outside the folded range, so it cannot collide with a valid distance.
 #define CYCLE_DIFF_INVALID INT16_MIN
 extern idxa2str_t synca2str;
-#define CYCLE_MASTER_KEEP_ALIVE_CYCLE_CNT                                                                                   \
-    (uint16_t)16 // is set so that at least once in a KEEP_ALIVE_CYCLE_CNT Frame cycle a frame is sent
-#define CYCLE_SLAVE_KEEP_ALIVE_CYCLE_CNT                                                                                    \
-    (uint16_t)3 // is set so that at least once in a KEEP_ALIVE_CYCLE_CNT Frame cycle a frame is sent
+// is set so that at least once in a KEEP_ALIVE_CYCLE_CNT Frame cycle a frame is sent
+#define CYCLE_MASTER_KEEP_ALIVE_CYCLE_CNT (uint8_t)16
+// is set so that at least once in a KEEP_ALIVE_CYCLE_CNT Frame cycle a frame is sent
+#define CYCLE_SLAVE_KEEP_ALIVE_CYCLE_CNT  (uint8_t)3
 #define CYCLE_MASTER_LOOSE                                                                                                  \
     3 // After CYCLE_MASTER_LOOSE*CYCLE_MASTER_KEEP_ALIVE_CYCLE_CNT a MASTER loooses its master role and all slave set their
       // role to NOT_SET. Then when the first Packet is received the Device sending in this slot becomes the new MASTER.
@@ -59,8 +59,8 @@ extern idxa2str_t synca2str;
 
 #ifdef UNIT_TEST
 typedef struct cycle_s {
-    volatile uint16_t subSlot; // actual sub slot
-    uint16_t psubSlot;         //  Pendig difference subslot value
+    volatile uint8_t subSlot; // actual sub slot
+    uint8_t psubSlot;         //  Pendig difference subslot value
     int8_t actSlot;
     int8_t lSlot;
     int8_t sSlot;

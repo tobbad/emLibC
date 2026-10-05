@@ -151,6 +151,14 @@ em_msg stateled_toggle_pin(stateled_e led_nr) {
     return GpioPinToggle(&my_stateled.port->pin[led_nr]);
 };
 
+em_msg stateled_dtoggle_pin(stateled_e led_nr) {
+    // clang-format off
+    if (!my_stateled.init) return EM_ERR;
+    if (!stateled_pin_valid((uint8_t)led_nr)) return EM_ERR;
+    // clang-format on
+    return GpioPinToggle(&my_stateled.port->pin[led_nr]);
+};
+
 em_msg stateled_all_off() {
     // clang-format off
     if (!my_stateled.init) return EM_ERR;
@@ -173,7 +181,7 @@ void stateled_show(system_state_e state) {
         if (my_stateled.cnt == 0) {
             stateled_toggle_port();
         }
-    } else if (((state == SYNCHRONIZE_READY) || (state == SYNCHRONIZE_DOING))) {
+    } else if (state >= SYNCHRONIZE){
         if (state_is_same(my_stateled.state, &my_stateled.lstate) == EM_ERR) {
             my_stateled.lstate = *my_stateled.state;
             // printf("Ledline Update"NL);
@@ -206,7 +214,7 @@ bool stateled_update(system_state_e state) {
     // clang-format off
     if (state == SYNC_RESET) {
         return false;
-    }  else if ((state == SYNCHRONIZE_READY) || (state == SYNCHRONIZE_DOING)){
+    }  else if ((state >= SYNCHRONIZE)){
         if (my_stateled.cnt == 0){
             stateled_iterate();
             my_stateled.bli_cnt++;

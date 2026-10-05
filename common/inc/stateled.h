@@ -33,7 +33,7 @@ typedef enum  {     // debug enums
     cycle_toggle,   // cycle toggle
     tx_toggle,      // 1 when tx active
     rx_toggle,	    // 1 when rx active
-    cycle_update,   // 0->1->0 when cycle is updated
+    cycle_dd,      // 0->1->0 when cycle is updated
 }dstateled_e;
 #define OFFSET 8
 void stateled_init(state_t *state, gpio_port_t *port, uint16_t cycle_size, uint8_t bli_cnt);
@@ -42,6 +42,7 @@ em_msg stateled_set_mask(uint16_t mask);
 em_msg stateled_set(uint16_t val);
 em_msg stateled_toggle_port();
 em_msg stateled_toggle_pin(stateled_e pinNr);
+em_msg stateled_dtoggle_pin(stateled_e pinNr);
 void stateled_iterate();
 void stateled_show(system_state_e state);
 em_msg stateled_on(uint8_t led_nr);

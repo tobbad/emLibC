@@ -306,6 +306,33 @@ TEST_F(CycleTest, MasterSeenKeepsSlaveAlive) {
     EXPECT_EQ(c.master, masterSlot);
 }
 
+// A slave that stops hearing its master gives the role up after
+// CYCLE_SLAVE_KEEP_ALIVE_CYCLE_CNT frame cycles -- exactly then, not before --
+// and falls back to SYNCHRONIZE so the next frame heard can elect a new master.
+TEST_F(CycleTest, SlaveAgesOutWithoutMaster) {
+    const int8_t masterSlot = 1;
+    cycle_t c{0};
+    ASSERT_EQ(cycle_init(&c,  TX_SS, RX_SS, POSTRX, CYCLE_MASTER_KEEP_ALIVE_CYCLE_CNT, &timerPtr), EM_OK);
+    ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
+    elect(&c, masterSlot);
+    ASSERT_EQ(c.slaveAge, 0);
+
+    for (uint16_t i = 1; i < CYCLE_SLAVE_KEEP_ALIVE_CYCLE_CNT; i++) {
+        advance_frame_cycles(&c, 1);
+        ASSERT_EQ(c.sync_state, SYNCHRONIZE_READY) << "frame cycle " << i;
+        ASSERT_EQ(c.role, SLAVE) << "frame cycle " << i;
+        ASSERT_EQ(c.slaveAge, i) << "frame cycle " << i;
+    }
+    EXPECT_EQ(c.role, SLAVE) << "the role has to hold right up to the timeout";
+
+    advance_frame_cycles(&c, 1);
+    EXPECT_EQ(c.role, NOT_SET);
+    EXPECT_FALSE(c.isSlave);
+    EXPECT_EQ(c.slaveAge, 0);
+    EXPECT_EQ(c.masterAge, 0);
+    EXPECT_EQ(c.sync_state, SYNCHRONIZE);
+}
+
 // A device with no role does not age: nothing to lose, and the watchdog must
 // not run away while it waits for the first frame.
 TEST_F(CycleTest, RolelessCycleDoesNotAge) {
@@ -515,7 +542,9 @@ TEST_F(CycleTest, CheckCycleSlaveIncrement) {
     ASSERT_EQ(cycle_init(&c,  TX_SS, RX_SS, POSTRX, CYCLE_MASTER_KEEP_ALIVE_CYCLE_CNT, &timerPtr), EM_OK);
     ASSERT_EQ(cycle_set_slot(nullptr, 1, SLAVE), EM_ERR);
     ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
-    ASSERT_EQ(cycle_set_slot(&c, slot, SLAVE), EM_OK);
+    // Elect through the RX path rather than cycle_set_slot(): only
+    // cycle_master_seen() records c.master, and the keep-alive below needs it.
+    elect(&c, slot);
     ASSERT_EQ(c.psubSlot, slot * CYCLE_SUB_SLOT_CNT + RX_SS);
     ASSERT_EQ(c.subSlot, 0);
 
@@ -536,29 +565,38 @@ TEST_F(CycleTest, CheckCycleSlaveIncrement) {
     ASSERT_EQ(c.subSlot, 3*slot * CYCLE_SUB_SLOT_CNT + RX_SS+1);
     cycle_reset_subslot(&c);
     ASSERT_EQ(c.subSlot, 0);
-    ASSERT_EQ(c.slaveAge, 0);
+    ASSERT_EQ(c.masterAge, 0);
     for (cycle = 0; cycle <= UINT16_MAX; cycle++) {
-        for (uint8_t ss = 0; ss <  CYCLE_MODULO; ss++) {
+        for (uint16_t ss = 0; ss <  CYCLE_MODULO; ss++) {
             ASSERT_EQ(c.subSlot, ss);
             ASSERT_EQ(c.actSlot, c.lSlot);
+            ASSERT_EQ(c.cycle,   cycle)<< " (ss+1) = " << (uint16_t)(ss+1) << " actSlot = "<<(uint32_t)cycle_act_slot(&c) << " cycle = " << cycle;
             cycle_increment(&c);
             ASSERT_EQ(c.sync_state, SYNCHRONIZE_READY)  << " (ss+1) = " << (uint16_t)(ss+1) << " actSlot = "<< (uint32_t)cycle_act_slot(&c) << " cycle = " << cycle;
             ASSERT_EQ(c.subSlot, (ss+1)%CYCLE_MODULO)   << " (ss+1) = " << (uint16_t)(ss+1) << " actSlot = "<< (uint32_t)cycle_act_slot(&c) << " cycle = " << cycle;
             ASSERT_EQ(c.actSlot, CYCLE_ACT_SLOT_N(ss+1))<< " (ss+1) = " << (uint16_t)(ss+1) << " actSlot = "<< (uint32_t)cycle_act_slot(&c)  << " cycle = " << cycle;
-             if (cycle == 255){
-                ASSERT_EQ(c.cycle,   cycle+1)<< " (ss+1) = " << (uint16_t)(ss+1) << " actSlot = "<<(uint32_t)cycle_act_slot(&c) << " cycle = " << cycle;
-            }
         }
-        ASSERT_EQ(c.slaveAge, cycle%CYCLE_SLAVE_KEEP_ALIVE_CYCLE_CNT)<< " (ss+1) = " << (uint16_t)(ss+1) << " actSlot = "<<(uint32_t)cycle_act_slot(&c) << " cycle = " << cycle;
+        // The wrap at the end of the inner loop aged the role by one frame
+        // cycle; a frame from the master resets it. Without that kick the
+        // watchdog would drop the role (see SlaveAgesOutWithoutMaster).
+        // Only the slave age advances, once per CYCLE_MODULO; masterAge stays 0.
+        ASSERT_EQ(c.slaveAge, 1) << " cycle = " << cycle;
+        ASSERT_EQ(c.masterAge, 0) << " cycle = " << cycle;
+        ASSERT_EQ(cycle_master_seen(&c, slot), EM_OK) << " cycle = " << cycle;
+        ASSERT_EQ(c.slaveAge, 0) << " cycle = " << cycle;
+        ASSERT_EQ(c.masterAge, 0) << " cycle = " << cycle;
+        ASSERT_EQ(c.role, SLAVE) << " cycle = " << cycle;
     }
-    // The loop above left the cycle counter at its uint16_t maximum; one more
-    // wrap of subSlot drives cycle past 65535 and overflows it back to 0.
+    // The last wrap already drove cycle past 65535 and overflowed it back to 0,
+    // and left subSlot at 0. One more tick only advances the sub-slot.
+    ASSERT_EQ(c.cycle, 0);
+    ASSERT_EQ(c.subSlot, 0);
     cycle_increment(&c);
 
     ASSERT_EQ(c.sync_state, SYNCHRONIZE_READY);
-    ASSERT_EQ(c.subSlot, (slot * CYCLE_SUB_SLOT_CNT + RX_SS + 3));
-    ASSERT_EQ(c.actSlot, slot);
-    ASSERT_EQ(c.sSlot, (CYCLE_SUB_SLOT_CNT + RX_SS + 3) % CYCLE_SUB_SLOT_CNT);
+    ASSERT_EQ(c.subSlot, 1);
+    ASSERT_EQ(c.actSlot, 0);
+    ASSERT_EQ(c.sSlot, 1);
     ASSERT_EQ(c.cycle, 0);
 }
 
@@ -600,43 +638,49 @@ TEST_F(CycleTest, CheckCycleMasterIncrement) {
     ASSERT_EQ(c.subSlot, slot * CYCLE_SUB_SLOT_CNT  + i);
     ASSERT_EQ(c.psubSlot, 0);
     ASSERT_EQ(c.sSlot, cycle_act_sub_slot(&c));
-    ASSERT_EQ(c.lSlot, cycle_act_slot(&c));
-    ASSERT_EQ(c.actSlot , cycle_act_slot(&c));
+    ASSERT_EQ(c.lSlot, SLOT_NOT_SET);
+    ASSERT_EQ(c.actSlot , 0 );
+    ASSERT_EQ(c.master, SLOT_NOT_SET);
     ASSERT_EQ(c.cycle,   0);
     ASSERT_EQ(c.slaveAge, 0);
     ASSERT_EQ(c.masterAge, 0);
-    ASSERT_EQ(c.master, SLOT_NOT_SET);
 
     ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE_READY), EM_OK);
     ASSERT_EQ(c.sync_state, SYNCHRONIZE_READY);
-    c.subSlot = 0;
+    // cycle_reset() leaves lSlot at SLOT_NOT_SET; cycle_reset_subslot() brings
+    // subSlot, actSlot and lSlot back in line, else the first tick counts as a wrap.
+    cycle_reset_subslot(&c);
     ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE_READY), EM_OK);
     ASSERT_EQ(c.sync_state, SYNCHRONIZE_READY);
     for (cycle = 0; cycle <= UINT16_MAX; cycle++) {
-        for (uint8_t ss = 0; ss <  CYCLE_MODULO; ss++) {
+        for (uint16_t ss = 0; ss <  CYCLE_MODULO; ss++) {
+            ASSERT_EQ(c.subSlot, ss);
+            ASSERT_EQ(c.cycle,   cycle)<< " (ss+1) = " << (uint16_t)(ss+1) << " actSlot = "<<(uint32_t)cycle_act_slot(&c) << " cycle = " << cycle;
             cycle_increment(&c);
-            ASSERT_EQ(c.actSlot, cycle_act_slot(&c));
-            ASSERT_EQ(c.sSlot,   cycle_act_sub_slot(&c));
-            ASSERT_EQ(c.cycle,   cycle) << "cycle = " << cycle << " ss = " << (uint16_t)ss;
+            ASSERT_EQ(c.actSlot, c.lSlot);
+            ASSERT_EQ(c.sync_state, SYNCHRONIZE_READY)  << " (ss+1) = " << (uint16_t)(ss+1) << " actSlot = "<< (uint32_t)cycle_act_slot(&c) << " cycle = " << cycle;
+            ASSERT_EQ(c.subSlot, (ss+1)%CYCLE_MODULO)   << " (ss+1) = " << (uint16_t)(ss+1) << " actSlot = "<< (uint32_t)cycle_act_slot(&c) << " cycle = " << cycle;
+            ASSERT_EQ(c.actSlot, CYCLE_ACT_SLOT_N(ss+1))<< " (ss+1) = " << (uint16_t)(ss+1) << " actSlot = "<< (uint32_t)cycle_act_slot(&c)  << " cycle = " << cycle;
         }
+        // The wrap at the end of the inner loop aged the role by one frame
+        // cycle; any valid frame resets it. Without that kick the watchdog
+        // would drop the role after CYCLE_MASTER_LOOSE_CYCLE_CNT cycles.
+        ASSERT_EQ(c.masterAge, 1) << " cycle = " << cycle;
+        ASSERT_EQ(c.slaveAge, 0) << " cycle = " << cycle;
+        ASSERT_EQ(cycle_master_seen(&c, slot), EM_OK) << " cycle = " << cycle;
+        ASSERT_EQ(c.masterAge, 0) << " cycle = " << cycle;
+        ASSERT_EQ(c.role, MASTER) << " cycle = " << cycle;
     }
-    // The loop above left the cycle counter at its uint16_t maximum; one more
-    // wrap of subSlot drives cycle past 65535 and overflows it back to 0.
-    cycle_increment(&c);
-
-    ASSERT_EQ(c.sync_state, SYNCHRONIZE_READY);
-    ASSERT_EQ(c.subSlot, (slot * CYCLE_SUB_SLOT_CNT + TX_SS + 3));
-    ASSERT_EQ(c.actSlot, slot);
-    ASSERT_EQ(c.sSlot, (CYCLE_SUB_SLOT_CNT + RX_SS + 3) % CYCLE_SUB_SLOT_CNT);
+    // The last wrap already drove cycle past 65535 and overflowed it back to 0,
+    // and left subSlot at 0. One more tick only advances the sub-slot.
     ASSERT_EQ(c.cycle, 0);
-    // The loop above left the cycle counter at its uint16_t maximum; one more
-    // wrap of subSlot drives cycle past 65535 and overflows it back to 0.
+    ASSERT_EQ(c.subSlot, 0);
     cycle_increment(&c);
 
     ASSERT_EQ(c.sync_state, SYNCHRONIZE_READY);
-    ASSERT_EQ(c.subSlot, (slot * CYCLE_SUB_SLOT_CNT + TX_SS + 3));
-    ASSERT_EQ(c.actSlot, slot);
-    ASSERT_EQ(c.sSlot, (CYCLE_SUB_SLOT_CNT + RX_SS + 3) % CYCLE_SUB_SLOT_CNT);
+    ASSERT_EQ(c.subSlot, 1);
+    ASSERT_EQ(c.actSlot, 0);
+    ASSERT_EQ(c.sSlot, 1);
     ASSERT_EQ(c.cycle, 0);
 }
 #if 0
