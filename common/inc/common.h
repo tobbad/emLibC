@@ -93,14 +93,13 @@ typedef enum {
 #define EM_RETURN_IF_NULL(ptr, ret) EM_RETURN_IF((ptr) == NULL, ret)
 
 typedef enum {
-    SYNC_RESET,          // 0
-    BOOT_UP,             // 1
+    SYNC_NA,             // 0
+    SYNC_RESET,          // 1
     SYNCHRONIZE,         // 2
     SYNCHRONIZE_READY,   // 3
-    SYNCHRONIZE_DOING,   // 4
-    SYNCHRONIZE_ERROR,   // 5
+    SYNCHRONIZE_ERROR,   // 4
     SYNCHRONIZE_LOCKED,  // 5
-    SYNC_CNT             // 7
+    SYNC_CNT             // 6
 } system_state_e;
 
 typedef union {

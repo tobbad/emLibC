@@ -18,11 +18,10 @@
 #endif
 
 static idx2str_t sync2str[] = {
+    {.str = (char *)&"SYNC_NA      ", .idx = SYNC_NA},        /*!< SYNC_RESET */
     {.str = (char *)&"SYNC_RESET   ", .idx = SYNC_RESET},        /*!< SYNC_RESET */
-    {.str = (char *)&"BOOT_UP      ", .idx = BOOT_UP},           /*!< BOOT_UP */
     {.str = (char *)&"SYNCHRONIZE  ", .idx = SYNCHRONIZE},       /*!< Start synchronize */
     {.str = (char *)&"SYNC_READY   ", .idx = SYNCHRONIZE_READY}, /*!< Partly synchronized */
-    {.str = (char *)&"SYNC_DOING   ", .idx = SYNCHRONIZE_DOING}, /*!< Partly synchronized */
     {.str = (char *)&"SYNC_ERROR   ", .idx = SYNCHRONIZE_ERROR}, /*!< Synchronizion error */
     {.str = (char *)&"SYNC_LOCKED  ", .idx = SYNCHRONIZE_LOCKED}, /*!< Device claimed tom be master or slave */
 };

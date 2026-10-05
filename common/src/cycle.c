@@ -64,7 +64,7 @@ cycle_t cycle;
 #define SLOT_PRINT_FMT "(c:%5d, %1x, %1x)" // length is 19
 #define SLOT_PRINT_FMT_STR_LEN 16 + 2
 
-em_msg cycle_init(cycle_t *cycle, int8_t slot, int8_t tx_ss, int8_t rx_ss, uint8_t postrx, uint8_t kaCnt, TIM_HandleTypeDef *htim) {
+em_msg cycle_init(cycle_t *cycle, int8_t tx_ss, int8_t rx_ss, uint8_t postrx, uint8_t kaCnt, TIM_HandleTypeDef *htim) {
     em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
@@ -76,13 +76,14 @@ em_msg cycle_init(cycle_t *cycle, int8_t slot, int8_t tx_ss, int8_t rx_ss, uint8
     cycle->postrx   = abs(postrx);
     cycle->kaCnt    = kaCnt;
     cycle->timer    = htim;
-    cycle->slot     = slot;
-    cycle->sync_state = SYNC_RESET;
+    cycle->subSlot  = 0;
     cycle->cntErrror= 0;
     cycle->init = true;
+    cycle->sync_state= SYNC_RESET;
     cycle_sscnt_init(cycle);
     cycle_reset_ka(cycle);
     cycle_reset(cycle);
+    cycle_update(cycle);
     res = EM_OK;
     return res;
 };
@@ -98,11 +99,14 @@ em_msg cycle_reset(cycle_t *cycle) {
     cycle->psubSlot  = 0;
     cycle->sSlot     = 0;
     cycle->actSlot   = 0;
-    cycle->lSlot     = 0;
+    cycle->lSlot     = SLOT_NOT_SET;
     cycle->cycle     = 0;
+    cycle->isMaster  = false;
+    cycle->isSlave   = false;
     cycle->slaveAge  = 0;
     cycle->masterAge = 0;
     cycle->master    = SLOT_NOT_SET;
+    cycle->slot      = SLOT_NOT_SET;
     res = EM_OK;
     return res;
 };
@@ -226,17 +230,37 @@ int8_t cycle_act_slot(cycle_t *cycle) {
     if (!cycle->init) return res;
     // clang-format on
     return CYCLE_ACT_SLOT(cycle);
-};
+}
 
 
-int8_t cycle_act_sub_slot(cycle_t *cycle) {
+int8_t cycle_act_sub_slot(cycle_t *cycle){
     em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
     if (!cycle->init) return res;
     // clang-format on
     return CYCLE_ACT_SUB_SLOT(cycle);
-};
+}
+
+em_msg cycle_update(cycle_t *cycle) {
+    em_msg res = EM_ERR;
+    // clang-format off
+    if (!cycle) return res;
+    if (!cycle->init) return res;
+    // clang-format on
+    if (cycle->slot!=SLOT_NOT_SET){
+        cycle->sSlot     = CYCLE_ACT_SUB_SLOT(cycle);;
+        cycle->actSlot   = CYCLE_ACT_SLOT(cycle);
+        cycle->lSlot     = CYCLE_ACT_SLOT_N(cycle->subSlot-1);
+    }
+    return EM_OK;
+}
+
+uint16_t cycle_cycle(cycle_t *cycle){
+    if (!cycle) return -1;
+    if (!cycle->init) return -1;
+    return cycle->cycle;
+}
 
 // Decrement keep alive
 em_msg cycle_dec_ka(cycle_t *cycle) {
@@ -294,30 +318,29 @@ bool cycle_role_is_set(cycle_t *cycle) {
 }
 
 void cycle_reset_role(cycle_t *cycle) {
-    // The one "drop the role" primitive: it puts the device back into the
-    // state it boots in, so the next frame heard re-elects a master
-    // (cycle_master_seen). The master watchdog in cycle_increment() calls it
-    // after CYCLE_MASTER_LOOSE_CYCLE_CNT silent frame cycles.
-    //
-    // A forced resync is otherwise silently swallowed: cycle_set_slot() only
-    // recomputes psubSlot/timerCNT the *first* time it is called after role
-    // goes back to NOT_SET, so without this every later resync trigger is a
-    // no-op for timing purposes even though sync_state visibly changes.
-    //
-    // isMaster has to go with it. It is the one-shot guard against a master
-    // re-latching onto its own timing (see cycle_set_slot); keeping it across
-    // a drop would mean no device is ever elected master twice, and the
-    // network dies at the first timeout.
-    // clang-format off
+    // Reset slave role
     if (!cycle) return;
     if (!cycle->init) return;
     // clang-format on
-     if (cycle->isSlave){
+    if (cycle->isSlave){
     	 cycle->role = NOT_SET;
     }
-    cycle->isMaster = false;
     cycle->isSlave = false;
 }
+
+em_msg cycle_reset_subslot(cycle_t *cycle){
+    em_msg res = EM_ERR;
+    // Reset slave role
+    if (!cycle) return res;
+    if (!cycle->init) return res;
+    // clang-format on
+    cycle->psubSlot  = 0;
+    cycle->subSlot   = 0;
+    cycle->sSlot     = 0;
+    cycle->actSlot   = 0;
+    cycle->lSlot     = 0;
+    return EM_OK;
+};
 
 system_state_e cycle_get_state(cycle_t *cycle) {
     em_msg res = EM_ERR;
@@ -401,19 +424,21 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
         cycle->role = ss_type;
     }
     if ((cycle->sync_state == SYNCHRONIZE) || (cycle->sync_state == SYNCHRONIZE_READY)  ||
-        (cycle->sync_state == SYNCHRONIZE_DOING) || (cycle->sync_state == SYNCHRONIZE_ERROR) ||
-        (cycle->sync_state == SYNCHRONIZE_LOCKED)) {
+        (cycle->sync_state == SYNCHRONIZE_ERROR) ||(cycle->sync_state == SYNCHRONIZE_LOCKED)) {
             if (cycle->role == MASTER) {
                 if (cycle->isMaster) return EM_ERR;
 #ifndef UNIT_TEST
                 cycle->timerCNT = cycle->timer->Instance->CNT;
 #endif
                 if (cycle->role  == MASTER){
-                    cycle->timerCNT = 0;
+                    cycle->timerCNT  = 0;
                     cycle_reset(cycle);
-                    cycle->master   = slot;
-                    cycle->psubSlot = (cycle->slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO + cycle_tx_ss(cycle)) % CYCLE_MODULO;
+                    cycle->master    = slot;
+                    cycle->slot      = slot;
+                    cycle->psubSlot  = (cycle->slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO + cycle_tx_ss(cycle)) % CYCLE_MODULO;
                     cycle->masterAge = 0;
+                    cycle->slaveAge  = 0;
+                    cycle->cycle     = 0;
                     cycle->isSlave   = false;
                     cycle->isMaster  = true;
                     return EM_OK;
@@ -422,8 +447,11 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
             } else if (cycle->role == SLAVE)  {
                 if (!cycle->isSlave){ // set it once or reset
                     cycle_reset(cycle);
-                    cycle->psubSlot = (slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO + cycle_rx_ss(cycle)) % CYCLE_MODULO;
+                    cycle->slot     = slot;
+                    cycle->psubSlot = (cycle->slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO + cycle_rx_ss(cycle)) % CYCLE_MODULO;
+                    cycle->masterAge= 0;
                     cycle->slaveAge = 0;
+                    cycle->cycle    = 0;
                     cycle->isSlave  = true;
                     cycle->isMaster = false;
                     return EM_OK;
@@ -523,15 +551,18 @@ int16_t cycle_difference(cycle_t *cycle, int8_t rxSlot) {
     //   lower = rxSlot*CYCLE_SUB_SLOT_CNT.
     // The cycle is a ring of CYCLE_MODULO sub-slots, so the raw difference is
     // folded onto the shorter way round, into [-CYCLE_MODULO_HALF, CYCLE_MODULO_HALF):
-    //   > 0  we are past the edge, that many sub-slots
-    //   == 0 exactly on the edge
-    //   < 0  the edge is still that many sub-slots ahead
+    //   > 0  we are past the upper edge,
+    //   == 0 within rxSlot
+    //   < 0  we are lower the lower edge,
     // rxSlot is masked to a valid slot, so no caller can push lower off the ring.
     const int16_t lower = (int16_t)(rxSlot & CYCLE_SLOT_MASK) * CYCLE_SUB_SLOT_CNT;
-    const int16_t delta = (int16_t)cycle->subSlot - lower;
-    // delta is in [-(CYCLE_MODULO-CYCLE_SUB_SLOT_CNT), CYCLE_MODULO), so one
-    // CYCLE_MODULO is not enough to make the operand of % non-negative.
-    return (int16_t)(((delta + CYCLE_MODULO + CYCLE_MODULO_HALF) % CYCLE_MODULO) - CYCLE_MODULO_HALF);
+    const int16_t upper = (int16_t)(rxSlot & CYCLE_SLOT_MASK+1) * CYCLE_SUB_SLOT_CNT;
+    if ((cycle->subSlot >= lower) && (cycle->subSlot < upper)) {
+        return 0; // inside the window
+    }
+    const int16_t above = ((cycle->subSlot - upper) + CYCLE_MODULO) % CYCLE_MODULO;
+    const int16_t below = ((lower - cycle->subSlot) + CYCLE_MODULO) % CYCLE_MODULO;
+    return ((above < below) ? above : below);
 }
 
 void cycle_sscnt_init(cycle_t *cycle) {
@@ -644,7 +675,7 @@ void cycle_increment(cycle_t *cycle) {
         cycle->subSlot++;
         cycle->subSlot = (cycle->subSlot % (CYCLE_SUB_SLOT_CNT * CYCLE_SLOT_CNT));
         cycle->actSlot = CYCLE_ACT_SLOT(cycle);
-        cycle->sSlot = CYCLE_ACT_SUB_SLOT(cycle);
+        cycle->sSlot   = CYCLE_ACT_SUB_SLOT(cycle);
 #if OPTION_SHOW_TIMING == 1
         // stateled_set(cycle->subSlot);
         stateled_toggle_pin(ss_toggle);
@@ -661,11 +692,6 @@ void cycle_increment(cycle_t *cycle) {
             stateled_set(cycle->actSlot);
             stateled_toggle_pin(slot_toggle);
 #endif
-            // actSlot only ever changes on a slot boundary, and the boundary
-            // into slot 0 is the frame-cycle boundary -- the one place per
-            // CYCLE_MODULO sub-slot ticks that may bump cycle->cycle and age a
-            // role. (An earlier version aged on subSlot == CYCLE_MODULO-1,
-            // which is never a slot boundary, so the watchdog never ran.)
             if ((cycle->actSlot == 0) && (cycle->sync_state >= SYNCHRONIZE)) {
 #if OPTION_SHOW_TIMING == 1
                 stateled_toggle_pin(cycle_toggle);
@@ -674,7 +700,7 @@ void cycle_increment(cycle_t *cycle) {
                 cycle->set = true;
                 cycle_age_role(cycle);
             }
-            cycle->lSlot = cycle->actSlot;
+            cycle->lSlot = CYCLE_ACT_SLOT(cycle);
         }
     }
 }

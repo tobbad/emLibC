@@ -13,6 +13,11 @@ extern "C" {
 #include "hal_port.h"
 #else
 typedef struct __TIM_HandleTypeDef {} TIM_HandleTypeDef;
+#define CYCLE_ACT_SUB_SLOT_N(ss)   (((ss) & CYCLE_SUB_SLOT_MASK))
+#define CYCLE_ACT_SUB_SLOT(_cycle) CYCLE_ACT_SUB_SLOT_N((cycle)->subSlot)
+#define CYCLE_ACT_SLOT_N(ss)       ((((ss) >> CYCLE_SUB_SLOT_SHIFT) & CYCLE_SLOT_MASK))
+#define CYCLE_ACT_SLOT(_cycle)     CYCLE_ACT_SLOT_N((_cycle)->subSlot)
+
 #endif
 #include "common.h"
 
@@ -23,7 +28,7 @@ typedef enum {
     SS_CNT,
 } dev_role_e;
 
-#define SLOT_NOT_SET -1
+#define SLOT_NOT_SET ((int8_t)-1)
 #define CYCLE_SUB_SLOT_POW2 4
 #define CYCLE_SUB_SLOT_CNT (1 << CYCLE_SUB_SLOT_POW2)
 #define CYCLE_SUB_SLOT_MASK (CYCLE_SUB_SLOT_CNT - 1)
@@ -54,8 +59,8 @@ extern idxa2str_t synca2str;
 
 #ifdef UNIT_TEST
 typedef struct cycle_s {
-    volatile uint8_t subSlot; // actual sub slot
-    uint8_t psubSlot;         //  Pendig difference subslot value
+    volatile uint16_t subSlot; // actual sub slot
+    uint16_t psubSlot;         //  Pendig difference subslot value
     int8_t actSlot;
     int8_t lSlot;
     int8_t sSlot;
@@ -87,21 +92,23 @@ typedef struct cycle_s cycle_t;
 extern cycle_t cycle;
 
 em_msg cycle_reset(cycle_t *cycle);
-em_msg cycle_init(cycle_t *cycle, int8_t slot, int8_t master_ss, int8_t slave_ss, uint8_t postrx, uint8_t kaCnt, TIM_HandleTypeDef *htim);
+em_msg cycle_init(cycle_t *cycle, int8_t master_ss, int8_t slave_ss, uint8_t postrx, uint8_t kaCnt, TIM_HandleTypeDef *htim);
 em_msg cycle_timer_add(cycle_t *cycle, int8_t add);
 size_t cycle_size();
+void cycle_reset_role(cycle_t *cycle);
+em_msg cycle_reset_subslot(cycle_t *cycle);
 char *cycle_string(cycle_t *cycle);
 char *cycle_text_char(cycle_t *cycle, const char *text);
 em_msg cycle_text_print(cycle_t *cycle, const char *text);
 em_msg cycle_text_print_s(cycle_t *cycle, const char *text, char *str);
 em_msg cycle_text_print_v(cycle_t *cycle, const char *text, void *str);
 int8_t cycle_act_slot(cycle_t *cycle);
+int8_t cycle_act_sub_slot(cycle_t *cycle);
+uint16_t cycle_cycle(cycle_t *cycle);
+em_msg cycle_update(cycle_t *cycle);
 dev_role_e cycle_role(cycle_t *cycle);
 char *cycle_role_str(cycle_t *cycle);
 bool cycle_role_is_set(cycle_t *cycle);
-void cycle_reset_role(cycle_t *cycle);
-int8_t cycle_act_sub_slot(cycle_t *cycle);
-uint16_t cycle_cycle(cycle_t *cycle);
 em_msg cycle_dec_ka(cycle_t *cycle);
 em_msg cycle_reset_ka(cycle_t *cycle);
 bool cycle_is_ka(cycle_t *cycle);
