@@ -296,6 +296,7 @@ em_msg cycle_reset_ka(cycle_t *cycle) {
     return EM_OK;
 }
 
+
 dev_role_e cycle_role(cycle_t *cycle) {
     // clang-format off
     if (!cycle) return SS_CNT;
@@ -375,22 +376,26 @@ int8_t cycle_get_master(cycle_t *cycle) {
     return cycle->master;
 }
 
-bool cycle_doSend(cycle_t *cycle) {
-    em_msg res = EM_ERR;
+em_msg cycle_doSend(cycle_t *cycle) {
+    bool res = false;
     // clang-format off
     if (!cycle) return res;
     if (!cycle->init) return res;
     // clang-format on
     int8_t actSlot = CYCLE_ACT_SLOT(cycle);
     int8_t subSlot = CYCLE_ACT_SUB_SLOT(cycle);
-    res = (actSlot == cycle->slot - 1) && ((CYCLE_SUB_SLOT_CNT - subSlot) < abs(cycle->tx_ss));
-#if MOPTION_VERBOSE == 1
+    if (cycle->slot == SLOT_NOT_SET){
+    	res = true;
+    } else {
+    	res = (actSlot == cycle->slot - 1) && ((CYCLE_SUB_SLOT_CNT - subSlot) < abs(cycle->tx_ss));
+    }
+#if OPTION_VERBOSE == 1
     res = 1;
     if (res) {
         printf("Do send?                %s" NL, cycle_string(cycle));
     }
 #endif
-    return res;
+    return res?EM_OK:EM_ERR;
 };
 
 int8_t cycle_check_slot(int8_t slot) {
@@ -398,6 +403,22 @@ int8_t cycle_check_slot(int8_t slot) {
         return slot;
     }
     return -1;
+}
+
+
+em_msg cycle_set_my_slot(cycle_t *cycle, int8_t slot){
+    em_msg res = EM_ERR;
+    // clang-format off
+    if (!cycle) return res;
+    if (!cycle->init) return res;
+    if (cycle_check_slot(slot)<0) return res;
+    // clang-format on
+    if (cycle->slot ==SLOT_NOT_SET){
+    	cycle->slot = slot;
+    	res = EM_OK;
+    }
+    return res;
+
 }
 
 em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
@@ -470,7 +491,6 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
 
     return res;
 }
-
 int8_t cycle_get_slot(cycle_t *cycle) {
     em_msg res = EM_ERR;
     // clang-format off
@@ -671,7 +691,7 @@ void cycle_increment(cycle_t *cycle) {
             cycle->psubSlot = 0;
             cycle->lSlot = CYCLE_ACT_SLOT_N(cycle->subSlot)-1;
 #ifndef UNIT_TEST
-            stateled_dtoggle_pin(cycle_dd);
+            stateled_dtoggle_pin(cycle_upd);
 
 #endif
         }
