@@ -41,11 +41,14 @@ typedef enum {
 #define CYCLE_SLOT_MASK (CYCLE_SLOT_CNT - 1)
 #define CYCLE_SLOT_SHIFT (CYCLE_SLOT_POW2)
 #define CYCLE_MODULO (CYCLE_SUB_SLOT_CNT * CYCLE_SLOT_CNT)
-// Half the ring: cycle_difference() folds its result into
-// [-CYCLE_MODULO_HALF, CYCLE_MODULO_HALF).
+// Half the ring.
 #define CYCLE_MODULO_HALF (CYCLE_MODULO / 2)
+// cycle_difference() returns the distance to rxSlot's window: < 0 below it
+// (subSlot - first sub-slot), 0 inside, > 0 above it (subSlot - last sub-slot).
+// The shorter way round the ring wins, so the result lies in
+// [-(CYCLE_MODULO - CYCLE_SUB_SLOT_CNT) / 2, (CYCLE_MODULO - CYCLE_SUB_SLOT_CNT) / 2].
 // Out-of-band result of cycle_difference() for a NULL or uninitialised cycle.
-// Outside the folded range, so it cannot collide with a valid distance.
+// Outside that range, so it cannot collide with a valid distance.
 #define CYCLE_DIFF_INVALID INT16_MIN
 extern idxa2str_t synca2str;
 // is set so that at least once in a KEEP_ALIVE_CYCLE_CNT Frame cycle a frame is sent

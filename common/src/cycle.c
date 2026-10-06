@@ -81,8 +81,8 @@ em_msg cycle_init(cycle_t *cycle, int8_t tx_ss, int8_t rx_ss, uint8_t postrx, ui
     cycle->timer    = htim;
     cycle->subSlot  = 0;
     cycle->cntErrror= 0;
-    cycle->init = true;
     cycle->sync_state= SYNC_RESET;
+    cycle->init = true;
     cycle_sscnt_init(cycle);
     cycle_reset_ka(cycle);
     cycle_reset(cycle);
@@ -252,7 +252,7 @@ em_msg cycle_update(cycle_t *cycle) {
     if (!cycle->init) return res;
     // clang-format on
     if (cycle->slot!=SLOT_NOT_SET){
-        cycle->sSlot     = CYCLE_ACT_SUB_SLOT(cycle);;
+        cycle->sSlot     = CYCLE_ACT_SUB_SLOT(cycle);
         cycle->actSlot   = CYCLE_ACT_SLOT(cycle);
         cycle->lSlot     = CYCLE_ACT_SLOT_N(cycle->subSlot-1);
     }
@@ -349,8 +349,8 @@ em_msg cycle_reset_subslot(cycle_t *cycle){
 system_state_e cycle_get_state(cycle_t *cycle) {
     em_msg res = EM_ERR;
     // clang-format off
-    if (!cycle) return res;
-    if (!cycle->init) return res;
+    if (!cycle) return SYNC_NA;
+    if (!cycle->init) return SYNC_NA;
     // clang-format on
     return cycle->sync_state;
 }
@@ -569,23 +569,25 @@ int16_t cycle_difference(cycle_t *cycle, int8_t rxSlot) {
     if (!cycle) return CYCLE_DIFF_INVALID;
     if (!cycle->init) return CYCLE_DIFF_INVALID;
     // clang-format on
-    // Signed sub-slot distance from the lower edge of rxSlot's window to the
-    // current position, with
-    //   lower = rxSlot*CYCLE_SUB_SLOT_CNT.
-    // The cycle is a ring of CYCLE_MODULO sub-slots, so the raw difference is
-    // folded onto the shorter way round, into [-CYCLE_MODULO_HALF, CYCLE_MODULO_HALF):
-    //   > 0  we are past the upper edge,
-    //   == 0 within rxSlot
-    //   < 0  we are lower the lower edge,
+    // Signed sub-slot distance from the current position to rxSlot's window
+    //   lower = rxSlot*CYCLE_SUB_SLOT_CNT          (first sub-slot of rxSlot)
+    //   last  = lower + CYCLE_SUB_SLOT_CNT - 1     (last sub-slot of rxSlot)
+    //   < 0  below the window: subSlot - lower
+    //   == 0 within the window [lower, last]
+    //   > 0  above the window: subSlot - last
+    // The cycle is a ring of CYCLE_MODULO sub-slots, so outside the window the
+    // shorter way round wins. above + below == CYCLE_MODULO - CYCLE_SUB_SLOT_CNT + 1
+    // is odd, so there is never a tie, and the result lies in
+    // [-(CYCLE_MODULO - CYCLE_SUB_SLOT_CNT) / 2, (CYCLE_MODULO - CYCLE_SUB_SLOT_CNT) / 2].
     // rxSlot is masked to a valid slot, so no caller can push lower off the ring.
     const int16_t lower = (int16_t)(rxSlot & CYCLE_SLOT_MASK) * CYCLE_SUB_SLOT_CNT;
-    const int16_t upper = (int16_t)((rxSlot & CYCLE_SLOT_MASK) + 1) * CYCLE_SUB_SLOT_CNT;
-    if ((cycle->subSlot >= lower) && (cycle->subSlot < upper)) {
+    const int16_t last  = lower + CYCLE_SUB_SLOT_CNT - 1;
+    if ((cycle->subSlot >= lower) && (cycle->subSlot <= last)) {
         return 0; // inside the window
     }
-    const int16_t above = ((cycle->subSlot - upper) + CYCLE_MODULO) % CYCLE_MODULO;
+    const int16_t above = ((cycle->subSlot - last) + CYCLE_MODULO) % CYCLE_MODULO;
     const int16_t below = ((lower - cycle->subSlot) + CYCLE_MODULO) % CYCLE_MODULO;
-    return ((above < below) ? above : below);
+    return ((above < below) ? above : (int16_t)-below);
 }
 
 void cycle_sscnt_init(cycle_t *cycle) {
