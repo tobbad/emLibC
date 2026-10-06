@@ -24,16 +24,16 @@ typedef enum  {// with REGUALR_STATELD  0
 }stateled_e;
 
 typedef enum  {     // debug enums
-    ddata_0,        // data 0
-    ddata_1,        // data 1
-    ddata_2,        // data 2
-    ddata_3,        // data 3
-    ss_toggle,      // subslot toggel
-    slot_toggle,    // slot toggle
-    cycle_toggle,   // cycle toggle
-    tx_toggle,      // 1 when tx active
-    rx_toggle,	    // 1 when rx active
-    cycle_dd,      // 0->1->0 when cycle is updated
+    ddata_0,        // 0 data 0
+    ddata_1,        // 1 data 1
+    ddata_2,        // 2 data 2
+    ddata_3,        // 3 data 3
+    ss_toggle,      // 4 subslot toggel
+    slot_toggle,    // 5 slot toggle
+    cycle_toggle,   // 6 cycle toggle
+    tx_toggle,      // 7 1 when tx active
+    rx_toggle,      // 8 1 when rx active
+    cycle_update,   // 9 0->1->0 when cycle is updated
 }dstateled_e;
 #define OFFSET 8
 void stateled_init(state_t *state, gpio_port_t *port, uint16_t cycle_size, uint8_t bli_cnt);
