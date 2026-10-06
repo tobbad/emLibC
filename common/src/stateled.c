@@ -47,16 +47,16 @@ static  gpio_port_t def_port ={
     .mask = 0x03FF,
     .cnt =10,
     .pin = {
-        { .port = GPIOC, .pin = GPIO_PIN_8,  .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, //  ddata_0,
-        { .port = GPIOC, .pin = GPIO_PIN_6,  .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, //  ddata_1,
-        { .port = GPIOB, .pin = GPIO_PIN_15, .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, //  ddata_2,
-        { .port = GPIOB, .pin = GPIO_PIN_14, .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, //  ddata_3,
-        { .port = GPIOB, .pin = GPIO_PIN_13, .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, //  ss_toggle,
-        { .port = GPIOB, .pin = GPIO_PIN_12, .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, //  slot_toggle,
-        { .port = GPIOB, .pin = GPIO_PIN_2,  .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, //  cycle_toggle,
-        { .port = GPIOC, .pin = GPIO_PIN_14, .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, //  tx_toggle,
-        { .port = GPIOB, .pin = GPIO_PIN_5,  .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, //  rx_toggle,
-        { .port = GPIOB, .pin = GPIO_PIN_6,  .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, //  cycle_update,
+        { .port = GPIOC, .pin = GPIO_PIN_8,  .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // 0 ddata_0,
+        { .port = GPIOC, .pin = GPIO_PIN_6,  .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // 1 ddata_1,
+        { .port = GPIOB, .pin = GPIO_PIN_15, .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // 2 ddata_2,
+        { .port = GPIOB, .pin = GPIO_PIN_14, .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // 3 ddata_3,
+        { .port = GPIOB, .pin = GPIO_PIN_13, .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // 4 ss_toggle,
+        { .port = GPIOB, .pin = GPIO_PIN_12, .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // 5 slot_toggle,
+        { .port = GPIOB, .pin = GPIO_PIN_2,  .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // 6 cycle_toggle,
+        { .port = GPIOC, .pin = GPIO_PIN_14, .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // 7 tx_toggle,
+        { .port = GPIOB, .pin = GPIO_PIN_5,  .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // 8 rx_toggle,
+        { .port = GPIOB, .pin = GPIO_PIN_6,  .def= false,  .inv= false, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // 9 cycle_update,
     },
 };
 #endif
@@ -156,6 +156,7 @@ em_msg stateled_dtoggle_pin(stateled_e led_nr) {
     if (!my_stateled.init) return EM_ERR;
     if (!stateled_pin_valid((uint8_t)led_nr)) return EM_ERR;
     // clang-format on
+    GpioPinToggle(&my_stateled.port->pin[led_nr]);
     return GpioPinToggle(&my_stateled.port->pin[led_nr]);
 };
 
