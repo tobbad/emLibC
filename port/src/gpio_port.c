@@ -26,7 +26,7 @@ em_msg GpioPortInit(gpio_port_t *port) {
             printf("Pin %d is not good" NL, i);
         }
     }
-    port->mask = 0xFFFF;
+    port->mask = (1<<port->cnt)-1;
     return EM_OK;
 }
 em_msg GpioPort_setMask(gpio_port_t *port, uint16_t mask) {
