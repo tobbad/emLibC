@@ -387,12 +387,11 @@ em_msg cycle_doSend(cycle_t *cycle) {
     if (cycle->slot == SLOT_NOT_SET){
     	res = true;
     } else {
-    	res = (actSlot == cycle->slot - 1) && ((CYCLE_SUB_SLOT_CNT - subSlot) < abs(cycle->tx_ss));
+    	res = (actSlot == cycle->slot-1) && ((CYCLE_SUB_SLOT_CNT - subSlot) < abs(cycle->tx_ss));
     }
 #if OPTION_VERBOSE == 1
-    res = 1;
     if (res) {
-        printf("Do send?                %s" NL, cycle_string(cycle));
+    	cycle_text_print(cycle, "Ready to send");
     }
 #endif
     return res?EM_OK:EM_ERR;
@@ -426,7 +425,6 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
     // clang-format off
     if (!cycle) return res;
     if (!cycle->init) return res;
-    if (cycle_check_slot(slot)<0) return res;
     if ((ss_type < SLAVE) || (ss_type>MASTER)) return res;
     // MASTER is a one-shot bootstrap claim, for a device that has not heard
     // anyone yet. A master derives the cycle from its own TX slot, so latching
@@ -457,8 +455,7 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
                 if (cycle->role  == MASTER){
                     cycle->timerCNT  = 0;
                     cycle_reset(cycle);
-                    cycle->master    = slot;
-                    cycle->slot      = slot;
+                    cycle->master    = cycle->slot;
                     cycle->psubSlot  = (cycle->slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO + cycle_tx_ss(cycle)) % CYCLE_MODULO;
                     cycle->masterAge = 0;
                     cycle->slaveAge  = 0;
@@ -471,8 +468,8 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
             } else if (cycle->role == SLAVE)  {
                 if (!cycle->isSlave){ // set it once or reset
                     cycle_reset(cycle);
-                    cycle->slot     = slot;
-                    cycle->psubSlot = (cycle->slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO + cycle_rx_ss(cycle)) % CYCLE_MODULO;
+                    cycle->master   = slot;
+                    cycle->psubSlot = ((cycle->slot-1) * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO +cycle_rx_ss(cycle)) % CYCLE_MODULO;
                     cycle->masterAge= 0;
                     cycle->slaveAge = 0;
                     cycle->cycle    = 0;
@@ -691,7 +688,6 @@ void cycle_increment(cycle_t *cycle) {
                 assert(1);
             }
             cycle->psubSlot = 0;
-            cycle->lSlot = CYCLE_ACT_SLOT_N(cycle->subSlot)-1;
 #ifndef UNIT_TEST
             stateled_dtoggle_pin(cycle_upd);
 
@@ -702,7 +698,7 @@ void cycle_increment(cycle_t *cycle) {
         cycle->actSlot = CYCLE_ACT_SLOT(cycle);
         cycle->sSlot   = CYCLE_ACT_SUB_SLOT(cycle);
 #if OPTION_SHOW_TIMING == 1
-        // stateled_set(cycle->subSlot);
+        //stateled_set(cycle->sSlot);
         stateled_toggle_pin(ss_toggle);
 #endif
         if (cycle->doMeasure) {
@@ -714,8 +710,8 @@ void cycle_increment(cycle_t *cycle) {
         }
         if (cycle->actSlot != cycle->lSlot) {
 #if OPTION_SHOW_TIMING == 1
-            stateled_set(cycle->actSlot);
-            stateled_toggle_pin(slot_toggle);
+             stateled_set(cycle->actSlot);
+             stateled_toggle_pin(slot_toggle);
 #endif
             if ((cycle->actSlot == 0) && (cycle->sync_state >= SYNCHRONIZE)) {
 #if OPTION_SHOW_TIMING == 1
