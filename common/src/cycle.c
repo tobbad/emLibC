@@ -80,6 +80,7 @@ em_msg cycle_init(cycle_t *cycle, int8_t tx_ss, int8_t rx_ss, uint8_t postrx, ui
     cycle->kaCnt    = kaCnt;
     cycle->timer    = htim;
     cycle->subSlot  = 0;
+    cycle->slot     = SLOT_NOT_SET;
     cycle->cntErrror= 0;
     cycle->sync_state= SYNC_RESET;
     cycle->init = true;
@@ -109,7 +110,6 @@ em_msg cycle_reset(cycle_t *cycle) {
     cycle->slaveAge  = 0;
     cycle->masterAge = 0;
     cycle->master    = SLOT_NOT_SET;
-    cycle->slot      = SLOT_NOT_SET;
     res = EM_OK;
     return res;
 };
@@ -328,8 +328,9 @@ void cycle_reset_role(cycle_t *cycle) {
     // clang-format on
     if (cycle->isSlave){
     	 cycle->role = NOT_SET;
+    	 cycle->isSlave = false;
+    	 cycle->slaveAge = 0;
     }
-    cycle->isSlave = false;
 }
 
 em_msg cycle_reset_subslot(cycle_t *cycle){
@@ -455,8 +456,8 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
                 if (cycle->role  == MASTER){
                     cycle->timerCNT  = 0;
                     cycle_reset(cycle);
-                    cycle->master    = cycle->slot;
-                    cycle->psubSlot  = (cycle->slot * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO + cycle_tx_ss(cycle)) % CYCLE_MODULO;
+                    cycle->master    = slot;
+                    cycle->psubSlot  = (cycle->master * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO + cycle_tx_ss(cycle)) % CYCLE_MODULO;
                     cycle->masterAge = 0;
                     cycle->slaveAge  = 0;
                     cycle->cycle     = 0;
@@ -469,7 +470,7 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
                 if (!cycle->isSlave){ // set it once or reset
                     cycle_reset(cycle);
                     cycle->master   = slot;
-                    cycle->psubSlot = ((cycle->slot-1) * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO +cycle_rx_ss(cycle)) % CYCLE_MODULO;
+                    cycle->psubSlot = ((slot+1) * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO +cycle_rx_ss(cycle)) % CYCLE_MODULO;
                     cycle->masterAge= 0;
                     cycle->slaveAge = 0;
                     cycle->cycle    = 0;
@@ -664,8 +665,10 @@ static void cycle_age_role(cycle_t *cycle) {
     }
     // Clear both ages, not just the one that ran dry: the role is gone, so the
     // next election has to start from a clean watchdog either way.
-    cycle->masterAge = 0;
-    cycle->slaveAge = 0;
+    if (cycle->role ==MASTER){
+    	cycle->masterAge = 0;
+
+    }
     cycle_reset_role(cycle);
     cycle_set_state(cycle, SYNCHRONIZE);
 }
@@ -681,7 +684,7 @@ void cycle_increment(cycle_t *cycle) {
     if (cycle->sync_state >= SYNCHRONIZE_READY) {
         if (cycle->psubSlot > 0) {
             if (cycle->role == MASTER)
-                cycle->subSlot = (cycle->slot * CYCLE_SUB_SLOT_CNT) - 1;
+                cycle->subSlot = (cycle->master * CYCLE_SUB_SLOT_CNT) - 1;
             else if (cycle->role == SLAVE) {
                 cycle->subSlot = cycle->psubSlot;
             } else {
