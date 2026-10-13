@@ -163,7 +163,6 @@ char *cycle_string(cycle_t *cycle) {
     return rStr;
 }
 
-// Return Char array with actual cycle and the given text
 char *cycle_text_char(cycle_t *cycle, const char *text) {
     // clang-format off
     if (!cycle) return DEFAULT_CHAR_NULL;
@@ -207,6 +206,25 @@ em_msg cycle_text_print_s(cycle_t *cycle, const char *text, char *str) {
     return EM_OK;
 };
 
+em_msg cycle_text_print_v(cycle_t *cycle, const char *text, void *data) {
+    char uint32[] = "%d";
+    char x32[] = "%x";
+    em_msg res = EM_ERR;
+    // clang-format off
+    if (!cycle) return res;
+    if (!cycle->init) return res;
+    if (!text) return res;
+    // clang-format on
+    char buf[TX_BUFFER_SIZE];
+    if (strstr(text, uint32) != NULL) {
+        snprintf(buf, TX_BUFFER_SIZE, text, *(uint32_t *)data);
+    } else if (strstr(text, x32) != NULL) {
+        snprintf(buf, TX_BUFFER_SIZE, text, *(uint32_t *)data);
+    }
+    char *line = cycle_text_char(cycle, text);
+    printf("%s%s" NL, line, buf);
+    return EM_OK;
+}
 
 int8_t cycle_act_slot(cycle_t *cycle) {
     em_msg res = EM_ERR;
@@ -634,7 +652,7 @@ static void cycle_age_role(cycle_t *cycle) {
         break;
     case SLAVE:
         age = &cycle->slaveAge;
-        limit = In eimne;
+        limit = CYCLE_SLAVE_KEEP_ALIVE_CYCLE_CNT;
         break;
     default:
         // No role to lose -- nothing ages until the next election.

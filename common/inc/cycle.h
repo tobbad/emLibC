@@ -106,7 +106,6 @@ char *cycle_string(cycle_t *cycle);
 char *cycle_text_char(cycle_t *cycle, const char *text);
 em_msg cycle_text_print(cycle_t *cycle, const char *text);
 em_msg cycle_text_print_s(cycle_t *cycle, const char *text, char *str);
-em_msg cycle_text_print_v(cycle_t *cycle, const char *text, void *str);
 int8_t cycle_act_slot(cycle_t *cycle);
 int8_t cycle_act_sub_slot(cycle_t *cycle);
 uint16_t cycle_cycle(cycle_t *cycle);
