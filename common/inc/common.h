@@ -129,6 +129,7 @@ typedef struct idxa2str_s {
 } idxa2str_t;
 
 extern idxa2str_t synca2str;
+extern char cBuf[];
 /*
  * Function to serialize the content of buffer as neaty formated
  * string in out. Format is:

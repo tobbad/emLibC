@@ -28,6 +28,7 @@ static idx2str_t sync2str[] = {
 idxa2str_t synca2str = {.cnt = ELCNT(sync2str), .entry = (idx2str_t *)&sync2str};
 #define ASCIHEX_LEN 16
 char ascihex[ASCIHEX_LEN] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+char cBuf[TX_BUFFER_SIZE];
 
 char nibble2char(uint8_t nr){
     nr &= 0x0f;
