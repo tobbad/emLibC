@@ -31,12 +31,12 @@ typedef struct cycle_s {
     int8_t rx_ss;
     int8_t postrx;
     dev_role_e role;
-    uint16_t ssCnt;    // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
     int8_t kaCnt;      // Set Keep alive counter
     int8_t _kaCnt;     // Keep alive counter
     uint32_t timerCNT; // MCU cycle count when cycle count was set
-    bool doMeasure;
-    bool cntErrror;
+    uint16_t ssCnt[RADIO_CNT];    // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
+    bool doMeasure[RADIO_CNT];
+    bool cntErrror[RADIO_CNT];
     system_state_e sync_state;
     bool init;
     bool set; // is set when cycle was finished
@@ -81,10 +81,10 @@ em_msg cycle_init(cycle_t *cycle, int8_t tx_ss, int8_t rx_ss, uint8_t postrx, ui
     cycle->timer    = htim;
     cycle->subSlot  = 0;
     cycle->slot     = SLOT_NOT_SET;
-    cycle->cntErrror= 0;
     cycle->sync_state= SYNC_RESET;
     cycle->init = true;
-    cycle_sscnt_init(cycle);
+    cycle_sscnt_init(cycle, RADIO_RX);
+    cycle_sscnt_init(cycle, RADIO_TX);
     cycle_reset_ka(cycle);
     cycle_reset(cycle);
     cycle_update(cycle);
@@ -588,13 +588,14 @@ int16_t cycle_difference(cycle_t *cycle, int8_t rxSlot) {
     return ((above < below) ? above : (int16_t)-below);
 }
 
-void cycle_sscnt_init(cycle_t *cycle) {
+void cycle_sscnt_init(cycle_t *cycle, cycle_measure_e dir) {
     if (!cycle)
         return;
     if (!cycle->init)
         return;
-    cycle->ssCnt = 0;
-    cycle->doMeasure = false;
+    cycle->cntErrror[dir] = 0;
+    cycle->ssCnt[dir]     = 0;
+    cycle->doMeasure[dir] = false;
 }
 /*
  *  Measure how many subslot past between cycle_sscnt_start and
@@ -602,30 +603,30 @@ void cycle_sscnt_init(cycle_t *cycle) {
  *  If an overflow occured on this int8_t value cycle_sscnt_get
  *  returns EM_ERR otherwise a value >=0
  */
-void cycle_sscnt_start(cycle_t *cycle) {
+void cycle_sscnt_start(cycle_t *cycle, cycle_measure_e dir) {
     if (!cycle)
         return;
     if (!cycle->init)
         return;
-    assert(cycle->doMeasure != true);
-    cycle->doMeasure = true;
+    if (dir>=RADIO_CNT) return;
+    cycle->doMeasure[dir] = true;
 }
 
-void cycle_sscnt_stop(cycle_t *cycle) {
+void cycle_sscnt_stop(cycle_t *cycle, cycle_measure_e dir) {
     if (!cycle)
         return;
     if (!cycle->init)
         return;
-    cycle->doMeasure = false;
+    cycle->doMeasure[dir] = false;
 }
 
-uint16_t cycle_sscnt_get(cycle_t *cycle) {
+uint16_t cycle_sscnt_get(cycle_t *cycle, cycle_measure_e dir) {
     if (!cycle)
         return -1;
     if (!cycle->init)
         return -1;
-    if (!cycle->cntErrror) {
-        return cycle->ssCnt;
+    if (!cycle->cntErrror[dir]) {
+        return cycle->ssCnt[dir];
     }
     return EM_ERR;
 };
@@ -704,11 +705,18 @@ void cycle_increment(cycle_t *cycle) {
         //stateled_set(cycle->sSlot);
         stateled_toggle_pin(ss_toggle);
 #endif
-        if (cycle->doMeasure) {
-            int8_t lss = cycle->ssCnt;
-            cycle->ssCnt++;
-            if (cycle->ssCnt < lss) {
-                cycle->cntErrror = true;
+        if (cycle->doMeasure[RADIO_RX]) {
+            int8_t lss = cycle->ssCnt[RADIO_RX];
+            cycle->ssCnt[RADIO_RX]++;
+            if (cycle->ssCnt[RADIO_RX] < lss) {
+                cycle->cntErrror[RADIO_RX] = true;
+            }
+        }
+        if (cycle->doMeasure[RADIO_TX]) {
+            int8_t lss = cycle->ssCnt[RADIO_TX];
+            cycle->ssCnt[RADIO_TX]++;
+            if (cycle->ssCnt[RADIO_TX] < lss) {
+                cycle->cntErrror[RADIO_RX]  = true;
             }
         }
         if (cycle->actSlot != cycle->lSlot) {

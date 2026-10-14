@@ -30,6 +30,12 @@ typedef enum {
     SS_CNT,
 } dev_role_e;
 
+typedef enum {
+	RADIO_TX,
+	RADIO_RX,
+	RADIO_CNT
+} cycle_measure_e;
+
 #define SLOT_NOT_SET ((int8_t)-1)
 #define CYCLE_SUB_SLOT_POW2 4
 #define CYCLE_SUB_SLOT_CNT (1 << CYCLE_SUB_SLOT_POW2)
@@ -80,11 +86,11 @@ typedef struct cycle_s {
     int8_t rx_ss;
     int8_t postrx;
     dev_role_e role;
-    uint16_t ssCnt;    // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
     int8_t kaCnt;      // Set Keep alive counter
     int8_t _kaCnt;     // Keep alive counter
     uint32_t timerCNT; // MCU cycle count when cycle count was set
-    bool doMeasure;
+    uint16_t ssCnt[RADIO_CNT];    // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
+    bool doMeasure[RADIO_CNT];
     bool cntErrror;
     system_state_e sync_state;
     bool init;
@@ -95,7 +101,6 @@ typedef struct cycle_s {
 typedef struct cycle_s cycle_t;
 #endif
 extern cycle_t cycle;
-
 em_msg cycle_reset(cycle_t *cycle);
 em_msg cycle_init(cycle_t *cycle, int8_t master_ss, int8_t slave_ss, uint8_t postrx, uint8_t kaCnt, TIM_HandleTypeDef *htim);
 em_msg cycle_timer_add(cycle_t *cycle, int8_t add);
@@ -131,10 +136,10 @@ uint8_t cycle_postrx(cycle_t *cycle);
 int16_t cycle_difference(cycle_t *cycle, int8_t rxSlot);
 void cycle_increment(cycle_t *cycle);
 bool cycle_ask_set(cycle_t *cycle);
-void cycle_sscnt_init(cycle_t *cycle);
-void cycle_sscnt_start(cycle_t *cycle);
-void cycle_sscnt_stop(cycle_t *cycle);
-uint16_t cycle_sscnt_get(cycle_t *cycle);
+void cycle_sscnt_init(cycle_t *cycle, cycle_measure_e dir);
+void cycle_sscnt_start(cycle_t *cycle, cycle_measure_e dir);
+void cycle_sscnt_stop(cycle_t *cycle, cycle_measure_e dir);
+uint16_t cycle_sscnt_get(cycle_t *cycle, cycle_measure_e dir);
 em_msg cycle_print(cycle_t *cycle, char *title);
 
 #ifdef __cplusplus

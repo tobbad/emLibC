@@ -109,6 +109,8 @@ em_msg state_set_state(const state_t *from, state_t *to) {
     if (state_check(to)) return res;
     if (state_check(from)) return res;
     // clang-format on
+    to->first = from->first;
+    to->cnt   = from->cnt;
     for (uint8_t oi = from->first, ii = to->first; oi < from->first + from->cnt; oi++, ii++) {
         key_state_e fstate = state_get(from, oi);
         state_set(to, ii, fstate);

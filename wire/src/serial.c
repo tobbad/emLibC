@@ -89,10 +89,10 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
         return EM_ERR;
     sio_t *init = dev;
     memset(&isio, 0, sizeof(isio_t));
-    isio.uart = init->uart;
+    isio.uart  = init->uart;
     isio.cycle = init->cycle;
-    isio.mode = init->mode;
-    isio.devh = dev_type;
+    isio.mode  = init->mode;
+    isio.devh  = dev_type;
     isio.buffer[SIO_RX] = buffer_new_buffer_t(init->buffer[SIO_RX]);
     isio.buffer[SIO_TX] = buffer_new_buffer_t(init->buffer[SIO_TX]);
     state_init(&isio.state);
