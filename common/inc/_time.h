@@ -9,8 +9,11 @@
 #define COMMON_INC__TIME_H_
 #include "common.h"
 #include "cycle.h"
-
+#if defined(STM32L053xx)
+#define TIME_MEAS_CNT 2
+#else
 #define TIME_MEAS_CNT 10
+#endif
 #define TIME_MEAS_CHAR_PER_LINE 20
 #define TIME_MEAS_TIME_FIELD_LEN 12
 #define TIME_DEV_CNT 10

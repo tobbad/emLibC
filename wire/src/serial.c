@@ -51,6 +51,7 @@
 #include "tinyUSB.h"
 #endif
 #endif
+
 #if defined(STM32F303xC)
 #include "stm32f3xx.h"
 #elif defined(STM32F407xx) || defined(STM32F401xE)
@@ -59,6 +60,8 @@
 #include "stm32h7xx.h"
 #elif defined(STM32L476xx) || defined(STM32L432xx) || defined(STM32L412xx) || defined(STM32L475xx)
 #include "stm32l4xx.h"
+#elif defined(STM32L053xx)
+#include "stm32l0xx.h"
 #else
 #error Undefined platform
 #endif
@@ -113,7 +116,7 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     serial_mode_set(isio.mode | USE_DMA_RX);
     srxhdl = time_new("srxhdl");
     stxhdl = time_new("stxhdl");
-    time_set_mode(stxhdl, serial_mode_get());
+    time_set_mode(stxhdl, (serial_mode_get() & ONE_SHOT) ? ONESHOT : 0);
     HAL_UARTEx_ReceiveToIdle_DMA(isio.uart, (uint8_t *)rx_buf, RX_BUFFER_SIZE);
     // we could set the output buffer size to 0:
     // setbuf(stdout, NULL);

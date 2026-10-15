@@ -10,7 +10,14 @@
 #include "serial.h"
 #include <inttypes.h>
 #define LINE_CHAR 10
+/* Cortex-M0/M0+ (ARMv6-M, z.B. STM32L0) haben keinen DWT->CYCCNT.
+ * Dort wird die Zeit aus HAL-Tick (ms) + SysTick->VAL (Sub-ms) gebildet. */
+#if defined(__CORTEX_M) && (__CORTEX_M < 3U)
+#define TIME_USE_SYSTICK
+#define NOW time_systick_ns()
+#else
 #define NOW (DWT->CYCCNT * _time.ccnt2ns)
+#endif
 
 typedef struct time_meas_s {
     uint32_t tick_start;
@@ -36,7 +43,7 @@ typedef struct time_single_s {
     int64_t last_ns; // This is set, when maximal baudrate was achived
     float   max_baud;
     int32_t max_cnt;
-    print_e mode;
+    mode_e mode;
     uint8_t name[LINE_CHAR];
 } time_single_t;
 
@@ -55,6 +62,20 @@ typedef struct timem_s {
 
 timem_t _time;
 
+#ifdef TIME_USE_SYSTICK
+static int64_t time_systick_ns(void) {
+    uint32_t t0, t1, val;
+    /* Tick und VAL sind nicht atomar lesbar: wiederholen, falls dazwischen
+       ein SysTick-Ueberlauf (HAL_IncTick) stattgefunden hat. */
+    do {
+        t0 = HAL_GetTick();
+        val = SysTick->VAL;
+        t1 = HAL_GetTick();
+    } while (t0 != t1);
+    return (int64_t)t0 * 1000000 + (int64_t)((SysTick->LOAD - val) * _time.ccnt2ns);
+}
+#endif
+
 em_msg time_check_hdl(time_handle_t hdl) {
     /* hdl indiziert _time.time[] (Größe TIME_DEV_CNT) -- strikt begrenzen.
      * (Frühere bitCnt==1-Klausel ließ Einzelbit-Handles >= TIME_DEV_CNT durch
@@ -66,13 +87,21 @@ em_msg time_check_hdl(time_handle_t hdl) {
 }
 
 void time_init() {
+#ifndef TIME_USE_SYSTICK
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
     DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+#endif
     memset(&_time, 0, sizeof(timem_t));
     for (uint8_t hdl = 0; hdl < TIME_DEV_CNT; hdl++) {
         time_reset(hdl);
     }
     _time.clk_Hz = HAL_RCC_GetHCLKFreq();
+#ifdef TIME_USE_SYSTICK
+    /* CLKSOURCE=0: SysTick laeuft mit HCLK/8 */
+    if ((SysTick->CTRL & SysTick_CTRL_CLKSOURCE_Msk) == 0) {
+        _time.clk_Hz /= 8;
+    }
+#endif
     float div = _time.clk_Hz;
     _time.ccnt2ns = 1000000000 / div;
     _time.init = true;
@@ -243,7 +272,7 @@ void time_stop(time_handle_t hdl, uint8_t *ptr) {
             _time.time[hdl].measurement[_time.time[hdl].idx].tick_start;
         _time.time[hdl].idx =
             _time.time[hdl].max + (_time.time[hdl].idx + 1 - _time.time[hdl].max) % (TIME_MEAS_CNT - _time.time[hdl].max);
-        if ((_time.time[hdl].idx == 0) && (_time.time[hdl].mode & ONE_SHOT)) {
+        if ((_time.time[hdl].idx == 0) && (_time.time[hdl].mode & ONESHOT)) {
             _time.time[hdl].idx = -1;
             _time.doLoop = false;
         }

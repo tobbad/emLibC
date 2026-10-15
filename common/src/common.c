@@ -13,7 +13,10 @@
 #include <string.h>
 #include "assert.h"
 #ifndef UNIT_TEST
+#if defined(__CORTEX_M) && (__CORTEX_M < 3U)
+#else
 #include "core_cm4.h"
+#endif
 #include "hal_port.h"
 #endif
 

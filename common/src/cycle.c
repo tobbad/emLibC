@@ -11,7 +11,23 @@
 #ifndef UNIT_TEST
 #include "options.h"
 #include "stateled.h"
+
+#if defined(STM32F303xC)
+#include "stm32f4xx_hal_tim.h"
+#elif defined(STM32F407xx) || defined(STM32F401xE)
+#include "stm32f4xx_hal_tim.h"
+#elif defined(STM32H755xx) || defined(STM32H743xx)
+#include "stm32h7xx_hal_tim.h"
+#elif defined(STM32L476xx) || defined(STM32L432xx) || defined(STM32L412xx) || defined(STM32L475xx)
 #include "stm32l4xx_hal_tim.h"
+#elif defined(STM32L053xx)
+#include "stm32l0xx_hal_tim.h"
+#endif
+
+#if defined(STM32L476xx)
+#elif defined(STM32L053xx)
+#include "stm32l0xx_hal_tim.h"
+#endif
 #endif
 #ifndef UNIT_TEST
 typedef struct cycle_s {
