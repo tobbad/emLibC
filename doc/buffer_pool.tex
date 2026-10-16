@@ -1,10 +1,10 @@
 \subsection{buffer\_pool}\label{buffer_pool}
 Das \verb|buffer_pool| Modul verwaltet eine feste Anzahl vorab allozierter
 \verb|buffer_t| (Abschnitt \ref{buffer}) und vergibt sie nach dem
-Belegt\-/Frei\-Prinzip. Anwender holen sich mit \verb|buffer_pool_get()|
+Belegt-/Frei-Prinzip. Anwender holen sich mit \verb|buffer_pool_get()|
 einen freien Puffer und geben ihn nach Gebrauch mit
 \verb|buffer_pool_return()| zurück, statt einzelne Puffer wiederholt zu
-allozieren und freizugeben. Das vermeidet Heap\-Fragmentierung und macht den
+allozieren und freizugeben. Das vermeidet Heap-Fragmentierung und macht den
 Speicherbedarf zur Laufzeit deterministisch.
 
 \subsubsection*{Zustand}
@@ -35,7 +35,7 @@ typedef struct buffer_pool_s {
 \item[\texttt{buffer\_pool\_new(lcnt, charCnt, line\_type, type)}] Erzeugt
   einen Pool aus \verb|lcnt| Puffern zu je \verb|charCnt| Bytes. \verb|line_type|
   legt den Typ der einzelnen Puffer fest (\verb|LINEAR| oder \verb|RING|),
-  \verb|type| die Betriebsart des Pools. Schlägt eine Teil\-Allokation fehl,
+  \verb|type| die Betriebsart des Pools. Schlägt eine Teil-Allokation fehl,
   werden bereits angelegte Puffer wieder freigegeben. Rückgabe:
   \verb|buffer_pool_t *| (\verb|NULL| bei Fehler).
 \item[\texttt{buffer\_pool\_free(pool)}] Gibt alle Puffer und den Pool selbst
@@ -44,15 +44,15 @@ typedef struct buffer_pool_s {
   markiert ihn als \verb|BUFFER_USED|. Rückgabe: \verb|buffer_t *|
   (\verb|NULL|, wenn kein Puffer frei ist).
 \item[\texttt{buffer\_pool\_return(bp, buffer)}] Gibt einen Puffer an den Pool
-  zurück. Geprüft werden der Index\-Bereich, die Zugehörigkeit zum Pool
-  (Pointer\-Vergleich) und dass der Puffer nicht mehr belegt ist; danach wird er
+  zurück. Geprüft werden der Index-Bereich, die Zugehörigkeit zum Pool
+  (Pointer-Vergleich) und dass der Puffer nicht mehr belegt ist; danach wird er
   mit \verb|buffer_reset()| zurückgesetzt. Ein noch als \verb|BUFFER_USED|
   markierter Puffer wird abgelehnt -- der Inhalt muss also zuvor verbraucht
   (z.\,B.\ per \verb|buffer_get()|) worden sein. Rückgabe: \verb|em_msg|
   (\verb|EM_OK| nach erfolgreichem Zurücksetzen, \verb|EM_ERR| bei ungültigem,
   fremdem oder noch belegtem Puffer).
 \item[\texttt{buffer\_pool\_print(bp, title)}] Gibt die Puffer des Pools zu
-  Debug\-Zwecken aus. Rückgabe: \verb|em_msg| (\verb|EM_ERR| bei
-  \verb|NULL|\-Pool, sonst \verb|EM_OK|).
+  Debug-Zwecken aus. Rückgabe: \verb|em_msg| (\verb|EM_ERR| bei
+  \verb|NULL|-Pool, sonst \verb|EM_OK|).
 \end{description}
 \par}

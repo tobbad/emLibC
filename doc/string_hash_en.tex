@@ -1,0 +1,123 @@
+\subsection{string\_hash}\label{string_hash}
+The \verb|string_hash| module is a hash map that maps short strings to an
+\verb|int8_t| value. A key is as long as the name field \verb|line| of a single
+time measurement (\verb|time_meas_t|, Section \ref{time}). A
+typical use is looking up a handle by its name.
+
+The library does not use \verb|malloc|: all nodes live in a fixed-size pool
+inside the map structure. Where the map itself lives (global, as
+\verb|static| or on the stack) is up to the caller. Memory footprint and run
+time are therefore deterministic, and several independent maps are possible.
+
+\subsubsection*{Configuration}
+The sizes can be overridden before including \verb|string_hash.h| (or with
+the compiler option \verb|-D|) (Listing \ref{sh_defines}).
+
+\begin{listing}[H]
+\begin{minted}{C}
+#define SH_SIZE        100  // max. number of entries (node pool)
+#define SH_BUCKET_CNT   37  // number of buckets, prime != 31
+#define SH_KEY_LEN (TIME_MEAS_CHAR_PER_LINE + 1)  // incl. '\0'
+\end{minted}
+\caption{Configuration of \texttt{string\_hash}}
+\label{sh_defines}
+\end{listing}
+
+A key may be at most \verb|SH_KEY_LEN - 1| characters long (20 characters
+with \verb|TIME_MEAS_CHAR_PER_LINE = 20|); longer keys are rejected, not
+truncated. \verb|SH_BUCKET_CNT| must not be a multiple of the hash multiplier
+31, otherwise every character except the last drops out of the hash and the
+entries are spread badly.
+
+On the Cortex-M4 a node takes 28 bytes and a bucket 4 bytes. With the default
+values a map therefore needs
+$100 \cdot 28 + 37 \cdot 4 + 4 = 2952$\,bytes $\approx 2.9$\,kB of RAM.
+
+\subsubsection*{State}
+The map is described by \verb|sh_hash_map_t| (Listing \ref{sh_hash_map_t}).
+\verb|bucket| holds the head of a linked list per bucket, \verb|node| is the
+node pool. A node with \verb|used == false| is free. Collisions are resolved
+by separate chaining; new nodes are inserted at the head of the list.
+
+\begin{listing}[H]
+\begin{minted}{C}
+typedef struct sh_node_s {
+    char key[SH_KEY_LEN];    // key, '\0'-terminated
+    int8_t value;            // associated value
+    bool used;               // node in use
+    struct sh_node_s *next;  // next node in the bucket
+} sh_node_t;
+
+typedef struct sh_hash_map_s {
+    int16_t numOfElements;            // number of entries
+    sh_node_t *bucket[SH_BUCKET_CNT]; // list head per bucket
+    sh_node_t node[SH_SIZE];          // node pool
+} sh_hash_map_t;
+\end{minted}
+\caption{Definition of the \texttt{sh\_hash\_map\_t} structure}
+\label{sh_hash_map_t}
+\end{listing}
+
+\subsubsection*{Hash function}
+The bucket index is a polynomial hash over the characters of the key, computed
+with Horner's scheme, modulo the number of buckets:
+\[
+h = \left(\sum_{i=0}^{n-1} k_i \cdot 31^{\,n-1-i}\right) \bmod
+\mathtt{SH\_BUCKET\_CNT}
+\]
+The computation uses \verb|uint32_t|. Overflow on long keys is intended and
+harmless, since the result only has to be evenly distributed, not exact.
+
+\subsubsection*{API}
+All functions check their pointer arguments and the key length. Invalid
+arguments result in \verb|EM_ERR|.
+
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{sh\_init(mp)}] Resets the map: all buckets empty, all nodes
+  free, \verb|numOfElements = 0|. Must be called before first use. Returns:
+  \verb|em_msg| (\verb|EM_ERR| for a \verb|NULL| map, otherwise
+  \verb|EM_OK|).
+\item[\texttt{sh\_insert(mp, key, value)}] Inserts \verb|key| with
+  \verb|value|. The key is copied into the node, so the caller need not keep
+  it. If \verb|key| already exists, only its value is overwritten. Returns:
+  \verb|em_msg| (\verb|EM_OK| after inserting or overwriting, \verb|EM_ERR|
+  for an invalid argument, a key that is too long, or a full pool).
+\item[\texttt{sh\_search(mp, key, value)}] Looks up \verb|key| and writes
+  the associated value to \verb|*value|. Since every \verb|int8_t| is a valid
+  value, ``not found'' is reported through the return value rather than
+  a reserved value. Returns: \verb|em_msg| (\verb|EM_OK| if found;
+  \verb|EM_ERR| if \verb|key| is missing or an argument is invalid,
+  \verb|*value| is then left unchanged).
+\item[\texttt{sh\_delete(mp, key)}] Removes \verb|key| from its list and
+  returns the node to the pool. Returns: \verb|em_msg| (\verb|EM_OK| after
+  removal, \verb|EM_ERR| if \verb|key| is missing or an argument is invalid).
+\item[\texttt{sh\_hash\_function(key)}] Returns the bucket index of
+  \verb|key|. Not needed for normal use, but helpful in tests. Returns:
+  \verb|uint16_t| (index in the range
+  $0 \ldots \mathtt{SH\_BUCKET\_CNT} - 1$).
+\end{description}
+\par}
+
+\subsubsection*{Example}
+\begin{listing}[H]
+\begin{minted}{C}
+static sh_hash_map_t names;
+int8_t hdl;
+
+sh_init(&names);
+sh_insert(&names, "loop", 3);
+if (sh_search(&names, "loop", &hdl) == EM_OK) {
+    time_start(hdl, 0, NULL, NULL);
+}
+sh_delete(&names, "loop");
+\end{minted}
+\caption{Using \texttt{string\_hash}}
+\label{sh_example}
+\end{listing}
+
+\subsubsection*{Limitations}
+The map is not thread- or interrupt-safe; concurrent access from an ISR and
+the main loop must be protected by the caller. Finding a free node is linear
+in the pool ($O(\mathtt{SH\_SIZE})$); lookup and deletion are $O(1)$ on
+average.

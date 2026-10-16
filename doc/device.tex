@@ -1,12 +1,12 @@
 \subsection{device}\label{device}
-Das \verb|device| Modul stellt eine generische Geräte\-Abstraktion für
-Byte\-orientierte Ein\-/Ausgabe bereit. Ein Gerät wird durch \verb|device_t|
+Das \verb|device| Modul stellt eine generische Geräte-Abstraktion für
+Byte"=orientierte Ein-/Ausgabe bereit. Ein Gerät wird durch \verb|device_t|
 (Listing \ref{device_t}) beschrieben -- eine Tabelle aus Funktionszeigern
 für \verb|open|, \verb|read|, \verb|write|, \verb|ioctrl|, \verb|close| und
-einen \verb|ready_cb|\-Rückruf, ergänzt um anwendungsspezifische
+einen \verb|ready_cb|-Rückruf, ergänzt um anwendungsspezifische
 \verb|user_data|. Konkrete Geräte registrieren sich mit \verb|device_init()|
 und werden anschließend über ein \verb|dev_handle_t| ($\ge 0$ gültig)
-angesprochen; die \verb|device_*|\-Funktionen prüfen das Handle und delegieren
+angesprochen; die \verb|device_*|-Funktionen prüfen das Handle und delegieren
 an die hinterlegten Zeiger. Genutzt wird das Modul u.\,a.\ vom \verb|serial|
 (Abschnitt \ref{serial}, \verb|serial_io|).
 
@@ -23,7 +23,7 @@ typedef struct device_s {
     uint8_t dev_type;
 } device_t;
 \end{minted}
-\caption{Geräte\-Schnittstelle \texttt{device\_t}}
+\caption{Geräte-Schnittstelle \texttt{device\_t}}
 \label{device_t}
 \end{listing}
 
@@ -49,6 +49,6 @@ Maske geforderten Funktionszeiger gesetzt sind.
   (alle Zeiger \verb|NULL|) zurück. Rückgabe: \verb|em_msg| (\verb|EM_OK|,
   bzw.\ \verb|EM_ERR| bei unbekanntem Gerät).
 \item[\texttt{device\_print(hdl)}] Gibt die hinterlegten Zeiger zu
-  Debug\-Zwecken aus. Rückgabe: \verb|void|.
+  Debug-Zwecken aus. Rückgabe: \verb|void|.
 \end{description}
 \par}

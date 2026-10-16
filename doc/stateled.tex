@@ -1,13 +1,13 @@
 \subsection{stateled}\label{stateled}
-Das \verb|stateled| Modul treibt eine Reihe von Status\-LEDs und macht so den
+Das \verb|stateled| Modul treibt eine Reihe von Status-LEDs und macht so den
 Tastenzustand sichtbar. Es bildet die Tastenzustände eines \verb|state_t|
 (Abschnitt \ref{state}) auf LEDs ab: \verb|ON| leuchtet dauerhaft, \verb|OFF|
 ist aus und \verb|BLINKING| blinkt -- der Blinktakt ergibt sich aus
 \verb|cycle_size|. Zusätzlich visualisiert es über den \verb|system_state_e|
 (Abschnitt \ref{common}) den Synchronisationszustand des Geräts. Die LEDs
-werden über ein \verb|gpio_port_t| (Port\-Modul) angesteuert; die Konstante
+werden über ein \verb|gpio_port_t| (Port-Modul) angesteuert; die Konstante
 \verb|REGUAL_STATELD| schaltet zwischen normaler und invertierter Logik
-(aktiv\-low) um.
+(aktiv-low) um.
 
 \begin{listing}
 \begin{minted}{C}
@@ -16,7 +16,7 @@ typedef enum {
     led_fehler, led_normal,
 } stateled_e;
 \end{minted}
-\caption{LED\-Bezeichner \texttt{stateled\_e}}
+\caption{LED-Bezeichner \texttt{stateled\_e}}
 \label{stateled_e}
 \end{listing}
 
@@ -25,8 +25,8 @@ typedef enum {
 \begin{description}
 \item[\texttt{stateled\_init(state, port, cycle\_size, bli\_cnt)}]
   Initialisiert das Modul mit dem anzuzeigenden \verb|state_t|, einem
-  GPIO\-Port (oder der Standardbelegung bei \verb|NULL|), der Zykluslänge für
-  das Blinken und einem Blink\-Zähler; führt zur Kontrolle einen Lauflicht\-Test
+  GPIO-Port (oder der Standardbelegung bei \verb|NULL|), der Zykluslänge für
+  das Blinken und einem Blink-Zähler; führt zur Kontrolle einen Lauflicht-Test
   über alle LEDs aus. Rückgabe: \verb|void|.
 \item[\texttt{stateled\_deinit()}] Deaktiviert das Modul. Rückgabe:
   \verb|void|.
@@ -38,7 +38,7 @@ typedef enum {
   Invertieren eine einzelne LED bzw.\ alle gemeinsam. Rückgabe: \verb|em_msg|
   (\verb|EM_ERR|, wenn nicht initialisiert).
 \item[\texttt{stateled\_set(val)} / \texttt{stateled\_set\_mask(mask)}] Setzen
-  das LED\-Muster direkt bzw.\ legen die aktive Bitmaske fest. Rückgabe:
+  das LED-Muster direkt bzw.\ legen die aktive Bitmaske fest. Rückgabe:
   \verb|em_msg| (\verb|EM_ERR|, wenn nicht initialisiert).
 \item[\texttt{stateled\_iterate()}] Schaltet zyklisch zur nächsten LED weiter
   (Lauflicht). Rückgabe: \verb|void|.

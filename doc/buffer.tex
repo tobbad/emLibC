@@ -6,8 +6,8 @@ Belegung mitführt. Es werden zwei Ausprägungen unterschieden
 \begin{description}
 \item[\texttt{LINEAR}] Ein linearer Puffer; Daten liegen ab dem Anfang des
   Speichers, Schreiben beginnt stets bei Index $0$.
-\item[\texttt{RING}] Ein Ringpuffer; Schreib\- und Lesepositionen laufen
-  über das Speicherende hinaus zyklisch um (\emph{wrap\-around}).
+\item[\texttt{RING}] Ein Ringpuffer; Schreib- und Lesepositionen laufen
+  über das Speicherende hinaus zyklisch um (\emph{wrap-around}).
 \end{description}
 Der Belegungszustand wird über \verb|state_e| ausgedrückt:
 \verb|BUFFER_READY| (frei/leer) bzw. \verb|BUFFER_USED| (enthält Daten,
@@ -61,11 +61,11 @@ typedef struct buffer_s {
 \subsubsection*{Lebenszyklus}
 {\sloppy\emergencystretch=3em
 \begin{description}
-\item[\texttt{buffer\_new(size, type)}] Alloziert eine \verb|buffer_t|\-Struktur
+\item[\texttt{buffer\_new(size, type)}] Alloziert eine \verb|buffer_t|-Struktur
   samt Speicher der Größe \verb|size|. Rückgabe: \verb|buffer_t *| (Zeiger auf
   den Puffer, bzw.\ \verb|NULL| bei \verb|size == 0| oder fehlgeschlagener
   Allokation).
-\item[\texttt{buffer\_new\_buffer\_t(buffer)}] Re\-initialisiert eine bereits
+\item[\texttt{buffer\_new\_buffer\_t(buffer)}] Re-initialisiert eine bereits
   bestehende Struktur: Größe und Typ bleiben erhalten, der Speicher wird neu
   angelegt. Rückgabe: \verb|buffer_t *| (\verb|NULL| bei Fehler).
 \item[\texttt{buffer\_free(buffer)}] Gibt Speicher und Struktur frei. Rückgabe:
@@ -90,7 +90,7 @@ typedef struct buffer_s {
   (\verb|EM_OK| bei Erfolg, \verb|EM_ERR| bei ungültigem Puffer oder
   \verb|*size <= 0|).
 \item[\texttt{buffer\_transfer(from, to)}] Überträgt den Inhalt von \verb|from|
-  nach \verb|to| und unterstützt alle \verb|LINEAR|/\verb|RING|\-Kombinationen.
+  nach \verb|to| und unterstützt alle \verb|LINEAR|/\verb|RING|-Kombinationen.
   Die Kapazität wird \emph{vor} dem Lesen geprüft (transaktional): passt der
   Inhalt nicht, bleibt \verb|from| unangetastet; andernfalls wird \verb|from|
   geleert. Rückgabe: \verb|int16_t| -- die übertragene Länge, bzw.\
@@ -121,13 +121,13 @@ typedef struct buffer_s {
   des Puffers. Rückgabe: \verb|clabel_u *|.
 \item[\texttt{buffer\_get\_till\_end(buffer)}] Liefert einen temporären
   (statischen) \verb|buffer_t|, der den Bereich ab \verb|first| bis zum
-  Speicherende beschreibt -- nützlich für \verb|RING|\-Zugriffe ohne Umlauf.
+  Speicherende beschreibt -- nützlich für \verb|RING|-Zugriffe ohne Umlauf.
   Rückgabe: \verb|buffer_t *|.
 \item[\texttt{buffer\_check(buffer, reduced)}] Prüft die Struktur auf
   Gültigkeit (Nullzeiger, \verb|size == 0|, und -- außer bei \verb|reduced| --
   \verb|mem == NULL|). Rückgabe: \verb|em_msg| (\verb|EM_OK| bei gültiger
   Struktur, sonst \verb|EM_ERR|).
 \item[\texttt{buffer\_print(buffer, title)}] Gibt die Felder und den Inhalt zu
-  Debug\-Zwecken aus. Rückgabe: \verb|void|.
+  Debug-Zwecken aus. Rückgabe: \verb|void|.
 \end{description}
 \par}

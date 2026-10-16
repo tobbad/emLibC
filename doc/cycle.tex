@@ -1,10 +1,10 @@
 \subsection{cycle}\label{cycle}
-Das \verb|cycle| Modul bildet die zeitliche Grundstruktur des Slot\-basierten
+Das \verb|cycle| Modul bildet die zeitliche Grundstruktur des Slot-basierten
 Funkprotokolls ab. Ein vollständiger \emph{Cycle} wird in \verb|SLOT_CNT|
-Slots unterteilt, und jeder Slot wiederum in \verb|SUB_SLOT_CNT| Sub\-Slots.
+Slots unterteilt, und jeder Slot wiederum in \verb|SUB_SLOT_CNT| Sub-Slots.
 Mit den Standardwerten aus \verb|system_definitions.h| (Listing
-\ref{cycle_defines}) ergibt das $16$ Slots zu je $8$ Sub\-Slots, also $128$
-Sub\-Slots pro Cycle. Jedes Gerät besitzt einen eigenen, ungeraden Slot
+\ref{cycle_defines}) ergibt das $16$ Slots zu je $8$ Sub-Slots, also $128$
+Sub-Slots pro Cycle. Jedes Gerät besitzt einen eigenen, ungeraden Slot
 ($1, 3, 5, \dots, \mathtt{f}$) und darf nur in diesem senden; die übrigen
 Slots dienen dem Empfang der anderen Teilnehmer.
 
@@ -18,16 +18,16 @@ Slots dienen dem Empfang der anderen Teilnehmer.
 #define SLOT_MASK      (SLOT_CNT-1)          // 0x0F
 #define SLOT_SHIFT     (SUB_SLOT_POW2)       // 3
 \end{minted}
-\caption{Slot\-Konstanten aus \texttt{system\_definitions.h}}
+\caption{Slot-Konstanten aus \texttt{system\_definitions.h}}
 \label{cycle_defines}
 \end{listing}
 
 \subsubsection*{Zustand}
 Der gesamte Zustand wird in der Struktur \verb|cycle_t| (Listing
 \ref{cycle_t}) gehalten. Das zentrale Feld ist der monoton hochzählende
-Zähler \verb|subSlot| (Bereich $0 \dots 127$), in dem Slot\- und
-Sub\-Slot\-Index \emph{bitweise gepackt} sind: die unteren
-\verb|SUB_SLOT_POW2| Bits enthalten den Sub\-Slot, die darüber liegenden
+Zähler \verb|subSlot| (Bereich $0 \dots 127$), in dem Slot- und
+Sub-Slot-Index \emph{bitweise gepackt} sind: die unteren
+\verb|SUB_SLOT_POW2| Bits enthalten den Sub-Slot, die darüber liegenden
 \verb|SLOT_POW2| Bits den Slot. Die beiden Makros aus Listing
 \ref{cycle_macros} extrahieren die beiden Anteile, ohne dass an anderer
 Stelle gerechnet werden muss:
@@ -36,7 +36,7 @@ Stelle gerechnet werden muss:
 \mathtt{ACT\_SLOT}      &= (\mathtt{subSlot} \gg \mathtt{SLOT\_SHIFT})\ \&\ \mathtt{SLOT\_MASK}
 \end{align*}
 Die Felder \verb|actSlot| und \verb|sSlot| sind zwischengespeicherte Kopien
-des aktuellen Slots bzw. Sub\-Slots, die bei jedem Fortschalten neu gesetzt
+des aktuellen Slots bzw. Sub-Slots, die bei jedem Fortschalten neu gesetzt
 werden, damit sie ohne erneute Bitoperation zur Verfügung stehen.
 \verb|cycle| zählt die vollständig durchlaufenen Cycles ($16$ Bit, läuft
 bei $65535$ über) und \verb|init| markiert die erfolgte Initialisierung.
@@ -60,7 +60,7 @@ typedef struct cycle_s {
 #define ACT_SUB_SLOT(_cycle)  (((_cycle)->subSlot) & SUB_SLOT_MASK)
 #define ACT_SLOT(_cycle)      (((_cycle)->subSlot >> SLOT_SHIFT) & SLOT_MASK)
 \end{minted}
-\caption{Makros zum Extrahieren von Slot und Sub\-Slot}
+\caption{Makros zum Extrahieren von Slot und Sub-Slot}
 \label{cycle_macros}
 \end{listing}
 
@@ -82,25 +82,25 @@ typedef struct cycle_s {
   ungerade Werte im Bereich $0 < \mathtt{slot} \le \mathtt{SLOT\_CNT}$.
   Rückgabe: \verb|int8_t| -- der Slot oder $-1$.
 \item[\texttt{cycle\_check(cycle, rxSlot, ss)}] Prüft, ob ein vom Slot
-  \verb|rxSlot| empfangenes Frame zur aktuellen Cycle\-Position passt. Das
+  \verb|rxSlot| empfangenes Frame zur aktuellen Cycle-Position passt. Das
   Ergebnis ist wahr, wenn der aktuelle Slot gleich \verb|rxSlot| ist, oder
   wenn \verb|rxSlot| der unmittelbar \emph{folgende} Slot ist und der aktuelle
-  Sub\-Slot kleiner als die Toleranz \verb|ss| ist, oder wenn \verb|rxSlot|
+  Sub-Slot kleiner als die Toleranz \verb|ss| ist, oder wenn \verb|rxSlot|
   der unmittelbar \emph{vorangehende} Slot ist und weniger als \verb|ss|
-  Sub\-Slots bis zum Slotende verbleiben (Slotindizes jeweils modulo
+  Sub-Slots bis zum Slotende verbleiben (Slotindizes jeweils modulo
   \verb|SLOT_CNT|). Das Toleranzfenster \verb|ss| lässt damit auch Frames der
   direkten Nachbarslots zu. Rückgabe: \verb|bool| (\verb|false| bei Nullzeiger
   oder ungültigem \verb|rxSlot|).
-\item[\texttt{cycle\_difference(cycle, rxSlot)}] Liefert den vorzeichen\-
-  behafteten Abstand in Sub\-Slots von der aktuellen Position \verb|subSlot|
+\item[\texttt{cycle\_difference(cycle, rxSlot)}] Liefert den
+  vorzeichenbehafteten Abstand in Sub-Slots von der aktuellen Position \verb|subSlot|
   zum \emph{Fenster} des Slots \verb|rxSlot|. Dieses Fenster umfasst
-  \verb|SUB_SLOT_CNT| Sub\-Slots mit der unteren Ecke
+  \verb|SUB_SLOT_CNT| Sub-Slots mit der unteren Ecke
   $\mathtt{rxSlot} \cdot \mathtt{SUB\_SLOT\_CNT}$ und der oberen Ecke
   $\mathtt{rxSlot} \cdot \mathtt{SUB\_SLOT\_CNT} + \mathtt{SUB\_SLOT\_CNT} - 1$.
   Innerhalb des Fensters ist der Abstand $0$; unterhalb der unteren Ecke ist
   er der (negative) Abstand zu dieser Ecke, oberhalb der oberen Ecke der
   (positive) Abstand dahinter. Gemessen wird auf dem kürzesten Weg über den
-  Ring aus $\mathtt{SUB\_SLOT\_CNT} \cdot \mathtt{SLOT\_CNT} = 128$ Sub\-Slots,
+  Ring aus $\mathtt{SUB\_SLOT\_CNT} \cdot \mathtt{SLOT\_CNT} = 128$ Sub-Slots,
   weshalb \verb|rxSlot|~$0$ und \verb|rxSlot|~$=\mathtt{SLOT\_CNT}$ dasselbe
   Ergebnis liefern. Mit der vorzeichenbehafteten Distanz zur unteren Ecke
   \[
@@ -123,7 +123,7 @@ typedef struct cycle_s {
   Format \verb|(c:<cycle>, <slot>, <subSlot>)| in einem statischen Puffer.
   Rückgabe: \verb|char *| (\verb|NULL| bei Nullzeiger).
 \item[\texttt{cycle\_print(cycle, title)}] Gibt alle Felder zeilenweise aus
-  (Debug\-Hilfe, vgl. \verb|xx_print| Konvention in der Einführung). Rückgabe:
+  (Debug-Hilfe, vgl. \verb|xx_print| Konvention in der Einführung). Rückgabe:
   \verb|em_msg| (\verb|EM_ERR| bei Nullzeiger oder nicht initialisierter
   Struktur, sonst \verb|EM_OK|).
 \end{description}
@@ -131,8 +131,8 @@ typedef struct cycle_s {
 \subsubsection*{Fortschalten des Cycles}
 {\sloppy\emergencystretch=3em
 Der Zähler wird ausschliesslich über \verb|cycle_increment()| weitergeschaltet,
-typischerweise einmal pro Sub\-Slot\-Tick. Die Funktion ist an die
-Synchronisations\-Zustandsmaschine (\verb|system_state_e|) gekoppelt:
+typischerweise einmal pro Sub-Slot-Tick. Die Funktion ist an die
+Synchronisations-Zustandsmaschine (\verb|system_state_e|) gekoppelt:
 
 \begin{itemize}
 \item Im Zustand \verb|SYNCHRONIZE| wird der Übergang nach
@@ -143,12 +143,12 @@ Synchronisations\-Zustandsmaschine (\verb|system_state_e|) gekoppelt:
   \verb|actSlot| und \verb|sSlot| werden aus dem neuen Wert nachgeführt.
 \item In den Zuständen \verb|SYNCHRONIZE_DOING|, \verb|SYNCHRONIZE_READY| und
   \verb|SYNCHRONIZE_ERROR| wird ein Slotwechsel erkannt. Beim Übergang auf
-  Slot $0$ wird der Cycle\-Zähler \verb|cycle| genau einmal pro Umlauf erhöht
+  Slot $0$ wird der Cycle-Zähler \verb|cycle| genau einmal pro Umlauf erhöht
   (über das Flag \verb|cycle_once| entprellt).
 \end{itemize}
 \par}
 
 \noindent Da \verb|cycle_increment()| zuerst fortschaltet und erst danach die
 Felder meldet, liefert der erste Aufruf nach einem Reset bereits den nächsten
-Sub\-Slot. Ist \verb|OPTION_SHOW_TIMING| aktiv, werden zusätzlich Status\-LEDs
+Sub-Slot. Ist \verb|OPTION_SHOW_TIMING| aktiv, werden zusätzlich Status-LEDs
 zur Laufzeitmessung getoggelt.

@@ -1,19 +1,19 @@
 \subsection{keyboard}\label{keyboard}
 Das \verb|keyboard| Modul definiert eine generische, polymorphe
 Schnittstelle für Eingabegeräte (\glqq Tastaturen\grqq{}). Jedes konkrete
-Gerät stellt eine \verb|kybd_t|\-Vtable aus Funktionszeigern bereit
+Gerät stellt eine \verb|kybd_t|-Vtable aus Funktionszeigern bereit
 (Listing \ref{kybd_t}) und liefert seinen Zustand als \verb|state_t|
 (bis zu \verb|MAX_BUTTON_CNT| Tastenzustände \verb|OFF|/\verb|BLI|/\verb|ON|
-mit Beschriftungen und einem \emph{dirty}\-Flag). Konkrete Implementierungen
+mit Beschriftungen und einem \emph{dirty}-Flag). Konkrete Implementierungen
 sind \verb|xpad| (Abschnitt \ref{xpad}), \verb|terminal| (Abschnitt
 \ref{terminal}) und \verb|serial| (Abschnitt \ref{serial}).
 
 Der Dispatcher verwaltet eine interne Tabelle registrierter Geräte.
 \verb|keyboard_init()| trägt ein Gerät ein und liefert ein
 \verb|dev_handle_t| ($> 0$); über dieses Handle leiten die übrigen
-\verb|keyboard_*|\-Funktionen ihren Aufruf an die jeweilige Vtable weiter.
+\verb|keyboard_*|-Funktionen ihren Aufruf an die jeweilige Vtable weiter.
 So bleibt der Anwendungscode unabhängig davon, ob die Eingabe von einer
-GPIO\-Matrix, einer seriellen Konsole oder USB stammt.
+GPIO-Matrix, einer seriellen Konsole oder USB stammt.
 
 \begin{listing}
 \begin{minted}{C}
@@ -32,13 +32,13 @@ typedef struct kybd_s {
     uint8_t first;  // Index der ersten Taste
 } kybd_t;
 \end{minted}
-\caption{Geräte\-Schnittstelle \texttt{kybd\_t}}
+\caption{Geräte-Schnittstelle \texttt{kybd\_t}}
 \label{kybd_t}
 \end{listing}
 
 \subsubsection*{API}
-Die \verb|keyboard_*|\-Funktionen prüfen das Handle und delegieren an den
-gleichnamigen Vtable\-Eintrag des registrierten Geräts.
+Die \verb|keyboard_*|-Funktionen prüfen das Handle und delegieren an den
+gleichnamigen Vtable-Eintrag des registrierten Geräts.
 {\sloppy\emergencystretch=3em
 \begin{description}
 \item[\texttt{keyboard\_init(kybd, device)}] Registriert die Vtable
@@ -54,9 +54,9 @@ gleichnamigen Vtable\-Eintrag des registrierten Geräts.
   Gerätezustand. Rückgabe: \verb|void|.
 \item[\texttt{keyboard\_diff(dev, ref, diff)}] Bestimmt die Differenz des
   Gerätezustands gegenüber \verb|ref|. Rückgabe: \verb|em_msg| (Ergebnis der
-  Geräte\-Funktion; \verb|EM_ERR| bei ungültigem Handle).
+  Geräte-Funktion; \verb|EM_ERR| bei ungültigem Handle).
 \item[\texttt{keyboard\_isdirty(dev)} / \texttt{keyboard\_undirty(dev)}] Fragt
-  das Änderungs\-Flag ab (\verb|bool|) bzw.\ setzt es zurück (\verb|void|).
+  das Änderungs-Flag ab (\verb|bool|) bzw.\ setzt es zurück (\verb|void|).
 \item[\texttt{keyboard\_reset(dev)}] Setzt das Gerät in den Ausgangszustand.
   Rückgabe: \verb|void|.
 \end{description}
@@ -64,6 +64,6 @@ gleichnamigen Vtable\-Eintrag des registrierten Geräts.
 
 \noindent Zur Anzeige stellt das Modul die Beschriftungstabellen
 \verb|key_state_3c| und \verb|key_state_2c| bereit, die die Zustände
-\verb|OFF|/\verb|BLI|/\verb|ON| in drei\- bzw.\ zweispaltige Texte abbilden.
-Die Konstanten \verb|SCAN_MS| und \verb|SETTLE_TIME_MS| legen Abtast\- und
+\verb|OFF|/\verb|BLI|/\verb|ON| in drei- bzw.\ zweispaltige Texte abbilden.
+Die Konstanten \verb|SCAN_MS| und \verb|SETTLE_TIME_MS| legen Abtast- und
 Einschwingzeiten fest.

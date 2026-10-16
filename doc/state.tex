@@ -47,7 +47,7 @@ typedef struct state_s {
 \end{listing}
 
 \noindent Über die Option \verb|REDUCED_PAYLOAD| (in \verb|emLibC_options.h|)
-existiert alternativ eine bit\-gepackte Variante ($\approx 10$~Byte), die hier
+existiert alternativ eine bit-gepackte Variante ($\approx 10$~Byte), die hier
 deaktiviert ist.
 
 \subsubsection*{Lebenszyklus und Einzeltasten}
@@ -86,12 +86,12 @@ deaktiviert ist.
   Packen bzw.\ entpacken die $16$ Tasten zu je $2$ Bit in einen
   \verb|uint32_t|. Rückgabe: \verb|em_msg| (Setzer) bzw.\ \verb|uint32_t| (die
   gepackten Zustände).
-\item[\texttt{state\_diff(ref, state, diff)}] Bestimmt die tasten\-weise
+\item[\texttt{state\_diff(ref, state, diff)}] Bestimmt die tastenweise
   Differenz (modular, vgl.\ \verb|state_key_diff()|) gegenüber \verb|ref| in
-  \verb|diff|. Rückgabe: \verb|em_msg| (das \emph{dirty}\-Flag).
+  \verb|diff|. Rückgabe: \verb|em_msg| (das \emph{dirty}-Flag).
 \item[\texttt{state\_add(ref, add)}] Wendet \verb|add| als Anzahl von
   Weiterschaltungen auf \verb|ref| an (\verb|BLINKING| $= +1$, \verb|ON| $=
-  +2$). Rückgabe: \verb|em_msg| (das \emph{dirty}\-Flag).
+  +2$). Rückgabe: \verb|em_msg| (das \emph{dirty}-Flag).
 \item[\texttt{state\_merge(in, out)}] Übernimmt geänderte Tasten von \verb|in|
   nach \verb|out| und meldet, ob sich etwas geändert hat. Rückgabe:
   \verb|bool|.
@@ -107,11 +107,11 @@ deaktiviert ist.
   bzw.\ lesen das aktive Tastenfenster. Rückgabe: \verb|em_msg| (Setzer) bzw.\
   \verb|uint8_t| (Getter).
 \item[\texttt{state\_get\_dirty} / \texttt{state\_set\_dirty} /
-  \texttt{state\_set\_undirty}] Verwalten das Änderungs\-Flag
+  \texttt{state\_set\_undirty}] Verwalten das Änderungs-Flag
   (\verb|state_get_dirty| liefert dessen Wert). Rückgabe: \verb|em_msg|
   (\verb|EM_ERR| bei ungültiger Struktur).
 \item[\texttt{state\_print(state, title, doLong, cycle)}] Gibt Beschriftung,
-  Zustände und die Cycle\-Position (Abschnitt \ref{cycle}) zu Debug\-Zwecken
+  Zustände und die Cycle-Position (Abschnitt \ref{cycle}) zu Debug-Zwecken
   aus. Rückgabe: \verb|em_msg| (\verb|EM_ERR| bei ungültiger Struktur, sonst
   \verb|EM_OK|).
 \end{description}
