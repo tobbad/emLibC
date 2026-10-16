@@ -91,7 +91,7 @@ typedef struct cycle_s {
     uint32_t timerCNT; // MCU cycle count when cycle count was set
     uint16_t ssCnt[RADIO_CNT];    // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
     bool doMeasure[RADIO_CNT];
-    bool cntErrror;
+    bool cntErrror[RADIO_CNT];
     system_state_e sync_state;
     bool init;
     bool set; // is set when cycle was finished

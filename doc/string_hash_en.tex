@@ -15,8 +15,8 @@ the compiler option \verb|-D|) (Listing \ref{sh_defines}).
 
 \begin{listing}[H]
 \begin{minted}{C}
-#define SH_SIZE        100  // max. number of entries (node pool)
-#define SH_BUCKET_CNT   37  // number of buckets, prime != 31
+#define SH_SIZE (TIME_DEV_CNT * TIME_MEAS_CNT) // node pool
+#define SH_BUCKET_CNT 37  // number of buckets, prime != 31
 #define SH_KEY_LEN (TIME_MEAS_CHAR_PER_LINE + 1)  // incl. '\0'
 \end{minted}
 \caption{Configuration of \texttt{string\_hash}}
@@ -29,9 +29,14 @@ truncated. \verb|SH_BUCKET_CNT| must not be a multiple of the hash multiplier
 31, otherwise every character except the last drops out of the hash and the
 entries are spread badly.
 
-On the Cortex-M4 a node takes 28 bytes and a bucket 4 bytes. With the default
-values a map therefore needs
-$100 \cdot 28 + 37 \cdot 4 + 4 = 2952$\,bytes $\approx 2.9$\,kB of RAM.
+\verb|SH_SIZE| follows the MCU-dependent values from \verb|_time.h|
+(Section \ref{time}): one line per measurement of all handles, i.e. 100
+entries on the STM32L476 and 20 on the STM32L053.
+
+On both Cortex-M4 and Cortex-M0+ a node takes 28 bytes and a bucket 4 bytes.
+A map therefore needs $\mathtt{SH\_SIZE} \cdot 28 + 37 \cdot 4 + 4$\,bytes,
+i.e. 2952\,bytes ($\approx 2.9$\,kB) on the STM32L476 and 712\,bytes on
+the STM32L053.
 
 \subsubsection*{State}
 The map is described by \verb|sh_hash_map_t| (Listing \ref{sh_hash_map_t}).

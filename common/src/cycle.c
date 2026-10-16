@@ -22,9 +22,6 @@
 #include "stm32l4xx_hal_tim.h"
 #elif defined(STM32L053xx)
 #include "stm32l0xx_hal_tim.h"
-#endif
-
-#if defined(STM32L476xx)
 #elif defined(STM32L053xx)
 #include "stm32l0xx_hal_tim.h"
 #endif
@@ -473,7 +470,7 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, dev_role_e ss_type) {
                     cycle->timerCNT  = 0;
                     cycle_reset(cycle);
                     cycle->master    = rxSlot;
-                    cycle->psubSlot  = (cycle->master * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - cycle_tx_ss(cycle)) % CYCLE_MODULO;
+                    cycle->psubSlot  = (cycle->master * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO + cycle_tx_ss(cycle)) % CYCLE_MODULO;
                     cycle->masterAge = 0;
                     cycle->slaveAge  = 0;
                     cycle->cycle     = 0;

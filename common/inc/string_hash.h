@@ -19,9 +19,10 @@
 extern "C" {
 #endif
 
-// Maximale Anzahl gespeicherter Eintraege
+// Maximale Anzahl gespeicherter Eintraege: eine pro Messzeile aller Handles.
+// Folgt den MCU-abhaengigen Werten aus _time.h (L476: 100, L053: 20).
 #ifndef SH_SIZE
-#define SH_SIZE 100
+#define SH_SIZE (TIME_DEV_CNT * TIME_MEAS_CNT)
 #endif
 // Anzahl Buckets (moeglichst eine Primzahl, aber nicht 31 = Hash-Multiplikator)
 #ifndef SH_BUCKET_CNT

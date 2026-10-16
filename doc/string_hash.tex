@@ -17,8 +17,8 @@ per Compiler-Option \verb|-D|) überschreiben (Listing \ref{sh_defines}).
 
 \begin{listing}[H]
 \begin{minted}{C}
-#define SH_SIZE        100  // max. Anzahl Eintraege (Knoten-Pool)
-#define SH_BUCKET_CNT   37  // Anzahl Buckets, Primzahl != 31
+#define SH_SIZE (TIME_DEV_CNT * TIME_MEAS_CNT) // Knoten-Pool
+#define SH_BUCKET_CNT 37  // Anzahl Buckets, Primzahl != 31
 #define SH_KEY_LEN (TIME_MEAS_CHAR_PER_LINE + 1)  // inkl. '\0'
 \end{minted}
 \caption{Konfiguration von \texttt{string\_hash}}
@@ -31,9 +31,14 @@ abgewiesen und nicht abgeschnitten. \verb|SH_BUCKET_CNT| darf kein
 Vielfaches des Hash-Multiplikators 31 sein, sonst fallen alle Zeichen
 ausser dem letzten aus dem Hash und die Einträge verteilen sich schlecht.
 
-Ein Knoten belegt auf dem Cortex-M4 28 Bytes, ein Bucket 4 Bytes. Mit den
-Standardwerten braucht eine Map damit
-$100 \cdot 28 + 37 \cdot 4 + 4 = 2952$\,Bytes $\approx 2{,}9$\,kB RAM.
+\verb|SH_SIZE| folgt den MCU-abhängigen Werten aus \verb|_time.h|
+(Abschnitt \ref{time}): eine Zeile pro Messung aller Handles, also 100
+Einträge auf dem STM32L476 und 20 auf dem STM32L053.
+
+Ein Knoten belegt auf Cortex-M4 und Cortex-M0+ 28 Bytes, ein Bucket 4 Bytes.
+Eine Map braucht damit $\mathtt{SH\_SIZE} \cdot 28 + 37 \cdot 4 + 4$\,Bytes,
+also 2952\,Bytes ($\approx 2{,}9$\,kB) auf dem STM32L476 und 712\,Bytes auf
+dem STM32L053.
 
 \subsubsection*{Zustand}
 Die Map wird durch \verb|sh_hash_map_t| beschrieben (Listing
