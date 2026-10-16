@@ -343,8 +343,8 @@ void cycle_reset_role(cycle_t *cycle) {
     if (!cycle->init) return;
     // clang-format on
     if (cycle->isSlave){
-    	 cycle->role = NOT_SET;
-    	 cycle->isSlave = false;
+    	 cycle->role     = NOT_SET;
+    	 cycle->isSlave  = false;
     	 cycle->slaveAge = 0;
     }
 }
@@ -437,7 +437,7 @@ em_msg cycle_set_my_slot(cycle_t *cycle, int8_t slot){
 
 }
 
-em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
+em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, dev_role_e ss_type) {
     em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
@@ -467,12 +467,12 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
             if (cycle->role == MASTER) {
                 if (cycle->isMaster) return EM_ERR;
 #ifndef UNIT_TEST
-                cycle->timerCNT = cycle->timer->Instance->CNT;
+//                cycle->timerCNT = cycle->timer->Instance->CNT;
 #endif
                 if (cycle->role  == MASTER){
                     cycle->timerCNT  = 0;
                     cycle_reset(cycle);
-                    cycle->master    = slot;
+                    cycle->master    = rxSlot;
                     cycle->psubSlot  = (cycle->master * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO - cycle_tx_ss(cycle)) % CYCLE_MODULO;
                     cycle->masterAge = 0;
                     cycle->slaveAge  = 0;
@@ -483,13 +483,15 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
                 }
                 res = EM_ERR;
             } else if (cycle->role == SLAVE)  {
-                if (!cycle->isSlave){ // set it once or reset
+            	//if (rxSlot != cycle->master) return EM_ERR;
+                if (!cycle->isSlave){ // set it once or reset on a valid rxSlot
                     cycle_reset(cycle);
-                    cycle->master   = slot;
-                    cycle->psubSlot = ((slot+1) * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO +cycle_rx_ss(cycle)) % CYCLE_MODULO;
+                    if (cycle->master == SLOT_NOT_SET){
+                    	cycle->master   = rxSlot;
+                    }
+                    cycle->psubSlot = ((rxSlot )* CYCLE_SUB_SLOT_CNT + CYCLE_MODULO +cycle_rx_ss(cycle)) % CYCLE_MODULO;
                     cycle->masterAge= 0;
                     cycle->slaveAge = 0;
-                    cycle->cycle    = 0;
                     cycle->isSlave  = true;
                     cycle->isMaster = false;
                     return EM_OK;
@@ -498,7 +500,7 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type) {
 
             }
 #ifndef UNIT_TEST
-        __HAL_TIM_SET_COUNTER(cycle->timer, 0);
+//        __HAL_TIM_SET_COUNTER(cycle->timer, 0);
 #endif
 
     }
@@ -684,7 +686,6 @@ static void cycle_age_role(cycle_t *cycle) {
     // next election has to start from a clean watchdog either way.
     if (cycle->role ==MASTER){
     	cycle->masterAge = 0;
-
     }
     cycle_reset_role(cycle);
     cycle_set_state(cycle, SYNCHRONIZE);
@@ -718,7 +719,7 @@ void cycle_increment(cycle_t *cycle) {
         cycle->actSlot = CYCLE_ACT_SLOT(cycle);
         cycle->sSlot   = CYCLE_ACT_SUB_SLOT(cycle);
 #if OPTION_SHOW_TIMING == 1
-        stateled_set(cycle->sSlot);
+        //stateled_set(cycle->sSlot);
         stateled_toggle_pin(ss_toggle);
 #endif
         if (cycle->doMeasure[RADIO_RX]) {
@@ -737,7 +738,7 @@ void cycle_increment(cycle_t *cycle) {
         }
         if (cycle->actSlot != cycle->lSlot) {
 #if OPTION_SHOW_TIMING == 1
-             //stateled_set(cycle->actSlot);
+             stateled_set(cycle->actSlot);
              stateled_toggle_pin(slot_toggle);
 #endif
             if ((cycle->actSlot == 0) && (cycle->sync_state >= SYNCHRONIZE)) {
