@@ -55,3 +55,13 @@ dkms.conf
 build/
 compile_commands.json
 .cache/
+
+# LaTeX build (doc/)
+doc/*.aux
+doc/*.idx
+doc/*.log
+doc/*.lol
+doc/*.out
+doc/*.toc
+doc/*.pdf
+doc/_minted*/
