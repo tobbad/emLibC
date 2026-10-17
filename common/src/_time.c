@@ -28,10 +28,10 @@ typedef struct time_meas_s {
     uint32_t tick_duration;
     int64_t  duration_su_ns;
     int64_t  duration_tx_ns;
-    unt32_t  count;
+    uint32_t  count;
     uint32_t _tick_duration;  // Storage for acculumated duration data in pause
     int64_t  _duration_tx_ns; // Storage for acculumated duration data in pause
-    unt32_t  _count;          // Storage for acculumated duration data in pause
+    uint32_t  _count;          // Storage for acculumated duration data in pause
     int64_t baud;
     char line[TIME_MEAS_CHAR_PER_LINE + 1];
 } time_meas_t;
