@@ -22,20 +22,23 @@
 typedef struct time_meas_s {
     uint32_t tick_start;
     uint32_t tick_stop;
+    int64_t  start_ns;
+    int64_t  stop_su_ns;
+    int64_t  stop_tx_ns;
     uint32_t tick_duration;
-    int64_t start_ns;
-    int64_t stop_su_ns;
-    int64_t stop_tx_ns;
-    int64_t duration_su_ns;
-    int64_t duration_tx_ns;
+    int64_t  duration_su_ns;
+    int64_t  duration_tx_ns;
+    unt32_t  count;
+    uint32_t _tick_duration;  // Storage for acculumated duration data in pause
+    int64_t  _duration_tx_ns; // Storage for acculumated duration data in pause
+    unt32_t  _count;          // Storage for acculumated duration data in pause
     int64_t baud;
-    uint8_t count;
     char line[TIME_MEAS_CHAR_PER_LINE + 1];
 } time_meas_t;
 
 typedef struct time_single_s {
     time_meas_t measurement[TIME_MEAS_CNT];
-    int8_t idx;
+    int8_t  idx;
     uint8_t max;
     int64_t init_ns;
     int64_t last_start_ns;
@@ -179,13 +182,14 @@ em_msg time_set_max(time_handle_t hdl, int8_t max) {
 }
 
 int64_t time_now_ns(void) { return NOW; }
+// Handle the single measurement
 void time_reset(time_handle_t hdl) {
     // clang-format off
     if (time_check_hdl(hdl) == EM_ERR) return;
     if (!_time.init) return;
     // clang-format on
     int64_t init_ns = _time.time[hdl].init_ns;
-    memset(&_time.time[hdl].measurement, 0, sizeof(time_single_t));
+    memset(&_time.time[hdl].measurement, 0, TIME_MEAS_CNT*sizeof(time_single_t));
     _time.time[hdl].init_ns = init_ns;
     _time.time[hdl].first_ns = -1;
     _time.time[hdl].last_ns = -1;
@@ -224,13 +228,34 @@ void time_start(time_handle_t hdl, uint8_t count, uint8_t *ptr, cycle_t *cycle) 
         _time.time[hdl].max_cnt += count;
     }
 }
+
+void time_pause(time_handle_t hdl) {
+    // clang-format off
+    if (time_check_hdl(hdl) == EM_ERR) return;
+    if (!_time.init) return;
+    // clang-format
+    _time.time[hdl].measurement[_time.time[hdl].idx]._duration_tx_ns = _time.time[hdl].measurement[_time.time[hdl].idx].duration_tx_ns;
+    _time.time[hdl].measurement[_time.time[hdl].idx]._tick_duration  = _time.time[hdl].measurement[_time.time[hdl].idx].tick_duration;
+    _time.time[hdl].measurement[_time.time[hdl].idx]._count =_time.time[hdl].measurement[_time.time[hdl].idx].count;
+}
+
+void time_resume(time_handle_t hdl) {
+    // clang-format off
+    if (time_check_hdl(hdl) == EM_ERR) return;
+    if (!_time.init) return;
+    // clang-format
+    int64_t now_ns = NOW;
+    _time.time[hdl].measurement[_time.time[hdl].idx].start_ns = now_ns;
+    _time.time[hdl].measurement[_time.time[hdl].idx]._duration_tx_ns = _time.time[hdl].measurement[_time.time[hdl].idx].duration_tx_ns;
+    _time.time[hdl].measurement[_time.time[hdl].idx]._tick_duration  = _time.time[hdl].measurement[_time.time[hdl].idx].tick_duration;
+    _time.time[hdl].measurement[_time.time[hdl].idx]._count =_time.time[hdl].measurement[_time.time[hdl].idx].count;
+}
+
 void time_stop_su(time_handle_t hdl) {
     // clang-format off
     if (time_check_hdl(hdl) == EM_ERR) return;
     if (!_time.init) return;
     // clang-format on
-    if (!_time.init)
-        return;
     if (_time.time[hdl].idx >= 0) {
         int64_t now_ns = NOW;
         _time.time[hdl].measurement[_time.time[hdl].idx].stop_su_ns = now_ns;
