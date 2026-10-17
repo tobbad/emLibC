@@ -285,10 +285,8 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
             if (HAL_UART_Transmit_DMA(isio.uart, isio.cbuffer->mem, isio.buffer[SIO_TX]->used) != HAL_OK){
                 serial_release_tx();
                 isio.ser_overflow++;
-                time_stop_su(stxhdl);
                 return txLen;
             }
-            time_stop_su(stxhdl);
         }
     } else {
         printf("No UART or USB is given" NL);

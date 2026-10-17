@@ -36,10 +36,9 @@ em_msg time_set_mode(time_handle_t hdl, mode_e mode);
 mode_e time_get_mode(time_handle_t hdl);
 void time_reset(time_handle_t hdl);
 void time_start(time_handle_t hdl, uint8_t count, uint8_t *ptr, cycle_t *cycle);
-void time_stop_su(time_handle_t hdl);
-void time_stop(time_handle_t hdl, uint8_t *ptr);
 void time_pause(time_handle_t hdl);
 void time_resume(time_handle_t hdl);
+void time_stop(time_handle_t hdl, uint8_t *ptr);
 void time_auto(time_handle_t hdl, uint8_t count, uint8_t *ptr, cycle_t *cycle);
 void time_print(time_handle_t hdl, char *titel, bool python, bool timing);
 

@@ -89,7 +89,7 @@ em_msg cycle_init(cycle_t *cycle, int8_t tx_ss, int8_t rx_ss, uint8_t postrx, ui
     memset(cycle, 0, sizeof(cycle_t));
     cycle->tx_ss    = tx_ss;
     cycle->rx_ss    = rx_ss;
-    cycle->postrx   = abs(postrx);
+    cycle->postrx   = postrx;
     cycle->kaCnt    = kaCnt;
     cycle->timer    = htim;
     cycle->subSlot  = 0;
