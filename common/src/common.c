@@ -276,6 +276,17 @@ type_e clable2type(clabel_u *lbl) {
     if (itIs) {
         return ascii;
     }
+
+    itIs = true;
+    for (uint8_t i = 0; i < len; i++) {
+        char c = lbl->str[i];
+        itIs &= (c>=0x30)&&(c<0x3a);
+        itIs |= c=='.';
+    }
+    if (itIs) {
+        return _float;
+    }
+
     return res;
 }
 
@@ -302,7 +313,6 @@ int8_t clabel2uint(clabel_u *lbl){
     lbl->str[CMD_LEN - 1] = 0;
     uint8_t len = strlen(lbl->str);
     int8_t res = 0;
-    if (isalpha(lbl->str[0])) return -1;
     for (int8_t i= 0;i <len ;i++){
         int8_t digit = hchar2int(lbl->str[i]);
         if (digit>=0){

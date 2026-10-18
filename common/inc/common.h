@@ -107,7 +107,7 @@ typedef union {
     uint8_t *ptr;
 } cPtrAway_u;
 
-typedef enum { hexnum = 0x10, ascii = 0x20, nonasci = 0x80 } type_e;
+typedef enum { hexnum = 0x10, ascii = 0x20, _float = 0x40, nonasci = 0x80 } type_e;
 
 #define CMD_LEN 4
 #define DEV_CNT 1

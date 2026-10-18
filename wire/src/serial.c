@@ -419,7 +419,7 @@ kybd_t serial_dev = {
     .first = 1,
 };
 
-int8_t serial_waitForNumber(char **key) {
+int32_t serial_waitForNumber(char **key) {
     if (!isio.init)
         return EM_ERR;
     char *str = NULL;
@@ -448,11 +448,21 @@ int8_t serial_waitForNumber(char **key) {
     if (ctype == hexnum) {
         *key = (char *)&str[0];
         return clabel2uint(&lbl);
+    } else if(ctype == _float){
+        char* errCheck;
+        float res  = strtod(lbl.str, &errCheck);
+        if(errCheck == lbl.str) {
+           printf("Conversion error:%s\n", lbl.str);
+           return -1;
+        }
+        *key = (char *)&str[0];
+        return (int)res;
     }
     if (ctype == ascii) {
         *key = (char *)&str[0];
         return -1;
     }
+
     return -1;
 }
 
