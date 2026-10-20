@@ -486,7 +486,7 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, dev_role_e ss_type) {
                     if (cycle->master == SLOT_NOT_SET){
                     	cycle->master   = rxSlot;
                     }
-                    cycle->psubSlot = ((rxSlot )* CYCLE_SUB_SLOT_CNT + CYCLE_MODULO +cycle_rx_ss(cycle)) % CYCLE_MODULO;
+                    cycle->psubSlot = (rxSlot* CYCLE_SUB_SLOT_CNT + CYCLE_MODULO +cycle_rx_ss(cycle)) % CYCLE_MODULO;
                     cycle->masterAge= 0;
                     cycle->slaveAge = 0;
                     cycle->isSlave  = true;
