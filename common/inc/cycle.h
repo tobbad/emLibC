@@ -71,11 +71,11 @@ extern idxa2str_t synca2str;
 #ifdef UNIT_TEST
 typedef struct cycle_s {
     volatile uint8_t subSlot; // actual sub slot
-    uint8_t psubSlot;         //  Pendig difference subslot value
-    int8_t actSlot;
-    int8_t lSlot;
-    int8_t sSlot;
-    uint16_t cycle;
+    volatile uint8_t psubSlot;         //  Pendig difference subslot value
+    volatile int8_t actSlot;
+    volatile int8_t lSlot;
+    volatile int8_t sSlot;
+    volatile uint16_t cycle;
     int8_t slot; // Configured slot of device
     int8_t master;
     bool isSlave;
