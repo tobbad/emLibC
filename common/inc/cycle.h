@@ -12,7 +12,7 @@ extern "C" {
 #ifndef UNIT_TEST
 #include "hal_port.h"
 #else
-typedef struct __TIM_HandleTypeDef {} TIM_HandleTypeDef;
+//typedef struct __TIM_HandleTypeDef {} TIM_HandleTypeDef;
 // subSlot packs the position in the frame cycle: the upper nibble is the slot,
 // the lower nibble the sub-slot within it (e.g. 223 = 0xDF -> slot 13, sub-slot 15).
 #define CYCLE_ACT_SUB_SLOT_N(ss)   (((ss) >> CYCLE_SUB_SLOT_SHIFT) & CYCLE_SUB_SLOT_MASK)
@@ -22,6 +22,7 @@ typedef struct __TIM_HandleTypeDef {} TIM_HandleTypeDef;
 
 #endif
 #include "common.h"
+#include "device.h"
 
 typedef enum {
     NOT_SET,
@@ -61,8 +62,8 @@ extern idxa2str_t synca2str;
 #define CYCLE_MASTER_KEEP_ALIVE_CYCLE_CNT (uint8_t)16
 // is set so that at least once in a KEEP_ALIVE_CYCLE_CNT Frame cycle a frame is sent
 #define CYCLE_SLAVE_KEEP_ALIVE_CYCLE_CNT  (uint8_t)3
-#define CYCLE_MASTER_LOOSE                                                                                                  \
-    3 // After CYCLE_MASTER_LOOSE*CYCLE_MASTER_KEEP_ALIVE_CYCLE_CNT a MASTER loooses its master role and all slave set their
+#define CYCLE_MASTER_LOOSE 3                                                                                                  \
+    // After CYCLE_MASTER_LOOSE*CYCLE_MASTER_KEEP_ALIVE_CYCLE_CNT a MASTER loooses its master role and all slave set their
       // role to NOT_SET. Then when the first Packet is received the Device sending in this slot becomes the new MASTER.
 // Frame cycles a role survives without proof that the network is still there.
 // Kicked by cycle_master_seen(), counted down in cycle_increment().
@@ -101,8 +102,10 @@ typedef struct cycle_s {
 typedef struct cycle_s cycle_t;
 #endif
 extern cycle_t cycle;
+extern cycle_t mcycle; //debug cycle
+
 em_msg cycle_reset(cycle_t *cycle);
-em_msg cycle_init(cycle_t *cycle, int8_t master_ss, int8_t slave_ss, uint8_t postrx, uint8_t kaCnt, TIM_HandleTypeDef *htim);
+em_msg cycle_init(cycle_t *cycle, dev_handle_t hdl, int8_t master_ss, int8_t slave_ss, uint8_t postrx, uint8_t kaCnt, TIM_HandleTypeDef *htim);
 em_msg cycle_timer_add(cycle_t *cycle, int8_t add);
 size_t cycle_size();
 void cycle_reset_role(cycle_t *cycle);
@@ -124,6 +127,7 @@ bool cycle_is_ka(cycle_t *cycle);
 em_msg cycle_doSend(cycle_t *cycle);
 int8_t cycle_check_slot(int8_t slot);
 em_msg cycle_set_my_slot(cycle_t *cycle, int8_t slot);
+em_msg cycle_set_master(cycle_t *cycle, int8_t slot);
 em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type);
 int8_t cycle_get_slot(cycle_t *cycle);
 int8_t cycle_get_master(cycle_t *cycle);

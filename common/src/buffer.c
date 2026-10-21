@@ -44,7 +44,7 @@ buffer_t *buffer_new(uint16_t size, b_type_e type) {
     return buffer_init(buffer, size, type);
 }
 
-buffer_t * buffer_init(buffer_t *buffer, uint16_t size, b_type_e type){
+buffer_t *buffer_init(buffer_t *buffer, uint16_t size, b_type_e type) {
     // clang-format off
     if (!buffer) return NULL;
     // clang-format off
@@ -81,7 +81,7 @@ buffer_t *buffer_new_buffer_t(buffer_t *buffer) {
     buffer->mem = calloc(1, size);
     if (!buffer->mem) return NULL;
     buffer->size = size;
-   // clang-format on
+    // clang-format on
     return buffer_init(buffer, buffer->size, buffer->type);
 }
 
@@ -149,7 +149,7 @@ int16_t buffer_transfer(buffer_t *from, buffer_t *to) {
     return EM_OK;
 }
 
-buffer_t  *buffer_reset(buffer_t *buffer) {
+buffer_t *buffer_reset(buffer_t *buffer) {
     // clang-format off
     em_msg res = buffer_check(buffer, false);
     if (res == EM_ERR) return NULL;
@@ -180,9 +180,11 @@ em_msg buffer_strip(buffer_t *buffer) {
     em_msg res = buffer_check(buffer, false);
     if (res == EM_ERR) return res;
     // clang-format on
-    for (uint16_t i = 0;i<buffer->used;i++){
-    	if (buffer->mem[i] == NL[0]) buffer->mem[i]=0;
-    	if (buffer->mem[i] == NL[1]) buffer->mem[i]=0;
+    for (uint16_t i = 0; i < buffer->used; i++) {
+        // clang-format off
+        if (buffer->mem[i] == NL[0]) buffer->mem[i] = 0;
+        if (buffer->mem[i] == NL[1]) buffer->mem[i] = 0;
+        // clang-format on
     }
     return EM_OK;
 };
@@ -320,13 +322,13 @@ buffer_t *buffer_get_till_end(buffer_t *buffer) {
     // clang-format on
     int16_t data_to_end = buffer->size - buffer->first;
     memset(&_buffer, 0, sizeof(_buffer));
-    _buffer.size  = buffer->size;
-    _buffer.used  = MIN(buffer->used, data_to_end);
-    _buffer.mem   = &buffer->mem[buffer->first];
-    _buffer.pl    = _buffer.mem;
+    _buffer.size = buffer->size;
+    _buffer.used = MIN(buffer->used, data_to_end);
+    _buffer.mem = &buffer->mem[buffer->first];
+    _buffer.pl = _buffer.mem;
     _buffer.first = 0;
-    _buffer.lbl   = buffer->lbl;
-    _buffer.type  = buffer->type;
+    _buffer.lbl = buffer->lbl;
+    _buffer.type = buffer->type;
     _buffer.state = (_buffer.used > 0) ? BUFFER_USED : BUFFER_READY;
     return &_buffer;
 }
@@ -350,9 +352,7 @@ void buffer_print(const buffer_t *buffer, char *title) {
     printf("buffer used         = %d" NL, buffer_used(buffer));
     printf("buffer writable     = %d" NL, buffer_writeable(buffer));
     printf("buffei id           = %d" NL, buffer->id);
-    printf("Buffer state is     = %s" NL,
-           (buffer->state < BUFFER_CNT) ? state2Str[buffer->state] : "?");
-    printf("Buffer type is      = %s" NL,
-           (buffer->type <= RING) ? type2Str[buffer->type] : "?");
+    printf("Buffer state is     = %s" NL, (buffer->state < BUFFER_CNT) ? state2Str[buffer->state] : "?");
+    printf("Buffer type is      = %s" NL, (buffer->type <= RING) ? type2Str[buffer->type] : "?");
     print_buffer(buffer->mem, buffer->size, "Full content");
 }

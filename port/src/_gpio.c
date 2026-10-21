@@ -4,10 +4,10 @@
  *  Created on: 28.12.2019
  *      Author: badi
  */
-#include "hal_port.h"
 #include "_gpio.h"
 #include "common.h"
 #include "emLibC_options.h"
+#include "hal_port.h"
 #define GPIO_NUMBER 16
 em_msg GpioCheckPort(GPIO_TypeDef *port) {
     em_msg res = EM_OK;
@@ -35,7 +35,7 @@ em_msg GpioCheckPort(GPIO_TypeDef *port) {
     return EM_ERR;
 }
 em_msg GpioCheckPin_isIn(gpio_pin_t *pin) { return pin->conf.Mode == GPIO_MODE_INPUT; }
-em_msg GpioCheckPin_isOut(gpio_pin_t *pin) { return (pin->conf.Mode&MODE_OUTPUT); }
+em_msg GpioCheckPin_isOut(gpio_pin_t *pin) { return (pin->conf.Mode & MODE_OUTPUT); }
 
 em_msg GpioPinInit(gpio_pin_t *pin) {
     GPIO_InitTypeDef GPIO_InitStruct = {0};

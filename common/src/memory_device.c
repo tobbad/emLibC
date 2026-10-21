@@ -15,9 +15,7 @@ typedef struct memory_device_t {
 
 static memory_device_t mDev[DEVICE_CNT];
 
-static bool mem_hdl_valid(dev_handle_t hdl) {
-    return (hdl >= 0) && (hdl < DEVICE_CNT);
-}
+static bool mem_hdl_valid(dev_handle_t hdl) { return (hdl >= 0) && (hdl < DEVICE_CNT); }
 
 em_msg memory_device_open(dev_handle_t hdl, void *user_data) {
     EM_RETURN_IF(!mem_hdl_valid(hdl), EM_ERR);

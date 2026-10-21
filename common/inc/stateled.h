@@ -9,7 +9,7 @@
 #define INC_D_LEDLINE_H_
 #include "gpio_port.h"
 #include "state.h"
-
+#include "device.h"
 typedef enum  {// with REGUALR_STATELD  0
     led_0,     // data 0
     led_1,     // data 1
@@ -35,19 +35,27 @@ typedef enum  {     // debug enums
     rx_toggle,      // 8 1 when rx active
     cycle_upd,      // 9 0->1->0 when cycle is updated
 }dstateled_e;
+
 #define OFFSET 8
-void stateled_init(state_t *state, gpio_port_t *port, uint16_t cycle_size, uint8_t bli_cnt);
-void stateled_deinit();
-em_msg stateled_set_mask(uint16_t mask);
-em_msg stateled_set(uint16_t val);
-em_msg stateled_toggle_port();
-em_msg stateled_toggle_pin(stateled_e pinNr);
-em_msg stateled_dtoggle_pin(stateled_e pinNr);
-void stateled_iterate();
-void stateled_show(system_state_e state);
-em_msg stateled_on(uint8_t led_nr);
-em_msg stateled_off(uint8_t led_nr);
-em_msg stateled_all_off();
-bool stateled_update(system_state_e state);
+typedef enum {
+    STATELED_DEV_NA,
+    STATELED_INBUILD,
+    STATELED_EXTERN,
+    STATELED_CNT,
+} state_led_e;
+
+dev_handle_t stateled_init(state_t *state, gpio_port_t *port, uint16_t cycle_size, uint8_t bli_cnt);
+void   stateled_deinit(dev_handle_t dev);
+em_msg stateled_set_mask(dev_handle_t dev,uint16_t mask);
+em_msg stateled_set(dev_handle_t dev,uint16_t val);
+em_msg stateled_toggle_port(dev_handle_t dev);
+em_msg stateled_toggle_pin(dev_handle_t dev, stateled_e pinNr);
+em_msg stateled_dtoggle_pin(dev_handle_t dev, stateled_e pinNr);
+void   stateled_iterate(dev_handle_t dev);
+void   stateled_show(dev_handle_t dev,system_state_e state);
+em_msg stateled_on(dev_handle_t dev,uint8_t led_nr);
+em_msg stateled_off(dev_handle_t dev,uint8_t led_nr);
+em_msg stateled_all_off(dev_handle_t dev);
+bool stateled_update(dev_handle_t dev,system_state_e state);
 
 #endif /* INC_D_LEDLINE_H_ */

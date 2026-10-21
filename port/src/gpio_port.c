@@ -10,7 +10,8 @@
 
 em_msg GpioPortCheck_mask(gpio_port_t *port, uint16_t mask) {
     EM_RETURN_IF_NULL(port, EM_ERR);
-    for (port->mask_size = 0; (mask & (1 << port->mask_size)) != 0; port->mask_size++) ;
+    for (port->mask_size = 0; (mask & (1 << port->mask_size)) != 0; port->mask_size++)
+        ;
     if (port->mask_size == 0) {
         return EM_ERR;
     } else {
@@ -26,7 +27,7 @@ em_msg GpioPortInit(gpio_port_t *port) {
             printf("Pin %d is not good" NL, i);
         }
     }
-    port->mask = (1<<port->cnt)-1;
+    port->mask = (1 << port->cnt) - 1;
     return EM_OK;
 }
 em_msg GpioPort_setMask(gpio_port_t *port, uint16_t mask) {

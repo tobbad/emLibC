@@ -34,7 +34,6 @@
 #include "common.h"
 #include "hal_port.h"
 #include "main.h"
-#include "hal_port.h"
 #include <assert.h>
 #include <errno.h>
 #include <signal.h>
@@ -47,8 +46,8 @@
 
 #ifdef HAL_PCD_MODULE_ENABLED
 #ifdef USE_TINY_USB
-#include "tusb.h"
 #include "tinyUSB.h"
+#include "tusb.h"
 #endif
 #endif
 
@@ -74,7 +73,7 @@
 
 static char rx_buf[RX_BUFFER_SIZE];
 static char tx_buf[TX_BUFFER_SIZE];
-buffer_t  *tx_buffer;
+buffer_t *tx_buffer;
 
 #define POOL_SIZE 10
 
@@ -92,19 +91,19 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
         return EM_ERR;
     sio_t *init = dev;
     memset(&isio, 0, sizeof(isio_t));
-    isio.uart  = init->uart;
+    isio.uart = init->uart;
     isio.cycle = init->cycle;
-    isio.mode  = init->mode;
-    isio.devh  = dev_type;
+    isio.mode = init->mode;
+    isio.devh = dev_type;
     isio.buffer[SIO_RX] = buffer_new_buffer_t(init->buffer[SIO_RX]);
     isio.buffer[SIO_TX] = buffer_new_buffer_t(init->buffer[SIO_TX]);
     state_init(&isio.state);
-//    isio.ring = buffer_new(POOL_SIZE* TX_BUFFER_SIZE, RING);
-//    isio.pool = buffer_pool_new(POOL_SIZE, TX_BUFFER_SIZE, LINEAR, RING);
-//    if (isio.pool == NULL) {
-//        isio.mode &= ~USE_DMA_TX;
-//        isio.mode |= USE_UART;      /* fall back to polled output */
-//    }
+    //    isio.ring = buffer_new(POOL_SIZE* TX_BUFFER_SIZE, RING);
+    //    isio.pool = buffer_pool_new(POOL_SIZE, TX_BUFFER_SIZE, LINEAR, RING);
+    //    if (isio.pool == NULL) {
+    //        isio.mode &= ~USE_DMA_TX;
+    //        isio.mode |= USE_UART;      /* fall back to polled output */
+    //    }
     isio.ser_overflow = 0;
     isio.usb_drop_cnt = 0;
     isio.cTxBytePerSecond = 0;
@@ -172,7 +171,7 @@ volatile int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
     return rLen;
 }
 
-buffer_t * serial_formatOut(uint8_t *ptr, int32_t txLen){
+buffer_t *serial_formatOut(uint8_t *ptr, int32_t txLen) {
     int16_t len = 0;
 
     static uint8_t gap_idx = 0;
@@ -185,19 +184,23 @@ buffer_t * serial_formatOut(uint8_t *ptr, int32_t txLen){
         len += sprintf((char *)&tx_buf[len], " %x ", gap_idx);
         gap_idx = (gap_idx + 1) % USE_DMA_TX;
     }
-    uint16_t txLenAct = MIN(len+txLen, TX_BUFFER_SIZE);
-    int16_t free = TX_BUFFER_SIZE -( len + txLen + TRUCT_NL_LEN);
+    // clang-format off
+    uint16_t txLenAct = MIN(len + txLen, TX_BUFFER_SIZE);
+    int16_t free      = TX_BUFFER_SIZE - (len + txLen + TRUCT_NL_LEN);
+    // clang-format on
 
     // Copy only what really fits.  txLenAct was computed but used solely for
     // placing the truncation mark, while the copy itself took the full txLen:
     // a printf() longer than TX_BUFFER_SIZE minus the timestamp wrote past
     // tx_buf and ended in a HardFault instead of being truncated.
     int32_t copy = (int32_t)TX_BUFFER_SIZE - len;
+    // clang-format off
     if (copy > txLen) copy = txLen;
     if (copy < 0)     copy = 0;
+    // clang-format on
     memcpy(&tx_buf[len], ptr, (size_t)copy);
     len += (int16_t)copy;
-    if (free <0) {
+    if (free < 0) {
         // Add Line end at last position
         isio.ser_overflow++;
         memcpy(&tx_buf[txLenAct - TRUCT_NL_LEN], &TRUNCT_NL, TRUCT_NL_LEN);
@@ -218,8 +221,9 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
         // Save ptr, len
         return 0;
     }
-    if (txLen>TX_BUFFER_SIZE) return txLen;
-    buffer_t * buf = serial_formatOut(ptr, txLen);
+    if (txLen > TX_BUFFER_SIZE)
+        return txLen;
+    buffer_t *buf = serial_formatOut(ptr, txLen);
     if (isio.mode & MEASURE_BYTE_PER_SECONDS) {
         time_auto(stxhdl, buf->used, buf->mem, isio.cycle);
         return txLen;
@@ -236,7 +240,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
             // already exceed that.  Flush and let tud_task() drain the FIFO to
             // the wire, then retry the remainder, bounded so a host that stops
             // reading cannot block this call forever.
-            uint32_t sent     = 0;
+            uint32_t sent = 0;
             uint32_t deadline = HAL_GetTick() + USB_TIMEOUT_MS;
             while (sent < (uint32_t)buf->used && con && HAL_GetTick() < deadline) {
                 sent += tud_cdc_write(buf->mem + sent, (uint32_t)buf->used - sent);
@@ -253,36 +257,36 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
         }
 #endif
 #endif
-   }
+    }
     if (isio.uart != NULL) {
-        if ( (buffer_transfer(buf, isio.buffer[SIO_TX]) == EM_ERR)) {
-                serial_release_tx();
-                isio.ser_overflow++;
-                return txLen;
+        if ((buffer_transfer(buf, isio.buffer[SIO_TX]) == EM_ERR)) {
+            serial_release_tx();
+            isio.ser_overflow++;
+            return txLen;
         }
-        if (isio.mode & (USE_UART )) {
+        if (isio.mode & (USE_UART)) {
             time_start(stxhdl, isio.buffer[SIO_TX]->used, isio.buffer[SIO_TX]->mem, isio.cycle);
-            HAL_UART_Transmit(isio.uart, isio.buffer[SIO_TX]->mem , isio.buffer[SIO_TX]->used, UART_TIMEOUT_MS);
+            HAL_UART_Transmit(isio.uart, isio.buffer[SIO_TX]->mem, isio.buffer[SIO_TX]->used, UART_TIMEOUT_MS);
             time_stop(stxhdl, NULL);
             isio.ready[SIO_TX] = true;
             return txLen;
         }
         if (isio.mode & USE_DMA_TX) { // does not work, needs a too large buffer
             if (isio.cbuffer != NULL) {
-                isio.mode &=   ~USE_DMA_TX;
+                isio.mode &= ~USE_DMA_TX;
                 return txLen;
             }
             isio.cbuffer = buffer_pool_get(isio.pool);
             uint32_t deadline = HAL_GetTick() + UART_TIMEOUT_MS;
             while ((isio.cbuffer == NULL) && (HAL_GetTick() > deadline)) {
-                if (isio.cbuffer == NULL) {   /* transfer stuck: drop this line, keep DMA on */
+                if (isio.cbuffer == NULL) { /* transfer stuck: drop this line, keep DMA on */
                     isio.ser_overflow++;
                     return txLen;
                 }
             }
             time_start(stxhdl, isio.buffer[SIO_TX]->used, isio.buffer[SIO_TX]->mem, isio.cycle);
             buffer_set(isio.cbuffer, isio.buffer[SIO_TX]->mem, isio.buffer[SIO_TX]->used);
-            if (HAL_UART_Transmit_DMA(isio.uart, isio.cbuffer->mem, isio.buffer[SIO_TX]->used) != HAL_OK){
+            if (HAL_UART_Transmit_DMA(isio.uart, isio.cbuffer->mem, isio.buffer[SIO_TX]->used) != HAL_OK) {
                 serial_release_tx();
                 isio.ser_overflow++;
                 return txLen;
@@ -371,7 +375,7 @@ static void serial_apply_change(clabel_u *lbl) {
     uint16_t len = strlen(lbl->str);
     if (len > 0) {
         int8_t res = clabel2uint(lbl);
-        if (res>= 0) {
+        if (res >= 0) {
             if (!state_get_dirty(&isio.state)) {
                 state_propagate_by_idx(&isio.state, res);
                 isio.state.clabel.cmd = lbl->cmd;
@@ -426,7 +430,7 @@ int32_t serial_waitForNumber(char **key) {
 #ifdef HAL_PCD_MODULE_ENABLED
     if (urx_buffer.state == BUFFER_USED) {
         *key = (char *)&urx_buffer.mem[0];
-        return clabel2uint((clabel_u  *)&urx_buffer.mem[0]);
+        return clabel2uint((clabel_u *)&urx_buffer.mem[0]);
     }
 #endif
     clabel_u lbl = {.cmd = 0};
@@ -472,11 +476,10 @@ static void serial_release_tx(void) {
         return;
     }
     isio.cbuffer = NULL;
-    b->used  = 0;
+    b->used = 0;
     b->first = 0;
-    b->pl    = b->mem;
-    b->state = BUFFER_READY;   /* last: only now may the pool hand it out */
-
+    b->pl = b->mem;
+    b->state = BUFFER_READY; /* last: only now may the pool hand it out */
 }
 
 /**
@@ -535,4 +538,3 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *UartHandle) {
         serial_release_tx();
     }
 }
-

@@ -7,6 +7,7 @@
 #include "xpad.h"
 #include "_gpio.h"
 #include "common.h"
+#include "cycle.h"
 #include "device.h"
 #include "gpio_port.h"
 #include "keyboard.h"
@@ -22,9 +23,7 @@ xpad_dev_t *mpy_xpad[DEVICE_CNT];
 static mkey_t reset_key = {.last = 1, .current = 1, .unstable = 0, .cnt = 0, .stable = true};
 
 /* devh indiziert my_xpad[]/mpy_xpad[] -- vor jedem Zugriff prüfen. */
-static bool xpad_devh_valid(dev_handle_t devh) {
-    return (devh >= 0) && (devh < DEVICE_CNT);
-}
+static bool xpad_devh_valid(dev_handle_t devh) { return (devh >= 0) && (devh < DEVICE_CNT); }
 // clang-format off
 static xpad_dev_t default_xscan_dev = {
     .spalte =
@@ -230,7 +229,7 @@ static uint16_t xpad_update_key(uint8_t devh, uint8_t index, bool pinVal) {
             my_xpad[devh].key[index].cnt++;
             if (pinVal != false) {
                 label = my_xpad[devh].state.label[index];
-                //printf("Increased index %d (%s) to %d (pinVal=%d)"NL, index, label, my_xpad[devh].key[index].cnt, pinVal);
+                // printf("Increased index %d (%s) to %d (pinVal=%d)"NL, index, label, my_xpad[devh].key[index].cnt, pinVal);
             }
         } else {
             // printf("Reset index %d from %d (pinVal=%d)"NL, index,
@@ -297,7 +296,7 @@ static int16_t xpad_eight_scan(dev_handle_t devh) {
     }
     char line[TX_BUFFER_SIZE];
     char ch = my_xpad[devh].state.label[index];
-    snprintf(line, TX_BUFFER_SIZE , "Received 8key: \"%c\"", ch);
+    snprintf(line, TX_BUFFER_SIZE, "Received 8key: \"%c\"", ch);
     cycle_text_print(&cycle, line);
     return index;
 }

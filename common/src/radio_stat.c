@@ -7,23 +7,27 @@
 
 #include "radio_stat.h"
 
-radio_stat_t  rstat;
+radio_stat_t rstat;
 
-typedef struct radio_stat_s{
-    uint8_t        activeSlots;
-    int32_t        rssi[CYCLE_SLOT_CNT];
-    int32_t        send[CYCLE_SLOT_CNT];
-    int32_t        recv[CYCLE_SLOT_CNT];
-    int32_t        recvd[CYCLE_SLOT_CNT];
-    int32_t        recve[CYCLE_SLOT_CNT];
-    int32_t        txack[CYCLE_SLOT_CNT];
-    int32_t        rxack[CYCLE_SLOT_CNT];
-    int32_t        master;
-    uint32_t       txTimeout;
-    bool           crc_err;
+typedef struct radio_stat_s {
+    // clang-format off
+
+    uint8_t   activeSlots;
+    int32_t   rssi[CYCLE_SLOT_CNT];
+    int32_t   send[CYCLE_SLOT_CNT];
+    int32_t   recv[CYCLE_SLOT_CNT];
+    int32_t   recvd[CYCLE_SLOT_CNT];
+    int32_t   recve[CYCLE_SLOT_CNT];
+    int32_t   txack[CYCLE_SLOT_CNT];
+    int32_t   rxack[CYCLE_SLOT_CNT];
+    int32_t   master;
+    uint32_t  txTimeout;
+    bool      crc_err;
+    // clang-format on
+
 } radio_stat_t;
 
-em_msg radio_stat_init(radio_stat_t *stat){
+em_msg radio_stat_init(radio_stat_t *stat) {
     // clang-format off
     if (!stat) return EM_ERR;
     // clang-format on
@@ -31,14 +35,14 @@ em_msg radio_stat_init(radio_stat_t *stat){
     return EM_OK;
 };
 
-em_msg radio_stat_reset(radio_stat_t *stat){
+em_msg radio_stat_reset(radio_stat_t *stat) {
     // clang-format off
     if (!stat) return EM_ERR;
     // clang-format on
     memset(stat, 0, sizeof(radio_stat_t));
     return EM_OK;
 }
-em_msg radio_stat_set_rssi(radio_stat_t *stat,  uint8_t idx, int32_t dbm){
+em_msg radio_stat_set_rssi(radio_stat_t *stat, uint8_t idx, int32_t dbm) {
     // clang-format off
     if (!stat) return EM_ERR;
     // clang-format on
@@ -46,7 +50,7 @@ em_msg radio_stat_set_rssi(radio_stat_t *stat,  uint8_t idx, int32_t dbm){
     return EM_OK;
 };
 
-em_msg radio_stat_inc_recv(radio_stat_t *stat,  uint8_t idx){
+em_msg radio_stat_inc_recv(radio_stat_t *stat, uint8_t idx) {
     // clang-format off
     if (!stat) return EM_ERR;
     if (idx>=CYCLE_SLOT_CNT) return EM_ERR;
@@ -54,15 +58,15 @@ em_msg radio_stat_inc_recv(radio_stat_t *stat,  uint8_t idx){
     stat->recv[idx] = MIN(UINT32_MAX, stat->recv[idx] + 1);
     return EM_OK;
 }
-uint32_t radio_stat_get_recv(radio_stat_t *stat,  uint8_t idx){
+uint32_t radio_stat_get_recv(radio_stat_t *stat, uint8_t idx) {
     // clang-format off
      if (!stat) return EM_ERR;
      if (idx>=CYCLE_SLOT_CNT) return EM_ERR;
-     // clang-format on
-     return stat->recv[idx];
- }
+    // clang-format on
+    return stat->recv[idx];
+}
 
-em_msg radio_stat_inc_send(radio_stat_t *stat,  uint8_t idx){
+em_msg radio_stat_inc_send(radio_stat_t *stat, uint8_t idx) {
     // clang-format off
     if (!stat) return EM_ERR;
     if (idx>=CYCLE_SLOT_CNT) return EM_ERR;
@@ -70,15 +74,15 @@ em_msg radio_stat_inc_send(radio_stat_t *stat,  uint8_t idx){
     stat->send[idx] = MIN(UINT32_MAX, stat->send[idx] + 1);
     return EM_OK;
 }
-uint32_t radio_stat_get_send(radio_stat_t *stat,  uint8_t idx){
+uint32_t radio_stat_get_send(radio_stat_t *stat, uint8_t idx) {
     // clang-format off
      if (!stat) return EM_ERR;
      if (idx>=CYCLE_SLOT_CNT) return EM_ERR;
-     // clang-format on
-     return stat->send[idx];
- }
+    // clang-format on
+    return stat->send[idx];
+}
 
-em_msg radio_stat_inc_recvd(radio_stat_t *stat,  uint8_t idx){
+em_msg radio_stat_inc_recvd(radio_stat_t *stat, uint8_t idx) {
     // clang-format off
     if (!stat) return EM_ERR;
     if (idx>=CYCLE_SLOT_CNT) return EM_ERR;
@@ -87,17 +91,15 @@ em_msg radio_stat_inc_recvd(radio_stat_t *stat,  uint8_t idx){
     return EM_OK;
 };
 
-
-uint32_t radio_stat_get_recd(radio_stat_t *stat,  uint8_t idx){
+uint32_t radio_stat_get_recd(radio_stat_t *stat, uint8_t idx) {
     // clang-format off
      if (!stat) return EM_ERR;
      if (idx>=CYCLE_SLOT_CNT) return EM_ERR;
-     // clang-format on
-     return stat->recvd[idx];
- }
+    // clang-format on
+    return stat->recvd[idx];
+}
 
-
-uint32_t radio_stat_get_txack(radio_stat_t *stat,  uint8_t idx){
+uint32_t radio_stat_get_txack(radio_stat_t *stat, uint8_t idx) {
     // clang-format off
     if (!stat) return EM_ERR;
     if (idx>=CYCLE_SLOT_CNT) return EM_ERR;
@@ -105,7 +107,7 @@ uint32_t radio_stat_get_txack(radio_stat_t *stat,  uint8_t idx){
     return stat->txack[idx];
 }
 
-em_msg radio_stat_inc_txack(radio_stat_t *stat,  uint8_t idx){
+em_msg radio_stat_inc_txack(radio_stat_t *stat, uint8_t idx) {
     // clang-format off
     if (!stat) return EM_ERR;
     if (idx>=CYCLE_SLOT_CNT) return EM_ERR;
@@ -114,7 +116,7 @@ em_msg radio_stat_inc_txack(radio_stat_t *stat,  uint8_t idx){
     return EM_OK;
 };
 
-uint32_t radio_stat_get_rxack(radio_stat_t *stat,  uint8_t idx){
+uint32_t radio_stat_get_rxack(radio_stat_t *stat, uint8_t idx) {
     // clang-format off
     if (!stat) return EM_ERR;
     if (idx>=CYCLE_SLOT_CNT) return EM_ERR;
@@ -122,7 +124,7 @@ uint32_t radio_stat_get_rxack(radio_stat_t *stat,  uint8_t idx){
     return stat->rxack[idx];
 }
 
-em_msg radio_stat_inc_rxack(radio_stat_t *stat,  uint8_t idx){
+em_msg radio_stat_inc_rxack(radio_stat_t *stat, uint8_t idx) {
     // clang-format off
     if (!stat) return EM_ERR;
     if (idx>=CYCLE_SLOT_CNT) return EM_ERR;
@@ -131,78 +133,76 @@ em_msg radio_stat_inc_rxack(radio_stat_t *stat,  uint8_t idx){
     return EM_OK;
 };
 
-em_msg   radio_stat_inc_tx_timeout(radio_stat_t *stat){
+em_msg radio_stat_inc_tx_timeout(radio_stat_t *stat) {
     // clang-format off
     if (!stat) return EM_ERR;
     // clang-format on
-    stat->master= MIN(CYCLE_MASTER_LOOSE*CYCLE_MASTER_KEEP_ALIVE_CYCLE_CNT, stat->master + 1);
+    stat->master = MIN(CYCLE_MASTER_LOOSE * CYCLE_MASTER_KEEP_ALIVE_CYCLE_CNT, stat->master + 1);
     return EM_OK;
-
 }
 
-
-em_msg   radio_stat_inc_master(radio_stat_t *stat){
+em_msg radio_stat_inc_master(radio_stat_t *stat) {
     // clang-format off
     if (!stat) return EM_ERR;
     // clang-format on
-    stat->master= MIN(CYCLE_MASTER_LOOSE*CYCLE_MASTER_KEEP_ALIVE_CYCLE_CNT, stat->master + 1);
+    stat->master = MIN(CYCLE_MASTER_LOOSE * CYCLE_MASTER_KEEP_ALIVE_CYCLE_CNT, stat->master + 1);
     return EM_OK;
 }
 
-uint32_t radio_stat_get_master(radio_stat_t *stat){
+uint32_t radio_stat_get_master(radio_stat_t *stat) {
     // clang-format off
     if (!stat) return EM_ERR;
     // clang-format on
     return stat->master;
 }
 
-em_msg radio_stat_set_crc_err(radio_stat_t *stat){
+em_msg radio_stat_set_crc_err(radio_stat_t *stat) {
     // clang-format off
     if (!stat) return EM_ERR;
     // clang-format on
-    stat->crc_err= true;
+    stat->crc_err = true;
     return EM_OK;
 };
 
-em_msg radio_stat_print(radio_stat_t *stat){
+em_msg radio_stat_print(radio_stat_t *stat) {
     // clang-format off
     if (!stat) return EM_ERR;
     // clang-format on
-    printf(" slot   send    recv   reccd    sack    rack  crc_err  rssi"NL);
-    for (uint8_t idx=0;idx<CYCLE_SLOT_CNT;idx++){
-        printf("  %2d %7ld %7ld %7ld %7ld %7ld    %3s    %3ld"NL, idx, stat->send[idx], stat->recv[idx], stat->recvd[idx], stat->txack[idx], stat->rxack[idx], stat->crc_err==0?"Yes":"No ", stat->rssi[idx]);
+    printf(" slot   send    recv   reccd    sack    rack  crc_err  rssi" NL);
+    for (uint8_t idx = 0; idx < CYCLE_SLOT_CNT; idx++) {
+        printf("  %2d %7ld %7ld %7ld %7ld %7ld    %3s    %3ld" NL, idx, stat->send[idx], stat->recv[idx], stat->recvd[idx],
+               stat->txack[idx], stat->rxack[idx], stat->crc_err == 0 ? "Yes" : "No ", stat->rssi[idx]);
     }
-    printf("Active slots = %d"NL, stat->activeSlots);
+    printf("Active slots = %d" NL, stat->activeSlots);
     return EM_OK;
 }
 
-
-system_state_e radio_stat_sync(radio_stat_t *stat){
-    uint16_t sum=0;
-    float usage=0;
-    stat->activeSlots=0;
-    for (uint8_t i = 0;i<CYCLE_SLOT_CNT;i++){
+system_state_e radio_stat_sync(radio_stat_t *stat) {
+    uint16_t sum = 0;
+    float usage = 0;
+    stat->activeSlots = 0;
+    for (uint8_t i = 0; i < CYCLE_SLOT_CNT; i++) {
         uint8_t cnt = radio_stat_get_recv(&rstat, i);
-        if (cnt>0) stat->activeSlots++;
-            sum += cnt;
+        if (cnt > 0)
+            stat->activeSlots++;
+        sum += cnt;
     }
-    usage = sum/((float)stat->activeSlots);
+    usage = sum / ((float)stat->activeSlots);
     if (usage > ACTIVE_SLOT_USAGE) {
         return SYNCHRONIZE_LOCKED;
-    } else{
+    } else {
         return SYNCHRONIZE_LOCKED;
     }
     return SYNCHRONIZE_ERROR;
 }
 
-em_msg radio_stat_print_rssi(radio_stat_t *stat, uint8_t min, uint8_t max){
+em_msg radio_stat_print_rssi(radio_stat_t *stat, uint8_t min, uint8_t max) {
     // clang-format off
     if (!stat) return EM_ERR;
     // clang-format on
-    for (uint8_t ch=min;ch<=max;ch++){
-        printf("Channel %2d = %ld"NL, ch, stat->rssi[ch]);
+    for (uint8_t ch = min; ch <= max; ch++) {
+        printf("Channel %2d = %ld" NL, ch, stat->rssi[ch]);
     }
-    printf("System Master is %ld"NL, stat->master);
+    printf("System Master is %ld" NL, stat->master);
     return EM_OK;
 }
-

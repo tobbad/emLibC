@@ -64,7 +64,7 @@ buffer_t *buffer_pool_get(buffer_pool_t *bp) {
             buffer_reset(buffer);
             buffer->state = BUFFER_USED;
             buffer->id = i;
-           return buffer;
+            return buffer;
         }
     }
     return NULL;
@@ -95,7 +95,7 @@ em_msg buffer_pool_return(buffer_pool_t *bp, buffer_t *buffer) {
         printf("bp->buffer[buffer->id]: %p" NL, bp->buffer[buffer->id]);
         printf("buffer                : %p" NL, buffer);
         return EM_ERR;
-    } else{
+    } else {
         return EM_OK;
     }
     return EM_OK;

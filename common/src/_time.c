@@ -4,8 +4,8 @@
  *  Created on: Jan 22, 2025
  *      Author: badi
  */
-#include "common.h"
 #include "_time.h"
+#include "common.h"
 #include "cycle.h"
 #include "serial.h"
 #include <inttypes.h>
@@ -35,13 +35,13 @@ typedef struct time_meas_s {
 
 typedef struct time_single_s {
     time_meas_t measurement[TIME_MEAS_CNT];
-    int8_t  idx;
+    int8_t idx;
     uint8_t max;
     int64_t init_ns;
     int64_t last_start_ns;
     int64_t first_ns;
     int64_t last_ns; // This is set, when maximal baudrate was achived
-    float   max_baud;
+    float max_baud;
     int32_t max_cnt;
     mode_e mode;
     uint8_t name[LINE_CHAR];
@@ -129,18 +129,17 @@ time_handle_t time_new(char *name) {
     return -1;
 }
 
-void time_delete(time_handle_t hdl){
+void time_delete(time_handle_t hdl) {
     // clang-format off
     if (!_time.init) return;
     // clang-format on
-    if ( time_check_hdl(hdl) == EM_OK){
-        printf("Delete handler %s (%d)"NL, _time.time[hdl].name, hdl);
+    if (time_check_hdl(hdl) == EM_OK) {
+        printf("Delete handler %s (%d)" NL, _time.time[hdl].name, hdl);
         _time.used &= ~(1U << hdl); /* Bit des Handles loeschen, nicht die Nummer XORen */
     } else {
         printf("*** Cannot delete handler (%d)" NL, hdl);
     }
 };
-
 
 em_msg time_set_mode(time_handle_t hdl, mode_e mode) {
     em_msg res = EM_ERR;

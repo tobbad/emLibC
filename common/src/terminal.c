@@ -6,7 +6,6 @@
  */
 #include "common.h"
 #include "device.h"
-#include "serial.h"
 #include "keyboard.h"
 #include "serial.h"
 #include "state.h"

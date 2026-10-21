@@ -14,22 +14,22 @@
 uint32_t HAL_GetTick() { return 1; };
 #endif
 
-static idx2str_t kstate[KEY_STATE_CNT+1] = {
+static idx2str_t kstate[KEY_STATE_CNT + 1] = {
     {.str = "OFF", .idx = OFF},
     {.str = "BL ", .idx = BLINKING},
     {.str = "ON ", .idx = ON},
     {.str = "   ", .idx = KEY_STATE_CNT},
 };
 
-static idx2str_t kstate_s[KEY_STATE_CNT+1] = {
+static idx2str_t kstate_s[KEY_STATE_CNT + 1] = {
     {.str = "OF", .idx = OFF},
     {.str = "BL", .idx = BLINKING},
     {.str = "ON", .idx = ON},
     {.str = "  ", .idx = KEY_STATE_CNT},
 };
 
-idxa2str_t kstatea2str =  {.cnt = KEY_STATE_CNT+1, .entry = (idx2str_t *)&kstate};
-idxa2str_t kstateas2str = {.cnt = KEY_STATE_CNT+1, .entry = (idx2str_t *)&kstate_s};
+idxa2str_t kstatea2str = {.cnt = KEY_STATE_CNT + 1, .entry = (idx2str_t *)&kstate};
+idxa2str_t kstateas2str = {.cnt = KEY_STATE_CNT + 1, .entry = (idx2str_t *)&kstate_s};
 
 em_msg state_init(state_t *state) {
     em_msg res = EM_ERR;
@@ -86,13 +86,9 @@ em_msg state_set(state_t *state, uint8_t nr, key_state_e ns) {
     return EM_OK;
 }
 
-char * state_key_string( key_state_e nr) {
-    return idxa2str(&kstatea2str, nr);
-}
+char *state_key_string(key_state_e nr) { return idxa2str(&kstatea2str, nr); }
 
-char * state_keys_string( key_state_e nr) {
-    return idxa2str(&kstateas2str, nr);
-}
+char *state_keys_string(key_state_e nr) { return idxa2str(&kstateas2str, nr); }
 
 key_state_e state_get(const state_t *state, uint8_t nr) {
     em_msg res = EM_ERR;
@@ -110,7 +106,7 @@ em_msg state_set_state(const state_t *from, state_t *to) {
     if (state_check(from)) return res;
     // clang-format on
     to->first = from->first;
-    to->cnt   = from->cnt;
+    to->cnt = from->cnt;
     for (uint8_t oi = from->first, ii = to->first; oi < from->first + from->cnt; oi++, ii++) {
         key_state_e fstate = state_get(from, oi);
         state_set(to, ii, fstate);
@@ -124,7 +120,7 @@ key_state_e state_key_diff(key_state_e state1, key_state_e state2) {
     if (state1 == state2) return OFF;
     if (state2 > state1) return (state2 - state1);
     // clang-format on
-    return (state2 + ON+1 - state1); // state2 < state1
+    return (state2 + ON + 1 - state1); // state2 < state1
 }
 
 em_msg state_set_key_by_idx(state_t *state, uint8_t nr, key_state_e new_state) {

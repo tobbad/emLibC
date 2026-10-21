@@ -38,8 +38,10 @@ i2c_handle li2c_init(I2C_HandleTypeDef *i2c_dev, uint8_t i2cAdr) {
 }
 
 em_msg i2c_write(i2c_handle i2c_h, uint8_t cnt, uint8_t *txbuffer) {
-    if ((i2c_h > 0) && (i2c_h <= I2C_HANDLLE_CNT) && (txbuffer != NULL) &&
-        (my_dev[i2c_h].i2c != NULL) && (cnt < MAX_TRANSFER_SIZE)) {
+    // clang-format off
+    if ((i2c_h > 0) && (i2c_h <= I2C_HANDLLE_CNT) && (txbuffer != NULL)
+        && (my_dev[i2c_h].i2c != NULL) &&  (cnt < MAX_TRANSFER_SIZE)) {
+        // clang-format on
         uint8_t buffer[MAX_TRANSFER_SIZE];
         uint16_t adr = my_dev[i2c_h].adr | 0x01;
         HAL_I2C_Master_Transmit(my_dev[i2c_h].i2c, adr, txbuffer, cnt, 100);
@@ -53,8 +55,10 @@ em_msg i2c_write(i2c_handle i2c_h, uint8_t cnt, uint8_t *txbuffer) {
 
 em_msg i2c_read(i2c_handle i2c_h, uint8_t cnt, uint8_t *rxbuffer) {
     /* '==' statt '=' -- die Zuweisung nullte den Device-Pointer als Seiteneffekt. */
-    if ((i2c_h > 0) && (i2c_h <= I2C_HANDLLE_CNT) && (my_dev[i2c_h].i2c != NULL) &&
-        (cnt < MAX_TRANSFER_SIZE)) {
+    // clang-format off
+    if ((i2c_h > 0) && (i2c_h <= I2C_HANDLLE_CNT) && (my_dev[i2c_h].i2c != NULL)
+        && (cnt < MAX_TRANSFER_SIZE)) {
+        // clang-format on
         uint16_t adr = my_dev[i2c_h].adr & 0xFE;
         UNUSED(adr);
     } else {

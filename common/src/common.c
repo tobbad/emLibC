@@ -6,12 +6,12 @@
  */
 
 #include "common.h"
+#include "assert.h"
 #include "state.h"
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include "assert.h"
 #ifndef UNIT_TEST
 #if defined(__CORTEX_M) && (__CORTEX_M < 3U)
 #else
@@ -21,11 +21,11 @@
 #endif
 
 static idx2str_t sync2str[] = {
-    {.str = (char *)&"SYNC_NA      ", .idx = SYNC_NA},        /*!< SYNC_RESET */
-    {.str = (char *)&"SYNC_RESET   ", .idx = SYNC_RESET},        /*!< SYNC_RESET */
-    {.str = (char *)&"SYNCHRONIZE  ", .idx = SYNCHRONIZE},       /*!< Start synchronize */
-    {.str = (char *)&"SYNC_READY   ", .idx = SYNCHRONIZE_READY}, /*!< Partly synchronized */
-    {.str = (char *)&"SYNC_ERROR   ", .idx = SYNCHRONIZE_ERROR}, /*!< Synchronizion error */
+    {.str = (char *)&"SYNC_NA      ", .idx = SYNC_NA},            /*!< SYNC_RESET */
+    {.str = (char *)&"SYNC_RESET   ", .idx = SYNC_RESET},         /*!< SYNC_RESET */
+    {.str = (char *)&"SYNCHRONIZE  ", .idx = SYNCHRONIZE},        /*!< Start synchronize */
+    {.str = (char *)&"SYNC_READY   ", .idx = SYNCHRONIZE_READY},  /*!< Partly synchronized */
+    {.str = (char *)&"SYNC_ERROR   ", .idx = SYNCHRONIZE_ERROR},  /*!< Synchronizion error */
     {.str = (char *)&"SYNC_LOCKED  ", .idx = SYNCHRONIZE_LOCKED}, /*!< Device claimed tom be master or slave */
 };
 idxa2str_t synca2str = {.cnt = ELCNT(sync2str), .entry = (idx2str_t *)&sync2str};
@@ -33,31 +33,30 @@ idxa2str_t synca2str = {.cnt = ELCNT(sync2str), .entry = (idx2str_t *)&sync2str}
 char ascihex[ASCIHEX_LEN] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 char cBuf[TX_BUFFER_SIZE];
 
-char nibble2char(uint8_t nr){
+char nibble2char(uint8_t nr) {
     nr &= 0x0f;
-    if (nr<10){
-        return nr+'0';
+    if (nr < 10) {
+        return nr + '0';
     } else {
-        return nr - 10+'A';
+        return nr - 10 + 'A';
     }
 }
 
-
 /**
-  * @brief  Convert Hex 32Bits value into char
-  * @param  value: value to convert
-  * @param  pbuf: pointer to the buffer
-  * @param  len: buffer length
-  * @retval None
-  */
-static void  int322unicode(uint32_t value, uint8_t * pbuf, uint8_t len){
+ * @brief  Convert Hex 32Bits value into char
+ * @param  value: value to convert
+ * @param  pbuf: pointer to the buffer
+ * @param  len: buffer length
+ * @retval None
+ */
+static void int322unicode(uint32_t value, uint8_t *pbuf, uint8_t len) {
     uint8_t idx = 0;
     for (idx = 0; idx < len; idx++) {
-        uint8_t shift = (8*(len-idx-1));
+        uint8_t shift = (8 * (len - idx - 1));
         uint8_t val = value >> shift;
-        pbuf[2*idx]   = nibble2char(val>>4);
-        pbuf[2*idx+1] = nibble2char(val&0x0f);
-        pbuf[2*idx+2] = 0;
+        pbuf[2 * idx] = nibble2char(val >> 4);
+        pbuf[2 * idx + 1] = nibble2char(val & 0x0f);
+        pbuf[2 * idx + 2] = 0;
     }
 }
 
@@ -97,15 +96,15 @@ size_t board_get_unique_id(uint8_t *id, size_t max_len) {
 }
 #endif
 
-char*  uniq_idstr(char* idstr, uint8_t len){
-    static const uint8_t idlen =  3;
-    uint32_t  id[idlen];
-    assert(len>=idlen*4*2+1);
-    memset(idstr,0, idlen*4);
-    board_get_unique_id((uint8_t*)&id, idlen*4);
-    for (uint8_t i=0;i<idlen;i++){
-        uint32_t val= *(uint32_t*)&id[i];
-        int322unicode(val, (uint8_t*)&idstr[8*i], 4 );
+char *uniq_idstr(char *idstr, uint8_t len) {
+    static const uint8_t idlen = 3;
+    uint32_t id[idlen];
+    assert(len >= idlen * 4 * 2 + 1);
+    memset(idstr, 0, idlen * 4);
+    board_get_unique_id((uint8_t *)&id, idlen * 4);
+    for (uint8_t i = 0; i < idlen; i++) {
+        uint32_t val = *(uint32_t *)&id[i];
+        int322unicode(val, (uint8_t *)&idstr[8 * i], 4);
     }
     return idstr;
 }
@@ -256,10 +255,10 @@ type_e clable2type(clabel_u *lbl) {
 
     bool itIs = true;
     bool itIs_n;
-    for (uint8_t i =0; i <len; i++) {
-        for (uint8_t j=0;j<ASCIHEX_LEN;j++){
-            itIs_n = ascihex[j]==lbl->str[i];
-            if (itIs_n){
+    for (uint8_t i = 0; i < len; i++) {
+        for (uint8_t j = 0; j < ASCIHEX_LEN; j++) {
+            itIs_n = ascihex[j] == lbl->str[i];
+            if (itIs_n) {
                 break;
             }
         }
@@ -290,33 +289,34 @@ type_e clable2type(clabel_u *lbl) {
     return res;
 }
 
-int8_t hchar2int(char ch){
-    for (int8_t i=0;i<ASCIHEX_LEN;i++){ /* ascihex[] hat ASCIHEX_LEN Einträge */
-        if (ascihex[i]==ch){
+int8_t hchar2int(char ch) {
+    for (int8_t i = 0; i < ASCIHEX_LEN; i++) { /* ascihex[] hat ASCIHEX_LEN Einträge */
+        if (ascihex[i] == ch) {
             return i;
         }
     }
     return EM_ERR;
 }
 
-
-int16_t uint_pow(unsigned base, unsigned exp){
+int16_t uint_pow(unsigned base, unsigned exp) {
     unsigned res = 0;
     res = (uint8_t)pow(base, exp) + 1e-9;
     return res;
 }
 
-int8_t clabel2uint(clabel_u *lbl){
+int8_t clabel2uint(clabel_u *lbl) {
     if (lbl == NULL) {
         return -1;
     }
     lbl->str[CMD_LEN - 1] = 0;
     uint8_t len = strlen(lbl->str);
     int8_t res = 0;
-    for (int8_t i= 0;i <len ;i++){
+    if (isalpha(lbl->str[0]))
+        return -1;
+    for (int8_t i = 0; i < len; i++) {
         int8_t digit = hchar2int(lbl->str[i]);
-        if (digit>=0){
-            res += digit*uint_pow(10, len-i-1);
+        if (digit >= 0) {
+            res += digit * uint_pow(10, len - i - 1);
         } else {
             return -1;
         }
@@ -402,10 +402,11 @@ uint32_t swap(uint32_t val) {
     return out;
 };
 
-int8_t int8bit_cnt(int8_t val){
+int8_t int8bit_cnt(int8_t val) {
     int8_t cnt = 0;
-    for (uint8_t i=0;i<sizeof(int8_t);i++){
-        if (val & (1<<i)) cnt++;
+    for (uint8_t i = 0; i < sizeof(int8_t); i++) {
+        if (val & (1 << i))
+            cnt++;
     }
     return cnt;
 }

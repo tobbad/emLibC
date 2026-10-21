@@ -29,9 +29,7 @@ uint16_t sh_hash_function(const char *key) {
     return (uint16_t)(sum % SH_BUCKET_CNT);
 }
 
-static bool sh_key_valid(const char *key) {
-    return (key != NULL) && (strnlen(key, SH_KEY_LEN) < SH_KEY_LEN);
-}
+static bool sh_key_valid(const char *key) { return (key != NULL) && (strnlen(key, SH_KEY_LEN) < SH_KEY_LEN); }
 
 static sh_node_t *sh_find(const sh_hash_map_t *mp, const char *key) {
     sh_node_t *node = mp->bucket[sh_hash_function(key)];
