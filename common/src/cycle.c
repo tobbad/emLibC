@@ -723,7 +723,7 @@ void cycle_increment(cycle_t *cycle) {
         if (cycle->psubSlot > 0) {
             // clang-format off
             if (cycle->role == MASTER)  cycle->subSlot = (cycle->master * CYCLE_SUB_SLOT_CNT) - 1;
-            else (cycle->role == SLAVE)  cycle->subSlot = cycle->psubSlot;
+            else if (cycle->role == SLAVE)  cycle->subSlot = cycle->psubSlot;
             // clang-format on
 
             cycle->psubSlot = 0;
