@@ -92,14 +92,16 @@ em_msg cycle_init(cycle_t *cycle, dev_handle_t hdl, int8_t tx_ss, int8_t rx_ss, 
     memset(cycle, 0, sizeof(cycle_t));
     cycle->tx_ss  = tx_ss;
     cycle->rx_ss  = rx_ss;
-    cycle->postrx  = abs(postrx);
+    cycle->postrx  = postrx;
     cycle->kaCnt   = kaCnt;
     cycle->timer   = htim;
     cycle->subSlot = 0;
-    cycle->slot    = SLOT_NOT_SET;
+    cycle->slot     = SLOT_NOT_SET;
+    cycle->master   = SLOT_NOT_SET;
     cycle->sync_state = SYNC_RESET;
-    cycle->init    = true;
+    cycle->psync_state = SYNC_RESET;
     cycle->hdl     = hdl;
+    cycle->init    = true;
     // clang-format on
     cycle_sscnt_init(cycle, RADIO_RX);
     cycle_sscnt_init(cycle, RADIO_TX);
@@ -128,6 +130,13 @@ em_msg cycle_reset(cycle_t *cycle) {
     cycle->masterAge= 0;
     cycle->master   = SLOT_NOT_SET;
     // clang-format on
+<<<<<<< HEAD
+=======
+    cycle->isMaster  = false;
+    cycle->isSlave   = false;
+    cycle->slaveAge  = 0;
+    cycle->masterAge = 0;
+>>>>>>> a157c2b (Added pending sync mecano)
     res = EM_OK;
     return res;
 };
@@ -735,6 +744,7 @@ void cycle_increment(cycle_t *cycle) {
     }
     if (cycle_sync_ok(cycle)) {
 			if (cycle->psubSlot > 0) {
+<<<<<<< HEAD
 				if (cycle->role == MASTER)
 					cycle->subSlot = (cycle->master * CYCLE_SUB_SLOT_CNT) - 1;
 				else if (cycle->role == SLAVE) {
