@@ -747,7 +747,7 @@ void cycle_increment(cycle_t *cycle) {
 //				}
 				cycle->psubSlot = 0;
 //#ifndef UNIT_TEST
-				stateled_dtoggle_pin(cycle_upd);
+				stateled_dtoggle_pin(STATELED_INBUILD, cycle_upd);
 //#endif
             }
 			cycle->subSlot++;
@@ -758,7 +758,7 @@ void cycle_increment(cycle_t *cycle) {
 			cycle->sSlot   = CYCLE_ACT_SUB_SLOT(cycle);
 #if OPTION_SHOW_TIMING == 1
            //stateled_set(cycle->sSlot);
-	       stateled_toggle_pin(ss_toggle);
+	       stateled_toggle_pin(STATELED_INBUILD, ss_toggle);
 #endif
 //		if (cycle->doMeasure[RADIO_RX]) {
 //			int8_t lss = cycle->ssCnt[RADIO_RX];
@@ -776,13 +776,13 @@ void cycle_increment(cycle_t *cycle) {
 //		}
 	       if (cycle->actSlot != cycle->lSlot) {
 #if OPTION_SHOW_TIMING == 1
-	           //stateled_set(cycle->actSlot);
-	    	   stateled_toggle_pin(slot_toggle);
+	           //stateled_set(STATELED_INBUILD, cycle->actSlot);
+	    	   stateled_toggle_pin(STATELED_INBUILD, slot_toggle);
 #endif
 	    	 cycle->lSlot = CYCLE_ACT_SLOT(cycle);
 //             if ((cycle->actSlot == 0) && (cycle_sync_ok(cycle))){
 //#if OPTION_SHOW_TIMING == 1
-//                  stateled_toggle_pin(cycle_toggle);
+//                  stateled_toggle_pin(STATELED_INBUILD, cycle_toggle);
 //#endif
 //                cycle->cycle += 1;
 //                cycle->set = true;
