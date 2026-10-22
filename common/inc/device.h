@@ -16,8 +16,7 @@ typedef enum { XSCAN, EIGHTKEY, TERMINAL, DEV_TYPE_NA } dev_type_e;
 #include "common.h"
 #define DEV_HANDLE_NOTDEFINED -1
 #define DEVICE_CNT 5
-typedef int8_t
-    dev_handle_t; /**< A value >=0 is OK, otherwise this is invalid */
+typedef int8_t   dev_handle_t; /**< A value >=0 is OK, otherwise this is invalid */
 
 typedef enum {
   DEV_CMD_RESET_DEVICE = 0,
