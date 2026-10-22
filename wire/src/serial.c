@@ -426,48 +426,19 @@ kybd_t serial_dev = {
 int32_t serial_waitForNumber(char **key) {
     if (!isio.init)
         return EM_ERR;
-    char *str = NULL;
+    char* endptr;
 #ifdef HAL_PCD_MODULE_ENABLED
     if (urx_buffer.state == BUFFER_USED) {
         *key = (char *)&urx_buffer.mem[0];
         return clabel2uint((clabel_u *)&urx_buffer.mem[0]);
     }
 #endif
-    clabel_u lbl = {.cmd = 0};
-    uint8_t len = 0;
-    uint8_t i;
-    if (new != NULL) {
-        str = new;
-        len = strlen(str);
-        len = MIN(len, CMD_LEN);
-        for (i = 0; i < len; i++) {
-            lbl.str[i] = new[i];
-        }
-        lbl.str[i] = 0;
-        new = NULL;
-    }
-    if ((str == NULL) || (strlen(str) == 0))
-        return -1;
-    uint8_t ctype = clable2type(&lbl);
-    if (ctype == hexnum) {
-        *key = (char *)&str[0];
-        return clabel2uint(&lbl);
-    } else if(ctype == _float){
-        char* errCheck;
-        float res  = strtod(lbl.str, &errCheck);
-        if(errCheck == lbl.str) {
-           printf("Conversion error:%s\n", lbl.str);
-           return -1;
-        }
-        *key = (char *)&str[0];
-        return (int)res;
-    }
-    if (ctype == ascii) {
-        *key = (char *)&str[0];
+    if (strlen((char*)isio.buffer[SIO_RX]->mem)==0) return -1;
+    long num = strtol((char*)isio.buffer[SIO_RX]->mem , &endptr, 10);
+    if (num == UINTMAX_MAX && errno == ERANGE){
         return -1;
     }
-
-    return -1;
+    return (int32_t)num;
 }
 
 static void serial_release_tx(void) {
