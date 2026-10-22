@@ -28,32 +28,33 @@
 #endif
 #ifndef UNIT_TEST
 typedef struct cycle_s {
-    volatile uint8_t subSlot; // actual sub slot
-    volatile uint8_t psubSlot;         //  Pendig difference subslot value
-    volatile int8_t actSlot;
-    volatile int8_t lSlot;
-    volatile int8_t sSlot;
-    volatile uint16_t cycle;
-    int8_t slot; // Configured slot of device
-    int8_t master;
-    bool isSlave;
-    bool isMaster;
-    uint16_t masterAge; // frame cycles since the network was last heard from
-    uint16_t slaveAge;  // iterates over slave cycles till role is resetted
-    int8_t tx_ss;
-    int8_t rx_ss;
-    int8_t postrx;
-    dev_role_e role;
-    dev_handle_t hdl;
-    int8_t kaCnt;      // Set Keep alive counter
-    int8_t _kaCnt;     // Keep alive counter
-    uint32_t timerCNT; // MCU cycle count when cycle count was set
-    // clang-format off
-    uint16_t ssCnt[RADIO_CNT]; // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
-    bool doMeasure[RADIO_CNT];
-    bool cntErrror[RADIO_CNT];
     // clang-format on
-    system_state_e sync_state;
+    volatile uint8_t  subSlot; // actual sub slot
+    volatile uint8_t  psubSlot;         //  Pendig difference subslot value
+    volatile system_state_e sync_state;
+    volatile system_state_e psync_state;
+    volatile int8_t   actSlot;
+    volatile int8_t   lSlot;
+    volatile int8_t   sSlot;
+    volatile uint16_t cycle;
+    int8_t            slot; // Configured slot of device
+    int8_t            master;
+    bool              isSlave;
+    bool              isMaster;
+    uint16_t          masterAge; // frame cycles since the network was last heard from
+    uint16_t          slaveAge;  // iterates over slave cycles till role is resetted
+    int8_t            tx_ss;
+    int8_t            rx_ss;
+    int8_t            postrx;
+    dev_role_e        role;
+    dev_handle_t      hdl;
+    int8_t            kaCnt;      // Set Keep alive counter
+    int8_t            _kaCnt;     // Keep alive counter
+    uint32_t          timerCNT; // MCU cycle count when cycle count was set
+    uint16_t          ssCnt[RADIO_CNT];    // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
+    bool              doMeasure[RADIO_CNT];
+    bool              cntErrror[RADIO_CNT];
+    // clang-format on
     bool init;
     bool set; // is set when cycle was finished
     TIM_HandleTypeDef *timer;
@@ -287,6 +288,17 @@ uint16_t cycle_cycle(cycle_t *cycle) {
     return cycle->cycle;
 }
 
+bool cycle_sync_ok(cycle_t *cycle) {
+    em_msg res = EM_ERR;
+    // clang-format off
+    if (!cycle) return SYNC_NA;
+    if (!cycle->init) return SYNC_NA;
+    // clang-format on
+    res = (cycle->sync_state == SYNCHRONIZE) || (cycle->sync_state == SYNCHRONIZE_READY)  ||
+          (cycle->sync_state == SYNCHRONIZE_ERROR) ||(cycle->sync_state == SYNCHRONIZE_LOCKED);
+    return res;
+}
+
 // Decrement keep alive
 em_msg cycle_dec_ka(cycle_t *cycle) {
     em_msg res = EM_ERR;
@@ -347,6 +359,7 @@ void cycle_reset_role(cycle_t *cycle) {
     if (!cycle) return;
     if (!cycle->init) return;
     if (cycle->isSlave) {
+    // clang-format on
         cycle->role     = NOT_SET;
         cycle->isSlave  = false;
         cycle->slaveAge = 0;
@@ -384,9 +397,9 @@ em_msg cycle_set_state(cycle_t *cycle, system_state_e state) {
     // clang-format off
     if (!cycle) return res;
     if (!cycle->init) return res;
-    if (state >= SYNC_CNT) return res;
+    if ((state >= SYNC_CNT) ||(state<SYNC_RESET)) return res;
     // clang-format on
-    cycle->sync_state = state;
+    cycle->psync_state = state;
     res = EM_OK;
     return res;
 }
@@ -481,15 +494,14 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, dev_role_e ss_type) {
     if (cycle->role == NOT_SET){
         cycle->role = ss_type;
     }
-    if ((cycle->sync_state == SYNCHRONIZE) || (cycle->sync_state == SYNCHRONIZE_READY)  ||
-        (cycle->sync_state == SYNCHRONIZE_ERROR) ||(cycle->sync_state == SYNCHRONIZE_LOCKED)) {
+    if (cycle_sync_ok(cycle)) {
             if (cycle->role == MASTER) {
                 if (cycle->isMaster) return EM_ERR;
 #ifndef UNIT_TEST
-//                cycle->timerCNT = cycle->timer->Instance->CNT;
+                   cycle->timerCNT = cycle->timer->Instance->CNT;
 #endif
                 if (cycle->role  == MASTER){
-                    cycle->timerCNT  = 0;
+                    //cycle->timerCNT  = 0;
                     cycle_reset(cycle);
                     cycle->master    = rxSlot;
                     cycle->psubSlot  = (cycle->master * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO + cycle_tx_ss(cycle)) % CYCLE_MODULO;
@@ -716,60 +728,68 @@ void cycle_increment(cycle_t *cycle) {
     if (!cycle) return;
     if (!cycle->init) return;
     // clang-format on
+	if (cycle->psync_state > SYNC_RESET){
+		cycle->sync_state = cycle->psync_state;
+		cycle->psync_state = SYNC_RESET;
+	}
     if (cycle->sync_state == SYNCHRONIZE) {
         cycle->sync_state = SYNCHRONIZE_READY;
     }
-    if (cycle->sync_state >= SYNCHRONIZE_READY) {
-        if (cycle->psubSlot > 0) {
-            // clang-format off
-            if (cycle->role == MASTER)  cycle->subSlot = (cycle->master * CYCLE_SUB_SLOT_CNT) - 1;
-            else if (cycle->role == SLAVE)  cycle->subSlot = cycle->psubSlot;
-            // clang-format on
-
-            cycle->psubSlot = 0;
-#ifndef UNIT_TEST
-            stateled_dtoggle_pin(cycle->hdl, cycle_upd);
-
-#endif
-        }
-        cycle->subSlot++;
-        cycle->subSlot = (cycle->subSlot % (CYCLE_SUB_SLOT_CNT * CYCLE_SLOT_CNT));
-        cycle->actSlot = CYCLE_ACT_SLOT(cycle);
-        cycle->sSlot = CYCLE_ACT_SUB_SLOT(cycle);
-#if OPTION_SHOW_TIMING == 1
-        // stateled_set(cycle->sSlot);
-        stateled_toggle_pin(cycle->hdl, ss_toggle);
-#endif
-        if (cycle->doMeasure[RADIO_RX]) {
-            int8_t lss = cycle->ssCnt[RADIO_RX];
-            cycle->ssCnt[RADIO_RX]++;
-            if (cycle->ssCnt[RADIO_RX] < lss) {
-                cycle->cntErrror[RADIO_RX] = true;
+    if (cycle_sync_ok(cycle)) {
+			if (cycle->psubSlot > 0) {
+//				if (cycle->role == MASTER)
+//					cycle->subSlot = (cycle->master * CYCLE_SUB_SLOT_CNT) - 1;
+//				else if (cycle->role == SLAVE) {
+//					cycle->subSlot = cycle->psubSlot;
+//				}
+//				else {
+//					assert(1);
+//				}
+				cycle->psubSlot = 0;
+//#ifndef UNIT_TEST
+				stateled_dtoggle_pin(cycle_upd);
+//#endif
             }
-        }
-        if (cycle->doMeasure[RADIO_TX]) {
-            int8_t lss = cycle->ssCnt[RADIO_TX];
-            cycle->ssCnt[RADIO_TX]++;
-            if (cycle->ssCnt[RADIO_TX] < lss) {
-                cycle->cntErrror[RADIO_RX] = true;
-            }
-        }
-        if (cycle->actSlot != cycle->lSlot) {
+			cycle->subSlot++;
+			uint16_t s = cycle->subSlot;
+			s =   s% (CYCLE_SUB_SLOT_CNT * CYCLE_SLOT_CNT);
+			cycle->subSlot = s;
+			cycle->actSlot = CYCLE_ACT_SLOT(cycle);
+			cycle->sSlot   = CYCLE_ACT_SUB_SLOT(cycle);
 #if OPTION_SHOW_TIMING == 1
-            stateled_set(cycle->hdl, cycle->actSlot);
-            stateled_toggle_pin(cycle->hdl, slot_toggle);
+           //stateled_set(cycle->sSlot);
+	       stateled_toggle_pin(ss_toggle);
 #endif
-            if ((cycle->actSlot == 0) && (cycle->sync_state >= SYNCHRONIZE)) {
+//		if (cycle->doMeasure[RADIO_RX]) {
+//			int8_t lss = cycle->ssCnt[RADIO_RX];
+//			cycle->ssCnt[RADIO_RX]++;
+//			if (cycle->ssCnt[RADIO_RX] < lss) {
+//				cycle->cntErrror[RADIO_RX] = true;
+//			}
+//		}
+//		if (cycle->doMeasure[RADIO_TX]) {
+//			int8_t lss = cycle->ssCnt[RADIO_TX];
+//			cycle->ssCnt[RADIO_TX]++;
+//			if (cycle->ssCnt[RADIO_TX] < lss) {
+//				cycle->cntErrror[RADIO_RX]  = true;
+//			}
+//		}
+	       if (cycle->actSlot != cycle->lSlot) {
 #if OPTION_SHOW_TIMING == 1
-                stateled_toggle_pin(cycle->hdl, cycle_toggle);
+	           //stateled_set(cycle->actSlot);
+	    	   stateled_toggle_pin(slot_toggle);
 #endif
-                cycle->cycle += 1;
-                cycle->set = true;
-                cycle_age_role(cycle);
-            }
-            cycle->lSlot = CYCLE_ACT_SLOT(cycle);
-        }
-    }
+	    	 cycle->lSlot = CYCLE_ACT_SLOT(cycle);
+//             if ((cycle->actSlot == 0) && (cycle_sync_ok(cycle))){
+//#if OPTION_SHOW_TIMING == 1
+//                  stateled_toggle_pin(cycle_toggle);
+//#endif
+//                cycle->cycle += 1;
+//                cycle->set = true;
+//                cycle_age_role(cycle);
+//              }
+	      }
+     }
 }
 
 bool cycle_ask_set(cycle_t *cycle) {

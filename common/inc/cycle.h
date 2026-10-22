@@ -73,6 +73,8 @@ extern idxa2str_t synca2str;
 typedef struct cycle_s {
     volatile uint8_t subSlot; // actual sub slot
     volatile uint8_t psubSlot;         //  Pendig difference subslot value
+    volatile system_state_e sync_state;
+    volatile system_state_e psync_state;
     volatile int8_t actSlot;
     volatile int8_t lSlot;
     volatile int8_t sSlot;
@@ -117,6 +119,7 @@ em_msg cycle_text_print_s(cycle_t *cycle, const char *text, char *str);
 int8_t cycle_act_slot(cycle_t *cycle);
 int8_t cycle_act_sub_slot(cycle_t *cycle);
 uint16_t cycle_cycle(cycle_t *cycle);
+bool cycle_sync_ok(cycle_t *cycle);
 em_msg cycle_update(cycle_t *cycle);
 dev_role_e cycle_role(cycle_t *cycle);
 char *cycle_role_str(cycle_t *cycle);
