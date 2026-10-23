@@ -55,6 +55,7 @@ typedef enum {
   DEV_ALL = DEV_DRCB << 1,
 } dev_func_t;
 
+bool device_hdl_valid(dev_handle_t hdl);
 dev_handle_t device_init(device_t *dev, void *user_data);
 em_msg device_check(dev_handle_t hdl, dev_func_t dev_type);
 em_msg device_read(dev_handle_t hdl, uint8_t *buffer, int16_t *cnt);

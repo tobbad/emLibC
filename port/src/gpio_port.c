@@ -36,6 +36,18 @@ em_msg GpioPort_setMask(gpio_port_t *port, uint16_t mask) {
     return EM_OK;
 }
 
+em_msg GpioPortTogglePolarity(gpio_port_t *port) {
+    EM_RETURN_IF_NULL(port, EM_ERR);
+    em_msg res = EM_OK;
+    bool pol;
+    for (uint8_t i = 0; i < port->cnt; i++) {
+        pol = port->pin[i].inv;
+        pol = !pol;
+        port->pin[i].inv =pol;
+    }
+    return res;
+}
+
 em_msg GpioPortToggle(gpio_port_t *port) {
     EM_RETURN_IF_NULL(port, EM_ERR);
     em_msg res = EM_OK;

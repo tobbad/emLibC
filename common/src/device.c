@@ -21,7 +21,9 @@ static device_t *my_devicesp[DEVICE_CNT];
 
 /* Handles index my_devicesp[]; reject anything outside [0, DEVICE_CNT) so no
  * accessor ever reads or writes past the array. dev_handle_t is signed. */
-static bool device_hdl_valid(dev_handle_t hdl) { return (hdl >= 0) && (hdl < DEVICE_CNT); }
+bool device_hdl_valid(dev_handle_t hdl) {
+    return (hdl >= 0) && (hdl < DEVICE_CNT);
+}
 
 static uint8_t device_find_dev(const device_t *dev) {
     for (uint8_t i = 0; i < DEVICE_CNT; i++) {

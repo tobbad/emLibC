@@ -46,6 +46,7 @@ typedef enum {
 
 dev_handle_t stateled_init(state_t *state, gpio_port_t *port, uint16_t cycle_size, uint8_t bli_cnt);
 void   stateled_deinit(dev_handle_t dev);
+void   stateled_toggle_polarity(dev_handle_t dev);
 em_msg stateled_set_mask(dev_handle_t dev,uint16_t mask);
 em_msg stateled_set(dev_handle_t dev,uint16_t val);
 em_msg stateled_toggle_port(dev_handle_t dev);

@@ -747,7 +747,7 @@ void cycle_increment(cycle_t *cycle) {
 				}
 				cycle->psubSlot = 0;
 #ifndef UNIT_TEST
-				stateled_dtoggle_pin(cycle->hdl, cycle_upd);
+				stateled_dtoggle_pin(cycle->hdl-1, cycle_upd);
 #endif
             }
 			cycle->subSlot++;
@@ -757,8 +757,8 @@ void cycle_increment(cycle_t *cycle) {
 			cycle->actSlot = CYCLE_ACT_SLOT(cycle);
 			cycle->sSlot   = CYCLE_ACT_SUB_SLOT(cycle);
 #if OPTION_SHOW_TIMING == 1
-            //stateled_set(cycle->sSlot);
-	        stateled_toggle_pin(cycle->hdl, ss_toggle);
+           //stateled_set(cycle->sSlot);
+	       stateled_toggle_pin(cycle->hdl-1, ss_toggle);
 #endif
 //            if (cycle->doMeasure[RADIO_RX]) {
 //                int8_t lss = cycle->ssCnt[RADIO_RX];
@@ -776,18 +776,18 @@ void cycle_increment(cycle_t *cycle) {
 //            }
 	       if (cycle->actSlot != cycle->lSlot) {
 #if OPTION_SHOW_TIMING == 1
-	    	   stateled_toggle_pin(cycle->hdl, slot_toggle);
-	           stateled_set(STATELED_INBUILD, cycle->actSlot);
+	           //stateled_set(cycle->hdl-1, cycle->actSlot);
+	    	   stateled_toggle_pin(cycle->hdl-1, slot_toggle);
 #endif
 	    	 cycle->lSlot = CYCLE_ACT_SLOT(cycle);
-             if ((cycle->actSlot == 0) && (cycle_sync_ok(cycle))){
-#if OPTION_SHOW_TIMING == 1
-                  stateled_toggle_pin(cycle->hdl, cycle_toggle);
-#endif
-                cycle->cycle += 1;
-                cycle->set = true;
-                cycle_age_role(cycle);
-              }
+//             if ((cycle->actSlot == 0) && (cycle_sync_ok(cycle))){
+//#if OPTION_SHOW_TIMING == 1
+//                stateled_toggle_pin(cycle->hdl-1, cycle_toggle);
+//#endif
+//                cycle->cycle += 1;
+//                cycle->set = true;
+//                cycle_age_role(cycle);
+//              }
 	      }
      }
 }

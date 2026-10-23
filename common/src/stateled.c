@@ -12,12 +12,12 @@
 #include "state.h"
 #define INIT_LED_TIME 100
 typedef struct led_line_s {
-    bool init;
     bool state_init;
     state_t lstate;
     state_t *state;
-    gpio_port_t *port[2];
     uint8_t cycle_size;
+    bool init[2];
+    gpio_port_t *port[2];
     uint16_t mask[2];
     uint8_t bli_cnt[2];
     uint8_t cnt[2];
@@ -88,9 +88,9 @@ dev_handle_t stateled_init(state_t *state, gpio_port_t *port, uint16_t cycle_siz
         dev = STATELED_INBUILD;
         my_stateled.port[dev - 1] = &def_port;
     }
-    my_stateled.init = true;
-    my_stateled.bli_cnt[dev] = bli_cnt * my_stateled.port[dev-1]->cnt;
-    my_stateled.cnt[dev] = 0;
+    my_stateled.init[dev-1] = true;
+    my_stateled.bli_cnt[dev-1] = bli_cnt * my_stateled.port[dev-1]->cnt;
+    my_stateled.cnt[dev-1] = 0;
     GpioPortInit(my_stateled.port[dev-1]);
     for (uint8_t i = 0; i < my_stateled.port[dev-1]->cnt; i++) {
         stateled_on(dev, i);
@@ -106,9 +106,18 @@ void stateled_deinit(dev_handle_t dev) {
     my_stateled.port[dev-1] = NULL;
 };
 
+
+void stateled_toggle_polarity(dev_handle_t dev){
+    // clang-format off
+    if (!my_stateled.init[dev-1]) return;
+    if (!stateled_port_valid(dev)) return ;
+    // clang-format on
+    GpioPortTogglePolarity(my_stateled.port[dev-1]);
+};
+
 em_msg stateled_set_mask(dev_handle_t dev, uint16_t mask) {
     // clang-format off
-    if (!my_stateled.init) return EM_ERR;
+    if (!my_stateled.init[dev-1]) return EM_ERR;
     if (!stateled_port_valid(dev)) return EM_ERR;
     // clang-format on
     return GpioPort_setMask(my_stateled.port[dev-1], mask);
@@ -116,15 +125,15 @@ em_msg stateled_set_mask(dev_handle_t dev, uint16_t mask) {
 
 em_msg stateled_set(dev_handle_t dev, uint16_t val) {
     // clang-format off
-    if (!my_stateled.init) return EM_ERR;
-    if (!stateled_port_valid(dev)) return EM_ERR;
+    if (!my_stateled.init[dev-1]) return EM_ERR;
+    if (!stateled_pin_valid(dev, val)) return EM_ERR;
     // clang-format on
     return GpioPortSet(my_stateled.port[dev-1], val);
 }
 
 em_msg stateled_toggle_port(dev_handle_t dev) {
     // clang-format off
-    if (!my_stateled.init) return EM_ERR;
+    if (!my_stateled.init[dev-1]) return EM_ERR;
     if (!stateled_port_valid(dev)) return EM_ERR;
     // clang-format on
     return GpioPortToggle(my_stateled.port[dev-1]);
@@ -132,7 +141,7 @@ em_msg stateled_toggle_port(dev_handle_t dev) {
 
 void stateled_iterate(dev_handle_t dev) {
     // clang-format off
-    if (!my_stateled.init) return;
+    if (!my_stateled.init[dev-1]) return;
     if (!stateled_port_valid(dev)) return ;
     if ((my_stateled.port[dev-1] == NULL) || (my_stateled.port[dev-1]->cnt == 0)) return;
     // clang-format on
@@ -146,7 +155,7 @@ void stateled_iterate(dev_handle_t dev) {
 
 em_msg stateled_on(dev_handle_t dev, uint8_t led_nr) {
     // clang-format off
-    if (!my_stateled.init) return EM_ERR;
+    if (!my_stateled.init[dev-1]) return EM_ERR;
     if (!stateled_pin_valid(dev, led_nr)) return EM_ERR;
     // clang-format on
     return GpioPinWrite(&my_stateled.port[dev-1]->pin[led_nr], true);
@@ -154,7 +163,7 @@ em_msg stateled_on(dev_handle_t dev, uint8_t led_nr) {
 
 em_msg stateled_off(dev_handle_t dev, uint8_t led_nr) {
     // clang-format off
-    if (!my_stateled.init) return EM_ERR;
+    if (!my_stateled.init[dev-1]) return EM_ERR;
     if (!stateled_pin_valid(dev, led_nr)) return EM_ERR;
     // clang-format on
     return GpioPinWrite(&my_stateled.port[dev-1]->pin[led_nr], false);
@@ -162,7 +171,7 @@ em_msg stateled_off(dev_handle_t dev, uint8_t led_nr) {
 
 em_msg stateled_toggle_pin(dev_handle_t dev, stateled_e led_nr) {
     // clang-format off
-    if (!my_stateled.init) return EM_ERR;
+    if (!my_stateled.init[dev-1]) return EM_ERR;
     if (!stateled_pin_valid(dev, (uint8_t)led_nr)) return EM_ERR;
     // clang-format on
     return GpioPinToggle(&my_stateled.port[dev-1]->pin[led_nr]);
@@ -170,7 +179,7 @@ em_msg stateled_toggle_pin(dev_handle_t dev, stateled_e led_nr) {
 
 em_msg stateled_dtoggle_pin(dev_handle_t dev, stateled_e led_nr) {
     // clang-format off
-    if (!my_stateled.init) return EM_ERR;
+    if (!my_stateled.init[dev-1]) return EM_ERR;
     if (!stateled_pin_valid(dev, (uint8_t)led_nr)) return EM_ERR;
     // clang-format on
     GpioPinToggle(&my_stateled.port[dev-1]->pin[led_nr]);
@@ -179,9 +188,8 @@ em_msg stateled_dtoggle_pin(dev_handle_t dev, stateled_e led_nr) {
 
 em_msg stateled_all_off(dev_handle_t dev) {
     // clang-format off
-    if (!my_stateled.init) return EM_ERR;
+    if (!my_stateled.init[dev-1]) return EM_ERR;
     if (!stateled_port_valid(dev)) return EM_ERR;
-
     // clang-format on
     for (uint8_t i = 0; i < my_stateled.port[dev-1]->cnt; i++) {
         stateled_off(dev, i);
@@ -191,15 +199,15 @@ em_msg stateled_all_off(dev_handle_t dev) {
 
 void stateled_show(dev_handle_t dev, system_state_e state) {
     // clang-format off
-    if (!my_stateled.init) return;
+    if (!my_stateled.init[dev-1]) return;
     if (my_stateled.state==NULL) return;
     if (!stateled_port_valid(dev)) return;
     // clang-format on
-    my_stateled.cnt[dev]++;
-    my_stateled.cnt[dev] = ((my_stateled.cnt[dev]) % my_stateled.cycle_size);
-    bool bstate = (my_stateled.cnt[dev] < (my_stateled.cycle_size >> 1));
+    my_stateled.cnt[dev-1]++;
+    my_stateled.cnt[dev-1] = ((my_stateled.cnt[dev-1]) % my_stateled.cycle_size);
+    bool bstate = (my_stateled.cnt[dev-1] < (my_stateled.cycle_size >> 1));
     if (state == SYNCHRONIZE_ERROR) {
-        if (my_stateled.cnt[dev] == 0) {
+        if (my_stateled.cnt[dev-1] == 0) {
             stateled_toggle_port(dev);
         }
     } else if (state >= SYNCHRONIZE) {
@@ -227,27 +235,27 @@ void stateled_show(dev_handle_t dev, system_state_e state) {
 
 bool stateled_update(dev_handle_t dev, system_state_e state) {
     // clang-format off
-    if (!my_stateled.init) return false;
-    if (!stateled_port_valid(dev)) return EM_ERR;
+    if (!my_stateled.init[dev-1]) return false;
+    if (!stateled_port_valid(dev)) return false;
     // clang-format on
-    my_stateled.bli_cnt[dev] = 0;
-    my_stateled.cnt[dev]++;
-    my_stateled.cnt[dev] = ((my_stateled.cnt[dev]) % my_stateled.cycle_size);
+    my_stateled.bli_cnt[dev-1] = 0;
+    my_stateled.cnt[dev-1]++;
+    my_stateled.cnt[dev-1] = ((my_stateled.cnt[dev-1]) % my_stateled.cycle_size);
     // clang-format off
     if (state == SYNC_RESET) {
         return false;
     }  else if ((state >= SYNCHRONIZE)){
-        if (my_stateled.cnt[dev] == 0){
+        if (my_stateled.cnt[dev-1] == 0){
             stateled_iterate(dev);
-            my_stateled.bli_cnt[dev]++;
+            my_stateled.bli_cnt[dev-1]++;
         }
-        if  (my_stateled.bli_cnt[dev] == my_stateled.cycle_size){
+        if  (my_stateled.bli_cnt[dev-1] == my_stateled.cycle_size){
             stateled_off(dev, 0);
-            my_stateled.bli_cnt[dev]  = 0;
+            my_stateled.bli_cnt[dev-1]  = 0;
             return true;
         }
    } else if (state == SYNCHRONIZE_ERROR){
-        if (my_stateled.cnt[dev] == 0){
+        if (my_stateled.cnt[dev-1] == 0){
             stateled_toggle_port(dev);
         }
     }
