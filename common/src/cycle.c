@@ -130,13 +130,6 @@ em_msg cycle_reset(cycle_t *cycle) {
     cycle->masterAge= 0;
     cycle->master   = SLOT_NOT_SET;
     // clang-format on
-<<<<<<< HEAD
-=======
-    cycle->isMaster  = false;
-    cycle->isSlave   = false;
-    cycle->slaveAge  = 0;
-    cycle->masterAge = 0;
->>>>>>> a157c2b (Added pending sync mecano)
     res = EM_OK;
     return res;
 };
@@ -744,7 +737,6 @@ void cycle_increment(cycle_t *cycle) {
     }
     if (cycle_sync_ok(cycle)) {
 			if (cycle->psubSlot > 0) {
-<<<<<<< HEAD
 				if (cycle->role == MASTER)
 					cycle->subSlot = (cycle->master * CYCLE_SUB_SLOT_CNT) - 1;
 				else if (cycle->role == SLAVE) {
@@ -765,27 +757,27 @@ void cycle_increment(cycle_t *cycle) {
 			cycle->actSlot = CYCLE_ACT_SLOT(cycle);
 			cycle->sSlot   = CYCLE_ACT_SUB_SLOT(cycle);
 #if OPTION_SHOW_TIMING == 1
-           //stateled_set(cycle->sSlot);
-	       stateled_toggle_pin(cycle->hdl, ss_toggle);
+            //stateled_set(cycle->sSlot);
+	        stateled_toggle_pin(cycle->hdl, ss_toggle);
 #endif
-		if (cycle->doMeasure[RADIO_RX]) {
-			int8_t lss = cycle->ssCnt[RADIO_RX];
-			cycle->ssCnt[RADIO_RX]++;
-			if (cycle->ssCnt[RADIO_RX] < lss) {
-				cycle->cntErrror[RADIO_RX] = true;
-			}
-		}
-		if (cycle->doMeasure[RADIO_TX]) {
-			int8_t lss = cycle->ssCnt[RADIO_TX];
-			cycle->ssCnt[RADIO_TX]++;
-			if (cycle->ssCnt[RADIO_TX] < lss) {
-				cycle->cntErrror[RADIO_RX]  = true;
-			}
-		}
+//            if (cycle->doMeasure[RADIO_RX]) {
+//                int8_t lss = cycle->ssCnt[RADIO_RX];
+//                cycle->ssCnt[RADIO_RX]++;
+//                if (cycle->ssCnt[RADIO_RX] < lss) {
+//                    cycle->cntErrror[RADIO_RX] = true;
+//                }
+//            }
+//            if (cycle->doMeasure[RADIO_TX]) {
+//                int8_t lss = cycle->ssCnt[RADIO_TX];
+//                cycle->ssCnt[RADIO_TX]++;
+//                if (cycle->ssCnt[RADIO_TX] < lss) {
+//                    cycle->cntErrror[RADIO_RX]  = true;
+//                }
+//            }
 	       if (cycle->actSlot != cycle->lSlot) {
 #if OPTION_SHOW_TIMING == 1
-	           //stateled_set(STATELED_INBUILD, cycle->actSlot);
 	    	   stateled_toggle_pin(cycle->hdl, slot_toggle);
+	           stateled_set(STATELED_INBUILD, cycle->actSlot);
 #endif
 	    	 cycle->lSlot = CYCLE_ACT_SLOT(cycle);
              if ((cycle->actSlot == 0) && (cycle_sync_ok(cycle))){

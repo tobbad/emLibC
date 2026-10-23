@@ -117,7 +117,7 @@ em_msg stateled_set_mask(dev_handle_t dev, uint16_t mask) {
 em_msg stateled_set(dev_handle_t dev, uint16_t val) {
     // clang-format off
     if (!my_stateled.init) return EM_ERR;
-    if (!stateled_pin_valid(dev, val)) return EM_ERR;
+    if (!stateled_port_valid(dev)) return EM_ERR;
     // clang-format on
     return GpioPortSet(my_stateled.port[dev-1], val);
 }
