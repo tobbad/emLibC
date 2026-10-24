@@ -91,6 +91,7 @@ dev_handle_t stateled_init(state_t *state, gpio_port_t *port, uint16_t cycle_siz
     my_stateled.init[dev-1] = true;
     my_stateled.bli_cnt[dev-1] = bli_cnt * my_stateled.port[dev-1]->cnt;
     my_stateled.cnt[dev-1] = 0;
+    stateled_set_mask(my_stateled.mask[dev-1] ,1<<(port->cnt-1)-1);
     GpioPortInit(my_stateled.port[dev-1]);
     for (uint8_t i = 0; i < my_stateled.port[dev-1]->cnt; i++) {
         stateled_on(dev, i);
