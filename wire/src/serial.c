@@ -83,6 +83,7 @@ isio_t isio;
 static char *new = NULL;
 static void serial_apply_change(clabel_u *lbl);
 static void serial_release_tx(void);
+static void serial_rx_restart(void);
 
 em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     if (isio.init)
@@ -116,7 +117,7 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     srxhdl = time_new("srxhdl");
     stxhdl = time_new("stxhdl");
     time_set_mode(stxhdl, (serial_mode_get() & ONE_SHOT) ? ONESHOT : 0);
-    HAL_UARTEx_ReceiveToIdle_DMA(isio.uart, (uint8_t *)rx_buf, RX_BUFFER_SIZE);
+    serial_rx_restart();
     // we could set the output buffer size to 0:
     // setbuf(stdout, NULL);
     // flush buffer:
@@ -426,6 +427,9 @@ kybd_t serial_dev = {
 int32_t serial_waitForNumber(char **key) {
     if (!isio.init)
         return EM_ERR;
+    // Also polled by the boot prompts (slot, channel, offset), which run
+    // before the main loop: an Rx error there must not leave them deaf.
+    serial_rx_watchdog();
     char* endptr;
 #ifdef HAL_PCD_MODULE_ENABLED
     if (urx_buffer.state == BUFFER_USED) {
@@ -486,7 +490,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
         isio.state.clabel.cmd = 0;
         memcpy((uint8_t *)&isio.state.clabel, new, strlen(new));
         serial_apply_change(&isio.state.clabel);
-        HAL_UARTEx_ReceiveToIdle_DMA(isio.uart, (uint8_t *)rx_buf, RX_BUFFER_SIZE);
+        serial_rx_restart();
     }
 }
 
@@ -508,4 +512,43 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *UartHandle) {
     if (UartHandle->gState != HAL_UART_STATE_BUSY_TX) {
         serial_release_tx();
     }
+    /* An Rx error (overrun ORE, framing FE, noise NE) during DMA reception is
+       a "blocking" error for HAL: it aborts the reception, sets RxState to
+       READY and calls this callback once the DMA abort is done - but never
+       restarts the reception.  The console then stays deaf until the next
+       reset, and a reset command can no longer arrive either: boards that
+       still print normally but ignore every key and every "r"/"s" (USART2
+       CR3.DMAR=0, ISR.ORE=1).  RxState BUSY_RX instead means a non-blocking
+       error (interrupt mode only) or a Tx-side error: the reception is still
+       running and must be left alone. */
+    if (UartHandle->RxState == HAL_UART_STATE_READY) {
+        serial_rx_restart();
+    }
+}
+
+/* (Re)start the console reception: DMA until the line goes idle.  Error flags
+   are cleared first - a pending ORE would abort the new reception at once.
+   If the start fails, RxState stays READY and serial_rx_watchdog() retries. */
+static void serial_rx_restart(void) {
+    if (isio.uart == NULL) {
+        return;
+    }
+    __HAL_UART_CLEAR_FLAG(isio.uart, UART_CLEAR_OREF | UART_CLEAR_FEF | UART_CLEAR_NEF | UART_CLEAR_PEF);
+    HAL_UARTEx_ReceiveToIdle_DMA(isio.uart, (uint8_t *)rx_buf, RX_BUFFER_SIZE);
+}
+
+/* Call from the main loop.  Restarts the console reception whenever it is not
+   running - after a failed restart in an interrupt, or any other way it may
+   have ended silently.  Without a running reception the board ignores every
+   key and every command, including the reset that would cure it. */
+void serial_rx_watchdog(void) {
+    if (!isio.init || isio.uart == NULL) {
+        return;
+    }
+    // Same state the UART interrupt changes: check and restart atomically.
+    __disable_irq();
+    if (isio.uart->RxState == HAL_UART_STATE_READY) {
+        serial_rx_restart();
+    }
+    __enable_irq();
 }
