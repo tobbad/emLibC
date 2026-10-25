@@ -59,7 +59,7 @@ typedef enum {
 #define CYCLE_DIFF_INVALID INT16_MIN
 extern idxa2str_t synca2str;
 // is set so that at least once in a KEEP_ALIVE_CYCLE_CNT Frame cycle a frame is sent
-#define CYCLE_MASTER_KEEP_ALIVE_CYCLE_CNT (uint8_t)16
+#define CYCLE_MASTER_KEEP_ALIVE_CYCLE_CNT (uint8_t)12
 // is set so that at least once in a KEEP_ALIVE_CYCLE_CNT Frame cycle a frame is sent
 #define CYCLE_SLAVE_KEEP_ALIVE_CYCLE_CNT  (uint8_t)3
 #define CYCLE_MASTER_LOOSE 3                                                                                                  \
@@ -71,34 +71,37 @@ extern idxa2str_t synca2str;
 
 #ifdef UNIT_TEST
 typedef struct cycle_s {
-    volatile uint8_t subSlot; // actual sub slot
-    volatile uint8_t psubSlot;         //  Pendig difference subslot value
+    // clang-format off
+    volatile uint8_t   subSlot; // actual sub slot
+    volatile uint8_t   psubSlot;         //  Pendig difference subslot value
     volatile system_state_e sync_state;
     volatile system_state_e psync_state;
-    volatile int8_t actSlot;
-    volatile int8_t lSlot;
-    volatile int8_t sSlot;
+    volatile int8_t   actSlot;
+    volatile int8_t   lSlot;
+    volatile int8_t   sSlot;
     volatile uint16_t cycle;
-    int8_t slot; // Configured slot of device
-    int8_t master;
-    bool isSlave;
-    bool isMaster;
-    uint16_t masterAge; // frame cycles since the network was last heard from
-    uint16_t slaveAge;  // iterates over slave cycles till role is resetted
-    int8_t tx_ss;
-    int8_t rx_ss;
-    int8_t postrx;
-    dev_role_e role;
-    int8_t kaCnt;      // Set Keep alive counter
-    int8_t _kaCnt;     // Keep alive counter
-    uint32_t timerCNT; // MCU cycle count when cycle count was set
-    uint16_t ssCnt[RADIO_CNT];    // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
-    bool doMeasure[RADIO_CNT];
-    bool cntErrror[RADIO_CNT];
-    system_state_e sync_state;
-    bool init;
-    bool set; // is set when cycle was finished
+    int8_t            slot; // Configured slot of device
+    dev_handle_t      hdl;
+    int8_t            master;
+    bool              isSlave;
+    bool              isMaster;
+    uint16_t          masterAge; // frame cycles since the network was last heard from
+    uint16_t          slaveAge;  // iterates over slave cycles till role is resetted
+    int8_t            tx_ss;
+    int8_t            rx_ss;
+    int8_t            postrx;
+    dev_role_e        role;
+    int8_t            kaCnt;      // Set Keep alive counter
+    int8_t            _kaCnt;     // Keep alive counter
+    uint32_t          timerCNT; // MCU cycle count when cycle count was set
+    uint16_t          ssCnt[RADIO_CNT];    // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
+    bool              doMeasure[RADIO_CNT];
+    bool              cntErrror[RADIO_CNT];
+    bool              init;
+    uint8_t           idx;   // on cycle is idx= 0, 1 and 2
+    bool              set; // is set when cycle was finished
     TIM_HandleTypeDef *timer;
+    // clang-format on
 } cycle_t;
 #else
 typedef struct cycle_s cycle_t;
@@ -125,6 +128,11 @@ dev_role_e cycle_role(cycle_t *cycle);
 char *cycle_role_str(cycle_t *cycle);
 bool cycle_role_is_set(cycle_t *cycle);
 em_msg cycle_dec_ka(cycle_t *cycle);
+// Mecanno for once in a cycle
+em_msg cycle_set_idx(cycle_t *cycle, uint8_t idx);
+em_msg cycle_idx_increment(cycle_t *cycle);
+em_msg cycle_monce_in_cycle(cycle_t *cycle);
+// Keep alive
 em_msg cycle_reset_ka(cycle_t *cycle);
 bool cycle_is_ka(cycle_t *cycle);
 em_msg cycle_doSend(cycle_t *cycle);

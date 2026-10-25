@@ -28,34 +28,37 @@
 #endif
 #ifndef UNIT_TEST
 typedef struct cycle_s {
-    volatile uint8_t subSlot; // actual sub slot
-    volatile uint8_t psubSlot;         //  Pendig difference subslot value
+    // clang-format off
+    volatile uint8_t   subSlot; // actual sub slot
+    volatile uint8_t   psubSlot;         //  Pendig difference subslot value
     volatile system_state_e sync_state;
     volatile system_state_e psync_state;
-    volatile int8_t actSlot;
-    volatile int8_t lSlot;
-    volatile int8_t sSlot;
+    volatile int8_t   actSlot;
+    volatile int8_t   lSlot;
+    volatile int8_t   sSlot;
     volatile uint16_t cycle;
-    int8_t slot; // Configured slot of device
-    dev_handle_t hdl;
-    int8_t master;
-    bool isSlave;
-    bool isMaster;
-    uint16_t masterAge; // frame cycles since the network was last heard from
-    uint16_t slaveAge;  // iterates over slave cycles till role is resetted
-    int8_t tx_ss;
-    int8_t rx_ss;
-    int8_t postrx;
-    dev_role_e role;
-    int8_t kaCnt;      // Set Keep alive counter
-    int8_t _kaCnt;     // Keep alive counter
-    uint32_t timerCNT; // MCU cycle count when cycle count was set
-    uint16_t ssCnt[RADIO_CNT];    // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
-    bool doMeasure[RADIO_CNT];
-    bool cntErrror[RADIO_CNT];
-    bool init;
-    bool set; // is set when cycle was finished
+    int8_t            slot; // Configured slot of device
+    dev_handle_t      hdl;
+    int8_t            master;
+    bool              isSlave;
+    bool              isMaster;
+    uint16_t          masterAge; // frame cycles since the network was last heard from
+    uint16_t          slaveAge;  // iterates over slave cycles till role is resetted
+    int8_t            tx_ss;
+    int8_t            rx_ss;
+    int8_t            postrx;
+    dev_role_e        role;
+    int8_t            kaCnt;      // Set Keep alive counter
+    int8_t            _kaCnt;     // Keep alive counter
+    uint32_t          timerCNT; // MCU cycle count when cycle count was set
+    uint16_t          ssCnt[RADIO_CNT];    // Counter for subslot count between cycle_sscnt_start and cycle_sscnt_stop after cycle_sscnt_init
+    bool              doMeasure[RADIO_CNT];
+    bool              cntErrror[RADIO_CNT];
+    bool              init;
+    uint8_t           idx;   // on cycle is idx= 0, 1 and 2
+    bool              set; // is set when cycle was finished
     TIM_HandleTypeDef *timer;
+    // clang-format on
 } cycle_t;
 #endif
 
@@ -90,18 +93,19 @@ em_msg cycle_init(cycle_t *cycle, dev_handle_t hdl, int8_t tx_ss, int8_t rx_ss, 
     if (!cycle) return res;
     if (!htim)  return res;
     memset(cycle, 0, sizeof(cycle_t));
-    cycle->tx_ss  = tx_ss;
-    cycle->rx_ss  = rx_ss;
-    cycle->postrx  = postrx;
-    cycle->kaCnt   = kaCnt;
-    cycle->timer   = htim;
-    cycle->subSlot = 0;
+    cycle->tx_ss    = tx_ss;
+    cycle->rx_ss    = rx_ss;
+    cycle->postrx   = postrx;
+    cycle->kaCnt    = kaCnt;
+    cycle->timer    = htim;
+    cycle->subSlot  = 0;
+    cycle->idx      = 0;
     cycle->slot     = SLOT_NOT_SET;
     cycle->master   = SLOT_NOT_SET;
+    cycle->hdl      = hdl;
+    cycle->init     = true;
     cycle->sync_state = SYNC_RESET;
     cycle->psync_state = SYNC_RESET;
-    cycle->hdl     = hdl;
-    cycle->init    = true;
     // clang-format on
     cycle_sscnt_init(cycle, RADIO_RX);
     cycle_sscnt_init(cycle, RADIO_TX);
@@ -388,7 +392,14 @@ system_state_e cycle_get_state(cycle_t *cycle) {
     if (!cycle) return SYNC_NA;
     if (!cycle->init) return SYNC_NA;
     // clang-format on
-    return cycle->sync_state;
+#ifndef UNIT_TEST
+    __disable_irq();
+#endif
+    system_state_e s = cycle->sync_state;
+#ifndef UNIT_TEST
+    __enable_irq();
+#endif
+    return s;
 }
 
 
@@ -441,6 +452,40 @@ int8_t cycle_check_slot(int8_t slot) {
     return -1;
 }
 
+em_msg cycle_set_idx(cycle_t *cycle, uint8_t idx) {
+    em_msg res = EM_ERR;
+    // clang-format off
+    if (!cycle) return res;
+    if (!cycle->init) return res;
+    if (!(idx<CYCLE_SLAVE_KEEP_ALIVE_CYCLE_CNT)) return res;
+    // clang-format on
+    cycle->idx = idx;
+    return res;
+}
+
+em_msg cycle_idx_increment(cycle_t *cycle) {
+    em_msg res = EM_ERR;
+    // clang-format off
+    if (!cycle) return res;
+    if (!cycle->init) return res;
+    // clang-format on
+    cycle->idx++;
+    return res;
+}
+
+em_msg cycle_monce_in_cycle(cycle_t *cycle){
+    em_msg res = EM_ERR;
+    // clang-format off
+    if (!cycle) return res;
+    if (!cycle->init) return res;
+    // clang-format on
+    if(cycle_role(cycle)== MASTER) {
+        res = (cycle->idx == CYCLE_SLAVE_KEEP_ALIVE_CYCLE_CNT-1)?EM_OK:EM_ERR;
+    }
+    return res;
+}
+
+
 em_msg cycle_set_my_slot(cycle_t *cycle, int8_t slot) {
     em_msg res = EM_ERR;
     // clang-format off
@@ -483,8 +528,14 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, dev_role_e ss_type) {
     // and is released only by cycle_reset_role(), i.e. by the master watchdog
     // in cycle_increment() -- so the role is claimable once per election, and
     // a device can be elected again after a timeout has torn the old master
-    // down. SLAVE claims are never latched: a slave re-syncs on every frame
-    // it receives from its master.
+    // down.
+    //
+    // SLAVE: the first claim (cycle->isSlave still false) takes the lock and
+    // makes rxSlot the master. Every later claim from the master sets
+    // psubSlot again the same way -- the slave's timer runs on its own
+    // crystal and drifts (~0.5 sub-slot per minute at 12 ppm), so it has to
+    // follow its master on every slot-aligned frame. Callers pass no ACKs:
+    // those go out off-slot.
     //
     // The guard sits in the MASTER branch below and keys off cycle->role, not
     // ss_type, so a latched master cannot demote onto a peer it finally hears
@@ -514,8 +565,7 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, dev_role_e ss_type) {
                 }
                 res = EM_ERR;
             } else if (cycle->role == SLAVE)  {
-            	//if (rxSlot != cycle->master) return EM_ERR;
-                if (!cycle->isSlave){ // set it once or reset on a valid rxSlot
+                if (!cycle->isSlave){ // lock once, then track the master's phase
                     cycle_reset(cycle);
                     if (cycle->master == SLOT_NOT_SET){
                     	cycle->master   = rxSlot;
@@ -527,7 +577,11 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, dev_role_e ss_type) {
                     cycle->isMaster = false;
                     return EM_OK;
                 }
-                return EM_ERR;
+                if (rxSlot != cycle->master) return EM_ERR;
+                cycle->psubSlot = (rxSlot* CYCLE_SUB_SLOT_CNT + CYCLE_MODULO +cycle_rx_ss(cycle)) % CYCLE_MODULO;
+                cycle->masterAge= 0;
+                cycle->slaveAge = 0;
+                return EM_OK;
 
             }
 #ifndef UNIT_TEST
@@ -760,41 +814,42 @@ void cycle_increment(cycle_t *cycle) {
            //stateled_set(cycle->sSlot);
 	       stateled_toggle_pin(cycle->hdl-1, ss_toggle);
 #endif
-//            if (cycle->doMeasure[RADIO_RX]) {
-//                int8_t lss = cycle->ssCnt[RADIO_RX];
-//                cycle->ssCnt[RADIO_RX]++;
-//                if (cycle->ssCnt[RADIO_RX] < lss) {
-//                    cycle->cntErrror[RADIO_RX] = true;
-//                }
-//            }
-//            if (cycle->doMeasure[RADIO_TX]) {
-//                int8_t lss = cycle->ssCnt[RADIO_TX];
-//                cycle->ssCnt[RADIO_TX]++;
-//                if (cycle->ssCnt[RADIO_TX] < lss) {
-//                    cycle->cntErrror[RADIO_RX]  = true;
-//                }
-//            }
+            if (cycle->doMeasure[RADIO_RX]) {
+                int8_t lss = cycle->ssCnt[RADIO_RX];
+                cycle->ssCnt[RADIO_RX]++;
+                if (cycle->ssCnt[RADIO_RX] < lss) {
+                    cycle->cntErrror[RADIO_RX] = true;
+                }
+            }
+            if (cycle->doMeasure[RADIO_TX]) {
+                int8_t lss = cycle->ssCnt[RADIO_TX];
+                cycle->ssCnt[RADIO_TX]++;
+                if (cycle->ssCnt[RADIO_TX] < lss) {
+                    cycle->cntErrror[RADIO_RX]  = true;
+                }
+            }
 	       if (cycle->actSlot != cycle->lSlot) {
 #if OPTION_SHOW_TIMING == 1
 	           //stateled_set(cycle->hdl-1, cycle->actSlot);
 	    	   stateled_toggle_pin(cycle->hdl-1, slot_toggle);
 #endif
 	    	 cycle->lSlot = CYCLE_ACT_SLOT(cycle);
-//             if ((cycle->actSlot == 0) && (cycle_sync_ok(cycle))){
-//#if OPTION_SHOW_TIMING == 1
-//                stateled_toggle_pin(cycle->hdl-1, cycle_toggle);
-//#endif
-//                cycle->cycle += 1;
-//                cycle->set = true;
-//                cycle_age_role(cycle);
-//              }
+             if ((cycle->actSlot == 0) && (cycle_sync_ok(cycle))){
+                 cycle->idx = 0;
+#if OPTION_SHOW_TIMING == 1
+                stateled_toggle_pin(cycle->hdl-1, cycle_toggle);
+#endif
+                cycle->cycle += 1;
+                cycle->set = true;
+                cycle_age_role(cycle);
+              }
 	      }
      }
 }
 
 bool cycle_ask_set(cycle_t *cycle) {
     bool res = false;
-    // clang-format off
+    // clang-format offIch
     if (!cycle) return res;
     if (!cycle->init) return res;
     // clang-format on
