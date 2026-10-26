@@ -32,6 +32,11 @@ em_msg GpioPortInit(gpio_port_t *port) {
 }
 em_msg GpioPort_setMask(gpio_port_t *port, uint16_t mask) {
     EM_RETURN_IF_NULL(port, EM_ERR);
+    uint8_t i;
+    for ( i=port->cnt;i<0;i--){
+        if (mask & 1<<i) break;
+    }
+    port->mask_size = (port->cnt-i);
     port->mask = mask;
     return EM_OK;
 }
@@ -62,8 +67,7 @@ em_msg GpioPortSet(gpio_port_t *port, uint8_t val) {
     em_msg res = GpioPortCheck_mask(port, port->mask);
     if (res == EM_OK) {
         /* mask_size kann bis 16 laufen, pin[] fasst aber nur port->cnt. */
-        uint8_t n = MIN(port->mask_size, port->cnt);
-        for (uint8_t i = 0; i < n; i++) {
+        for (uint8_t i = 0; i < port->mask_size; i++) {
             if ((val & (1 << i)) && (port->mask & (1 << i))) {
                 res |= GpioPinWrite(&port->pin[i], 1);
             } else {
