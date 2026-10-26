@@ -68,6 +68,11 @@ extern idxa2str_t synca2str;
 // Frame cycles a role survives without proof that the network is still there.
 // Kicked by cycle_master_seen(), counted down in cycle_increment().
 #define CYCLE_MASTER_LOOSE_CYCLE_CNT (uint16_t)(CYCLE_MASTER_LOOSE * CYCLE_MASTER_KEEP_ALIVE_CYCLE_CNT)
+// A slave is kicked only by its master's frames, which in a quiet network are
+// the keep-alives every CYCLE_MASTER_KEEP_ALIVE_CYCLE_CNT cycles. Its budget
+// must therefore span several keep-alives, not CYCLE_SLAVE_KEEP_ALIVE_CYCLE_CNT
+// cycles, or every slave drops its role between two keep-alives.
+#define CYCLE_SLAVE_LOOSE_CYCLE_CNT  CYCLE_MASTER_LOOSE_CYCLE_CNT
 
 #ifdef UNIT_TEST
 typedef struct cycle_s {

@@ -27,19 +27,19 @@ static led_line_t my_stateled;
 // clang-format off
 static  gpio_port_t def_port ={
     .mask = 0x000F,
-    .mask_size = 4,
+    .mask_size =4,
 	.cnt =10,
 	.pin = {
-        { .port = GPIOC, .pin = GPIO_PIN_8,  .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led 0
-        { .port = GPIOC, .pin = GPIO_PIN_6,  .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led 1
-        { .port = GPIOB, .pin = GPIO_PIN_15, .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led 2
-        { .port = GPIOB, .pin = GPIO_PIN_14, .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led 3
-        { .port = GPIOB, .pin = GPIO_PIN_13, .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led 4
-        { .port = GPIOB, .pin = GPIO_PIN_12, .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led 5
-        { .port = GPIOB, .pin = GPIO_PIN_2,  .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led 6
-        { .port = GPIOC, .pin = GPIO_PIN_14, .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led 7
-        { .port = GPIOB, .pin = GPIO_PIN_5,  .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led fehler
-        { .port = GPIOB, .pin = GPIO_PIN_6,  .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // led normal
+        { .port = GPIOC, .pin = GPIO_PIN_8,  .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // 0 data 0                         led 0
+        { .port = GPIOC, .pin = GPIO_PIN_6,  .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // 1 data 1                         led 1
+        { .port = GPIOB, .pin = GPIO_PIN_15, .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // 2 data 2                         led 2
+        { .port = GPIOB, .pin = GPIO_PIN_14, .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // 3 data 3                         led 3
+        { .port = GPIOB, .pin = GPIO_PIN_13, .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // 4 subslot toggel                 led 4
+        { .port = GPIOB, .pin = GPIO_PIN_12, .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // 5 slot toggle                    led 5
+        { .port = GPIOB, .pin = GPIO_PIN_2,  .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // 6 cycle toggle                   led 6
+        { .port = GPIOC, .pin = GPIO_PIN_14, .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // 7 1 when tx active               led 7
+        { .port = GPIOB, .pin = GPIO_PIN_5,  .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // 8 1 when rx active               led fehler
+        { .port = GPIOB, .pin = GPIO_PIN_6,  .def= false,  .inv= true, .conf = { .Mode = GPIO_MODE_OUTPUT_PP, .Speed=GPIO_SPEED_FREQ_LOW, .Pull = GPIO_NOPULL } }, // 9 0->1->0 when cycle is updated  led normal
 	},
 };
 
@@ -73,12 +73,19 @@ dev_handle_t stateled_init(state_t *state, gpio_port_t *port, uint16_t cycle_siz
     my_stateled.init[dev-1] = true;
     my_stateled.bli_cnt[dev-1] = bli_cnt * my_stateled.port[dev-1]->cnt;
     my_stateled.cnt[dev-1] = 0;
-    stateled_set_mask(dev ,0xF);
+    // GpioPortInit() opens the mask to all pins, so narrow it afterwards:
+    // stateled_set() may only drive the data pins 0..3.
     GpioPortInit(my_stateled.port[dev-1]);
+    stateled_set_mask(dev ,0xF);
     for (uint8_t i = 0; i < my_stateled.port[dev-1]->cnt; i++) {
+#if 0
         stateled_on(dev, i);
         HAL_Delay(INIT_LED_TIME);
         stateled_off(dev, i);
+#else
+        stateled_set(dev, i);
+        HAL_Delay(INIT_LED_TIME);
+#endif
     }
     return dev;
 }
@@ -109,7 +116,6 @@ em_msg stateled_set_mask(dev_handle_t dev, uint16_t mask) {
 em_msg stateled_set(dev_handle_t dev, uint16_t val) {
     // clang-format off
     if (!my_stateled.init[dev-1]) return EM_ERR;
-    if (!stateled_pin_valid(dev, val)) return EM_ERR;
     // clang-format on
     return GpioPortSet(my_stateled.port[dev-1], val);
 }

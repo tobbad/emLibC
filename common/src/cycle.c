@@ -132,7 +132,6 @@ em_msg cycle_reset(cycle_t *cycle) {
     cycle->isSlave  = false;
     cycle->slaveAge = 0;
     cycle->masterAge= 0;
-    cycle->master   = SLOT_NOT_SET;
     // clang-format on
     res = EM_OK;
     return res;
@@ -757,7 +756,7 @@ static void cycle_age_role(cycle_t *cycle) {
         break;
     case SLAVE:
         age = &cycle->slaveAge;
-        limit = CYCLE_SLAVE_KEEP_ALIVE_CYCLE_CNT;
+        limit = CYCLE_SLAVE_LOOSE_CYCLE_CNT;
         break;
     default:
         // No role to lose -- nothing ages until the next election.
@@ -833,7 +832,7 @@ void cycle_increment(cycle_t *cycle) {
 	           stateled_set(cycle->hdl, cycle->actSlot);
 	    	   stateled_toggle_pin(cycle->hdl, slot_toggle);
 #endif
-	    	 cycle->lSlot = CYCLE_ACT_SLOT(cycle);
+	    	 cycle->lSlot = cycle->actSlot;
              if ((cycle->actSlot == 0) && (cycle_sync_ok(cycle))){
                  cycle->idx = 0;
 #if OPTION_SHOW_TIMING == 1

@@ -11,7 +11,7 @@
 
 typedef struct gpio_port_s {
     uint16_t mask;
-    uint16_t mask_size;
+    uint16_t mask_size; // derived from mask (contiguous bits from bit 0) by GpioPortInit()/GpioPort_setMask(), never set by hand
     gpio_pin_t pin[10];
     uint8_t cnt;
 } gpio_port_t;

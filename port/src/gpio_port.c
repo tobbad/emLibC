@@ -10,8 +10,7 @@
 
 em_msg GpioPortCheck_mask(gpio_port_t *port, uint16_t mask) {
     EM_RETURN_IF_NULL(port, EM_ERR);
-    for (port->mask_size = 0; (mask & (1 << port->mask_size)) != 0; port->mask_size++)
-        ;
+    for (port->mask_size = 0; (mask & (1 << port->mask_size)) != 0; port->mask_size++);
     if (port->mask_size == 0) {
         return EM_ERR;
     } else {
@@ -27,18 +26,17 @@ em_msg GpioPortInit(gpio_port_t *port) {
             printf("Pin %d is not good" NL, i);
         }
     }
-    port->mask = (1 << port->cnt) - 1;
-    return EM_OK;
+    /* Öffnet die Maske für alle Pins und berechnet mask_size dazu. */
+    return GpioPort_setMask(port, (1 << port->cnt) - 1);
 }
 em_msg GpioPort_setMask(gpio_port_t *port, uint16_t mask) {
     EM_RETURN_IF_NULL(port, EM_ERR);
-    uint8_t i;
-    for ( i=port->cnt;i<0;i--){
-        if (mask & 1<<i) break;
+    /* Setzt auch mask_size (Anzahl zusammenhängender Bits ab Bit 0). */
+    em_msg res = GpioPortCheck_mask(port, mask);
+    if (res ==EM_OK){
+        port->mask = mask;
     }
-    port->mask_size = (port->cnt-i);
-    port->mask = mask;
-    return EM_OK;
+    return res;
 }
 
 em_msg GpioPortTogglePolarity(gpio_port_t *port) {
@@ -66,13 +64,15 @@ em_msg GpioPortSet(gpio_port_t *port, uint8_t val) {
     EM_RETURN_IF_NULL(port, EM_ERR);
     em_msg res = GpioPortCheck_mask(port, port->mask);
     if (res == EM_OK) {
-        /* mask_size kann bis 16 laufen, pin[] fasst aber nur port->cnt. */
-        for (uint8_t i = 0; i < port->mask_size; i++) {
-            if ((val & (1 << i)) && (port->mask & (1 << i))) {
-                res |= GpioPinWrite(&port->pin[i], 1);
-            } else {
-                res |= GpioPinWrite(&port->pin[i], 0);
+        /* mask_size kann bis 16 laufen, pin[] fasst aber nur port->cnt.
+           Pins ausserhalb der Maske bleiben unangetastet: Sie gehören
+           anderen Nutzern (z.B. ss/slot/cycle-Toggle-Pins der stateled). */
+        uint8_t n = MIN(port->mask_size, port->cnt);
+        for (uint8_t i = 0; i < n; i++) {
+            if (!(port->mask & (1 << i))) {
+                continue;
             }
+            res |= GpioPinWrite(&port->pin[i], (val & (1 << i)) ? 1 : 0);
         }
     }
     return res;
