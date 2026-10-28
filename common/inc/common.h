@@ -111,12 +111,6 @@ typedef enum { hexnum = 0x10, ascii = 0x20, _float = 0x40, nonasci = 0x80 } type
 
 #define CMD_LEN 4
 #define DEV_CNT 1
-typedef union {
-    uint32_t cmd;      // Kann ein pointer zu einem Pointer enthalten, das
-                       // den anderen Geräten mitgeteilt wird oder NULL
-    char str[CMD_LEN]; // CMD_LEN ist 4 ist leer (0) oder ein command
-} clabel_u;
-#define ZERO4 ((32 << 24) + (32 << 16) + (32 << 8) + 32) // is "     " as str
 
 typedef struct idx2str_s {
     char *str;
@@ -147,15 +141,15 @@ uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer, uint16_t buffer_s
 uint16_t common_crc16(const uint8_t *data_p, uint16_t length);
 uint8_t modulo_sub(int8_t slot, int8_t oSlot, uint8_t modulo);
 void    print_buffer(const uint8_t *buffer, uint8_t size, const char *header);
-type_e  clable2type(clabel_u *lbl);
 int16_t uint_pow(unsigned base, unsigned exp);
-int8_t  str2uint(char *str);
-int8_t  uint82uint(uint8_t  *mem);
+int8_t  str2int8(char *str);
+int8_t  cuint82int(uint8_t  *mem);
 char    *idxa2str(idxa2str_t *map, uint8_t idx);
 char    *idx2str(idx2str_t *map, uint8_t cnt, uint8_t idx);
 int     in_interrupt(void);
+int8_t  hchar2int(char ch);
 char    int2hchar(uint8_t idx);
-int8_t int8bit_cnt(int8_t val);
+int8_t  int8bit_cnt(int8_t val);
 uint32_t swap(uint32_t val);
 
 #ifdef __cplusplus

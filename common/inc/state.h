@@ -31,7 +31,6 @@ typedef struct state_s {
     uint8_t dirty;
     uint8_t id;                       // 8 Bitcounter, der bei jedem Senden in diesem Slots
                                       // inkrementiert mitgesendet wird
-    clabel_u clabel;                  // is 4 bytes
     key_state_e state[MAX_STATE_CNT]; // 16 bytes
     char label[MAX_STATE_CNT];        // 16 bytes
 } state_t;                            // Size is 2*MAX_BUTTON_CNT + 8=  40 Byte (MAX_BUTTON_CNT = 16)
@@ -71,7 +70,6 @@ bool dirty;      // Das zwei Topbit indizieren die Art der clabel (01: *cmd, 11;
 uint8_t id;      // 8 Bitcounter, der bei jedem Senden in diesem Slots
 uint32_t state;  // Jedes label hat eine  state: 00=OFF, 01: BLINKING, 11 ON
                  // 16*2 =32 Bit
-clabel_u clabel; // 4 Bytes
 } state_t;          // Size is 10 Bytes oder mit id 11 Bytes, Label gibt es nicht da es sowiso MAX_BUTTON_CNT
                  // (0..MAX_BUTTON_CNT-1) Labels gibt
 

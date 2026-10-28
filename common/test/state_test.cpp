@@ -37,7 +37,6 @@ TEST(StateInitTest, DefaultFieldsAfterInit) {
     EXPECT_EQ(s.first, 0);
     EXPECT_EQ(s.cnt, MAX_STATE_CNT);
     EXPECT_EQ(s.dirty, false);
-    EXPECT_EQ(s.clabel.cmd, 0u);
     EXPECT_EQ(state_check(&s), EM_OK);
     state_print(&s, "State", true, &c);
     for (int8_t i = 0; i < MAX_STATE_CNT; i++) {
@@ -87,24 +86,24 @@ TEST_F(StateTest, Ch2IdxMissingCharReturnsError) { EXPECT_EQ(state_ch2idx(&state
 // state_set / state_get (direkt)
 // ---------------------------------------------------------------------------
 TEST_F(StateTest, SetAndGetOFF) {
-    EXPECT_EQ(state_set(&state, 0, OFF), EM_OK);
+    EXPECT_EQ(state_set_key(&state, 0, OFF), EM_OK);
     EXPECT_EQ(state_get(&state, 0), (key_state_e)OFF);
 }
 
 TEST_F(StateTest, SetAndGetBLINKING) {
-    EXPECT_EQ(state_set(&state, 0, BLINKING), EM_OK);
+    EXPECT_EQ(state_set_key(&state, 0, BLINKING), EM_OK);
     EXPECT_EQ(state_get(&state, 0), (key_state_e)BLINKING);
 }
 
 TEST_F(StateTest, SetAndGetON) {
-    EXPECT_EQ(state_set(&state, 0, ON), EM_OK);
+    EXPECT_EQ(state_set_key(&state, 0, ON), EM_OK);
     EXPECT_EQ(state_get(&state, 0), (key_state_e)ON);
 }
 
 TEST_F(StateTest, SetOutOfRangeReturnsError) {
-    EXPECT_EQ(state_set(&state, MAX_STATE_CNT - 1, ON), EM_OK);
-    EXPECT_EQ(state_set(&state, MAX_STATE_CNT, ON), EM_ERR);
-    EXPECT_EQ(state_set(&state, MAX_STATE_CNT + 1, ON), EM_ERR);
+    EXPECT_EQ(state_set_key(&state, MAX_STATE_CNT - 1, ON), EM_OK);
+    EXPECT_EQ(state_set_key(&state, MAX_STATE_CNT, ON), EM_ERR);
+    EXPECT_EQ(state_set_key(&state, MAX_STATE_CNT + 1, ON), EM_ERR);
 }
 
 // ---------------------------------------------------------------------------
@@ -167,7 +166,6 @@ TEST_F(StateTest, SetDirtyAndUndirty) {
     EXPECT_EQ(state_get_dirty(&state), true);
     EXPECT_EQ(state_set_undirty(&state), EM_OK);
     EXPECT_EQ(state_get_dirty(&state), false);
-    EXPECT_EQ(state.clabel.cmd, 0u);
 }
 
 // ---------------------------------------------------------------------------
@@ -225,9 +223,9 @@ TEST_F(StateKeyDiffTest, WrapAroundDiff) {
 }
 
 // ---------------------------------------------------------------------------
-// state_copy / state_merge / state_is_same / state_diff / state_add
+// state_copy / state_merge / state_is_same / state_diff / state_add state set
 // ---------------------------------------------------------------------------
-class StateCopyMergeTest : public ::testing::Test {
+class StateCopyMergeSetTest : public ::testing::Test {
   protected:
     state_t s1, s2, ref;
     void SetUp() override {
@@ -243,7 +241,7 @@ class StateCopyMergeTest : public ::testing::Test {
     }
 };
 
-TEST_F(StateCopyMergeTest, MergeResult) {
+TEST_F(StateCopyMergeSetTest, MergeResult) {
     state_t check;
     em_msg res;
     bool resb;
@@ -274,7 +272,7 @@ TEST_F(StateCopyMergeTest, MergeResult) {
     }
 }
 
-TEST_F(StateCopyMergeTest, PropagateResult) {
+TEST_F(StateCopyMergeSetTest, PropagateResult) {
     state_t prop;
     em_msg res;
     bool resb;
@@ -296,7 +294,7 @@ TEST_F(StateCopyMergeTest, PropagateResult) {
     EXPECT_EQ(state_is_same(&prop, &ref), EM_OK);
 }
 
-TEST_F(StateCopyMergeTest, DiffVec) {
+TEST_F(StateCopyMergeSetTest, DiffVec) {
     state_t diff;
     state_init(&diff);
     state_diff(&s1, &s2, &diff);
@@ -313,7 +311,7 @@ TEST_F(StateCopyMergeTest, DiffVec) {
     EXPECT_EQ(state_is_same(&ref, &diff), EM_OK);
 }
 
-TEST_F(StateCopyMergeTest, AddDiffConverges) {
+TEST_F(StateCopyMergeSetTest, AddDiffConverges) {
     // state1 + diff(state1, state2) soll state2 ergeben
     state_t diff;
     state_init(&diff);
@@ -323,9 +321,17 @@ TEST_F(StateCopyMergeTest, AddDiffConverges) {
     EXPECT_EQ(state_is_same(&s1, &s2), EM_OK);
 }
 
-TEST_F(StateCopyMergeTest, IsSameDetectsOneDifference) {
+TEST_F(StateCopyMergeSetTest, IsSameDetectsOneDifference) {
     state_t copy;
     state_copy(&s1, &copy);
     state_set_key_by_idx(&copy, 0, ON); // flip one key
-    EXPECT_NE(state_is_same(&s1, &copy), EM_OK);
+    EXPECT_EQ(state_is_same(&s1, &copy), EM_ERR);
+}
+
+TEST_F(StateCopyMergeSetTest, StateSet) {
+    state_t copy;
+    state_init(&copy);
+    state_set_key_by_idx(&copy, 0, ON); // flip one key
+    EXPECT_EQ(state_set_state(&s1, &copy), EM_OK);
+    EXPECT_EQ(state_is_same(&s1, &copy), EM_OK);
 }

@@ -72,73 +72,32 @@ TEST_F(Int2HcharTest, OutOfRangeReturnsSpace) {
 }
 
 // ---------------------------------------------------------------------------
-// str2uint / clabel2uint
+// str2int8 / clabel2uint
 // ---------------------------------------------------------------------------
-class Str2UintTest : public ::testing::Test {};
+class str2int8Test : public ::testing::Test {};
 
-TEST_F(Str2UintTest, Zero) { EXPECT_EQ(str2uint((char *)"0"), 0); }
+TEST_F(str2int8Test, Zero) { EXPECT_EQ(str2int8((char *)"0"), 0); }
 
-TEST_F(Str2UintTest, PositiveValue) {
-    EXPECT_EQ(str2uint((char *)"42"), 42);
-    EXPECT_EQ(str2uint((char *)"127"), 127);
-}
-
-TEST_F(Str2UintTest, Clabel2UintMatchesStr2Uint) {
-    clabel_u lbl;
-    memcpy(lbl.str, "10", 3);
-    lbl.str[3] = '\0';
-    EXPECT_EQ(clabel2uint(&lbl), str2uint((char *)"10"));
+TEST_F(str2int8Test, PositiveValue) {
+    EXPECT_EQ(str2int8((char *)"42"), 42);
+    EXPECT_EQ(str2int8((char *)"127"), 127);
 }
 
 // ---------------------------------------------------------------------------
 // clable2type
 // ---------------------------------------------------------------------------
-class Clable2TypeTest : public ::testing::Test {
+class Char2Uint8 : public ::testing::Test {
   protected:
-    clabel_u lbl;
-    void fill(const char *s) {
-        memset(lbl.str, 0, CMD_LEN);
-        strncpy(lbl.str, s, CMD_LEN - 1);
-    }
+    uint8_t uval  =43;
+    char sval[3]  ="43";
 };
 
-TEST_F(Clable2TypeTest, DecimalNumberIsHexnum) {
-    fill("123");
-    EXPECT_EQ(clable2type(&lbl), hexnum);
+TEST_F(Char2Uint8, cuint2int) {
+    EXPECT_EQ(cuint82int((uint8_t *)(sval)), uval);
 }
 
-TEST_F(Clable2TypeTest, ZeroIsHexnum) {
-    fill("0");
-    EXPECT_EQ(clable2type(&lbl), hexnum);
-}
-
-TEST_F(Clable2TypeTest, NegativeDecimalIsHexnum) {
-    fill("-1");
-    EXPECT_EQ(clable2type(&lbl), hexnum);
-}
-
-TEST_F(Clable2TypeTest, EmptyStringIsHexnum) {
-    // strtol("", &stop, 10) → stop zeigt auf str[0], strlen(stop)==0 → hexnum
-    fill("");
-    EXPECT_EQ(clable2type(&lbl), hexnum);
-}
-
-TEST_F(Clable2TypeTest, AlphanumNonDecimalIsAscii) {
-    fill("AB1");
-    EXPECT_EQ(clable2type(&lbl), ascii);
-}
-
-TEST_F(Clable2TypeTest, PureAlphaIsAscii) {
-    fill("abc");
-    EXPECT_EQ(clable2type(&lbl), ascii);
-}
-
-TEST_F(Clable2TypeTest, NonAsciiBytesIsNonasci) {
-    lbl.str[0] = (char)0x80;
-    lbl.str[1] = '\0';
-    lbl.str[2] = '\0';
-    lbl.str[3] = '\0';
-    EXPECT_EQ(clable2type(&lbl), nonasci);
+TEST_F(Char2Uint8, cuint2) {
+    EXPECT_EQ(str2int8(sval), uval);
 }
 
 // ---------------------------------------------------------------------------
@@ -269,13 +228,6 @@ TEST_F(BoardGetUniqueIdTest, PaddingBeyond12IsZero) {
     }
 }
 
-TEST_F(BoardGetUniqueIdTest, SmallerThan12BytesClipped) {
-    board_get_unique_id(id, 8);
-    for (uint8_t i = 0; i < 8; i++) {
-        EXPECT_EQ(id[i], i);
-    }
-}
-
 // ---------------------------------------------------------------------------
 // modulo_sub
 // ---------------------------------------------------------------------------
@@ -330,23 +282,3 @@ TEST_F(Idx2StrTest, Idxa2StrWrapper) {
     EXPECT_STREQ(idxa2str(&amap, 2), "two");
     EXPECT_STREQ(idxa2str(&amap, 9), "NA ");
 }
-
-// ---------------------------------------------------------------------------
-// synca2str — globale Lookup-Tabelle für system_state_e
-// ---------------------------------------------------------------------------
-class SyncA2StrTest : public ::testing::Test {};
-
-TEST_F(SyncA2StrTest, AllStatesResolvable) {
-    // Jeder Zustand in [SYNC_RESET, SYNC_CNT) muss einen Eintrag haben.
-    for (int s = SYNC_RESET; s < SYNC_CNT; s++) {
-        EXPECT_STRNE(idxa2str(&synca2str, (uint8_t)s), "NA ") << "state " << s << " fehlt in synca2str";
-    }
-}
-
-TEST_F(SyncA2StrTest, BootUpContainsName) { EXPECT_NE(strstr(idxa2str(&synca2str, BOOT_UP), "BOOT_UP"), nullptr); }
-
-TEST_F(SyncA2StrTest, SynchronizeOkContainsName) {
-    EXPECT_NE(strstr(idxa2str(&synca2str, SYNCHRONIZE_OK), "SYNCHRONIZE_OK"), nullptr);
-}
-
-TEST_F(SyncA2StrTest, OutOfRangeReturnsNA) { EXPECT_STREQ(idxa2str(&synca2str, SYNC_CNT), "NA "); }

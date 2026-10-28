@@ -94,7 +94,6 @@ int16_t buffer_transfer(buffer_t *from, buffer_t *to) {
         return res;
 
     int16_t len = from->used;
-    to->lbl.cmd = from->lbl.cmd;
 
     if (len == 0) { /* nichts zu übertragen */
         from->state = BUFFER_READY;
@@ -155,7 +154,6 @@ buffer_t *buffer_reset(buffer_t *buffer) {
     if (res == EM_ERR) return NULL;
     // clang-format on
     memset(buffer->mem, 0, buffer->size);
-    memset(buffer->lbl.str, 0, CMD_LEN);
     buffer->pl = buffer->mem;
     buffer->used = 0;
     buffer->first = 0;
@@ -172,7 +170,6 @@ em_msg buffer_clear(buffer_t *buffer) {
     buffer->first = (buffer->first + buffer->used) % buffer->size;
     buffer->used = 0;
     buffer->state = BUFFER_READY;
-    memset(buffer->lbl.str, 0, CMD_LEN);
     return res;
 };
 em_msg buffer_strip(buffer_t *buffer) {
@@ -237,13 +234,9 @@ em_msg buffer_set(buffer_t *buffer, const uint8_t *data, int16_t size) {
 
         if (size <= space_to_end) {
             memcpy(&buffer->mem[write_pos], data, size);
-            buffer->lbl.cmd = 0;
-            memcpy(buffer->lbl.str, data, MIN(CMD_LEN - 1, size));
         } else {
             memcpy(&buffer->mem[write_pos], data, space_to_end);
             memcpy(&buffer->mem[0], data + space_to_end, size - space_to_end);
-            buffer->lbl.cmd = 0;
-            memcpy(buffer->lbl.str, data, MIN(CMD_LEN - 1, size));
         }
 
         buffer->used += size;
@@ -280,10 +273,8 @@ em_msg buffer_get(buffer_t *buffer, uint8_t *data, int16_t *size) {
 
         if (*size <= data_to_end) {
             memcpy(data, &buffer->mem[buffer->first], *size);
-            memcpy(buffer->lbl.str, data, MIN(CMD_LEN - 1, *size));
         } else {
             memcpy(data, &buffer->mem[buffer->first], data_to_end);
-            memcpy(buffer->lbl.str, data, MIN(CMD_LEN - 1, data_to_end));
             memcpy(data + data_to_end, &buffer->mem[0], *size - data_to_end);
         }
 
@@ -296,13 +287,6 @@ em_msg buffer_get(buffer_t *buffer, uint8_t *data, int16_t *size) {
     }
 
     return EM_OK;
-}
-
-clabel_u *buffer_get_clabel(buffer_t *buffer) {
-    // clang-format off
-    em_msg res = buffer_check(buffer, false);
-    if (res == EM_ERR) return NULL;
-    return &buffer->lbl;
 }
 
 /*
@@ -327,7 +311,6 @@ buffer_t *buffer_get_till_end(buffer_t *buffer) {
     _buffer.mem = &buffer->mem[buffer->first];
     _buffer.pl = _buffer.mem;
     _buffer.first = 0;
-    _buffer.lbl = buffer->lbl;
     _buffer.type = buffer->type;
     _buffer.state = (_buffer.used > 0) ? BUFFER_USED : BUFFER_READY;
     return &_buffer;
@@ -351,7 +334,7 @@ void buffer_print(const buffer_t *buffer, char *title) {
     printf("buffer first        = %1d" NL, buffer->first);
     printf("buffer used         = %d" NL, buffer_used(buffer));
     printf("buffer writable     = %d" NL, buffer_writeable(buffer));
-    printf("buffei id           = %d" NL, buffer->id);
+    printf("buffer id           = %d" NL, buffer->id);
     printf("Buffer state is     = %s" NL, (buffer->state < BUFFER_CNT) ? state2Str[buffer->state] : "?");
     printf("Buffer type is      = %s" NL, (buffer->type <= RING) ? type2Str[buffer->type] : "?");
     print_buffer(buffer->mem, buffer->size, "Full content");

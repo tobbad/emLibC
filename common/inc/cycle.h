@@ -12,7 +12,7 @@ extern "C" {
 #ifndef UNIT_TEST
 #include "hal_port.h"
 #else
-//typedef struct __TIM_HandleTypeDef {} TIM_HandleTypeDef;
+typedef struct __TIM_HandleTypeDef {} TIM_HandleTypeDef;
 // subSlot packs the position in the frame cycle: the upper nibble is the slot,
 // the lower nibble the sub-slot within it (e.g. 223 = 0xDF -> slot 13, sub-slot 15).
 #define CYCLE_ACT_SUB_SLOT_N(ss)   (((ss) >> CYCLE_SUB_SLOT_SHIFT) & CYCLE_SUB_SLOT_MASK)

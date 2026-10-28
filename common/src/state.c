@@ -40,7 +40,6 @@ em_msg state_init(state_t *state) {
     state->first = 0;
     state->cnt = MAX_STATE_CNT;
     state->id = 0xFF;
-    state->clabel.cmd = 0;
     memcpy(&state->label, &"0123456789ABCDEF", MAX_STATE_CNT);
     state_reset(state);
     res = EM_OK;
@@ -284,7 +283,6 @@ em_msg state_add(state_t *ref, state_t *add) {
     if (ref->cnt != add->cnt) return res; /* paralleler Zugriff add->state[a] */
     // clang-format on
     ref->dirty = false;
-    add->clabel.cmd = ref->clabel.cmd;
     for (uint8_t r = ref->first, a = add->first; r < ref->first + ref->cnt; r++, a++) {
         if (add->state[a] == BLINKING) {
             state_propagate_by_idx(ref, r);
@@ -347,7 +345,6 @@ bool state_merge(state_t *inState, state_t *outState) {
     if (inState->cnt != outState->cnt) return res; /* paralleler Zugriff */
     // clang-format on
     outState->dirty = false;
-    outState->clabel.cmd = inState->clabel.cmd;
     for (uint8_t ri = inState->first, oi = outState->first; ri < inState->first + inState->cnt; ri++, oi++) {
         if (inState->state[ri] != outState->state[oi]) {
             outState->dirty = true;
@@ -368,7 +365,6 @@ em_msg state_print(const state_t *state, const char *title, bool doLong, cycle_t
     if (doLong) {
         printf("first      = %d" NL, state->first);
         printf("cnt        = %d" NL, state->cnt);
-        printf("clabel     = 0x%04lx" NL, state->clabel.cmd);
     }
     if (doLong) {
         printf("label      = ");
@@ -422,7 +418,6 @@ em_msg state_set_undirty(state_t *state) {
     if (state_check(state)) return res;
     // clang-format on
     state->dirty = false;
-    state->clabel.cmd = 0;
     res = EM_OK;
     return res;
 }

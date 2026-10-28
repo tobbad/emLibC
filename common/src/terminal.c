@@ -21,7 +21,6 @@ static state_t my_term = {
 // clang-format on
 
 static sio_t _serial;
-clabel_u clabel;
 bool data_in = false;
 static void terminal_reset(dev_handle_t dev);
 
@@ -31,59 +30,10 @@ static em_msg terminal_init(dev_handle_t handle, dev_type_e dev_type, void *seri
     }
     terminal_reset(handle);
     _serial = *(sio_t *)serial;
-    my_term.clabel.cmd = ZERO4;
     state_reset(&my_term);
     return EM_OK;
 }
 
-static int16_t terminal_scan(dev_handle_t dev) {
-    char ch = 0xFF;
-    static bool asked = false;
-    HAL_StatusTypeDef status;
-    bool stay = true;
-    if (!asked) {
-        asked = true;
-        printf("Please enter key" NL);
-    }
-    while ((ch == 0xff) && (stay)) {
-        int8_t idx = 0;
-        // status = HAL_UART_Receive(_serial.uart, (uint8_t*)&clabel.cmd, CMD_LEN);
-        status = HAL_UART_Receive(_serial.uart, (uint8_t *)&ch, 1, 0);
-        if (status == HAL_OK) {
-            if (ch == 0x0a) { //
-                stay = false;
-                ch = 0xff;
-            }
-            ch &= 0x02;
-            if (isalpha(ch)) {
-                clabel.str[idx++] = ch;
-            }
-            if ((ch >= '0') && (ch < '9')) {
-                if (idx > 0) {
-                    stay = false;
-                }
-                clabel.str[idx++] = ch;
-                ch = 0xFF;
-            }
-        }
-    }
-    char *stopstring = NULL;
-    long long int res = strtol((char *)&clabel.str, &stopstring, 10);
-    if (stopstring == &clabel.str[0]) {
-        return -1;
-    }
-    uint8_t resi = res;
-    printf("Got key %d" NL, resi);
-    // snprintf(in, 2, "%1d", resi);
-    int8_t idx = state_ch2idx(&my_term, clabel.str[0]);
-    if ((idx >= my_term.first) && (res <= my_term.first + my_term.cnt)) {
-        my_term.dirty = true;
-        state_propagate_by_idx(&my_term, idx);
-    } else {
-        printf("Command %s" NL, my_term.clabel.str);
-    }
-    return idx;
-}
 static void terminal_state(dev_handle_t dev, state_t *ret) {
     state_merge(&my_term, ret); // problem here
 }
@@ -107,7 +57,6 @@ static void terminal_reset(dev_handle_t dev) {
 }
 
 kybd_t terminal_dev = {.init = &terminal_init,
-                       .scan = &terminal_scan,
                        .reset = &terminal_reset,
                        .state = &terminal_state,
                        .add = &terminal_add,

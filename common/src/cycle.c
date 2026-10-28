@@ -290,17 +290,6 @@ uint16_t cycle_cycle(cycle_t *cycle) {
     return cycle->cycle;
 }
 
-bool cycle_sync_ok(cycle_t *cycle) {
-    em_msg res = EM_ERR;
-    // clang-format off
-    if (!cycle) return SYNC_NA;
-    if (!cycle->init) return SYNC_NA;
-    // clang-format on
-    res = (cycle->sync_state == SYNCHRONIZE) || (cycle->sync_state == SYNCHRONIZE_READY)  ||
-          (cycle->sync_state == SYNCHRONIZE_ERROR) ||(cycle->sync_state == SYNCHRONIZE_LOCKED);
-    return res;
-}
-
 // Decrement keep alive
 em_msg cycle_dec_ka(cycle_t *cycle) {
     em_msg res = EM_ERR;
@@ -385,6 +374,18 @@ em_msg cycle_reset_subslot(cycle_t *cycle) {
     cycle->lSlot = 0;
     return EM_OK;
 };
+
+
+bool cycle_sync_ok(cycle_t *cycle) {
+    em_msg res = EM_ERR;
+    // clang-format off
+    if (!cycle) return false;
+    if (!cycle->init) return false;
+    // clang-format on
+    res = (cycle->sync_state == SYNCHRONIZE) || (cycle->sync_state == SYNCHRONIZE_READY)  ||
+          (cycle->sync_state == SYNCHRONIZE_ERROR) ||(cycle->sync_state == SYNCHRONIZE_LOCKED);
+    return res;
+}
 
 system_state_e cycle_get_state(cycle_t *cycle) {
     // clang-format off
@@ -581,14 +582,12 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, dev_role_e ss_type) {
                 cycle->masterAge= 0;
                 cycle->slaveAge = 0;
                 return EM_OK;
-
             }
 #ifndef UNIT_TEST
 //        __HAL_TIM_SET_COUNTER(cycle->timer, 0);
 #endif
 
     }
-
     return res;
 }
 int8_t cycle_get_slot(cycle_t *cycle) {

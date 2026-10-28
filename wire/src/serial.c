@@ -373,7 +373,7 @@ static void serial_apply_change(uint8_t *mem) {
         return;
     uint16_t len = strlen((char*)mem);
     if (len > 0) {
-        int8_t res = uint82uint(mem);
+        int8_t res = cuint82int(mem);
         if (res >= 0) {
             if (!state_get_dirty(&isio.state)) {
                 state_propagate_by_idx(&isio.state, res);

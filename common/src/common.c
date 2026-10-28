@@ -245,19 +245,19 @@ char int2hchar(uint8_t nr) {
     return ret;
 }
 
-type_e clable2type(clabel_u *lbl) {
+type_e uin82type(uint8_t * mmem) {
+    char* str = (char*) mmem;
     type_e res = nonasci;
-    if (lbl == NULL) {
+    if (mmem == NULL) {
         return res;
     }
-    lbl->str[CMD_LEN - 1] = 0;
-    uint8_t len = strlen(lbl->str);
+    uint8_t len = strlen(str);
 
     bool itIs = true;
     bool itIs_n;
     for (uint8_t i = 0; i < len; i++) {
         for (uint8_t j = 0; j < ASCIHEX_LEN; j++) {
-            itIs_n = ascihex[j] == lbl->str[i];
+            itIs_n = ascihex[j] == str[i];
             if (itIs_n) {
                 break;
             }
@@ -270,7 +270,7 @@ type_e clable2type(clabel_u *lbl) {
 
     itIs = true;
     for (uint8_t i = 0; i < len; i++) {
-        itIs &= isascii(lbl->str[i]);
+        itIs &= isascii(str[i]);
     }
     if (itIs) {
         return ascii;
@@ -278,9 +278,8 @@ type_e clable2type(clabel_u *lbl) {
 
     itIs = true;
     for (uint8_t i = 0; i < len; i++) {
-        char c = lbl->str[i];
-        itIs &= (c>=0x30)&&(c<0x3a);
-        itIs |= c=='.';
+        char c = str[i];
+        itIs &= ((c >= '0') && (c <= '9')) || (c == '.');
     }
     if (itIs) {
         return _float;
@@ -298,13 +297,8 @@ int8_t hchar2int(char ch) {
     return EM_ERR;
 }
 
-int16_t uint_pow(unsigned base, unsigned exp) {
-    unsigned res = 0;
-    res = (uint8_t)pow(base, exp) + 1e-9;
-    return res;
-}
 
-int8_t uint82uint(uint8_t *mem) {
+int8_t cuint82int(uint8_t *mem) {
     char *_mem = (char*)mem;
     uint8_t len = strlen(_mem);
     int8_t res = 0;
@@ -318,6 +312,20 @@ int8_t uint82uint(uint8_t *mem) {
             return -1;
         }
     }
+    return res;
+}
+
+int8_t  str2int8(char *str){
+    if (!str) return -1;
+    int value = (int)strtol(str, NULL, 10);
+    return value;
+
+}
+
+
+int16_t uint_pow(unsigned base, unsigned exp) {
+    unsigned res = 0;
+    res = (uint8_t)pow(base, exp) + 1e-9;
     return res;
 }
 

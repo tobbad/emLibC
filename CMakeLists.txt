@@ -258,7 +258,7 @@ file(GLOB TEST_SRC_FILES "${COMMON_TEST_DIR}/*.cpp")
 list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/slip_test.cpp")
 # common_test referenziert str2uint(), das in common.h deklariert, aber nirgends
 # implementiert ist -> linkt nicht. Bleibt deaktiviert.
-list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/common_test.cpp")
+#list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/common_test.cpp")
 # device_test erwartet eine ältere device_t-Signatur (uint16_t counts) als die
 # aktuelle device.h -> kompiliert nicht. Bleibt deaktiviert.
 list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/device_test.cpp")
@@ -267,7 +267,7 @@ list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/device_test.cpp")
 list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/packet_test.cpp")
 list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/harden_test.cpp")
 list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/simple_test.cpp")
-list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/buffer_test.cpp")
+#list(REMOVE_ITEM TEST_SRC_FILES "${COMMON_TEST_DIR}/buffer_test.cpp")
 
 
 # Erstelle die Bibliothek
