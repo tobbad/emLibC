@@ -111,7 +111,6 @@ em_msg cycle_init(cycle_t *cycle, dev_handle_t hdl, int8_t tx_ss, int8_t rx_ss, 
     cycle_sscnt_init(cycle, RADIO_TX);
     cycle_reset_ka(cycle);
     cycle_reset(cycle);
-    cycle_update(cycle);
     res = EM_OK;
     return res;
 };
@@ -123,6 +122,7 @@ em_msg cycle_reset(cycle_t *cycle) {
     // clang-format off
     if (!cycle) return res;
     if (!cycle->init) return res;
+    cycle->subSlot  = 0;
     cycle->psubSlot = 0;
     cycle->sSlot    = 0;
     cycle->actSlot  = 0;
@@ -791,7 +791,7 @@ void cycle_increment(cycle_t *cycle) {
     if (cycle_sync_ok(cycle)) {
 			if (cycle->psubSlot > 0) {
 				if (cycle->role == MASTER)
-					cycle->subSlot = (cycle->master * CYCLE_SUB_SLOT_CNT) - 1;
+					cycle->subSlot = (cycle->slot * CYCLE_SUB_SLOT_CNT)-1;
 				else if (cycle->role == SLAVE) {
 					cycle->subSlot = cycle->psubSlot;
 				}
@@ -800,7 +800,7 @@ void cycle_increment(cycle_t *cycle) {
 				}
 				cycle->psubSlot = 0;
 #ifndef UNIT_TEST
-				stateled_dtoggle_pin(cycle->hdl-1, cycle_upd);
+				stateled_dtoggle_pin(cycle->hdl, cycle_upd);
 #endif
             }
 			cycle->subSlot++;

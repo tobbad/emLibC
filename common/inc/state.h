@@ -35,6 +35,7 @@ typedef struct state_s {
     key_state_e state[MAX_STATE_CNT]; // 16 bytes
     char label[MAX_STATE_CNT];        // 16 bytes
 } state_t;                            // Size is 2*MAX_BUTTON_CNT + 8=  40 Byte (MAX_BUTTON_CNT = 16)
+
 #ifdef blabla
 #define STATE_SET_RANGE(_s, _first, _cnt)                  \
     do {                                                    \
@@ -113,7 +114,7 @@ int8_t state_nr2idx(state_t *state, uint8_t nr);
 em_msg state_init(state_t *state);
 em_msg state_reset(state_t *state);
 em_msg state_set_first(state_t *state, uint8_t cnt);
-em_msg state_set(state_t *state, uint8_t nr, key_state_e);
+em_msg state_set_key(state_t *state, uint8_t nr, key_state_e);
 char * state_key_string( key_state_e nr);
 char * state_keys_string( key_state_e nr);
 key_state_e state_get(const state_t *state, uint8_t nr);

@@ -67,13 +67,12 @@ em_msg state_reset(state_t *state) {
     for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {
         state_set_key_by_idx(state, i, OFF);
     }
-    state->clabel.cmd = 0;
     state->dirty = false;
     res = EM_OK;
     return res;
 }
 
-em_msg state_set(state_t *state, uint8_t nr, key_state_e ns) {
+em_msg state_set_key(state_t *state, uint8_t nr, key_state_e ns) {
     em_msg res = EM_ERR;
     // clang-format off
     if (state_check(state)) return res;
@@ -109,7 +108,7 @@ em_msg state_set_state(const state_t *from, state_t *to) {
     to->cnt = from->cnt;
     for (uint8_t oi = from->first, ii = to->first; oi < from->first + from->cnt; oi++, ii++) {
         key_state_e fstate = state_get(from, oi);
-        state_set(to, ii, fstate);
+        state_set_key(to, ii, fstate);
     }
     state_set_undirty(to);
     return EM_OK;
@@ -120,7 +119,7 @@ key_state_e state_key_diff(key_state_e state1, key_state_e state2) {
     if (state1 == state2) return OFF;
     if (state2 > state1) return (state2 - state1);
     // clang-format on
-    return (state2 + ON + 1 - state1); // state2 < state1
+    return (state2 + KEY_STATE_CNT - state1)%KEY_STATE_CNT; // state2 < state1
 }
 
 em_msg state_set_key_by_idx(state_t *state, uint8_t nr, key_state_e new_state) {
@@ -129,7 +128,7 @@ em_msg state_set_key_by_idx(state_t *state, uint8_t nr, key_state_e new_state) {
     if (state_check(state)) return res;
     if (new_state > ON) return res;
     // clang-format on
-    state_set(state, nr, new_state);
+    state_set_key(state, nr, new_state);
     res = EM_OK;
     return res;
 }
@@ -155,7 +154,7 @@ em_msg state_set_key_by_lbl(state_t *state, char lbl, key_state_e new_state) {
     EM_GUARD_LOG("state_set_key_by_lbl");
     if (nr < 0) return res;
     // clang-format on
-    res = state_set(state, nr, new_state);
+    res = state_set_key(state, nr, new_state);
     return res;
 }
 
@@ -241,7 +240,7 @@ em_msg state_set_u32(state_t *state, uint32_t u32) {
             mask = (0x3 << shift);
             uint32_t x = (u32 & mask);
             x >>= shift;
-            state_set(state, i, x);
+            state_set_key(state, i, x);
         }
     }
     res = EM_OK;
@@ -326,9 +325,6 @@ em_msg state_diff(state_t *ref, state_t *state, state_t *diff) {
     // clang-format on
     // printf("inState.cnt: %d, outState.cnt: %d"NL, instate->cnt,outstate->cnt);
     diff->dirty = false;
-    if (ref->clabel.cmd != state->clabel.cmd) {
-        ref->clabel.cmd = state->clabel.cmd;
-    }
     for (uint8_t ri = ref->first, si = state->first; ri < ref->first + ref->cnt; ri++, si++) {
         if (ref->state[ri] != state->state[si]) {
             diff->dirty = true;
