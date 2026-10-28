@@ -150,7 +150,7 @@ void    print_buffer(const uint8_t *buffer, uint8_t size, const char *header);
 type_e  clable2type(clabel_u *lbl);
 int16_t uint_pow(unsigned base, unsigned exp);
 int8_t  str2uint(char *str);
-int8_t  clabel2uint(clabel_u *lbl);
+int8_t  uint82uint(uint8_t  *mem);
 char    *idxa2str(idxa2str_t *map, uint8_t idx);
 char    *idx2str(idx2str_t *map, uint8_t cnt, uint8_t idx);
 int     in_interrupt(void);

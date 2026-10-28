@@ -81,7 +81,7 @@ time_handle_t srxhdl;
 time_handle_t stxhdl;
 isio_t isio;
 static char *new = NULL;
-static void serial_apply_change(clabel_u *lbl);
+static void serial_apply_change(uint8_t *mem);
 static void serial_release_tx(void);
 static void serial_rx_restart(void);
 
@@ -145,12 +145,10 @@ uint32_t serial_get_byte_per_second() {
 
 volatile int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
     uint16_t rLen = EM_ERR;
-    if (!isio.init)
+    if (!isio.init){
         return rLen;
 #ifdef HAL_PCD_MODULE_ENABLED
-    if (urx_buffer.state == BUFFER_USED) {
-        clabel_u *lbl = buffer_get_clabel(&urx_buffer);
-        serial_apply_change(lbl);
+        serial_apply_change(urx_buffer.mem);
         buffer_transfer(&urx_buffer, isio.buffer[SIO_RX]);
         time_stop(urxhdl, NULL);
         return isio.buffer[SIO_RX]->used;
@@ -370,20 +368,19 @@ static void serial_get_state(dev_handle_t dev, state_t *ret) {
     memcpy(ret, &isio.state, sizeof(state_t));
 };
 
-static void serial_apply_change(clabel_u *lbl) {
+static void serial_apply_change(uint8_t *mem) {
     if (!isio.init)
         return;
-    uint16_t len = strlen(lbl->str);
+    uint16_t len = strlen((char*)mem);
     if (len > 0) {
-        int8_t res = clabel2uint(lbl);
+        int8_t res = uint82uint(mem);
         if (res >= 0) {
             if (!state_get_dirty(&isio.state)) {
                 state_propagate_by_idx(&isio.state, res);
-                isio.state.clabel.cmd = lbl->cmd;
             }
         }
     }
-};
+}
 
 static em_msg serial_diff(dev_handle_t dev, state_t *ref, state_t *diff) {
     if (!isio.init)
@@ -434,7 +431,7 @@ int32_t serial_waitForNumber(char **key) {
 #ifdef HAL_PCD_MODULE_ENABLED
     if (urx_buffer.state == BUFFER_USED) {
         *key = (char *)&urx_buffer.mem[0];
-        return clabel2uint((clabel_u *)&urx_buffer.mem[0]);
+        return uint82uint(&urx_buffer.mem[0]);
     }
 #endif
     if (strlen((char*)isio.buffer[SIO_RX]->mem)==0) return -1;
@@ -487,9 +484,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
         isio.buffer[SIO_RX]->state = BUFFER_USED;
         buffer_tolower(isio.buffer[SIO_RX]);
         new = (char *)isio.buffer[SIO_RX]->mem;
-        isio.state.clabel.cmd = 0;
-        memcpy((uint8_t *)&isio.state.clabel, new, strlen(new));
-        serial_apply_change(&isio.state.clabel);
+        serial_apply_change(isio.buffer[SIO_RX]->mem);
         serial_rx_restart();
     }
 }

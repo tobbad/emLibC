@@ -304,17 +304,14 @@ int16_t uint_pow(unsigned base, unsigned exp) {
     return res;
 }
 
-int8_t clabel2uint(clabel_u *lbl) {
-    if (lbl == NULL) {
-        return -1;
-    }
-    lbl->str[CMD_LEN - 1] = 0;
-    uint8_t len = strlen(lbl->str);
+int8_t uint82uint(uint8_t *mem) {
+    char *_mem = (char*)mem;
+    uint8_t len = strlen(_mem);
     int8_t res = 0;
-    if (isalpha(lbl->str[0]))
+    if (isalpha(_mem[0]))
         return -1;
     for (int8_t i = 0; i < len; i++) {
-        int8_t digit = hchar2int(lbl->str[i]);
+        int8_t digit = hchar2int(_mem[i]);
         if (digit >= 0) {
             res += digit * uint_pow(10, len - i - 1);
         } else {
