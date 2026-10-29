@@ -44,10 +44,10 @@ em_msg GpioPortTogglePolarity(gpio_port_t *port) {
     em_msg res = EM_OK;
     bool pol;
     for (uint8_t i = 0; i < port->cnt; i++) {
+        GpioPinWrite(&port->pin[i], port->pin[i].def);
         pol = port->pin[i].inv;
         pol = !pol;
         port->pin[i].inv =pol;
-        GpioPinWrite(&port->pin[i], port->pin[i].def);
     }
     return res;
 }
