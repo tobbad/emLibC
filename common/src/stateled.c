@@ -76,7 +76,6 @@ dev_handle_t stateled_init(state_t *state, gpio_port_t *port, uint16_t cycle_siz
     // GpioPortInit() opens the mask to all pins, so narrow it afterwards:
     // stateled_set() may only drive the data pins 0..3.
     GpioPortInit(my_stateled.port[dev-1]);
-    stateled_set_mask(dev ,0xF);
     for (uint8_t i = 0; i < my_stateled.port[dev-1]->cnt; i++) {
         stateled_on(dev, i);
         HAL_Delay(INIT_LED_TIME);
