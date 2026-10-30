@@ -127,7 +127,6 @@ em_msg cycle_reset(cycle_t *cycle) {
     cycle->sSlot    = 0;
     cycle->actSlot  = 0;
     cycle->lSlot    = SLOT_NOT_SET;
-    cycle->cycle    = 0;
     cycle->isMaster = false;
     cycle->isSlave  = false;
     cycle->slaveAge = 0;
@@ -485,7 +484,6 @@ em_msg cycle_monce_in_cycle(cycle_t *cycle){
     return res;
 }
 
-
 em_msg cycle_set_my_slot(cycle_t *cycle, int8_t slot) {
     em_msg res = EM_ERR;
     // clang-format off
@@ -514,7 +512,7 @@ em_msg cycle_set_master(cycle_t *cycle, int8_t slot) {
     return res;
 }
 
-em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, dev_role_e ss_type) {
+em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, dev_role_e ss_type, bool isKa) {
     em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
@@ -578,7 +576,8 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, dev_role_e ss_type) {
                     return EM_OK;
                 }
                 if (rxSlot != cycle->master) return EM_ERR;
-                cycle->psubSlot = (rxSlot* CYCLE_SUB_SLOT_CNT + CYCLE_MODULO +cycle_rx_ss(cycle)) % CYCLE_MODULO;
+                uint8_t kaVal = isKa?KEEP_ALIVE_INC:0; // this is keep alive, so postpone corrction as ka IS 4.5ms vs regular frame with 13.3ma
+                cycle->psubSlot = (rxSlot* CYCLE_SUB_SLOT_CNT + CYCLE_MODULO +cycle_rx_ss(cycle) + kaVal) % CYCLE_MODULO;
                 cycle->masterAge= 0;
                 cycle->slaveAge = 0;
                 return EM_OK;
@@ -622,7 +621,7 @@ em_msg cycle_master_seen(cycle_t *cycle, int8_t rxSlot) {
     if (cycle_check_slot(rxSlot)<0) return res;
     // clang-format on
     if (cycle->role == NOT_SET) {
-        res = cycle_set_slot(cycle, rxSlot, SLAVE);
+        res = cycle_set_slot(cycle, rxSlot, SLAVE, 0);
         if (res == EM_OK) {
             cycle->master = rxSlot;
         }

@@ -73,6 +73,7 @@ extern idxa2str_t synca2str;
 // must therefore span several keep-alives, not CYCLE_SLAVE_KEEP_ALIVE_CYCLE_CNT
 // cycles, or every slave drops its role between two keep-alives.
 #define CYCLE_SLAVE_LOOSE_CYCLE_CNT  CYCLE_MASTER_LOOSE_CYCLE_CNT
+#define KEEP_ALIVE_INC            0  // increase subslot by this value in addition to SS_RX_SS
 
 #ifdef UNIT_TEST
 typedef struct cycle_s {
@@ -137,6 +138,7 @@ em_msg cycle_dec_ka(cycle_t *cycle);
 em_msg cycle_set_idx(cycle_t *cycle, uint8_t idx);
 em_msg cycle_idx_increment(cycle_t *cycle);
 em_msg cycle_monce_in_cycle(cycle_t *cycle);
+
 // Keep alive
 em_msg cycle_reset_ka(cycle_t *cycle);
 bool cycle_is_ka(cycle_t *cycle);
@@ -144,7 +146,7 @@ em_msg cycle_doSend(cycle_t *cycle);
 int8_t cycle_check_slot(int8_t slot);
 em_msg cycle_set_my_slot(cycle_t *cycle, int8_t slot);
 em_msg cycle_set_master(cycle_t *cycle, int8_t slot);
-em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type);
+em_msg cycle_set_slot(cycle_t *cycle, int8_t slot, dev_role_e ss_type, bool iaKa);
 int8_t cycle_get_slot(cycle_t *cycle);
 int8_t cycle_get_master(cycle_t *cycle);
 em_msg cycle_master_seen(cycle_t *cycle, int8_t rxSlot);
