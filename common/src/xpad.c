@@ -350,7 +350,6 @@ static void xpad_state(dev_handle_t devh, state_t *oState) {
         return;
     }
     uint8_t oIdx = oState->first;
-    oState->clabel.cmd = my_xpad[devh].state.clabel.cmd;
     uint8_t iIdx = my_xpad[devh].state.first;
     for (uint8_t i = 0; i < oState->cnt; i++, iIdx++, oIdx++) {
         if ((oIdx >= MAX_STATE_CNT) || (iIdx >= MAX_STATE_CNT)) {

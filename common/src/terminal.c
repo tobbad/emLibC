@@ -128,15 +128,3 @@ int8_t terminal_waitForNumber(char **key) {
 //	}
 //	return -1;
 // }
-
-void UART_IdleCallback(void) {
-    data_in = true;
-
-    uint16_t receivedLength = CMD_LEN - __HAL_DMA_GET_COUNTER(_serial.uart->hdmarx);
-
-    if (receivedLength > 0 && receivedLength <= 3) {
-        memcpy(&my_term.clabel.cmd, (uint8_t *)&clabel.cmd, receivedLength);
-        clabel.cmd = ZERO4;
-    }
-    HAL_UART_Receive_DMA(_serial.uart, (uint8_t *)&clabel.cmd, CMD_LEN);
-}

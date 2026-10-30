@@ -431,7 +431,7 @@ int32_t serial_waitForNumber(char **key) {
 #ifdef HAL_PCD_MODULE_ENABLED
     if (urx_buffer.state == BUFFER_USED) {
         *key = (char *)&urx_buffer.mem[0];
-        return uint82uint(&urx_buffer.mem[0]);
+        return cuint82int(&urx_buffer.mem[0]);
     }
 #endif
     if (strlen((char*)isio.buffer[SIO_RX]->mem)==0) return -1;
