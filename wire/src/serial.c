@@ -421,6 +421,11 @@ kybd_t serial_dev = {
 };
 
 int32_t serial_waitForNumber(char **key) {
+    // *key always points to valid text: the received input, or "" when
+    // there is none.  The boot prompts test *key for 'r' and 'd'.
+    static char no_key[] = "";
+    if (key != NULL)
+        *key = no_key;
     if (!isio.init)
         return EM_ERR;
     // Also polled by the boot prompts (slot, channel, offset), which run
@@ -429,13 +434,19 @@ int32_t serial_waitForNumber(char **key) {
     char* endptr;
 #ifdef HAL_PCD_MODULE_ENABLED
     if (urx_buffer.state == BUFFER_USED) {
-        *key = (char *)&urx_buffer.mem[0];
+        if (key != NULL)
+            *key = (char *)&urx_buffer.mem[0];
         return cuint82int(&urx_buffer.mem[0]);
     }
 #endif
-    if (strlen((char*)isio.buffer[SIO_RX]->mem)==0) return -1;
-    long num = strtol((char*)isio.buffer[SIO_RX]->mem , &endptr, 10);
-    if (num == UINTMAX_MAX && errno == ERANGE){
+    char *rx = (char *)isio.buffer[SIO_RX]->mem;
+    if (strlen(rx) == 0) return -1;
+    if (key != NULL)
+        *key = rx;
+    errno = 0;
+    long num = strtol(rx, &endptr, 10);
+    // No digits ("r", "del", ...) is a command, not the number 0.
+    if ((endptr == rx) || (errno == ERANGE)) {
         return -1;
     }
     return (int32_t)num;
