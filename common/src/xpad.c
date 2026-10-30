@@ -31,10 +31,10 @@ static xpad_dev_t default_xscan_dev = {
             // Output
             .cnt = SPALTEN_CNT,
             .pin = {
-                    {.port = GPIOA, .pin = GPIO_PIN_0, .conf = {.Mode = GPIO_MODE_OUTPUT_PP, .Pull = GPIO_PULLUP}}, // spalte 1
-                    {.port = GPIOA, .pin = GPIO_PIN_4, .conf = {.Mode = GPIO_MODE_OUTPUT_PP, .Pull = GPIO_PULLUP}}, // spalte 2
-                    {.port = GPIOB, .pin = GPIO_PIN_3, .conf = {.Mode = GPIO_MODE_OUTPUT_PP, .Pull = GPIO_PULLUP}}, // spalte 3
-                    {.port = GPIOC, .pin = GPIO_PIN_1, .conf = {.Mode = GPIO_MODE_OUTPUT_PP, .Pull = GPIO_PULLUP}}, // spalte 4
+                    {.port = GPIOC, .pin = GPIO_PIN_1, .conf = {.Mode = GPIO_MODE_OUTPUT_PP, .Pull = GPIO_PULLUP}}, // Spalte 1
+                    {.port = GPIOC, .pin = GPIO_PIN_2, .conf = {.Mode = GPIO_MODE_OUTPUT_PP, .Pull = GPIO_PULLUP}}, // Spalte 2
+                    {.port = GPIOC, .pin = GPIO_PIN_3, .conf = {.Mode = GPIO_MODE_OUTPUT_PP, .Pull = GPIO_PULLUP}}, // Spalte 3
+                    {.port = GPIOA, .pin = GPIO_PIN_0, .conf = {.Mode = GPIO_MODE_OUTPUT_PP, .Pull = GPIO_PULLUP}}, // Spalte 4
                 },
         },
     .zeile =
@@ -43,10 +43,11 @@ static xpad_dev_t default_xscan_dev = {
             .cnt = ZEILEN_CNT,
             .pin =
                 {
-                    {.port = GPIOA, .pin = GPIO_PIN_10, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}}, // zeile 1                                                                                   // zeilen 1
-                    {.port = GPIOB, .pin = GPIO_PIN_3,  .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}}, // zeilen 2
-                    {.port = GPIOB, .pin = GPIO_PIN_5,  .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}}, // zeilen 3
-                    {.port = GPIOB, .pin = GPIO_PIN_10, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}}, // zeilen 4
+                    {.port = GPIOA, .pin = GPIO_PIN_4,  .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // zeile 1
+                    {.port = GPIOA, .pin = GPIO_PIN_5,  .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // zeile 2
+                    {.port = GPIOC, .pin = GPIO_PIN_15, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // zeile 3
+                    {.port = GPIOC, .pin = GPIO_PIN_9,  .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // zeile 4
+
                 },
         },
     .dev_type = XSCAN,
@@ -68,14 +69,14 @@ static xpad_dev_t default_eight_dev = {
             .cnt = EIGHT_BUTTON_CNT,
             .pin =
                 {
-                    {.port = GPIOC, .pin = GPIO_PIN_1, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 1
-                    {.port = GPIOC, .pin = GPIO_PIN_2, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 2
-                    {.port = GPIOC, .pin = GPIO_PIN_3, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 3
-                    {.port = GPIOA, .pin = GPIO_PIN_0, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 4
-                    {.port = GPIOA, .pin = GPIO_PIN_4, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 6
-                    {.port = GPIOA, .pin = GPIO_PIN_5, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 5
-                    {.port = GPIOC, .pin = GPIO_PIN_15, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}}, // Taste 7
-                    {.port = GPIOC, .pin = GPIO_PIN_9, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 8
+                    {.port = GPIOC, .pin = GPIO_PIN_1,  .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 1
+                    {.port = GPIOC, .pin = GPIO_PIN_2,  .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 2
+                    {.port = GPIOC, .pin = GPIO_PIN_3,  .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 3
+                    {.port = GPIOA, .pin = GPIO_PIN_0,  .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 4
+                    {.port = GPIOA, .pin = GPIO_PIN_4,  .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 5
+                    {.port = GPIOA, .pin = GPIO_PIN_5,  .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 6
+                    {.port = GPIOC, .pin = GPIO_PIN_15, .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 7
+                    {.port = GPIOC, .pin = GPIO_PIN_9,  .conf = {.Mode = GPIO_MODE_INPUT, .Pull = GPIO_PULLUP}},  // Taste 8
                 },
         },
 
@@ -109,7 +110,7 @@ static em_msg xpad_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
             my_xpad[devh].zeile = default_xscan_dev.zeile;
         } else {
             my_xpad[devh].spalte = device->spalte;
-            my_xpad[devh].zeile = device->zeile;
+            my_xpad[devh].zeile  = device->zeile;
         }
         my_xpad[devh].state = default_xscan_dev.state;
         memcpy(&my_xpad[devh].state, &default_xscan_dev.state, sizeof(state_t));
