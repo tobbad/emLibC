@@ -71,8 +71,8 @@
 #include "serial.h"
 #include "state.h"
 
-static char rx_buf[RX_BUFFER_SIZE];
-static char tx_buf[TX_BUFFER_SIZE];
+static uint8_t rx_buf[RX_BUFFER_SIZE];
+static uint8_t tx_buf[TX_BUFFER_SIZE];
 buffer_t *tx_buffer;
 
 #define POOL_SIZE 10
@@ -80,7 +80,6 @@ buffer_t *tx_buffer;
 time_handle_t srxhdl;
 time_handle_t stxhdl;
 isio_t isio;
-static char *new = NULL;
 static void serial_apply_change(uint8_t *mem);
 static void serial_release_tx(void);
 static void serial_rx_restart(void);
@@ -465,25 +464,8 @@ static void serial_release_tx(void) {
  */
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
     if (huart == isio.uart) {
-        uint8_t idx = 0;
-        memset(isio.buffer[SIO_RX]->mem, 0, isio.buffer[SIO_RX]->size);
-        isio.buffer[SIO_RX]->pl = isio.buffer[SIO_RX]->mem;
-        for (uint8_t i = 0; i < size; i++) {
-            char ch = rx_buf[idx++];
-            *isio.buffer[SIO_RX]->pl = ch;
-            isio.buffer[SIO_RX]->pl++;
-            if (idx == RX_BUFFER_SIZE) {
-                assert("too long");
-            }
-            if (isio.buffer[SIO_RX]->pl == isio.buffer[SIO_RX]->mem + isio.buffer[SIO_RX]->size - 1) {
-                isio.buffer[SIO_RX]->pl = isio.buffer[SIO_RX]->mem;
-            }
-        }
-        isio.buffer[SIO_RX]->used = size;
-        *isio.buffer[SIO_RX]->pl = 0; // End string
-        isio.buffer[SIO_RX]->state = BUFFER_USED;
+        buffer_set(isio.buffer[SIO_RX], rx_buf, size);
         buffer_tolower(isio.buffer[SIO_RX]);
-        new = (char *)isio.buffer[SIO_RX]->mem;
         serial_apply_change(isio.buffer[SIO_RX]->mem);
         serial_rx_restart();
     }
@@ -529,7 +511,7 @@ static void serial_rx_restart(void) {
         return;
     }
     __HAL_UART_CLEAR_FLAG(isio.uart, UART_CLEAR_OREF | UART_CLEAR_FEF | UART_CLEAR_NEF | UART_CLEAR_PEF);
-    HAL_UARTEx_ReceiveToIdle_DMA(isio.uart, (uint8_t *)rx_buf, RX_BUFFER_SIZE);
+    HAL_UARTEx_ReceiveToIdle_DMA(isio.uart, rx_buf, RX_BUFFER_SIZE);
 }
 
 /* Call from the main loop.  Restarts the console reception whenever it is not

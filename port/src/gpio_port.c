@@ -66,14 +66,13 @@ em_msg GpioPortSet(gpio_port_t *port, uint8_t val) {
     em_msg res = GpioPortCheck_mask(port, port->mask);
     if (res == EM_OK) {
         /* mask_size kann bis 16 laufen, pin[] fasst aber nur port->cnt.
-           Pins ausserhalb der Maske bleiben unangetastet: Sie gehören
-           anderen Nutzern (z.B. ss/slot/cycle-Toggle-Pins der stateled). */
-        uint8_t n = MIN(port->mask_size, port->cnt);
-        for (uint8_t i = 0; i < n; i++) {
-            if (!(port->mask & (1 << i))) {
-                continue;
+        Pins ausserhalb der Maske bleiben unangetastet: Sie gehören
+        anderen Nutzern (z.B. ss/slot/cycle-Toggle-Pins der stateled). */
+        for (uint8_t i = 0; i < port->cnt; i++) {
+            bool in_mask = (port->mask & (1 << i));
+            if (in_mask) {
+                res |= GpioPinWrite(&port->pin[i], (val & (1 << i)) ? 1 : 0);
             }
-            res |= GpioPinWrite(&port->pin[i], (val & (1 << i)) ? 1 : 0);
         }
     }
     return res;
