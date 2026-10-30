@@ -147,6 +147,7 @@ volatile int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
     if (!isio.init){
         return rLen;
 #ifdef HAL_PCD_MODULE_ENABLED
+    if (urx_buffer.state == BUFFER_USED) {
         serial_apply_change(urx_buffer.mem);
         buffer_transfer(&urx_buffer, isio.buffer[SIO_RX]);
         time_stop(urxhdl, NULL);
