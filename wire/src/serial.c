@@ -73,6 +73,11 @@
 
 static uint8_t rx_buf[RX_BUFFER_SIZE];
 static uint8_t tx_buf[TX_BUFFER_SIZE];
+// Line mode (serial_set_line_mode()): input is collected here and handed on
+// only at CR/LF, so a human can type multi-digit numbers.
+static volatile bool line_mode = false;
+static uint8_t  rx_line[RX_BUFFER_SIZE];
+static uint16_t rx_line_len = 0;
 buffer_t *tx_buffer;
 
 #define POOL_SIZE 10
@@ -83,6 +88,7 @@ isio_t isio;
 static void serial_apply_change(uint8_t *mem);
 static void serial_release_tx(void);
 static void serial_rx_restart(void);
+static void serial_rx_collect_line(const uint8_t *data, uint16_t size);
 
 em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     if (isio.init)
@@ -353,6 +359,7 @@ void serial_reset(dev_handle_t dev) {
 #endif
     memset(rx_buf, 0, RX_BUFFER_SIZE);
     memset(tx_buf, 0, TX_BUFFER_SIZE);
+    rx_line_len = 0;
 };
 
 static void serial_set_state(dev_handle_t dev, const state_t *state) { state_set_state(state, &isio.state); };
@@ -474,11 +481,52 @@ static void serial_release_tx(void) {
  * @retval None
  */
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
-    if (huart == isio.uart) {
+    if (huart != isio.uart) {
+        return;
+    }
+    if (line_mode) {
+        serial_rx_collect_line(rx_buf, size);
+    } else {
         buffer_set(isio.buffer[SIO_RX], rx_buf, size);
         buffer_tolower(isio.buffer[SIO_RX]);
         serial_apply_change(isio.buffer[SIO_RX]->mem);
-        serial_rx_restart();
+    }
+    serial_rx_restart();
+}
+
+/* ReceiveToIdle ends a reception after one idle character time (~87 us at
+   115200 Bd), so a human typing "13" arrives as "1" and "3" in two events,
+   and the boot prompts would already take the "1".  In line mode the pieces
+   are collected and the complete line replaces the Rx buffer at CR or LF.
+   Backspace/DEL removes the last character; empty lines are ignored, so
+   "\r\n" does not wipe the line just handed on. */
+void serial_set_line_mode(bool on) {
+    __disable_irq();
+    line_mode   = on;
+    rx_line_len = 0;
+    __enable_irq();
+}
+
+static void serial_rx_collect_line(const uint8_t *data, uint16_t size) {
+    for (uint16_t i = 0; i < size; i++) {
+        uint8_t c = data[i];
+        if ((c == '\r') || (c == '\n')) {
+            if (rx_line_len > 0) {
+                buffer_t *rx = isio.buffer[SIO_RX];
+                uint16_t  len = MIN(rx_line_len, rx->size - 1); // keep a 0 for strlen()
+                buffer_reset(rx);
+                buffer_set(rx, rx_line, len);
+                buffer_tolower(rx);
+                serial_apply_change(rx->mem);
+            }
+            rx_line_len = 0;
+        } else if ((c == '\b') || (c == 0x7f)) {
+            if (rx_line_len > 0) {
+                rx_line_len--;
+            }
+        } else if (rx_line_len < sizeof(rx_line)) {
+            rx_line[rx_line_len++] = c;
+        }
     }
 }
 

@@ -100,6 +100,7 @@ void     serial_reset(dev_handle_t dev);
 void     serial_mode_set(print_e mode);
 print_e  serial_mode_get();
 int32_t   serial_waitForNumber(char **key);
+void      serial_set_line_mode(bool on);   // Rx: hand on input only at CR/LF
 void      serial_rx_watchdog(void);
 uint32_t serial_uart_printf(char *line , uint16_t len);
 
