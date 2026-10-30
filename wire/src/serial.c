@@ -151,8 +151,8 @@ volatile int16_t _read(int32_t file, uint8_t *ptr, uint16_t len) {
         buffer_transfer(&urx_buffer, isio.buffer[SIO_RX]);
         time_stop(urxhdl, NULL);
         return isio.buffer[SIO_RX]->used;
-    }
 #endif
+    }
     if (isio.uart != NULL) {
         if (isio.mode & USE_DMA_RX) {
             memcpy(ptr, isio.buffer[SIO_RX]->mem, isio.buffer[SIO_RX]->used);
