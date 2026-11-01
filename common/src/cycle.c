@@ -558,7 +558,6 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, dev_role_e ss_type, bool is
                     //cycle->timerCNT  = 0;
                     cycle_reset(cycle);
                     cycle->master    = rxSlot;
-                    cycle->slot      = rxSlot;
                     cycle->psubSlot  = (cycle->master * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO + cycle_tx_ss(cycle)) % CYCLE_MODULO;
                     cycle->masterAge = 0;
                     cycle->slaveAge  = 0;
@@ -571,7 +570,9 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, dev_role_e ss_type, bool is
             } else if (cycle->role == SLAVE)  {
                 if (!cycle->isSlave){ // lock once, then track the master's phase
                     cycle_reset(cycle);
-                    cycle->slot     = rxSlot;
+                    // cycle->slot is the own slot, set only by
+                    // cycle_set_my_slot() from the EEPROM.  rxSlot is the
+                    // master's slot: taking it made every slave transmit there.
                     cycle->psubSlot = (rxSlot* CYCLE_SUB_SLOT_CNT + CYCLE_MODULO +cycle_rx_ss(cycle)) % CYCLE_MODULO;
                     cycle->masterAge= 0;
                     cycle->slaveAge = 0;
@@ -829,13 +830,17 @@ void cycle_increment(cycle_t *cycle) {
                     cycle->cntErrror[RADIO_RX]  = true;
                 }
             }
+	       // A new frame cycle is the step from slot f to 0.  After
+	       // cycle_init()/cycle_reset() lSlot is unknown: the first tick in
+	       // slot 0 is no new cycle and must not age the role.
+	       bool wrapped = (cycle->lSlot != SLOT_NOT_SET);
 	       if (cycle->actSlot != cycle->lSlot) {
 #if OPTION_SHOW_TIMING == 1
 	           stateled_set(cycle->hdl, cycle->actSlot);
 	    	   stateled_toggle_pin(cycle->hdl, slot_toggle);
 #endif
 	    	 cycle->lSlot = cycle->actSlot;
-             if ((cycle->actSlot == 0) && (cycle_sync_ok(cycle))){
+             if ((cycle->actSlot == 0) && wrapped && (cycle_sync_ok(cycle))){
                  cycle->idx = 0;
 #if OPTION_SHOW_TIMING == 1
                 stateled_toggle_pin(cycle->hdl, cycle_toggle);

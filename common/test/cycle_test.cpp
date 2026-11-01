@@ -232,8 +232,8 @@ TEST_F(CycleTest, SlaveClaimsAreNotLatched) {
             << "EXP= " << slave * CYCLE_SUB_SLOT_CNT + RX_SS + 1 + tick << " tick= " << tick;
         if (!dropped && (c.role == NOT_SET)) {
             dropped = true;
-            EXPECT_EQ(c.cycle, CYCLE_SLAVE_KEEP_ALIVE_CYCLE_CNT+1) << "cycle = " << c.cycle;
-            EXPECT_EQ(c.cycle, CYCLE_SLAVE_KEEP_ALIVE_CYCLE_CNT+1)
+            EXPECT_EQ(c.cycle, CYCLE_SLAVE_KEEP_ALIVE_CYCLE_CNT) << "cycle = " << c.cycle;
+            EXPECT_EQ(c.cycle, CYCLE_SLAVE_KEEP_ALIVE_CYCLE_CNT)
                 << "the slave must age out exactly at the keep-alive limit, tick= " << tick;
             EXPECT_EQ(c.psync_state, SYNCHRONIZE) << "the watchdog asks for a resync on the tick it fires, tick= " << tick;
             EXPECT_EQ(c.sync_state, SYNCHRONIZE_READY)
@@ -453,7 +453,7 @@ TEST_F(CycleTest, CheckSlotAsSlave) {
     ASSERT_EQ(cycle_set_slot(&c, dslot, SLAVE, KA_DEFAULT), EM_OK);
     ASSERT_EQ(c.isSlave, true);
     ASSERT_EQ(c.psubSlot, dslot * CYCLE_SUB_SLOT_CNT + RX_SS);
-    ASSERT_EQ(c.slot, dslot);
+    ASSERT_EQ(c.slot, SLOT_NOT_SET); // own slot only via cycle_set_my_slot()
     ASSERT_EQ(c.slaveAge, 0);
 
     cycle_increment(&c);
