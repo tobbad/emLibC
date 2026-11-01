@@ -62,7 +62,7 @@ extern idxa2str_t synca2str;
 #define CYCLE_MASTER_KEEP_ALIVE_CYCLE_CNT (uint8_t)12
 // is set so that at least once in a KEEP_ALIVE_CYCLE_CNT Frame cycle a frame is sent
 #define CYCLE_SLAVE_KEEP_ALIVE_CYCLE_CNT  (uint8_t)3
-#define CYCLE_MASTER_LOOSE 3                                                                                                  \
+#define CYCLE_MASTER_LOOSE 8                                                                                                  \
     // After CYCLE_MASTER_LOOSE*CYCLE_MASTER_KEEP_ALIVE_CYCLE_CNT a MASTER loooses its master role and all slave set their
       // role to NOT_SET. Then when the first Packet is received the Device sending in this slot becomes the new MASTER.
 // Frame cycles a role survives without proof that the network is still there.
@@ -72,8 +72,6 @@ extern idxa2str_t synca2str;
 // the keep-alives every CYCLE_MASTER_KEEP_ALIVE_CYCLE_CNT cycles. Its budget
 // must therefore span several keep-alives, not CYCLE_SLAVE_KEEP_ALIVE_CYCLE_CNT
 // cycles, or every slave drops its role between two keep-alives.
-#define CYCLE_SLAVE_LOOSE_CYCLE_CNT  CYCLE_MASTER_LOOSE_CYCLE_CNT
-#define KEEP_ALIVE_INC            0  // increase subslot by this value in addition to SS_RX_SS
 
 #ifdef UNIT_TEST
 typedef struct cycle_s {

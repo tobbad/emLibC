@@ -248,7 +248,7 @@ char int2hchar(uint8_t nr) {
 type_e uin82type(uint8_t * mmem) {
     char* str = (char*) mmem;
     type_e res = nonasci;
-    if (mmem == NULL) {
+    if (str == NULL) {
         return res;
     }
     uint8_t len = strlen(str);

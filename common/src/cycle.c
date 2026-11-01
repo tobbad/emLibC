@@ -350,11 +350,16 @@ void cycle_reset_role(cycle_t *cycle) {
     if (!cycle->init) return;
     if (cycle->isSlave) {
     // clang-format on
+        cycle_set_state(cycle, SYNCHRONIZE);
         cycle->role     = NOT_SET;
         cycle->isSlave  = false;
         cycle->slaveAge = 0;
      // clang-format on
    }
+   if (cycle->role == MASTER) {
+        cycle->masterAge = 0;
+    }
+
 }
 
 em_msg cycle_reset_subslot(cycle_t *cycle) {
@@ -553,6 +558,7 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, dev_role_e ss_type, bool is
                     //cycle->timerCNT  = 0;
                     cycle_reset(cycle);
                     cycle->master    = rxSlot;
+                    cycle->slot      = rxSlot;
                     cycle->psubSlot  = (cycle->master * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO + cycle_tx_ss(cycle)) % CYCLE_MODULO;
                     cycle->masterAge = 0;
                     cycle->slaveAge  = 0;
@@ -565,9 +571,7 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, dev_role_e ss_type, bool is
             } else if (cycle->role == SLAVE)  {
                 if (!cycle->isSlave){ // lock once, then track the master's phase
                     cycle_reset(cycle);
-                    if (cycle->master == SLOT_NOT_SET){
-                    	cycle->master   = rxSlot;
-                    }
+                    cycle->slot     = rxSlot;
                     cycle->psubSlot = (rxSlot* CYCLE_SUB_SLOT_CNT + CYCLE_MODULO +cycle_rx_ss(cycle)) % CYCLE_MODULO;
                     cycle->masterAge= 0;
                     cycle->slaveAge = 0;
@@ -575,9 +579,13 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, dev_role_e ss_type, bool is
                     cycle->isMaster = false;
                     return EM_OK;
                 }
-                if (rxSlot != cycle->master) return EM_ERR;
-                uint8_t kaVal = isKa?KEEP_ALIVE_INC:0; // this is keep alive, so postpone corrction as ka IS 4.5ms vs regular frame with 13.3ma
-                cycle->psubSlot = (rxSlot* CYCLE_SUB_SLOT_CNT + CYCLE_MODULO +cycle_rx_ss(cycle) + kaVal) % CYCLE_MODULO;
+                if (cycle->master == SLOT_NOT_SET){
+                    cycle->isMaster = false;
+                    cycle->master   = rxSlot;
+                    return EM_OK;
+                }
+                if (rxSlot == cycle->master) return EM_ERR;
+                cycle->psubSlot = (rxSlot* CYCLE_SUB_SLOT_CNT + CYCLE_MODULO +cycle_rx_ss(cycle)) % CYCLE_MODULO;
                 cycle->masterAge= 0;
                 cycle->slaveAge = 0;
                 return EM_OK;
@@ -754,7 +762,7 @@ static void cycle_age_role(cycle_t *cycle) {
         break;
     case SLAVE:
         age = &cycle->slaveAge;
-        limit = CYCLE_SLAVE_LOOSE_CYCLE_CNT;
+        limit = CYCLE_SLAVE_KEEP_ALIVE_CYCLE_CNT;
         break;
     default:
         // No role to lose -- nothing ages until the next election.
@@ -767,11 +775,7 @@ static void cycle_age_role(cycle_t *cycle) {
     }
     // Clear both ages, not just the one that ran dry: the role is gone, so the
     // next election has to start from a clean watchdog either way.
-    if (cycle->role == MASTER) {
-        cycle->masterAge = 0;
-    }
     cycle_reset_role(cycle);
-    cycle_set_state(cycle, SYNCHRONIZE);
 }
 
 void cycle_increment(cycle_t *cycle) {

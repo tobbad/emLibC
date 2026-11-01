@@ -142,6 +142,7 @@ uint16_t common_crc16(const uint8_t *data_p, uint16_t length);
 uint8_t modulo_sub(int8_t slot, int8_t oSlot, uint8_t modulo);
 void    print_buffer(const uint8_t *buffer, uint8_t size, const char *header);
 int16_t uint_pow(unsigned base, unsigned exp);
+type_e uin82type(uint8_t * mmem);
 int8_t  str2int8(char *str);
 int8_t  cuint82int(uint8_t  *mem);
 char    *idxa2str(idxa2str_t *map, uint8_t idx);
