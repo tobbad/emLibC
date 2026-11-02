@@ -564,7 +564,7 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, dev_role_e ss_type, bool is
                     cycle->cycle     = 0;
                     cycle->isSlave   = false;
                     cycle->isMaster  = true;
-                    return EM_OK;
+                    return cycle->role==ss_type;
                 }
                 res = EM_ERR;
             } else if (cycle->role == SLAVE)  {
@@ -578,12 +578,12 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, dev_role_e ss_type, bool is
                     cycle->slaveAge = 0;
                     cycle->isSlave  = true;
                     cycle->isMaster = false;
-                    return EM_OK;
+                    return cycle->role==ss_type?EM_OK:EM_ERR;
                 }
                 if (cycle->master == SLOT_NOT_SET){
                     cycle->isMaster = false;
                     cycle->master   = rxSlot;
-                    return EM_OK;
+                    return EM_ERR;
                 }
                 if (rxSlot == cycle->master) return EM_ERR;
                 cycle->psubSlot = (rxSlot* CYCLE_SUB_SLOT_CNT + CYCLE_MODULO +cycle_rx_ss(cycle)) % CYCLE_MODULO;
