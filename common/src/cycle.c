@@ -352,6 +352,7 @@ void cycle_reset_role(cycle_t *cycle) {
     // clang-format on
         cycle_set_state(cycle, SYNCHRONIZE);
         cycle->role     = NOT_SET;
+        cycle->isSlave  = false;
         cycle->slaveAge = 0;
      // clang-format on
    }
@@ -563,7 +564,7 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, dev_role_e ss_type, bool is
                     cycle->cycle     = 0;
                     cycle->isSlave   = false;
                     cycle->isMaster  = true;
-                    return cycle->role==ss_type;
+                    return cycle->role==ss_type?EM_OK:EM_ERR;
                 }
                 res = EM_ERR;
             } else if (cycle->role == SLAVE)  {
@@ -588,7 +589,7 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, dev_role_e ss_type, bool is
                 cycle->psubSlot = (rxSlot* CYCLE_SUB_SLOT_CNT + CYCLE_MODULO +cycle_rx_ss(cycle)) % CYCLE_MODULO;
                 cycle->masterAge= 0;
                 cycle->slaveAge = 0;
-                return EM_OK;
+                return cycle->role==ss_type?EM_OK:EM_ERR;;
             }
 #ifndef UNIT_TEST
 //        __HAL_TIM_SET_COUNTER(cycle->timer, 0);
