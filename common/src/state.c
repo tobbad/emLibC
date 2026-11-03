@@ -43,6 +43,7 @@ em_msg state_hisory_init(crc_history_t *hist){
     if (!hist) return EM_ERR;
     memset(hist, 0, sizeof(crc_history_t));
     hist->cnt = HISTORY_SIZE;
+    return EM_OK;
 }
 
 
