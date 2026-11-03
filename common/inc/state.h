@@ -21,19 +21,19 @@ extern idxa2str_t kstatea2str ;
 extern char key2char[][4];
 
 #define MAX_STATE_CNT MAX_BUTTON_CNT
-#define STATE_MASK   0x03
+#define STATE_MASK     0x03
+#define HISTORY_SIZE   8
 
 //
 #if REDUCED_PAYLOAD == 0
 typedef struct state_s {
     uint8_t first;
     uint8_t cnt;
-    uint8_t dirty;
-    uint8_t id;                       // 8 Bitcounter, der bei jedem Senden in diesem Slots
-                                      // inkrementiert mitgesendet wird
+    uint8_t dirty;                    // 8 Bitcounter, der bei jedem Senden in diesem Slots
+    uint8_t id;                       // inkrementiert mitgesendet wird                       // 8 Bitcounter, der bei jedem Senden in diesem Slots
     key_state_e state[MAX_STATE_CNT]; // 16 bytes
     char label[MAX_STATE_CNT];        // 16 bytes
-} state_t;                            // Size is 2*MAX_BUTTON_CNT + 8=  40 Byte (MAX_BUTTON_CNT = 16)
+} state_t;                            // Size is 2*MAX_BUTTON_CNT + 4=  36 Byte (MAX_BUTTON_CNT = 16)
 
 #ifdef blabla
 #define STATE_SET_RANGE(_s, _first, _cnt)                  \
@@ -111,6 +111,7 @@ int8_t state_ch2idx(const state_t *state, char ch);
 int8_t state_nr2idx(state_t *state, uint8_t nr);
 em_msg state_init(state_t *state);
 em_msg state_reset(state_t *state);
+em_msg state_register(state_t *state);
 em_msg state_set_first(state_t *state, uint8_t cnt);
 em_msg state_set_key(state_t *state, uint8_t nr, key_state_e);
 char * state_key_string( key_state_e nr);
@@ -132,7 +133,7 @@ em_msg state_set_u32(state_t *state, uint32_t u32);
 uint32_t state_get_u32(state_t *state);
 em_msg state_copy(const state_t *from, state_t *to);
 em_msg state_is_same(state_t *last, state_t *cur);
-em_msg state_diff(state_t *ref, state_t *state, state_t *diff);
+em_msg state_diff(const state_t *ref, const state_t *state, state_t *diff);
 em_msg state_add(state_t *inState, state_t *add);
 bool   state_merge(state_t *inState, state_t *outState);
 em_msg state_check(const state_t *state);
