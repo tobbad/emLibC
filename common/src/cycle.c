@@ -352,7 +352,6 @@ void cycle_reset_role(cycle_t *cycle) {
     // clang-format on
         cycle_set_state(cycle, SYNCHRONIZE);
         cycle->role     = NOT_SET;
-        cycle->isSlave  = false;
         cycle->slaveAge = 0;
      // clang-format on
    }
