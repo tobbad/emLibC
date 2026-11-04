@@ -336,6 +336,22 @@ char *cycle_role_str(cycle_t *cycle) {
     return idxa2str(&cyclea2str, cycle->role);
 }
 
+em_msg  cycle_role_ok(dev_role_e role_type){
+    if ((role_type<SLAVE) || (role_type>MASTER)) return EM_ERR;
+    return EM_OK;
+}
+
+em_msg  cycle_set_role(cycle_t *cycle, dev_role_e role_type){
+    // clang-format off
+    if (!cycle) return EM_ERR;
+    if (!cycle->init) return EM_ERR;
+    if (cycle->role !=NOT_SET) return EM_ERR;
+    if (cycle_role_ok(role_type)==EM_ERR) return EM_ERR;
+    // clang-format on
+    cycle->role = role_type;
+    return EM_OK;
+}
+
 bool cycle_role_is_set(cycle_t *cycle) {
     // clang-format off
     if (!cycle) return false;
@@ -344,22 +360,13 @@ bool cycle_role_is_set(cycle_t *cycle) {
     return cycle->role != NOT_SET;
 }
 
-void cycle_reset_role(cycle_t *cycle) {
-    // Reset slave role
-    if (!cycle) return;
-    if (!cycle->init) return;
-    if (cycle->isSlave) {
+em_msg cycle_reset_role(cycle_t *cycle) {
+    em_msg res = EM_ERR;
+    if (!cycle) return res;
+    if (!cycle->init) return res;
     // clang-format on
-        cycle_set_state(cycle, SYNCHRONIZE);
-        cycle->role     = NOT_SET;
-        cycle->isSlave  = false;
-        cycle->slaveAge = 0;
-     // clang-format on
-   }
-   if (cycle->role == MASTER) {
-        cycle->masterAge = 0;
-    }
-
+    cycle->role = NOT_SET;
+    return EM_OK;
 }
 
 em_msg cycle_reset_subslot(cycle_t *cycle) {
@@ -517,12 +524,11 @@ em_msg cycle_set_master(cycle_t *cycle, int8_t slot) {
     return res;
 }
 
-em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, dev_role_e ss_type, bool isKa) {
+em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, bool isKa) {
     em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;
     if (!cycle->init) return res;
-    if ((ss_type < SLAVE) || (ss_type>MASTER)) return res;
     // MASTER is a one-shot bootstrap claim, for a device that has not heard
     // anyone yet. A master derives the cycle from its own TX slot, so latching
     // it a second time recomputes psubSlot and resets the timer counter
@@ -546,7 +552,7 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, dev_role_e ss_type, bool is
     // Demotion is the watchdog's job alone, which keeps one path for it
     // instead of racing an RX against a timeout.
     if (cycle->role == NOT_SET){
-        cycle->role = ss_type;
+        return EM_ERR;
     }
     if (cycle_sync_ok(cycle)) {
             if (cycle->role == MASTER) {
@@ -564,7 +570,7 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, dev_role_e ss_type, bool is
                     cycle->cycle     = 0;
                     cycle->isSlave   = false;
                     cycle->isMaster  = true;
-                    return cycle->role==ss_type?EM_OK:EM_ERR;
+                    return EM_OK;
                 }
                 res = EM_ERR;
             } else if (cycle->role == SLAVE)  {
@@ -578,18 +584,14 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, dev_role_e ss_type, bool is
                     cycle->slaveAge = 0;
                     cycle->isSlave  = true;
                     cycle->isMaster = false;
-                    return cycle->role==ss_type?EM_OK:EM_ERR;
-                }
-                if (cycle->master == SLOT_NOT_SET){
                     cycle->isMaster = false;
                     cycle->master   = rxSlot;
-                    return EM_ERR;
+                    return EM_OK;
                 }
-                if (rxSlot == cycle->master) return EM_ERR;
-                cycle->psubSlot = (rxSlot* CYCLE_SUB_SLOT_CNT + CYCLE_MODULO +cycle_rx_ss(cycle)) % CYCLE_MODULO;
-                cycle->masterAge= 0;
-                cycle->slaveAge = 0;
-                return cycle->role==ss_type?EM_OK:EM_ERR;;
+                if (rxSlot == cycle->master){
+                    cycle->psubSlot = (rxSlot* CYCLE_SUB_SLOT_CNT + CYCLE_MODULO +cycle_rx_ss(cycle)) % CYCLE_MODULO;
+                }
+                return EM_ERR;;
             }
 #ifndef UNIT_TEST
 //        __HAL_TIM_SET_COUNTER(cycle->timer, 0);
@@ -605,46 +607,6 @@ int8_t cycle_get_slot(cycle_t *cycle) {
     if (!cycle->init) return res;
     // clang-format on
     return cycle->slot;
-}
-
-// RX path entry point: a frame arrived in sub-slot window rxSlot.
-//
-// It kicks the master watchdog, and elects a master when there is none. What
-// counts as proof that the network is still there depends on the role:
-//   NOT_SET -- nobody is master (boot, or the watchdog just fired). The first
-//              sender heard wins the election: it becomes cycle->master and we
-//              latch our own timing onto its slot as SLAVE.
-//   SLAVE   -- only a frame from cycle->master counts. Accepting any frame
-//              would keep a partitioned group alive with no master in it.
-//   MASTER  -- any frame counts. A master is its own timing reference and
-//              never hears itself, so requiring its own slot here would time
-//              a perfectly healthy master out every CYCLE_MASTER_LOOSE_CYCLE_CNT
-//              cycles.
-// Returns EM_OK when the frame kicked the watchdog, EM_ERR when it was
-// ignored (wrong slot for a slave) or the election could not be latched.
-em_msg cycle_master_seen(cycle_t *cycle, int8_t rxSlot) {
-    em_msg res = EM_ERR;
-    // clang-format off
-    if (!cycle) return res;
-    if (!cycle->init) return res;
-    if (cycle_check_slot(rxSlot)<0) return res;
-    // clang-format on
-    if (cycle->role == NOT_SET) {
-        res = cycle_set_slot(cycle, rxSlot, SLAVE, 0);
-        if (res == EM_OK) {
-            cycle->master = rxSlot;
-        }
-        return res;
-    }
-    if ((cycle->role == SLAVE) && (rxSlot != cycle->master)) {
-        return res;
-    }
-    // Both watchdogs are kicked: the frame is proof the network is there,
-    // whichever role we currently hold.
-    cycle->masterAge = 0;
-    cycle->slaveAge = 0;
-    res = EM_OK;
-    return res;
 }
 
 int8_t cycle_tx_ss(cycle_t *cycle) {

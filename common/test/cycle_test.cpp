@@ -132,7 +132,8 @@ TEST_F(CycleTest, SetSlotSlaveRole) {
     EXPECT_EQ(c.role, NOT_SET);
 
     ASSERT_EQ(cycle_sync_ok(&c), 1);
-    ASSERT_EQ(cycle_set_slot(&c, my_slot, SLAVE, KA_DEFAULT), EM_OK);
+    ASSERT_EQ(cycle_set_role(&c, SLAVE), EM_OK);
+    ASSERT_EQ(cycle_set_slot(&c, my_slot, KA_DEFAULT), EM_OK);
     EXPECT_EQ(c.isSlave, true);
     EXPECT_EQ(c.slot, my_slot);
     EXPECT_STREQ(cycle_role_str(&c), "SLAVE ");
@@ -142,7 +143,8 @@ TEST_F(CycleTest, SetSlotSlaveRole) {
     EXPECT_EQ(c.isMaster, false);
     EXPECT_EQ(c.isSlave, true);
     EXPECT_EQ(c.master, SLOT_NOT_SET);
-    ASSERT_EQ(cycle_set_slot(&c, my_slot - 2, SLAVE, KA_DEFAULT), EM_OK);
+    ASSERT_EQ(cycle_set_role(&c, SLAVE), EM_OK);
+    ASSERT_EQ(cycle_set_slot(&c, my_slot - 2, KA_DEFAULT), EM_OK);
     EXPECT_EQ(c.master, my_slot - 2); // der Slave uebernimmt rxSlot als Master
     EXPECT_EQ(c.subSlot, 0);
     EXPECT_EQ(c.slaveAge, 0);
@@ -176,13 +178,15 @@ TEST_F(CycleTest, SetSlotMasterRole) {
     EXPECT_EQ(c.sync_state, SYNCHRONIZE_READY);
 
     ASSERT_EQ(cycle_set_my_slot(&c, my_slot), EM_OK);
-    ASSERT_EQ(cycle_set_slot(&c, (my_slot), MASTER, KA_DEFAULT), EM_OK);
+    ASSERT_EQ(cycle_set_role(&c, MASTER), EM_OK);
+    ASSERT_EQ(cycle_set_slot(&c, (my_slot), KA_DEFAULT), EM_OK);
     EXPECT_STREQ(cycle_role_str(&c), "MASTER");
     EXPECT_EQ(c.role, MASTER);
     EXPECT_EQ(c.slot, (my_slot));
     EXPECT_EQ(c.master, (my_slot));
+    ASSERT_EQ(cycle_set_role(&c, MASTER), EM_OK);
 
-    ASSERT_EQ(cycle_set_slot(&c, (my_slot), SLAVE, KA_DEFAULT), EM_ERR);
+    ASSERT_EQ(cycle_set_role(&c, SLAVE), EM_ERR);
 
     EXPECT_EQ(c.isMaster, true);
     EXPECT_EQ(c.isSlave, false);
@@ -217,7 +221,8 @@ TEST_F(CycleTest, SlaveClaimsAreNotLatched) {
     ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
     ASSERT_EQ(c.role, NOT_SET);
     cycle_increment(&c);
-    ASSERT_EQ(cycle_set_slot(&c, slave, SLAVE, KA_DEFAULT), EM_OK) << "slot=" << (int)slave;
+    ASSERT_EQ(cycle_set_role(&c, MASTER), EM_OK);
+    ASSERT_EQ(cycle_set_slot(&c, slave, KA_DEFAULT), EM_OK) << "slot=" << (int)slave;
     EXPECT_EQ(c.role, SLAVE);
     EXPECT_EQ(c.psubSlot, slave * CYCLE_SUB_SLOT_CNT + RX_SS) << "slot=" << (int)slave;
 
@@ -262,7 +267,8 @@ TEST_F(CycleTest, SetSlotRejectsInvalidRole) {
         ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
         EXPECT_EQ(c.psync_state, SYNCHRONIZE);
         cycle_increment(&c);
-        EXPECT_EQ(cycle_set_slot(&c, 3, role, KA_DEFAULT), EM_ERR) << "role=" << (int)role;
+        EXPECT_EQ(cycle_set_role(&c, role), EM_ERR);
+        EXPECT_EQ(cycle_set_slot(&c, 3, KA_DEFAULT), EM_ERR) << "role=" << (int)role;
         EXPECT_EQ(c.sync_state, SYNCHRONIZE_READY) << "role=" << (int)role;
     }
 }
@@ -287,12 +293,13 @@ TEST_F(CycleTest, SetSlotFrozenWhenLocked) {
     cycle_increment(&c);
     EXPECT_EQ(c.sync_state, SYNCHRONIZE_READY);
 
-    ASSERT_EQ(cycle_set_slot(&c, slot, SLAVE, KA_DEFAULT), EM_OK);
+    ASSERT_EQ(cycle_set_role(&c, SLAVE), EM_OK);
+    ASSERT_EQ(cycle_set_slot(&c, slot, KA_DEFAULT), EM_OK);
     const int8_t claimed = c.subSlot;
 
     ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE_LOCKED), EM_OK);
     EXPECT_EQ(c.psync_state, SYNCHRONIZE_LOCKED);
-    EXPECT_EQ(cycle_set_slot(&c, 5, SLAVE, KA_DEFAULT), EM_OK);
+    EXPECT_EQ(cycle_set_slot(&c, 5, KA_DEFAULT), EM_OK);
     EXPECT_EQ(c.subSlot, claimed);
     EXPECT_STREQ(cycle_role_str(&c), "SLAVE "); // still the originally claimed role
 }
@@ -311,11 +318,10 @@ TEST_F(CycleTest, ResetSlaveRole) {
 
     EXPECT_EQ(c.sync_state, SYNCHRONIZE_READY);
     ASSERT_EQ(cycle_set_my_slot(&c, slot), EM_OK);
-    ASSERT_EQ(cycle_set_slot(&c, slot, SLAVE, KA_DEFAULT), EM_OK);
+    ASSERT_EQ(cycle_set_slot(&c, slot, KA_DEFAULT), EM_OK);
     ASSERT_EQ(c.subSlot, 0);
     ASSERT_EQ(c.psubSlot, slot * CYCLE_SUB_SLOT_CNT + RX_SS);
     ASSERT_EQ(c.cycle, 0);
-    cycle_print(&c, "Test");
     ASSERT_EQ(c.isSlave, true);
     ASSERT_EQ(c.isMaster, false);
     ASSERT_EQ(c.slaveAge, 0);
@@ -348,7 +354,8 @@ TEST_F(CycleTest, ResetMasterRole) {
     EXPECT_EQ(c.role, NOT_SET);
     EXPECT_TRUE(cycle_sync_ok(&c));
     ASSERT_EQ(cycle_set_my_slot(&c, slot), EM_OK);
-    ASSERT_EQ(cycle_set_slot(&c, slot, MASTER, KA_DEFAULT), EM_OK);
+    ASSERT_EQ(cycle_set_role(&c, MASTER), EM_OK);
+    ASSERT_EQ(cycle_set_slot(&c, slot, KA_DEFAULT), EM_OK);
     EXPECT_EQ(c.role, MASTER);
     ASSERT_GT(c.psubSlot, 0); // nur Flag, siehe SetSlotMasterRole
     ASSERT_EQ(c.cycle, 0);
@@ -382,8 +389,8 @@ TEST_F(CycleTest, ResetRoleDropsSlave) {
     ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
 
     cycle_increment(&c);
-
-    ASSERT_EQ(cycle_set_slot(&c, slot, SLAVE, KA_DEFAULT), EM_OK);
+    ASSERT_EQ(cycle_set_role(&c, SLAVE), EM_OK);
+    ASSERT_EQ(cycle_set_slot(&c, slot, KA_DEFAULT), EM_OK);
     ASSERT_EQ(c.role, SLAVE);
 
     cycle_reset_role(&c);
@@ -393,7 +400,8 @@ TEST_F(CycleTest, ResetRoleDropsSlave) {
     EXPECT_EQ(c.isMaster, false);
     EXPECT_EQ(c.slaveAge, 0);
     // Danach darf die Rolle neu vergeben werden
-    EXPECT_EQ(cycle_set_slot(&c, slot, SLAVE, KA_DEFAULT), EM_OK);
+    ASSERT_EQ(cycle_set_role(&c, SLAVE), EM_OK);
+    EXPECT_EQ(cycle_set_slot(&c, slot, KA_DEFAULT), EM_OK);
     EXPECT_EQ(c.role, SLAVE);
 }
 
@@ -404,8 +412,8 @@ TEST_F(CycleTest, ResetRoleKeepsMaster) {
     ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
 
     cycle_increment(&c);
-
-    ASSERT_EQ(cycle_set_slot(&c, slot, MASTER, KA_DEFAULT), EM_OK);
+    ASSERT_EQ(cycle_set_role(&c, MASTER), EM_OK);
+    ASSERT_EQ(cycle_set_slot(&c, slot, KA_DEFAULT), EM_OK);
     const uint16_t psubSlot = c.psubSlot;
 
     cycle_reset_role(&c);
@@ -426,7 +434,9 @@ TEST_F(CycleTest, MasterKeepsRoleBeyondWatchdog) {
     ASSERT_EQ(cycle_init(&c, dummy_hdl, TX_SS, RX_SS, POSTRX, CYCLE_MASTER_KEEP_ALIVE_CYCLE_CNT, &timerPtr), EM_OK);
     ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
     cycle_increment(&c);
-    ASSERT_EQ(cycle_set_slot(&c, slot, MASTER, KA_DEFAULT), EM_OK);
+    ASSERT_EQ(cycle_set_role(&c, MASTER), EM_OK);
+
+    ASSERT_EQ(cycle_set_slot(&c, slot, KA_DEFAULT), EM_OK);
 
     for (int i = 0; i < 2 * CYCLE_MASTER_LOOSE_CYCLE_CNT + 1; i++) {
         advance_frame_cycles(&c, 1);
@@ -450,7 +460,8 @@ TEST_F(CycleTest, CheckSlotAsSlave) {
     EXPECT_EQ(c.role, NOT_SET);
     ASSERT_EQ(c.isSlave, false);
     EXPECT_TRUE(cycle_sync_ok(&c));
-    ASSERT_EQ(cycle_set_slot(&c, dslot, SLAVE, KA_DEFAULT), EM_OK);
+    ASSERT_EQ(cycle_set_role(&c, SLAVE), EM_OK);
+    ASSERT_EQ(cycle_set_slot(&c, dslot, KA_DEFAULT), EM_OK);
     ASSERT_EQ(c.isSlave, true);
     ASSERT_EQ(c.psubSlot, dslot * CYCLE_SUB_SLOT_CNT + RX_SS);
     ASSERT_EQ(c.slot, SLOT_NOT_SET); // own slot only via cycle_set_my_slot()
@@ -464,16 +475,18 @@ TEST_F(CycleTest, CheckSlotAsSlave) {
     ASSERT_EQ(c.isSlave, true);
     ASSERT_EQ(c.slaveAge, 0);
     ASSERT_EQ(c.master, SLOT_NOT_SET);
-    ASSERT_EQ(cycle_set_slot(&c, master, SLAVE, KA_DEFAULT), EM_OK);
+    ASSERT_EQ(cycle_set_role(&c, SLAVE), EM_OK);
+    ASSERT_EQ(cycle_set_slot(&c, master, KA_DEFAULT), EM_OK);
     ASSERT_EQ(c.master, master);
     EXPECT_TRUE(cycle_sync_ok(&c));
 
     for (uint8_t slot = 1; slot < CYCLE_SLOT_CNT; slot += 2) {
         if (slot == master) {
-            ASSERT_EQ(cycle_set_slot(&c, slot, SLAVE, KA_DEFAULT), EM_ERR);
+
+            ASSERT_EQ(cycle_set_slot(&c, slot, KA_DEFAULT), EM_ERR);
             continue;
         } else {
-            ASSERT_EQ(cycle_set_slot(&c, slot, SLAVE, KA_DEFAULT), EM_OK) << "slot = " << slot;
+            ASSERT_EQ(cycle_set_slot(&c, slot, KA_DEFAULT), EM_OK) << "slot = " << slot;
         }
         ASSERT_EQ(c.psubSlot, slot * CYCLE_SUB_SLOT_CNT + RX_SS);
         cycle_increment(&c);
