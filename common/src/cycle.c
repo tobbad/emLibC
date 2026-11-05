@@ -374,7 +374,9 @@ em_msg cycle_reset_role(cycle_t *cycle) {
     if (!cycle) return res;
     if (!cycle->init) return res;
     // clang-format on
-    cycle->role = NOT_SET;
+    if (cycle->isSlave){
+        cycle->role = NOT_SET;
+    }
     return EM_OK;
 }
 
