@@ -132,6 +132,8 @@ em_msg cycle_update(cycle_t *cycle);
 dev_role_e cycle_role(cycle_t *cycle);
 char *cycle_role_str(cycle_t *cycle);
 bool cycle_role_is_set(cycle_t *cycle);
+em_msg  cycle_role_ok(dev_role_e role_type);
+bool cycle_slot_is_master(cycle_t *cycle, int8_t slot);
 em_msg cycle_dec_ka(cycle_t *cycle);
 // Mecanno for once in a cycle
 em_msg cycle_set_idx(cycle_t *cycle, uint8_t idx);

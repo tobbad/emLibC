@@ -310,6 +310,15 @@ bool cycle_is_ka(cycle_t *cycle) {
     return cycle->_kaCnt == 0;
 };
 
+bool cycle_slot_is_master(cycle_t *cycle, int8_t slot) {
+    em_msg res = EM_ERR;
+    // clang-format off
+    if (!cycle) return res;
+    if (!cycle->init) return res;
+    // clang-format on
+    return (cycle->master == slot);
+};
+
 em_msg cycle_reset_ka(cycle_t *cycle) {
     em_msg res = EM_ERR;
     // clang-format off
@@ -496,20 +505,6 @@ em_msg cycle_monce_in_cycle(cycle_t *cycle){
     return res;
 }
 
-em_msg cycle_set_my_slot(cycle_t *cycle, int8_t slot) {
-    em_msg res = EM_ERR;
-    // clang-format off
-    if (!cycle) return res;
-    if (!cycle->init) return res;
-    if (cycle_check_slot(slot)<0) return res;
-    // clang-format on
-    if (cycle->slot == SLOT_NOT_SET) {
-        cycle->slot = slot;
-        res = EM_OK;
-    }
-    return res;
-}
-
 em_msg cycle_set_master(cycle_t *cycle, int8_t slot) {
     em_msg res = EM_ERR;
     // clang-format off
@@ -519,6 +514,20 @@ em_msg cycle_set_master(cycle_t *cycle, int8_t slot) {
     // clang-format on
     if (cycle->master == SLOT_NOT_SET) {
         cycle->master = slot;
+        res = EM_OK;
+    }
+    return res;
+}
+
+em_msg cycle_set_my_slot(cycle_t *cycle, int8_t slot) {
+    em_msg res = EM_ERR;
+    // clang-format off
+    if (!cycle) return res;
+    if (!cycle->init) return res;
+    if (cycle_check_slot(slot)<0) return res;
+    // clang-format on
+    if (cycle->slot == SLOT_NOT_SET) {
+        cycle->slot = slot;
         res = EM_OK;
     }
     return res;
@@ -564,6 +573,7 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, bool isKa) {
                     //cycle->timerCNT  = 0;
                     cycle_reset(cycle);
                     cycle->master    = rxSlot;
+                    cycle->slot      = rxSlot;
                     cycle->psubSlot  = (cycle->master * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO + cycle_tx_ss(cycle)) % CYCLE_MODULO;
                     cycle->masterAge = 0;
                     cycle->slaveAge  = 0;
@@ -584,14 +594,15 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, bool isKa) {
                     cycle->slaveAge = 0;
                     cycle->isSlave  = true;
                     cycle->isMaster = false;
-                    cycle->isMaster = false;
+                    cycle_set_master(cycle, rxSlot);
                     cycle->master   = rxSlot;
                     return EM_OK;
                 }
-                if (rxSlot == cycle->master){
+                if (cycle_slot_is_master(cycle, rxSlot)){
                     cycle->psubSlot = (rxSlot* CYCLE_SUB_SLOT_CNT + CYCLE_MODULO +cycle_rx_ss(cycle)) % CYCLE_MODULO;
+                    return EM_OK;
                 }
-                return EM_ERR;;
+                return EM_ERR;
             }
 #ifndef UNIT_TEST
 //        __HAL_TIM_SET_COUNTER(cycle->timer, 0);
@@ -746,6 +757,7 @@ void cycle_increment(cycle_t *cycle) {
     if (!cycle) return;
     if (!cycle->init) return;
     // clang-format on
+    static uint16_t lcycle;
 	if (cycle->psync_state > SYNC_RESET){
 		cycle->sync_state = cycle->psync_state;
 		cycle->psync_state = SYNC_RESET;
@@ -768,6 +780,11 @@ void cycle_increment(cycle_t *cycle) {
 				stateled_dtoggle_pin(cycle->hdl, cycle_upd);
 #endif
             }
+			if (lcycle != cycle->cycle){
+                cycle->set = true;
+                cycle_age_role(cycle);
+                lcycle = cycle->cycle;
+			}
 			cycle->subSlot++;
 			uint16_t s = cycle->subSlot;
 			s =   s% (CYCLE_SUB_SLOT_CNT * CYCLE_SLOT_CNT);
@@ -807,10 +824,9 @@ void cycle_increment(cycle_t *cycle) {
 #if OPTION_SHOW_TIMING == 1
                 stateled_toggle_pin(cycle->hdl, cycle_toggle);
 #endif
+                lcycle = cycle->cycle;
                 cycle->cycle += 1;
-                cycle->set = true;
-                cycle_age_role(cycle);
-              }
+             }
 	      }
      }
 }
