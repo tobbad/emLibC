@@ -541,10 +541,10 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, bool isKa) {
     if (!cycle) return res;
     if (!cycle->init) return res;
     // MASTER is a one-shot bootstrap claim, for a device that has not heard
-    // anyone yet. A master derives the cycle from its own TX slot, so latching
-    // it a second time recomputes psubSlot and resets the timer counter
-    // against that same self-reference -- shifting the phase every slave has
-    // synced to, for no gain. cycle->isMaster records that the claim happened
+    // anyone yet. cycle_doSend() only lets it send just before its own slot, so
+    // the running subSlot already fits and is kept: the first frame leaves at
+    // the same position as every later one, which SS_RX_SS of the slaves
+    // relies on. cycle->isMaster records that the claim happened
     // and is released only by cycle_reset_role(), i.e. by the master watchdog
     // in cycle_increment() -- so the role is claimable once per election, and
     // a device can be elected again after a timeout has torn the old master
@@ -573,10 +573,9 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, bool isKa) {
 #endif
                 if (cycle->role  == MASTER){
                     //cycle->timerCNT  = 0;
-                    cycle_reset(cycle);
                     cycle->master    = rxSlot;
                     cycle->slot      = rxSlot;
-                    cycle->psubSlot  = (cycle->master * CYCLE_SUB_SLOT_CNT + CYCLE_MODULO + cycle_tx_ss(cycle)) % CYCLE_MODULO;
+                    cycle->psubSlot  = 0;
                     cycle->masterAge = 0;
                     cycle->slaveAge  = 0;
                     cycle->cycle     = 0;
@@ -602,6 +601,7 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, bool isKa) {
                 }
                 if (cycle_slot_is_master(cycle, rxSlot)){
                     cycle->psubSlot = (rxSlot* CYCLE_SUB_SLOT_CNT + CYCLE_MODULO +cycle_rx_ss(cycle)) % CYCLE_MODULO;
+                    cycle->slaveAge = 0; // the master is alive
                     return EM_OK;
                 }
                 return EM_ERR;
@@ -724,7 +724,7 @@ uint16_t cycle_sscnt_get(cycle_t *cycle, cycle_measure_e dir) {
 // is dropped and the next frame heard elects a new master.
 //
 // The two roles get different budgets: a slave must notice a dead master fast
-// (CYCLE_SLAVE_KEEP_ALIVE_CYCLE_CNT), while a master may sit quiet much longer
+// (CYCLE_SLAVE_LOOSE_CYCLE_CNT), while a master may sit quiet much longer
 // before it concludes it is alone (CYCLE_MASTER_LOOSE_CYCLE_CNT).
 // (plain `static`, not the STATIC macro: common.h only defines STATIC in its
 // UNIT_TEST branch, so STATIC does not compile in the firmware build.)
@@ -738,7 +738,7 @@ static void cycle_age_role(cycle_t *cycle) {
         break;
     case SLAVE:
         age = &cycle->slaveAge;
-        limit = CYCLE_SLAVE_KEEP_ALIVE_CYCLE_CNT;
+        limit = CYCLE_SLAVE_LOOSE_CYCLE_CNT;
         break;
     default:
         // No role to lose -- nothing ages until the next election.
@@ -769,9 +769,7 @@ void cycle_increment(cycle_t *cycle) {
     }
     if (cycle_sync_ok(cycle)) {
 			if (cycle->psubSlot > 0) {
-				if (cycle->role == MASTER)
-					cycle->subSlot = (cycle->slot * CYCLE_SUB_SLOT_CNT)-1;
-				else if (cycle->role == SLAVE) {
+				if (cycle->role == SLAVE) {
 					cycle->subSlot = cycle->psubSlot;
 				}
 				else {

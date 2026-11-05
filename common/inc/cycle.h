@@ -72,6 +72,7 @@ extern idxa2str_t synca2str;
 // the keep-alives every CYCLE_MASTER_KEEP_ALIVE_CYCLE_CNT cycles. Its budget
 // must therefore span several keep-alives, not CYCLE_SLAVE_KEEP_ALIVE_CYCLE_CNT
 // cycles, or every slave drops its role between two keep-alives.
+#define CYCLE_SLAVE_LOOSE_CYCLE_CNT (uint16_t)(3 * CYCLE_MASTER_KEEP_ALIVE_CYCLE_CNT)
 
 #ifdef UNIT_TEST
 typedef struct cycle_s {
