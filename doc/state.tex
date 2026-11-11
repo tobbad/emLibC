@@ -100,6 +100,36 @@ deaktiviert ist.
 \end{description}
 \par}
 
+\subsubsection*{Bereits empfangene Zustände erkennen}
+Mit \verb|state_register()| lässt sich feststellen, ob ein empfangener
+\verb|state_t| schon einmal angekommen ist, z.\,B.\ wenn dasselbe Paket über
+mehrere Geräte weitergeleitet wird. Das Modul führt dazu eine globale History
+der CRC16-Werte (\verb|common_crc16()|, Abschnitt \ref{common}) der zuletzt
+registrierten Zustände. Die History ist ein Ringpuffer mit
+\verb|HISTORY_SIZE| ($8$) Einträgen: ist er voll, wird der älteste Eintrag
+überschrieben. Sie liegt im \verb|.bss| und ist daher nach dem Start leer;
+\verb|state_init()| verändert sie nicht.
+
+Die CRC wird über den \emph{ganzen} \verb|state_t| gebildet, also inklusive
+\verb|dirty| und \verb|id|. Da \verb|id| bei jedem Senden erhöht wird, gilt
+jedes neue Paket eines Slots als neuer Zustand; als bekannt erkannt werden nur
+bitgleiche Zustände, also etwa ein weitergeleitetes Paket mit derselben
+\verb|id|.
+
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{state\_register(state)}] Sucht die CRC von \verb|state| in der
+  History; ist sie nicht enthalten, wird sie eingetragen. Ein ungültiger
+  Zustand wird nicht eingetragen. Rückgabe: \verb|em_msg| (\verb|EM_OK|, wenn
+  der Zustand schon registriert war; \verb|EM_ERR|, wenn er neu ist und
+  eingetragen wurde oder wenn \verb|state| ungültig bzw.\ \verb|NULL| ist).
+\item[\texttt{state\_crc(state)}] Berechnet die CRC16 über den ganzen
+  \verb|state_t|. Rückgabe: \verb|uint16_t| (die CRC, bzw.\
+  \verb|STATE_CRC_INVALID| $= \mathtt{0xFFFF}$ bei ungültigem Zustand).
+\item[\texttt{state\_history\_reset()}] Leert die History. Rückgabe: keine.
+\end{description}
+\par}
+
 \subsubsection*{Bereich, Flags und Ausgabe}
 {\sloppy\emergencystretch=3em
 \begin{description}

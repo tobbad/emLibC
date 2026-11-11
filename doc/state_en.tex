@@ -98,6 +98,35 @@ disabled here.
 \end{description}
 \par}
 
+\subsubsection*{Detecting already received states}
+\verb|state_register()| tells whether a received \verb|state_t| has already
+arrived before, e.g.\ when the same packet is forwarded by several devices.
+For this the module keeps a global history of the CRC16 values
+(\verb|common_crc16()|, Section \ref{common}) of the most recently registered
+states. The history is a ring buffer with \verb|HISTORY_SIZE| ($8$) entries:
+once it is full, the oldest entry is overwritten. It lives in \verb|.bss| and
+is therefore empty after start-up; \verb|state_init()| does not touch it.
+
+The CRC is computed over the \emph{whole} \verb|state_t|, including
+\verb|dirty| and \verb|id|. Since \verb|id| is incremented on every
+transmission, every new packet of a slot counts as a new state; only
+bit-identical states are recognised as known, e.g.\ a forwarded packet with
+the same \verb|id|.
+
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{state\_register(state)}] Looks up the CRC of \verb|state| in the
+  history and adds it if it is not present. An invalid state is not added.
+  Returns: \verb|em_msg| (\verb|EM_OK| if the state was already registered;
+  \verb|EM_ERR| if it is new and was added, or if \verb|state| is invalid or
+  \verb|NULL|).
+\item[\texttt{state\_crc(state)}] Computes the CRC16 over the whole
+  \verb|state_t|. Returns: \verb|uint16_t| (the CRC, or
+  \verb|STATE_CRC_INVALID| $= \mathtt{0xFFFF}$ for an invalid state).
+\item[\texttt{state\_history\_reset()}] Clears the history. Returns: nothing.
+\end{description}
+\par}
+
 \subsubsection*{Range, flags and output}
 {\sloppy\emergencystretch=3em
 \begin{description}
