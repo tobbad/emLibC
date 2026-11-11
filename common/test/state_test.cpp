@@ -335,3 +335,74 @@ TEST_F(StateCopyMergeSetTest, StateSet) {
     EXPECT_EQ(state_set_state(&s1, &copy), EM_OK);
     EXPECT_EQ(state_is_same(&s1, &copy), EM_OK);
 }
+
+// ---------------------------------------------------------------------------
+// state_crc / state_register (History der schon gesehenen states)
+// ---------------------------------------------------------------------------
+class StateRegisterTest : public ::testing::Test {
+  protected:
+    state_t s;
+    void SetUp() override {
+        state_history_reset();
+        state_init(&s);
+    }
+};
+
+TEST_F(StateRegisterTest, NullAndInvalidReturnError) {
+    EXPECT_EQ(state_register(nullptr), EM_ERR);
+    EXPECT_EQ(state_crc(nullptr), STATE_CRC_INVALID);
+    s.cnt = MAX_STATE_CNT + 1;
+    EXPECT_EQ(state_crc(&s), STATE_CRC_INVALID);
+    EXPECT_EQ(state_register(&s), EM_ERR);
+    EXPECT_EQ(state_register(&s), EM_ERR); // ungültig wird nie eingetragen
+}
+
+TEST_F(StateRegisterTest, NewThenSeen) {
+    EXPECT_EQ(state_register(&s), EM_ERR); // neu
+    EXPECT_EQ(state_register(&s), EM_OK);  // schon gesehen
+}
+
+TEST_F(StateRegisterTest, DifferentContentIsNew) {
+    state_register(&s);
+    state_set_key_by_idx(&s, 3, ON);
+    EXPECT_EQ(state_register(&s), EM_ERR);
+    EXPECT_EQ(state_register(&s), EM_OK);
+}
+
+TEST_F(StateRegisterTest, IdChangeIsNew) {
+    uint16_t crc = state_crc(&s);
+    state_register(&s);
+    s.id = 42;
+    EXPECT_NE(state_crc(&s), crc);
+    EXPECT_EQ(state_register(&s), EM_ERR); // neu
+    EXPECT_EQ(state_register(&s), EM_OK);  // schon gesehen
+}
+
+TEST_F(StateRegisterTest, DirtyChangeIsNew) {
+    uint16_t crc = state_crc(&s);
+    state_register(&s);
+    s.dirty = 1;
+    EXPECT_NE(state_crc(&s), crc);
+    EXPECT_EQ(state_register(&s), EM_ERR); // neu
+    EXPECT_EQ(state_register(&s), EM_OK);  // schon gesehen
+}
+
+TEST_F(StateRegisterTest, OldestEntryIsOverwritten) {
+    state_t first;
+    state_copy(&s, &first);
+    EXPECT_EQ(state_register(&first), EM_ERR);
+    // HISTORY_SIZE weitere, unterschiedliche states verdrängen den ersten
+    for (uint8_t i = 0; i < HISTORY_SIZE; i++) {
+        state_t t;
+        state_init(&t);
+        state_set_key_by_idx(&t, i, ON);
+        EXPECT_EQ(state_register(&t), EM_ERR) << "i=" << (int)i;
+    }
+    EXPECT_EQ(state_register(&first), EM_ERR); // wieder neu
+}
+
+TEST_F(StateRegisterTest, ResetClearsHistory) {
+    state_register(&s);
+    state_history_reset();
+    EXPECT_EQ(state_register(&s), EM_ERR);
+}
