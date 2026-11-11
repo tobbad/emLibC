@@ -575,7 +575,7 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, bool isKa) {
                     //cycle->timerCNT  = 0;
                     cycle->master    = rxSlot;
                     cycle->slot      = rxSlot;
-                    cycle->psubSlot  = 0;
+                    cycle->psubSlot  = (cycle->master* CYCLE_SUB_SLOT_CNT + CYCLE_MODULO +cycle_rx_ss(cycle)) % CYCLE_MODULO;
                     cycle->masterAge = 0;
                     cycle->slaveAge  = 0;
                     cycle->cycle     = 0;
