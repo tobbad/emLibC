@@ -92,7 +92,7 @@ uint16_t state_crc(const state_t *state) {
 }
 
 // true, wenn crc in der History ist
-STATIC bool state_registered(uint16_t crc) {
+static bool state_registered(uint16_t crc) {
     for (uint8_t i = 0; i < history.used; i++) {
         if (history.crc[i] == crc)
             return true;
