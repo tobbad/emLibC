@@ -28,6 +28,7 @@ static idx2str_t sync2str[] = {
     {.str = (char *)&"SYNC_ERROR   ", .idx = SYNCHRONIZE_ERROR},  /*!< Synchronizion error */
     {.str = (char *)&"SYNC_LOCKED  ", .idx = SYNCHRONIZE_LOCKED}, /*!< Device claimed tom be master or slave */
 };
+
 idxa2str_t synca2str = {.cnt = ELCNT(sync2str), .entry = (idx2str_t *)&sync2str};
 #define ASCIHEX_LEN 16
 char ascihex[ASCIHEX_LEN] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
@@ -41,6 +42,40 @@ char nibble2char(uint8_t nr) {
         return nr - 10 + 'A';
     }
 }
+
+// true, wenn crc in der History ist
+bool common_crc_registered(crc_history_t *hist, uint16_t crc) {
+    if (!hist) return false;
+    for (uint8_t i = 0; i < hist->used; i++) {
+        if (hist->crc[i] == crc)
+            return true;
+    }
+    return false;
+}
+
+// Liefert EM_OK, wenn der state (Inhalt) schon einmal registriert wurde.
+// Sonst wird er in die History (Ringpuffer, HISTORY_SIZE Einträge)
+// aufgenommen und EM_ERR geliefert. Ungültiger state -> EM_ERR, ohne Eintrag.
+em_msg common_crc_register(crc_history_t *hist, uint32_t crc) {
+    if (!hist)
+        return EM_ERR;
+    if (common_crc_registered(hist, crc))
+        return EM_OK;
+    hist->crc[hist->idx] = crc;
+    hist->idx  = (uint8_t)(( hist->idx + 1) % HISTORY_SIZE);
+    if (hist->used < HISTORY_SIZE){
+        hist->used++;
+    }
+    return EM_ERR;
+}
+
+
+em_msg common_reset_crc_history(crc_history_t *hist){
+    if(! hist) return EM_ERR;
+    memset(&hist, 0, sizeof(crc_history_t));
+    return EM_OK;
+}
+
 
 /**
  * @brief  Convert Hex 32Bits value into char

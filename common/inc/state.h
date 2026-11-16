@@ -22,7 +22,6 @@ extern char key2char[][4];
 
 #define MAX_STATE_CNT MAX_BUTTON_CNT
 #define STATE_MASK     0x03
-#define HISTORY_SIZE   8
 #define STATE_CRC_INVALID 0xFFFFu
 
 //
@@ -113,7 +112,6 @@ int8_t state_nr2idx(state_t *state, uint8_t nr);
 em_msg state_init(state_t *state);
 em_msg state_reset(state_t *state);
 em_msg state_register(const state_t *state);
-uint16_t state_crc(const state_t *state);
 void   state_history_reset(void);
 em_msg state_set_first(state_t *state, uint8_t cnt);
 em_msg state_set_key(state_t *state, uint8_t nr, key_state_e);

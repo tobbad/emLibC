@@ -31,16 +31,7 @@ static idx2str_t kstate_s[KEY_STATE_CNT + 1] = {
 idxa2str_t kstatea2str = {.cnt = KEY_STATE_CNT + 1, .entry = (idx2str_t *)&kstate};
 idxa2str_t kstateas2str = {.cnt = KEY_STATE_CNT + 1, .entry = (idx2str_t *)&kstate_s};
 
-typedef struct crc_history_s {
-    uint16_t crc[HISTORY_SIZE];
-    uint8_t  used; // Anzahl gültiger Einträge (0..HISTORY_SIZE)
-    uint8_t  idx;  // nächster Schreibplatz (Ringpuffer)
-} crc_history_t;
-
 static crc_history_t history; // .bss -> beim Start leer
-
-void state_history_reset(void) { memset(&history, 0, sizeof(history)); }
-
 
 em_msg state_init(state_t *state) {
     em_msg res = EM_ERR;
@@ -85,19 +76,10 @@ em_msg state_reset(state_t *state) {
 
 // CRC über den ganzen state_t (inkl. dirty und id).
 // Liefert STATE_CRC_INVALID bei ungültigem state.
-uint16_t state_crc(const state_t *state) {
+static uint16_t state_crc(const state_t *state) {
     if (state_check(state) != EM_OK)
         return STATE_CRC_INVALID;
     return common_crc16((const uint8_t *)state, sizeof(state_t));
-}
-
-// true, wenn crc in der History ist
-static bool state_registered(uint16_t crc) {
-    for (uint8_t i = 0; i < history.used; i++) {
-        if (history.crc[i] == crc)
-            return true;
-    }
-    return false;
 }
 
 // Liefert EM_OK, wenn der state (Inhalt) schon einmal registriert wurde.
@@ -107,13 +89,10 @@ em_msg state_register(const state_t *state) {
     if (state_check(state) != EM_OK)
         return EM_ERR;
     uint16_t crc = state_crc(state);
-    if (state_registered(crc))
+    if (common_crc_registered(&history, crc)){
         return EM_OK;
-    history.crc[history.idx] = crc;
-    history.idx              = (uint8_t)((history.idx + 1) % HISTORY_SIZE);
-    if (history.used < HISTORY_SIZE)
-        history.used++;
-    return EM_ERR;
+    }
+    return common_crc_register(&history, crc);
 }
 
 em_msg state_set_key(state_t *state, uint8_t nr, key_state_e ns) {

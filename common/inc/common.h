@@ -102,6 +102,8 @@ typedef enum {
     SYNC_CNT             // 6
 } system_state_e;
 
+#define HISTORY_SIZE   8
+
 typedef union {
     const uint8_t *cptr;
     uint8_t *ptr;
@@ -122,6 +124,13 @@ typedef struct idxa2str_s {
     idx2str_t *entry;
 } idxa2str_t;
 
+
+typedef struct crc_history_s {
+    uint16_t crc[HISTORY_SIZE];
+    uint8_t  used; // Anzahl gültiger Einträge (0..HISTORY_SIZE)
+    uint8_t  idx;  // nächster Schreibplatz (Ringpuffer)
+} crc_history_t;
+
 extern idxa2str_t synca2str;
 extern char cBuf[];
 /*
@@ -136,6 +145,11 @@ extern char cBuf[];
 size_t    board_get_unique_id(uint8_t *id, size_t max_len);
 // idstr braucht 2*UNIQ_ID_LEN+1 Bytes: je zwei Hex-Zeichen pro Byte, plus abschliessende 0
 char     *uniq_idstr(char* idstr, uint8_t len);
+//  Functions for crc history
+em_msg common_reset_crc_history(crc_history_t *hist);
+bool   common_crc_registered(crc_history_t *hist, uint16_t crc);
+em_msg common_crc_register(crc_history_t *hist, uint32_t crc);
+
 uint32_t csss2uint32(uint32_t cycle, uint8_t slot, uint8_t sSlot);
 uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer, uint16_t buffer_size, bool write_asci);
 uint16_t common_crc16(const uint8_t *data_p, uint16_t length);
