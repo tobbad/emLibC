@@ -414,9 +414,9 @@ em_msg state_print(const state_t *state, const char *title, bool doLong, cycle_t
     printf(NL);
 
     if (state->dirty && 0x01) {
-        printf("Dirty" NL);
+        printf("Dirty (id=0x%2x)"NL, state->id);
     } else {
-        printf("Not Dirty" NL);
+        printf("Not dirty (id=0x%2x)"NL, state->id);
     }
     if ((state->dirty >> 6) == 1) {
         printf("clable is cmd" NL);

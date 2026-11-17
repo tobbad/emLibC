@@ -228,26 +228,6 @@ em_msg cycle_text_print_s(cycle_t *cycle, const char *text, char *str) {
     return EM_OK;
 };
 
-em_msg cycle_text_print_v(cycle_t *cycle, const char *text, void *data) {
-    char uint32[] = "%d";
-    char x32[] = "%x";
-    em_msg res = EM_ERR;
-    // clang-format off
-    if (!cycle) return res;
-    if (!cycle->init) return res;
-    if (!text) return res;
-    // clang-format on
-    char buf[TX_BUFFER_SIZE];
-    if (strstr(text, uint32) != NULL) {
-        snprintf(buf, TX_BUFFER_SIZE, text, *(uint32_t *)data);
-    } else if (strstr(text, x32) != NULL) {
-        snprintf(buf, TX_BUFFER_SIZE, text, *(uint32_t *)data);
-    }
-    char *line = cycle_text_char(cycle, text);
-    printf("%s%s" NL, line, buf);
-    return EM_OK;
-}
-
 int8_t cycle_act_slot(cycle_t *cycle) {
     em_msg res = EM_ERR;
     // clang-format off
@@ -471,7 +451,7 @@ int8_t cycle_check_slot(int8_t slot) {
     if (((slot > 0) && (slot <= CYCLE_SLOT_CNT)) && (slot % 2 == 1)) {
         return slot;
     }
-    return -1;
+    return slot;
 }
 
 em_msg cycle_set_idx(cycle_t *cycle, uint8_t idx) {
