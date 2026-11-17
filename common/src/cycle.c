@@ -492,7 +492,7 @@ em_msg cycle_set_master(cycle_t *cycle, int8_t slot) {
     // clang-format off
     if (!cycle) return res;
     if (!cycle->init) return res;
-    if (cycle_check_slot(slot)<0) return res;
+    if (cycle_check_slot(slot)<0) return slot;
     // clang-format on
     if (cycle->master == SLOT_NOT_SET) {
         cycle->master = slot;
