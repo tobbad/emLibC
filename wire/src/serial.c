@@ -72,7 +72,7 @@
 #include "state.h"
 
 static uint8_t rx_buf[RX_BUFFER_SIZE];
-static uint8_t tx_buf[TX_BUFFER_SIZE];
+static buffer_t _tx_buffer = {.size = TX_BUFFER_SIZE, .type= RING};
 // Line mode (serial_set_line_mode()): input is collected here and handed on
 // only at CR/LF, so a human can type multi-digit numbers.
 static volatile bool line_mode = false;
@@ -115,18 +115,13 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     isio.cTxBytePerSecond = 0;
 
     memset(rx_buf, 0, RX_BUFFER_SIZE);
-    memset(tx_buf, 0, TX_BUFFER_SIZE);
-    tx_buffer = buffer_new(TX_BUFFER_SIZE, LINEAR);
+    tx_buffer = buffer_new_buffer_t(&_tx_buffer);
     isio.init = true;
     serial_mode_set(isio.mode | USE_DMA_RX);
     srxhdl = time_new("srxhdl");
     stxhdl = time_new("stxhdl");
     time_set_mode(stxhdl, (serial_mode_get() & ONE_SHOT) ? ONESHOT : 0);
     serial_rx_restart();
-    // we could set the output buffer size to 0:
-    // setbuf(stdout, NULL);
-    // flush buffer:
-    // fflush(stdout);
     return EM_OK;
 }
 
@@ -182,37 +177,34 @@ buffer_t *serial_formatOut(uint8_t *ptr, int32_t txLen) {
     uint32_t tick = 0;
     if (isio.mode & TIMESTAMP) {
         tick = HAL_GetTick();
-        len = sprintf((char *)tx_buf, "%010ld: ", tick);
+        len = sprintf((char *)cBuf, "%010ld: ", tick);
     }
     if (isio.mode & GAP_DETECT) {
-        len += sprintf((char *)&tx_buf[len], " %x ", gap_idx);
+        len += sprintf((char *)&cBuf[len], " %x ", gap_idx);
         gap_idx = (gap_idx + 1) % USE_DMA_TX;
     }
     // clang-format off
     uint16_t txLenAct = MIN(len + txLen, TX_BUFFER_SIZE);
-    int16_t free      = TX_BUFFER_SIZE - (len + txLen + TRUCT_NL_LEN);
-    // clang-format on
-
+    int16_t free      = buffer_writeable(tx_buffer);
     // Copy only what really fits.  txLenAct was computed but used solely for
     // placing the truncation mark, while the copy itself took the full txLen:
     // a printf() longer than TX_BUFFER_SIZE minus the timestamp wrote past
     // tx_buf and ended in a HardFault instead of being truncated.
-    int32_t copy = (int32_t)TX_BUFFER_SIZE - len;
+    int32_t copy = (int32_t)free - len;
     // clang-format off
     if (copy > txLen) copy = txLen;
     if (copy < 0)     copy = 0;
     // clang-format on
-    memcpy(&tx_buf[len], ptr, (size_t)copy);
+    memcpy(&cBuf[len], ptr, (size_t)copy);
     len += (int16_t)copy;
     if (free < 0) {
         // Add Line end at last position
         isio.ser_overflow++;
-        memcpy(&tx_buf[txLenAct - TRUCT_NL_LEN], &TRUNCT_NL, TRUCT_NL_LEN);
+        memcpy(&cBuf[txLenAct - TRUCT_NL_LEN], &TRUNCT_NL, TRUCT_NL_LEN);
         // ... and never report more bytes than tx_buf actually holds.
         len = (int16_t)txLenAct;
     }
-    memcpy(tx_buffer->mem, tx_buf, len);
-    tx_buffer->used = len;
+    buffer_set(tx_buffer, cBuf, txLenAct);
     return tx_buffer;
 }
 
@@ -358,7 +350,6 @@ void serial_reset(dev_handle_t dev) {
     buffer_clear(&urx_buffer);
 #endif
     memset(rx_buf, 0, RX_BUFFER_SIZE);
-    memset(tx_buf, 0, TX_BUFFER_SIZE);
     rx_line_len = 0;
 };
 
