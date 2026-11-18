@@ -386,43 +386,30 @@ em_msg state_print(const state_t *state, const char *title, bool doLong, cycle_t
         cycle_text_print(cycle, title);
     }
     if (doLong) {
-        printf("first      = %d" NL, state->first);
-        printf("cnt        = %d" NL, state->cnt);
-    }
-    if (doLong) {
+        printf("first=%d, cnt=%d, "NL, state->first, state->cnt);
         printf("label      = ");
-    } else {
-        printf("label = ");
+        for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
+            char c = state->label[i];
+            if (isprint(c)) {
+                printf(" %c  ", state->label[i]);
+            } else {
+                printf("....");
+            }
+         }
+         printf(NL);
     }
-    for (uint8_t i = 0; i < MAX_BUTTON_CNT; i++) {
-        char c = state->label[i];
-        if (isprint(c)) {
-            printf(" %c  ", state->label[i]);
-        } else {
-            printf(".....");
-        }
-    }
-    printf(NL);
-    if (doLong) {
-        printf("State      = ");
-    } else {
-        printf("State = ");
-    }
+    printf("State = ");
     for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {
         printf("%s ", state_key_string(state->state[i]));
     }
     printf(NL);
-
-    if (state->dirty && 0x01) {
-        printf("Dirty (id=0x%2x)"NL, state->id);
-    } else {
-        printf("Not dirty (id=0x%2x)"NL, state->id);
-    }
-    if ((state->dirty >> 6) == 1) {
-        printf("clable is cmd" NL);
-    } else if ((state->dirty >> 6) == 2) {
-        printf("clable is str" NL);
-    }
+    if (doLong) {
+        if (state->dirty && 0x01) {
+            printf("Dirty (id=0x%2x)"NL, state->id);
+        } else {
+            printf("Not dirty (id=0x%2x)"NL, state->id);
+        }
+     }
     res = EM_OK;
     return res;
 }
