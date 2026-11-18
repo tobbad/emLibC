@@ -307,6 +307,7 @@ em_msg state_add(state_t *ref, state_t *add) {
     if (ref->cnt != add->cnt) return res; /* paralleler Zugriff add->state[a] */
     // clang-format on
     ref->dirty = false;
+    ref->id++;
     for (uint8_t r = ref->first, a = add->first; r < ref->first + ref->cnt; r++, a++) {
         if (add->state[a] == BLINKING) {
             state_propagate_by_idx(ref, r);
@@ -367,6 +368,7 @@ bool state_merge(state_t *inState, state_t *outState) {
     if (state_check(outState)==EM_ERR) return res;
     if (inState->cnt != outState->cnt) return res; /* paralleler Zugriff */
     // clang-format on
+    outState->id = inState->id;
     outState->dirty = false;
     for (uint8_t ri = inState->first, oi = outState->first; ri < inState->first + inState->cnt; ri++, oi++) {
         if (inState->state[ri] != outState->state[oi]) {
