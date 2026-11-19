@@ -337,7 +337,7 @@ int8_t cuint82int(uint8_t *mem) {
     char *_mem = (char*)mem;
     uint8_t len = strlen(_mem);
     int8_t res = 0;
-    if (isalpha(_mem[0])){
+    if (isalpha((unsigned char)_mem[0])){
         return -1;
     }
     for (int8_t i = 0; i < len; i++) {
