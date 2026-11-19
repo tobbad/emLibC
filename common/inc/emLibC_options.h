@@ -13,7 +13,7 @@ extern "C" {
 #define REGUALR_STATELD  1 // Regular leds
 #endif
 
-#define EMLIB_VERBOSE   0 // Otherwise inverse flag to support 1 Active logic on pins
+#define EMLIB_VERBOSE   0
 #define REDUCED_PAYLOAD 0
 
 #ifdef __cplusplus

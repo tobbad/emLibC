@@ -347,6 +347,7 @@ em_msg state_diff(const state_t *ref, const state_t *state, state_t *diff) {
     if ((ref->cnt != state->cnt) || (ref->cnt != diff->cnt)) return res;
     // clang-format on
     diff->dirty = false;
+    diff->id = state->id;
     for (uint8_t ri = ref->first, si = state->first; ri < ref->first + ref->cnt; ri++, si++) {
         if (ref->state[ri] != state->state[si]) {
             diff->dirty = true;

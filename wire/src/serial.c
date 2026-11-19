@@ -204,7 +204,7 @@ buffer_t *serial_formatOut(uint8_t *ptr, int32_t txLen) {
         // ... and never report more bytes than tx_buf actually holds.
         len = (int16_t)txLenAct;
     }
-    buffer_set(tx_buffer, cBuf, txLenAct);
+    buffer_set(tx_buffer, (uint8_t*)cBuf, txLenAct);
     return tx_buffer;
 }
 

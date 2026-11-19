@@ -43,7 +43,7 @@ extern "C" {
 #define TRUNCT_NL "?" NL
 #define TRUCT_NL_LEN strlen(TRUNCT_NL)
 #define MAX_BUTTON_CNT  16
-#define CYCLE_POSITION  22
+#define CYCLE_POSITION  (22) // Is related to SM_State_t from app_x-cube...
 #define DEFAULT_CHAR_NULL  (char*)&"ISNULL"
 
 #ifndef MIN
