@@ -32,6 +32,7 @@
 #undef USE_USB
 #include "_time.h"
 #include "common.h"
+#include "buffer.h"
 #include "hal_port.h"
 #include "main.h"
 #include <assert.h>
@@ -65,9 +66,7 @@
 #error Undefined platform
 #endif
 #include "_time.h"
-#include "common.h"
 #include "hal_port.h"
-#include "main.h"
 #include "serial.h"
 #include "state.h"
 
@@ -118,6 +117,9 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     tx_buffer = buffer_new_buffer_t(&_tx_buffer);
     isio.init = true;
     serial_mode_set(isio.mode | USE_DMA_RX);
+    if (isio.mode&USE_DMA_TX){
+        isio.dma = buffer_new( ,RING);
+    }
     srxhdl = time_new("srxhdl");
     stxhdl = time_new("stxhdl");
     time_set_mode(stxhdl, (serial_mode_get() & ONE_SHOT) ? ONESHOT : 0);
@@ -268,20 +270,8 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
             return txLen;
         }
         if (isio.mode & USE_DMA_TX) { // does not work, needs a too large buffer
-            if (isio.cbuffer != NULL) {
-                isio.mode &= ~USE_DMA_TX;
-                return txLen;
-            }
-            isio.cbuffer = buffer_pool_get(isio.pool);
-            uint32_t deadline = HAL_GetTick() + UART_TIMEOUT_MS;
-            while ((isio.cbuffer == NULL) && (HAL_GetTick() > deadline)) {
-                if (isio.cbuffer == NULL) { /* transfer stuck: drop this line, keep DMA on */
-                    isio.ser_overflow++;
-                    return txLen;
-                }
-            }
             time_start(stxhdl, isio.buffer[SIO_TX]->used, isio.buffer[SIO_TX]->mem, isio.cycle);
-            buffer_set(isio.cbuffer, isio.buffer[SIO_TX]->mem, isio.buffer[SIO_TX]->used);
+            buffer_transfer(isio.buffer[SIO_TX], isio.dma);
             if (HAL_UART_Transmit_DMA(isio.uart, isio.cbuffer->mem, isio.buffer[SIO_TX]->used) != HAL_OK) {
                 serial_release_tx();
                 isio.ser_overflow++;

@@ -210,18 +210,25 @@ em_msg buffer_tolower(buffer_t *buffer) {
     return res;
 }
 
-em_msg buffer_set(buffer_t *buffer, const uint8_t *data, int16_t size) {
-    em_msg res = buffer_check(buffer, false);
-    if (res == EM_ERR)
-        return res;
 
-    EM_RETURN_IF_NULL(data, EM_ERR);
+em_msg buffer_set(buffer_t *buffer, const uint8_t *data, int16_t size) {
+    EM_RETURN_IF_NULL(in, EM_ERR);
+    EM_RETURN_IF_NULL(out, EM_ERR);
+    em_msg res = buffer_check(out, false);
+    if (res == EM_ERR){
+        return res;
+    }
+    em_msg res = buffer_check(in, false);
+    if (res == EM_ERR){
+        return res;
+    }
+
 
     if (size <= 0)
         return EM_ERR;
 
-    int16_t writable = buffer_writeable(buffer);
-    if (size > writable)
+    int16_t writable = buffer_writeable(out);
+    if (bu > writable)
         return EM_ERR;
 
     if (buffer->type == LINEAR) {

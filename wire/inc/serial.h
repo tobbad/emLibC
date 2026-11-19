@@ -50,6 +50,8 @@
 #define USB_TX_BUFFER_SIZE 1024
 #endif
 
+#define DMA_BUFFER_SIZE 4096
+
 typedef enum {
   SIO_ERROR = -1,
   SIO_OK = 0,
@@ -86,11 +88,9 @@ typedef struct isio_s {
     dev_handle_t   devh;
     state_t        state;
     bool           init;
-    buffer_pool_t *pool;
-    buffer_t *volatile   ring;
+    buffer_t       bdma;
     uint32_t       ser_overflow;
     uint32_t       usb_drop_cnt;
-    buffer_t *volatile  cbuffer;
     uint32_t       cTxBytePerSecond;
 } isio_t;
 
