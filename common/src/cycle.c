@@ -194,11 +194,11 @@ char *cycle_text_char(cycle_t *cycle, const char *text) {
     uint8_t text_len = strlen(text);
     static char rbuf[TX_BUFFER_SIZE];
     char *cycle_str = cycle_string(cycle);
-    memset(rbuf, 0 , TX_BUFFER_SIZE);
+    memset(rbuf, 32 , TX_BUFFER_SIZE);
     text_len = MIN(text_len, CYCLE_POSITION);
     memcpy(rbuf, text, text_len);
     memcpy(&rbuf[CYCLE_POSITION], cycle_str, strlen(cycle_str));
-    text_len = CYCLE_POSITION + strlen(cycle_str) + 1;
+    text_len = CYCLE_POSITION + strlen(cycle_str);
     rbuf[text_len] = 0;
     return rbuf;
 }
