@@ -50,7 +50,7 @@
 #define USB_TX_BUFFER_SIZE 1024
 #endif
 
-#define DMA_BUFFER_SIZE 4096
+#define DMA_TX_BUFFER_SIZE 4096
 
 typedef enum {
   SIO_ERROR = -1,
@@ -81,17 +81,17 @@ typedef struct _sio_t {
 
 typedef struct isio_s {
     UART_HandleTypeDef *uart;
-    cycle_t       *cycle;
-    buffer_t      *buffer[SIO_RXTX_CNT];
-    print_e        mode;
-    int8_t         ready[SIO_RXTX_CNT];
-    dev_handle_t   devh;
-    state_t        state;
-    bool           init;
-    buffer_t       bdma;
-    uint32_t       ser_overflow;
-    uint32_t       usb_drop_cnt;
-    uint32_t       cTxBytePerSecond;
+    cycle_t       * cycle;
+    buffer_t      * buffer[SIO_RXTX_CNT];
+    print_e         mode;
+    buffer_pool_t * pool;
+    int8_t          ready[SIO_RXTX_CNT];
+    dev_handle_t    devh;
+    state_t         state;
+    bool            init;
+     uint32_t       ser_overflow;
+    uint32_t        usb_drop_cnt;
+    uint32_t        cTxBytePerSecond;
 } isio_t;
 
 uint32_t serial_get_byte_per_second();
