@@ -194,7 +194,7 @@ char *cycle_text_char(cycle_t *cycle, const char *text) {
     uint8_t text_len = strlen(text);
     static char rbuf[TX_BUFFER_SIZE];
     char *cycle_str = cycle_string(cycle);
-    memset(rbuf, ' ', TX_BUFFER_SIZE);
+    memset(rbuf, 0 , TX_BUFFER_SIZE);
     text_len = MIN(text_len, CYCLE_POSITION);
     memcpy(rbuf, text, text_len);
     memcpy(&rbuf[CYCLE_POSITION], cycle_str, strlen(cycle_str));
@@ -575,8 +575,9 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, bool isKa) {
                     cycle->slaveAge = 0;
                     cycle->isSlave  = true;
                     cycle->isMaster = false;
-                    cycle_set_master(cycle, rxSlot);
-                    cycle->master   = rxSlot;
+                    if (cycle_set_master(cycle, rxSlot) == EM_OK){
+                        printf("Newly set master to %x"NL, rxSlot);
+                    }
                     return EM_OK;
                 }
                 if (cycle_slot_is_master(cycle, rxSlot)){
