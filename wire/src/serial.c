@@ -117,9 +117,6 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     tx_buffer = buffer_new_buffer_t(&_tx_buffer);
     isio.init = true;
     serial_mode_set(isio.mode | USE_DMA_RX);
-    if (isio.mode&USE_DMA_TX){
-        isio.dma = buffer_new( ,RING);
-    }
     srxhdl = time_new("srxhdl");
     stxhdl = time_new("stxhdl");
     time_set_mode(stxhdl, (serial_mode_get() & ONE_SHOT) ? ONESHOT : 0);
@@ -271,12 +268,12 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
         }
         if (isio.mode & USE_DMA_TX) { // does not work, needs a too large buffer
             time_start(stxhdl, isio.buffer[SIO_TX]->used, isio.buffer[SIO_TX]->mem, isio.cycle);
-            buffer_transfer(isio.buffer[SIO_TX], isio.dma);
-            if (HAL_UART_Transmit_DMA(isio.uart, isio.cbuffer->mem, isio.buffer[SIO_TX]->used) != HAL_OK) {
-                serial_release_tx();
-                isio.ser_overflow++;
-                return txLen;
-            }
+//            buffer_transfer(isio.buffer[SIO_TX], isio.dma);
+//            if (HAL_UART_Transmit_DMA(isio.uart, isio.cbuffer->mem, isio.buffer[SIO_TX]->used) != HAL_OK) {
+//                serial_release_tx();
+//                isio.ser_overflow++;
+//                return txLen;
+//            }
         }
     } else {
         printf("No UART or USB is given" NL);
@@ -441,15 +438,15 @@ int32_t serial_waitForNumber(char **key) {
 }
 
 static void serial_release_tx(void) {
-    buffer_t *b = isio.cbuffer;
-    if (b == NULL) {
-        return;
-    }
-    isio.cbuffer = NULL;
-    b->used = 0;
-    b->first = 0;
-    b->pl = b->mem;
-    b->state = BUFFER_READY; /* last: only now may the pool hand it out */
+//    buffer_t *b = isio.cbuffer;
+//    if (b == NULL) {
+//        return;
+//    }
+//    isio.cbuffer = NULL;
+//    b->used = 0;
+//    b->first = 0;
+//    b->pl = b->mem;
+//    b->state = BUFFER_READY; /* last: only now may the pool hand it out */
 }
 
 /**
