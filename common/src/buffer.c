@@ -85,6 +85,77 @@ buffer_t *buffer_new_buffer_t(buffer_t *buffer) {
     return buffer_init(buffer, buffer->size, buffer->type);
 }
 
+buffer_t *buffer_reset(buffer_t *buffer) {
+    // clang-format off
+    em_msg res = buffer_check(buffer, false);
+    if (res == EM_ERR) return NULL;
+    // clang-format on
+    memset(buffer->mem, 0, buffer->size);
+    buffer->pl = buffer->mem;
+    buffer->used = 0;
+    buffer->first = 0;
+    buffer->id = 0;
+    buffer->state = BUFFER_READY;
+    return buffer;
+}
+
+em_msg buffer_clear(buffer_t *buffer) {
+    // clang-format off
+    em_msg res = buffer_check(buffer, false);
+    if (res == EM_ERR) return res;
+    // clang-format on
+    buffer->first = (buffer->first + buffer->used) % buffer->size;
+    buffer->used = 0;
+    buffer->state = BUFFER_READY;
+    return res;
+};
+em_msg buffer_strip(buffer_t *buffer) {
+    // clang-format off
+    em_msg res = buffer_check(buffer, false);
+    if (res == EM_ERR) return res;
+    // clang-format on
+    for (uint16_t i = 0; i < buffer->used; i++) {
+        // clang-format off
+        if (buffer->mem[i] == NL[0]) buffer->mem[i] = 0;
+        if (buffer->mem[i] == NL[1]) buffer->mem[i] = 0;
+        // clang-format on
+    }
+    return EM_OK;
+};
+
+int16_t buffer_used(const buffer_t *buffer) {
+    EM_RETURN_IF_NULL(buffer, 0);
+    return buffer->used;
+}
+
+int16_t buffer_writeable(const buffer_t *buffer) {
+    EM_RETURN_IF_NULL(buffer, 0);
+    return buffer->size - buffer->used;
+}
+
+em_msg buffer_tolower(buffer_t *buffer) {
+    em_msg res = EM_ERR;
+    // clang-format off
+    if (!buffer) return res;
+    // clang-format on
+    for (uint8_t i = 0; i < buffer->used; i++) {
+        if ((buffer->mem[i] >= 'A') && (buffer->mem[i] <= 'Z')) {
+            buffer->mem[i] |= 0x20;
+        }
+    }
+    res = EM_OK;
+    return res;
+}
+
+int16_t    buffer_add_char(buffer_t *buffer, char c){
+    if (!buffer) return EM_ERR;
+    em_msg res = buffer_check(buffer, false);
+    if (res == EM_ERR) return EM_ERR;
+    return buffer_set(buffer, (uint8_t*)&c, sizeof(char));
+};
+
+
+
 int16_t buffer_transfer(buffer_t *from, buffer_t *to) {
     em_msg res = buffer_check(from, false);
     if (res == EM_ERR)
@@ -148,19 +219,6 @@ int16_t buffer_transfer(buffer_t *from, buffer_t *to) {
     return EM_OK;
 }
 
-buffer_t *buffer_reset(buffer_t *buffer) {
-    // clang-format off
-    em_msg res = buffer_check(buffer, false);
-    if (res == EM_ERR) return NULL;
-    // clang-format on
-    memset(buffer->mem, 0, buffer->size);
-    buffer->pl = buffer->mem;
-    buffer->used = 0;
-    buffer->first = 0;
-    buffer->id = 0;
-    buffer->state = BUFFER_READY;
-    return buffer;
-}
 
 em_msg buffer_clear(buffer_t *buffer) {
     // clang-format off
@@ -210,15 +268,13 @@ em_msg buffer_tolower(buffer_t *buffer) {
     return res;
 }
 
-
-em_msg buffer_set(buffer_t *buffer, const uint8_t *data, int16_t size) {
+range_t * buffer_set(buffer_t *buffer, const uint8_t *data, int16_t size) {
     EM_RETURN_IF_NULL(buffer, EM_ERR);
     EM_RETURN_IF_NULL(data, EM_ERR);
     em_msg res = buffer_check(buffer, false);
     if (res == EM_ERR){
         return res;
     }
-
     if (size <= 0)
         return EM_ERR;
 
@@ -228,12 +284,14 @@ em_msg buffer_set(buffer_t *buffer, const uint8_t *data, int16_t size) {
 
     if (buffer->type == LINEAR) {
         memcpy(buffer->mem, data, size);
-        buffer->first = 0;
-        buffer->used = size;
+        range.first = buffer->first = 0;
+        range.last  = buffer->used = size;
     } else {
         int16_t write_pos = (buffer->first + buffer->used) % buffer->size;
         int16_t space_to_end = buffer->size - write_pos;
 
+        range.first = write_pos;
+        range.last = size - space_to_end;
         if (size <= space_to_end) {
             memcpy(&buffer->mem[write_pos], data, size);
         } else {
@@ -245,7 +303,7 @@ em_msg buffer_set(buffer_t *buffer, const uint8_t *data, int16_t size) {
     }
 
     buffer->state = BUFFER_USED;
-    return EM_OK;
+    return &range;
 }
 
 em_msg buffer_get(buffer_t *buffer, uint8_t *data, int16_t *size) {

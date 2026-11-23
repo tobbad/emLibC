@@ -9,6 +9,8 @@
 #define COMMON_INC_BUFFER_H_
 #include "common.h"
 #include "state.h"
+#include "void_fifo.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,6 +28,7 @@ typedef enum {
 } b_type_e;
 
 typedef struct buffer_s {
+    data_type_e  dt;
     state_e state;
     uint8_t *pl;   /* pointer to first byte used in buffer */
     uint8_t *mem;  /* Start of memory */
@@ -40,6 +43,7 @@ typedef struct buffer_s {
  * the memory is claimed as well, The filled in struct
  * is afterwards returned
  */
+buffer_t * buffer_init(buffer_t *buffer, uint16_t size, b_type_e type);
 em_msg     buffer_check(const buffer_t *buffer, bool reduced);
 em_msg     buffer_free(buffer_t *buffer);
 int16_t    buffer_writeable(const buffer_t *buffer);
@@ -47,13 +51,13 @@ bool       buffer_try_claim(buffer_t *b);
 int16_t    buffer_used(const buffer_t *buffer);
 buffer_t * buffer_new(uint16_t size, b_type_e type);
 buffer_t * buffer_new_buffer_t(buffer_t *buffer);
-buffer_t * buffer_init(buffer_t *buffer, uint16_t size, b_type_e type);
-int16_t    buffer_transfer(buffer_t *from, buffer_t *to);
 buffer_t * buffer_reset(buffer_t *buffer);
 em_msg     buffer_clear(buffer_t *buffer);
 em_msg     buffer_strip(buffer_t *buffer);
 em_msg     buffer_tolower(buffer_t *buffer);
-em_msg     buffer_set(buffer_t *buffer, const uint8_t *data, int16_t size);
+int16_t    buffer_add_char(buffer_t *buffer, char c);
+int16_t    buffer_transfer(buffer_t *from, buffer_t *to);
+range_t*   buffer_set(buffer_t *buffer, const uint8_t *data, int16_t size);
 em_msg     buffer_get(buffer_t *buffer, uint8_t *data, int16_t *size);
 buffer_t * buffer_get_till_end(buffer_t *buffer);
 bool buffer_is_used(buffer_t *buffer);
