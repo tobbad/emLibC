@@ -360,7 +360,9 @@ static void serial_apply_change(uint8_t *mem) {
         int8_t res = cuint82int(mem);
         if (res >= 0) {
             if (!state_get_dirty(&isio.state)) {
-                state_propagate_by_idx(&isio.state, res);
+                em_msg pres = state_propagate_by_idx(&isio.state, res);
+                printf("Key applied: res=%d, propagate=%d, isio.state[%d]=%d" NL,
+                       res, pres, res, isio.state.state[res]);
             }
         }
     }

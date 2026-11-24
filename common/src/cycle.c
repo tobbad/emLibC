@@ -102,10 +102,11 @@ em_msg cycle_init(cycle_t *cycle, dev_handle_t hdl, int8_t tx_ss, int8_t rx_ss, 
     cycle->idx      = 0;
     cycle->slot     = SLOT_NOT_SET;
     cycle->master   = SLOT_NOT_SET;
+    cycle->cycle    = UINT16_MAX;
     cycle->hdl      = hdl;
-    cycle->init     = true;
     cycle->sync_state = SYNC_RESET;
     cycle->psync_state = SYNC_RESET;
+    cycle->init     = true;
     // clang-format on
     cycle_sscnt_init(cycle, RADIO_RX);
     cycle_sscnt_init(cycle, RADIO_TX);
@@ -558,7 +559,9 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, bool isKa) {
                     cycle->psubSlot  = (cycle->master* CYCLE_SUB_SLOT_CNT + CYCLE_MODULO +cycle_rx_ss(cycle)) % CYCLE_MODULO;
                     cycle->masterAge = 0;
                     cycle->slaveAge  = 0;
-                    cycle->cycle     = 0;
+                    if (cycle->cycle == UINT16_MAX){
+                        cycle->cycle     = 0;
+                    }
                     cycle->isSlave   = false;
                     cycle->isMaster  = true;
                     return EM_OK;
@@ -574,6 +577,9 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, bool isKa) {
                     cycle->masterAge= 0;
                     cycle->slaveAge = 0;
                     cycle->isSlave  = true;
+                    if (cycle->cycle == UINT16_MAX){
+                        cycle->cycle    = 0;
+                    }
                     cycle->isMaster = false;
                     if (cycle_set_master(cycle, rxSlot) == EM_OK){
                         printf("Newly set master to %x"NL, rxSlot);
