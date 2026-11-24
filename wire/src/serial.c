@@ -77,6 +77,12 @@ static buffer_t _tx_buffer = {.size = TX_BUFFER_SIZE, .type= RING};
 static volatile bool line_mode = false;
 static uint8_t  rx_line[RX_BUFFER_SIZE];
 static uint16_t rx_line_len = 0;
+// serial_apply_change() (UART RX interrupt) stashes here instead of
+// printf'ing directly; serial_scan() (main loop) prints and clears it.
+static volatile bool   key_applied_pending    = false;
+static volatile int8_t key_applied_res        = 0;
+static volatile em_msg key_applied_propagate  = EM_ERR;
+static volatile int8_t key_applied_value      = 0;
 buffer_t *tx_buffer;
 
 #define POOL_SIZE 10
@@ -324,6 +330,17 @@ device_t serial_io = {
 static int16_t serial_scan(dev_handle_t dev) {
     if (!isio.init)
         return EM_ERR;
+    // Debug output for serial_apply_change() belongs here, not in the UART
+    // RX interrupt that sets it: printf ends in a blocking HAL_UART_Transmit/
+    // USB write (serial.c _write()), and in_interrupt() (common.c) is a stub
+    // that always returns false, so nothing there actually protects an ISR
+    // from blocking on it. serial_scan() runs from the main loop instead.
+    if (key_applied_pending) {
+        key_applied_pending = false;
+        printf("Key applied: res=%d, propagate=%d, isio.state[%d]=%d" NL,
+               key_applied_res, key_applied_propagate,
+               key_applied_res, key_applied_value);
+    }
     return _read(0, isio.buffer[SIO_RX]->mem, RX_BUFFER_SIZE);
 };
 
@@ -361,8 +378,12 @@ static void serial_apply_change(uint8_t *mem) {
         if (res >= 0) {
             if (!state_get_dirty(&isio.state)) {
                 em_msg pres = state_propagate_by_idx(&isio.state, res);
-                printf("Key applied: res=%d, propagate=%d, isio.state[%d]=%d" NL,
-                       res, pres, res, isio.state.state[res]);
+                // Stash for serial_scan() to print from the main loop — see
+                // the comment there for why not here (ISR context).
+                key_applied_res       = res;
+                key_applied_propagate = pres;
+                key_applied_value     = isio.state.state[res];
+                key_applied_pending    = true;
             }
         }
     }
