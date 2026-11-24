@@ -9,7 +9,7 @@
 #define COMMON_INC_BUFFER_H_
 #include "common.h"
 #include "state.h"
-#include "void_fifo.h"
+#include "fifo_range.h"
 
 
 #ifdef __cplusplus
@@ -28,7 +28,6 @@ typedef enum {
 } b_type_e;
 
 typedef struct buffer_s {
-    data_type_e  dt;
     state_e state;
     uint8_t *pl;   /* pointer to first byte used in buffer */
     uint8_t *mem;  /* Start of memory */
@@ -57,7 +56,7 @@ em_msg     buffer_strip(buffer_t *buffer);
 em_msg     buffer_tolower(buffer_t *buffer);
 int16_t    buffer_add_char(buffer_t *buffer, char c);
 int16_t    buffer_transfer(buffer_t *from, buffer_t *to);
-range_t*   buffer_set(buffer_t *buffer, const uint8_t *data, int16_t size);
+em_msg     buffer_set(buffer_t *buffer, const uint8_t *data, int16_t size);
 em_msg     buffer_get(buffer_t *buffer, uint8_t *data, int16_t *size);
 buffer_t * buffer_get_till_end(buffer_t *buffer);
 bool buffer_is_used(buffer_t *buffer);

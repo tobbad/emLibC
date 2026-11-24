@@ -59,6 +59,9 @@ typedef enum {
 
 typedef enum { SIO_RX = 0, SIO_TX, SIO_RXTX_CNT } sio_channel_e;
 
+#define SERIAL_USE_POOL 1
+#define SERIAL_USE_RING 0
+
 typedef enum {
   RAW        = 1,
   TIMESTAMP  = 2,
@@ -66,7 +69,7 @@ typedef enum {
   ONE_SHOT   = 0x8,
   USE_UART   = 0x10,
   USE_DMA_RX = 0x20,
-  USE_DMA_TX = 0x40, // Does not work
+  USE_DMA_TX = 0x40,
   USE_USB    = 0x80,
   MEASURE_BYTE_PER_SECONDS= 0x100,
 } print_e;
@@ -84,7 +87,13 @@ typedef struct isio_s {
     cycle_t       * cycle;
     buffer_t      * buffer[SIO_RXTX_CNT];
     print_e         mode;
+    buffer_t * volatile cbuffer;     // Pool-Puffer, den die DMA gerade sendet; NULL = UART frei
+#if SERIAL_USE_POOL==1
     buffer_pool_t * pool;
+#endif
+#if SERIAL_USE_RING==1
+    buffer_t      * ring;
+#endif
     int8_t          ready[SIO_RXTX_CNT];
     dev_handle_t    devh;
     state_t         state;

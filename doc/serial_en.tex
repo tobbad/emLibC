@@ -16,7 +16,7 @@ timestamps.
 The behaviour is controlled via the bit field \verb|print_e| (Listing
 \ref{print_e}) and set with \verb|serial_mode_set()|. It selects, among other
 things, the transport layer (\verb|USE_UART|, \verb|USE_DMA_RX|,
-\verb|USE_USB|) and optional preparation such as timestamps (\verb|TIMESTAMP|),
+\verb|USE_DMA_TX|, \verb|USE_USB|) and optional preparation such as timestamps (\verb|TIMESTAMP|),
 gap detection (\verb|GAP_DETECT|) or plain raw output (\verb|RAW|).
 
 \begin{listing}
@@ -28,7 +28,7 @@ typedef enum {
     ONE_SHOT   = 0x8,
     USE_UART   = 0x10,
     USE_DMA_RX = 0x20,
-    USE_DMA_TX = 0x40, // does not work
+    USE_DMA_TX = 0x40, // transmit via DMA
     USE_USB    = 0x80,
     MEASURE_BYTE_PER_SECONDS = 0x100,
 } print_e;
@@ -42,8 +42,9 @@ The configuration is passed at initialisation as \verb|sio_t| (Listing
 \ref{sio_t}): UART handle, RX/TX buffers, a \verb|cycle_t| and the operating
 mode. The module keeps the run-time state internally in the single variable
 \verb|isio| (type \verb|isio_t|); this additionally holds the device state
-\verb|state_t|, a \verb|buffer_pool_t| and counters for overflows and dropped
-USB bytes.
+\verb|state_t|, a \verb|buffer_pool_t| as transmit queue, the buffer
+currently being sent \verb|cbuffer| and counters for overflows
+(\verb|ser_overflow|) and dropped USB bytes.
 
 \begin{listing}
 \begin{minted}{C}
@@ -66,6 +67,64 @@ Reception runs via DMA with idle-line detection
 converts it to lowercase (\verb|buffer_tolower|) and passes it to the
 \verb|state_t| via \verb|serial_apply_change()| -- an input recognised as a hex
 number toggles the corresponding key.
+\par}
+
+\subsubsection*{Transmission via DMA}\label{serial_dma_tx}
+{\sloppy\emergencystretch=3em
+With \verb|USE_UART| alone, \verb|_write()| transmits blocking via
+\verb|HAL_UART_Transmit()| from the staging buffer \verb|isio.buffer[SIO_TX]|.
+It needs no release: on return everything has been sent, and the next
+\verb|buffer_transfer()| overwrites it completely.
+
+With \verb|USE_UART| and \verb|USE_DMA_TX| the module transmits
+non-blocking. \verb|HAL_UART_Transmit_DMA()| returns \verb|HAL_BUSY| as long
+as \verb|huart->gState| is not \verb|HAL_UART_STATE_READY| -- which only
+happens after the last byte has left the line (DMA done $\rightarrow$
+\verb|TCIE| $\rightarrow$ USART interrupt $\rightarrow$
+\verb|UART_EndTransmit_IT()| $\rightarrow$ \verb|HAL_UART_TxCpltCallback()|).
+Every output during a running transfer must therefore be buffered. The
+\verb|buffer_pool| in \verb|RING| mode (Section \ref{buffer_pool}) serves as
+the transmit queue: the allocation order of the buffers is also the transmit
+order.
+\par}
+
+\begin{description}
+\item[\texttt{isio.cbuffer}] The pool buffer the DMA is currently sending;
+  \verb|NULL| means the UART is free. The module decides from this field, not
+  from \verb|gState|, whether a transfer is running.
+\item[\texttt{\_write()}] Gets a buffer with \verb|buffer_pool_get()|, copies
+  the formatted line into it and starts it if \verb|cbuffer == NULL|;
+  otherwise it stays queued in the pool. These three steps run with interrupts
+  disabled so that the TxCplt ISR never sees a half-filled buffer and no
+  buffer gets stuck between check and start (\verb|memcpy| of at most
+  \verb|TX_BUFFER_SIZE| bytes).
+\item[\texttt{serial\_tx\_kick(b)}] Sets \verb|cbuffer = b| and starts
+  \verb|HAL_UART_Transmit_DMA()|. If the start fails, \verb|b| is dropped
+  (\verb|ser_overflow|) and the next used buffer is tried.
+\item[\texttt{serial\_release\_tx()}] Releases \verb|cbuffer|: resets the
+  fields, sets \verb|state = BUFFER_READY| last, then calls
+  \verb|buffer_pool_return()| as a check (release contract, Listing
+  \ref{buffer_pool_lifecycle}).
+\item[\texttt{HAL\_UART\_TxCpltCallback()}] Releases the sent buffer and
+  starts the next one found by \verb|buffer_pool_next_used()|. \verb|gState|
+  is already \verb|READY| at this point.
+\item[\texttt{HAL\_UART\_ErrorCallback()}] Only on a TX error
+  (\verb|cbuffer != NULL| and \verb|gState == READY|) is the buffer dropped
+  and transmission continued with the next one. An RX error during a running
+  transfer (\verb|gState == BUSY_TX|) leaves it untouched.
+\end{description}
+
+\paragraph{Sizing.}
+{\sloppy\emergencystretch=3em
+If the pool is full, \verb|_write()| drops the line and increments
+\verb|isio.ser_overflow|. The pool must therefore hold the largest burst of
+output, typically the start-up banner. With \verb|POOL_SIZE| $= 90$ and
+\verb|TX_BUFFER_SIZE| $= 96$ it takes about 12\,KB of heap. A full line takes
+about 8\,ms at 115\,200\,baud, so output may lag behind its generation by up
+to about 0.75\,s; timestamps are taken at \verb|printf| time and stay correct.
+If more is printed continuously than the baud rate allows (about 120 full
+lines per second), any pool runs full. \verb|POOL_SIZE| must not exceed 127,
+since \verb|next| is an \verb|int8_t|.
 \par}
 
 \subsubsection*{API}

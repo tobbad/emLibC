@@ -76,8 +76,6 @@ static buffer_t _tx_buffer = {.size = TX_BUFFER_SIZE, .type= RING};
 // Line mode (serial_set_line_mode()): input is collected here and handed on
 // only at CR/LF, so a human can type multi-digit numbers.
 static volatile bool line_mode = false;
-static uint8_t  rx_line[RX_BUFFER_SIZE];
-static uint16_t rx_line_len = 0;
 // serial_apply_change() (UART RX interrupt) stashes here instead of
 // printf'ing directly; serial_scan() (main loop) prints and clears it.
 static volatile bool   key_applied_pending    = false;
@@ -86,13 +84,14 @@ static volatile em_msg key_applied_propagate  = EM_ERR;
 static volatile int8_t key_applied_value      = 0;
 buffer_t *tx_buffer;
 
-#define POOL_SIZE 10
+#define POOL_SIZE 90
 
 time_handle_t srxhdl;
 time_handle_t stxhdl;
 isio_t isio;
 static void serial_apply_change(uint8_t *mem);
 static void serial_release_tx(void);
+static void serial_tx_kick(buffer_t *b);
 static void serial_rx_restart(void);
 static void serial_rx_collect_line(const uint8_t *data, uint16_t size);
 
@@ -110,12 +109,16 @@ em_msg serial_init(dev_handle_t devh, dev_type_e dev_type, void *dev) {
     isio.buffer[SIO_RX] = buffer_new_buffer_t(init->buffer[SIO_RX]);
     isio.buffer[SIO_TX] = buffer_new_buffer_t(init->buffer[SIO_TX]);
     state_init(&isio.state);
-    isio.ring = buffer_new(ENTRY_CNT * TX_BUFFER_SIZE, RING);
+#if SERIAL_USE_POOL==1
     isio.pool = buffer_pool_new(POOL_SIZE, TX_BUFFER_SIZE, LINEAR, RING);
-    //    if (isio.pool == NULL) {
-    //        isio.mode &= ~USE_DMA_TX;
-    //        isio.mode |= USE_UART;      /* fall back to polled output */
-    //    }
+#endif
+#if SERIAL_USE_RING==1
+    isio.ring = buffer_new(ENTRY_CNT * TX_BUFFER_SIZE, RING);
+    if (isio.pool == NULL) {
+        isio.mode &= ~USE_DMA_TX;
+        isio.mode |= USE_UART;      /* fall back to polled output */
+    }
+#endif
     isio.ser_overflow = 0;
     isio.usb_drop_cnt = 0;
     isio.cTxBytePerSecond = 0;
@@ -261,33 +264,42 @@ int _write(int32_t file, uint8_t *ptr, int32_t txLen) {
 #endif
     }
     if (isio.uart != NULL) {
-        if ((buffer_transfer(out, isio.buffer[SIO_TX]) == EM_ERR)) {
-            serial_release_tx();
-            isio.ser_overflow++;
-            return txLen;
-        }
         if (isio.mode & (USE_UART)) {
-            time_start(stxhdl, isio.buffer[SIO_TX]->used, isio.buffer[SIO_TX]->mem, isio.cycle);
-            HAL_UART_Transmit(isio.uart, isio.buffer[SIO_TX]->mem, isio.buffer[SIO_TX]->used, UART_TIMEOUT_MS);
-            time_stop(stxhdl, NULL);
-            isio.ready[SIO_TX] = true;
-            return txLen;
+            if (isio.mode & USE_DMA_TX) {
+#if SERIAL_USE_POOL==1
+                /* Holen, füllen und ggf. starten atomar zur TxCplt-ISR: diese
+                   sendet jeden belegten Pool-Puffer, also darf sie keinen
+                   halb gefüllten sehen (memcpy von max. TX_BUFFER_SIZE Byte). */
+                uint32_t primask = __get_PRIMASK();
+                __disable_irq();
+                buffer_t *buffer = buffer_pool_get(isio.pool);
+                if (buffer == NULL) {                       // alle Puffer belegt
+                    isio.ser_overflow++;
+                } else if (buffer_transfer(out, buffer) == EM_ERR) {
+                    buffer->state = BUFFER_READY;           // nie gesendet: direkt zurück
+                    buffer_pool_return(isio.pool, buffer);
+                    isio.ser_overflow++;
+                } else if (isio.cbuffer == NULL) {        // UART frei: selbst starten
+                    serial_tx_kick(buffer);
+                }                                           // sonst startet ihn die TxCplt-ISR
+                __set_PRIMASK(primask);
+#else
+                isio.ser_overflow++;
+#endif
+                return txLen;
+            } else{
+                if ((buffer_transfer(out, isio.buffer[SIO_TX]) == EM_ERR)) {
+                    isio.ser_overflow++;
+                    return txLen;
+                }
+                time_start(stxhdl, isio.buffer[SIO_TX]->used, isio.buffer[SIO_TX]->mem, isio.cycle);
+                HAL_UART_Transmit(isio.uart, isio.buffer[SIO_TX]->mem, isio.buffer[SIO_TX]->used, UART_TIMEOUT_MS);
+                time_stop(stxhdl, NULL);
+                isio.ready[SIO_TX] = true;
+                return txLen;
+            }
+            // does not work, needs a too large buffer
         }
-        if (isio.mode & USE_DMA_TX) { // does not work, needs a too large buffer
-            buffer_t * buffer = buffer_pool_get(isio.pool);
-            if ((buffer_transfer(out, buffer) == EM_ERR)) {
-                serial_release_tx();
-                isio.ser_overflow++;
-                return txLen;
-            }
-            time_start(stxhdl, isio.buffer[SIO_TX]->used, isio.buffer[SIO_TX]->mem, isio.cycle);
-            if (HAL_UART_Transmit_DMA(isio.uart, buffer->mem, buffer->used) != HAL_OK) {
-                serial_release_tx();
-                isio.ser_overflow++;
-                return txLen;
-            }
-            return txLen;
-       }
     } else {
         printf("No UART or USB is given" NL);
     }
@@ -361,7 +373,7 @@ void serial_reset(dev_handle_t dev) {
     buffer_clear(&urx_buffer);
 #endif
     memset(rx_buf, 0, RX_BUFFER_SIZE);
-    rx_line_len = 0;
+    isio.buffer[SIO_RX]->used = 0;
 };
 
 static void serial_set_state(dev_handle_t dev, const state_t *state) { state_set_state(state, &isio.state); };
@@ -467,16 +479,52 @@ int32_t serial_waitForNumber(char **key) {
     return (int32_t)num;
 }
 
+/* Gibt den Pool-Puffer frei, den die DMA gesendet hat (isio.cbuffer). */
 static void serial_release_tx(void) {
-//    buffer_t *b = isio.cbuffer;
-//    if (b == NULL) {
-//        return;
-//    }
-//    isio.cbuffer = NULL;
-//    b->used = 0;
-//    b->first = 0;
-//    b->pl = b->mem;
-//    b->state = BUFFER_READY; /* last: only now may the pool hand it out */
+    buffer_t *b = isio.cbuffer;
+    if (b == NULL) {
+        return;
+    }
+    isio.cbuffer = NULL;
+    b->used  = 0;
+    b->first = 0;
+    b->pl    = b->mem;
+    b->state = BUFFER_READY;   /* last: only now may the pool hand it out */
+#if SERIAL_USE_POOL==1
+    buffer_pool_return(isio.pool, b);
+#endif
+}
+
+/* Startet die DMA-Übertragung von b.  Schlägt der Start fehl, wird b
+   verworfen und der nächste belegte Pool-Puffer versucht.  isio.cbuffer ist
+   danach der laufende Puffer oder NULL (UART frei).  Nur mit gesperrten IRQs
+   oder aus der UART-ISR aufrufen. */
+static void serial_tx_kick(buffer_t *b) {
+#if SERIAL_USE_POOL==1
+    while (b != NULL) {
+        isio.cbuffer = b;
+        time_start(stxhdl, b->used, b->mem, isio.cycle);
+        if (HAL_UART_Transmit_DMA(isio.uart, b->mem, (uint16_t)b->used) == HAL_OK) {
+            return;
+        }
+        isio.ser_overflow++;
+        serial_release_tx();
+        b = buffer_pool_next_used(isio.pool, b);
+    }
+#endif
+    isio.cbuffer = NULL;
+}
+
+/* Laufenden Puffer freigeben und den nächsten (ältesten) belegten starten. */
+static void serial_tx_done(void) {
+#if SERIAL_USE_POOL==1
+    buffer_t *done = isio.cbuffer;
+    if (done == NULL) {
+        return;
+    }
+    serial_release_tx();
+    serial_tx_kick(buffer_pool_next_used(isio.pool, done));
+#endif
 }
 
 /**
@@ -511,7 +559,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
 void serial_set_line_mode(bool on) {
     __disable_irq();
     line_mode   = on;
-    rx_line_len = 0;
+    isio.buffer[SIO_RX]->used = 0;
     __enable_irq();
 }
 
@@ -519,18 +567,14 @@ static void serial_rx_collect_line(const uint8_t *data, uint16_t size) {
     for (uint16_t i = 0; i < size; i++) {
         uint8_t c = data[i];
         if ((c == '\r') || (c == '\n')) {
-            if (rx_line_len > 0) {
-                buffer_t *rx = isio.buffer[SIO_RX];
-                uint16_t  len = MIN(rx_line_len, rx->size - 1); // keep a 0 for strlen()
-                buffer_reset(rx);
-                buffer_set(rx, rx_line, len);
-                buffer_tolower(rx);
-                serial_apply_change(rx->mem);
+            if (isio.buffer[SIO_RX]->used > 0) {
+                buffer_tolower(isio.buffer[SIO_RX]);
+                serial_apply_change(isio.buffer[SIO_RX]->mem);
             }
-            rx_line_len = 0;
+            isio.buffer[SIO_RX]->used = 0;
         } else if ((c == '\b') || (c == 0x7f)) {
-            if (rx_line_len > 0) {
-                rx_line_len--;
+            if (isio.buffer[SIO_RX]->used > 0) {
+                isio.buffer[SIO_RX]->used--;
             }
         } else if (isio.buffer[SIO_RX]->used < isio.buffer[SIO_RX]->size) {
             buffer_add_char(isio.buffer[SIO_RX], c);
@@ -542,19 +586,20 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *UartHandle) {
     if (UartHandle != isio.uart) {
         return;
     }
-    serial_release_tx();
     time_stop(stxhdl, NULL);
+    serial_tx_done();   // gState ist hier schon READY
 }
 
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *UartHandle) {
     if (UartHandle != isio.uart) {
         return;
     }
-    /* Only reclaim the Tx buffer if no transmission is still running —
-       this callback also fires for Rx errors (ORE, FE, NE) while a Tx DMA
-       is legitimately in progress. */
-    if (UartHandle->gState != HAL_UART_STATE_BUSY_TX) {
-        serial_release_tx();
+    /* Tx error: HAL aborted the Tx DMA and set gState READY - drop that buffer
+       and go on with the next one.  This callback also fires for Rx errors
+       (ORE, FE, NE) while a Tx DMA is legitimately in progress (gState still
+       BUSY_TX): leave the transmission alone then. */
+    if ((isio.cbuffer != NULL) && (UartHandle->gState == HAL_UART_STATE_READY)) {
+        serial_tx_done();
     }
     /* An Rx error (overrun ORE, framing FE, noise NE) during DMA reception is
        a "blocking" error for HAL: it aborts the reception, sets RxState to

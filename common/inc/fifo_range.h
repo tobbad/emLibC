@@ -21,7 +21,7 @@ typedef struct fifo_range_s {
     bool     init;
     int16_t  size;
     int16_t  first;   // last which was pushed
-    int16_t  used;    // elements in ring
+    int16_t  last;    // elements in ring
 } fifo_range_t;
 
 // This is a ring of size elements

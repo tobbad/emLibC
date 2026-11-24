@@ -26,6 +26,7 @@ buffer_pool_t *buffer_pool_new(uint8_t lcnt, uint8_t charCnt, b_type_e line_type
 void buffer_pool_free(buffer_pool_t *pool);
 buffer_t *buffer_pool_get(buffer_pool_t *bp);
 em_msg buffer_pool_return(buffer_pool_t *bp, buffer_t *buffer);
+buffer_t *buffer_pool_next_used(buffer_pool_t *bp, const buffer_t *after);
 em_msg buffer_pool_print(buffer_pool_t *bp, char *title);
 
 #ifdef __cplusplus

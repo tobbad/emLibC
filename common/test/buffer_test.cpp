@@ -592,3 +592,99 @@ TEST_F(BufferPoolTest, CreateBufferPool) {
     buffer_pool_free(pool);
     pool = NULL;
 }
+
+// Freigabe-Vertrag: der Benutzer setzt BUFFER_READY, buffer_pool_return() prüft.
+static void pool_release(buffer_pool_t *bp, buffer_t *b) {
+    b->state = BUFFER_READY;
+    ASSERT_EQ(buffer_pool_return(bp, b), EM_OK);
+}
+
+TEST_F(BufferPoolTest, ReturnRejectsUsedBuffer) {
+    pool = buffer_pool_new(line_cnt, column_cnt, LINEAR, RING);
+    ASSERT_NE(pool, nullptr);
+    buffer_t *b = buffer_pool_get(pool);
+    ASSERT_NE(b, nullptr);
+    EXPECT_EQ(buffer_pool_return(pool, b), EM_ERR); // noch BUFFER_USED
+    pool_release(pool, b);
+}
+
+TEST_F(BufferPoolTest, ReturnRejectsForeignBuffer) {
+    pool = buffer_pool_new(line_cnt, column_cnt, LINEAR, RING);
+    buffer_pool_t *other = buffer_pool_new(line_cnt, column_cnt, LINEAR, RING);
+    ASSERT_NE(pool, nullptr);
+    ASSERT_NE(other, nullptr);
+    buffer_t *b = buffer_pool_get(other);
+    b->state = BUFFER_READY;
+    EXPECT_EQ(buffer_pool_return(pool, b), EM_ERR);
+    buffer_pool_free(other);
+}
+
+// RING: strikt reihum, voller Pool liefert NULL, freigegebene Slots werden in
+// Ringreihenfolge wieder vergeben.
+TEST_F(BufferPoolTest, RingHandsOutInOrder) {
+    pool = buffer_pool_new(line_cnt, column_cnt, LINEAR, RING);
+    ASSERT_NE(pool, nullptr);
+    buffer_t *b[8];
+    for (uint8_t i = 0; i < line_cnt; i++) {
+        b[i] = buffer_pool_get(pool);
+        ASSERT_NE(b[i], nullptr);
+        EXPECT_EQ(b[i]->id, i);
+    }
+    EXPECT_EQ(buffer_pool_get(pool), nullptr); // voll
+    pool_release(pool, b[0]);
+    pool_release(pool, b[1]);
+    EXPECT_EQ(buffer_pool_get(pool), b[0]);
+    EXPECT_EQ(buffer_pool_get(pool), b[1]);
+    EXPECT_EQ(buffer_pool_get(pool), nullptr);
+}
+
+// RING überspringt nicht: ist der Slot an 'next' belegt, gilt der Pool als
+// voll, auch wenn weiter hinten ein Puffer frei ist.
+TEST_F(BufferPoolTest, RingDoesNotSkip) {
+    pool = buffer_pool_new(3, column_cnt, LINEAR, RING);
+    ASSERT_NE(pool, nullptr);
+    buffer_t *a = buffer_pool_get(pool);
+    buffer_t *b = buffer_pool_get(pool);
+    buffer_t *c = buffer_pool_get(pool);
+    ASSERT_TRUE(a && b && c);
+    pool_release(pool, b);                     // Loch hinter 'next' (= a)
+    EXPECT_EQ(buffer_pool_get(pool), nullptr);
+    pool_release(pool, a);
+    EXPECT_EQ(buffer_pool_get(pool), a);
+    EXPECT_EQ(buffer_pool_get(pool), b);
+}
+
+// next_used liefert die Puffer in Vergabereihenfolge (FIFO), auch über den
+// Umlauf hinweg, und nie 'after' selbst.
+TEST_F(BufferPoolTest, NextUsedFollowsAllocationOrder) {
+    pool = buffer_pool_new(3, column_cnt, LINEAR, RING);
+    ASSERT_NE(pool, nullptr);
+    EXPECT_EQ(buffer_pool_next_used(nullptr, nullptr), nullptr);
+    buffer_t *a = buffer_pool_get(pool);
+    EXPECT_EQ(buffer_pool_next_used(pool, nullptr), nullptr);
+    EXPECT_EQ(buffer_pool_next_used(pool, a), nullptr); // nur a belegt
+    buffer_t *b = buffer_pool_get(pool);
+    buffer_t *c = buffer_pool_get(pool);
+    EXPECT_EQ(buffer_pool_next_used(pool, a), b);
+    pool_release(pool, a);
+    buffer_t *d = buffer_pool_get(pool); // Umlauf: wieder Slot 0
+    ASSERT_EQ(d, a);
+    EXPECT_EQ(buffer_pool_next_used(pool, b), c);
+    EXPECT_EQ(buffer_pool_next_used(pool, c), d);
+    pool_release(pool, b);
+    pool_release(pool, c);
+    EXPECT_EQ(buffer_pool_next_used(pool, c), d);
+    pool_release(pool, d);
+    EXPECT_EQ(buffer_pool_next_used(pool, d), nullptr);
+}
+
+// LINEAR: erster freier Puffer, Löcher werden sofort wiederverwendet.
+TEST_F(BufferPoolTest, LinearHandsOutFirstFree) {
+    pool = buffer_pool_new(3, column_cnt, LINEAR, LINEAR);
+    ASSERT_NE(pool, nullptr);
+    buffer_t *a = buffer_pool_get(pool);
+    buffer_t *b = buffer_pool_get(pool);
+    ASSERT_TRUE(a && b);
+    pool_release(pool, a);
+    EXPECT_EQ(buffer_pool_get(pool), a);
+}

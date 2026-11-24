@@ -76,11 +76,18 @@ em_msg state_reset(state_t *state) {
 
 // CRC über den ganzen state_t (inkl. dirty und id).
 // Liefert STATE_CRC_INVALID bei ungültigem state.
-static uint16_t state_crc(const state_t *state) {
+// In der Firmware privat; für die Unit-Tests sichtbar (Deklaration in state.h).
+#ifndef UNIT_TEST
+static
+#endif
+uint16_t state_crc(const state_t *state) {
     if (state_check(state) != EM_OK)
         return STATE_CRC_INVALID;
     return common_crc16((const uint8_t *)state, sizeof(state_t));
 }
+
+// Leert die History der schon gesehenen states.
+void state_history_reset(void) { common_reset_crc_history(&history); }
 
 // Liefert EM_OK, wenn der state (Inhalt) schon einmal registriert wurde.
 // Sonst wird er in die History (Ringpuffer, HISTORY_SIZE Einträge)

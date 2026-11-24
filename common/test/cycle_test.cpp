@@ -175,11 +175,14 @@ TEST_F(CycleTest, SetSlotMasterRole) {
     EXPECT_EQ(c.role, MASTER);
     EXPECT_EQ(c.isMaster, false);
     EXPECT_EQ(cycle_sync_ok(&c), true);
-    // Die Uebernahme laesst subSlot weiterlaufen: kein Sprung.
+    // Die Uebernahme merkt den Sprung in psubSlot vor; subSlot laeuft bis zum
+    // naechsten Tick weiter. Dort springt der Master an den Anfang seines
+    // eigenen Slots (cycle_increment: slot*CYCLE_SUB_SLOT_CNT-1, dann ++).
     const uint16_t ss = c.subSlot;
+    const uint16_t jmp = master * CYCLE_SUB_SLOT_CNT;
     ASSERT_EQ(cycle_set_slot(&c, master, KA_DEFAULT), EM_OK);
     EXPECT_EQ(c.role, MASTER);
-    EXPECT_EQ(c.psubSlot, 0);
+    EXPECT_EQ(c.psubSlot, (master * CYCLE_SUB_SLOT_CNT + RX_SS) % CYCLE_MODULO);
     EXPECT_EQ(c.subSlot, ss);
 
     cycle_increment(&c);
@@ -187,7 +190,7 @@ TEST_F(CycleTest, SetSlotMasterRole) {
     EXPECT_EQ(c.sync_state, SYNCHRONIZE_READY);
 
     EXPECT_EQ(c.psubSlot, 0);
-    EXPECT_EQ(c.subSlot, ss + 1);
+    EXPECT_EQ(c.subSlot, jmp);
 
     ASSERT_EQ(cycle_role_ok(MASTER), EM_OK);
     ASSERT_EQ(cycle_set_slot(&c, master, KA_DEFAULT), EM_ERR);
@@ -200,7 +203,7 @@ TEST_F(CycleTest, SetSlotMasterRole) {
     EXPECT_EQ(c.isMaster, true);
     EXPECT_EQ(c.isSlave, false);
     EXPECT_EQ(c.sync_state, SYNCHRONIZE_READY);
-    EXPECT_EQ(c.subSlot, ss + 1);
+    EXPECT_EQ(c.subSlot, jmp); // abgelehnter zweiter Claim: kein weiterer Sprung
     EXPECT_EQ(c.psubSlot, 0);
     EXPECT_EQ(cycle_get_state(&c), SYNCHRONIZE_READY);
 
@@ -209,7 +212,7 @@ TEST_F(CycleTest, SetSlotMasterRole) {
     EXPECT_EQ(cycle_get_state(&c), SYNCHRONIZE_READY);
     EXPECT_EQ(c.sync_state, SYNCHRONIZE_READY);
     EXPECT_STREQ(cycle_role_str(&c), "MASTER");
-    EXPECT_EQ(c.subSlot, ss + 2);
+    EXPECT_EQ(c.subSlot, jmp + 1);
     EXPECT_EQ(c.psubSlot, 0);
 }
 
@@ -322,7 +325,7 @@ TEST_F(CycleTest, ResetSlaveRole) {
     ASSERT_EQ(c.slaveAge, 0);
     ASSERT_EQ(cycle_set_state(&c, SYNCHRONIZE), EM_OK);
     EXPECT_EQ(c.psync_state, SYNCHRONIZE);
-    ASSERT_EQ(c.cycle, 0);
+    ASSERT_EQ(c.cycle, UINT16_MAX); // wird beim ersten Claim einmalig genullt
 
     cycle_increment(&c);
 
@@ -369,7 +372,7 @@ TEST_F(CycleTest, ResetMasterRole) {
     ASSERT_EQ(cycle_set_slot(&c, slot, KA_DEFAULT), EM_OK);
 
     EXPECT_EQ(c.role, MASTER);
-    ASSERT_EQ(c.psubSlot, 0); // kein Sprung, siehe SetSlotMasterRole
+    ASSERT_EQ(c.psubSlot, (slot * CYCLE_SUB_SLOT_CNT + RX_SS) % CYCLE_MODULO); // Sprung vorgemerkt, siehe SetSlotMasterRole
     ASSERT_EQ(c.cycle, 0);
     ASSERT_EQ(c.isMaster, true);
     ASSERT_EQ(c.isSlave, false);

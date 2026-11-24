@@ -11,9 +11,45 @@ Speicherbedarf zur Laufzeit deterministisch.
 Der Pool wird durch \verb|buffer_pool_t| (Listing \ref{buffer_pool_t})
 beschrieben. \verb|buffer| ist das Feld der verwalteten
 \verb|buffer_cnt| Puffer; \verb|type| bezeichnet die Betriebsart des Pools
-und \verb|next| den Index des nächsten Elements (negativ, wenn ein linearer
-Puffer im Ring verwendet wird). \verb|sbuffer| ist ein zweites, derzeit für
-Erweiterungen reserviertes Feld.
+und \verb|next| bei einem \verb|RING|-Pool den Index des Puffers, den
+\verb|buffer_pool_get()| als nächsten vergibt (bei \verb|LINEAR| negativ).
+\verb|sbuffer| ist ein zweites, derzeit für Erweiterungen reserviertes Feld.
+
+\subsubsection*{Betriebsarten}
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{LINEAR}] \verb|buffer_pool_get()| vergibt den ersten freien
+  Puffer. Die Vergabereihenfolge ist nicht festgelegt.
+\item[\texttt{RING}] Die Puffer werden strikt reihum vergeben
+  ($0, 1, \dots, n-1, 0, \dots$), ausgehend von \verb|next|. Ist der Puffer
+  an Position \verb|next| noch belegt, gilt der Pool als voll -- es wird
+  bewusst nicht übersprungen. Damit ist die Vergabereihenfolge zugleich die
+  Verbrauchsreihenfolge: Ein Verbraucher findet mit
+  \verb|buffer_pool_next_used()| stets den ältesten noch nicht verbrauchten
+  Puffer. Der Pool dient so ohne zusätzliche Datenstruktur als FIFO, z.\,B.\
+  als Sende-Warteschlange des \verb|serial|-Moduls (Abschnitt
+  \ref{serial}).
+\end{description}
+\par}
+
+\subsubsection*{Freigabe-Vertrag}
+Der Benutzer eines Puffers gibt ihn frei, indem er dessen \verb|state| auf
+\verb|BUFFER_READY| setzt -- ab diesem Moment darf \verb|buffer_pool_get()|
+ihn neu vergeben. \verb|buffer_pool_return()| gibt selbst nichts frei,
+sondern prüft nur, ob der Puffer gültig, nicht mehr belegt und
+tatsächlich ein Puffer dieses Pools ist. Dadurch ist die Freigabe ein
+einzelner Schreibzugriff und auch aus einem Interrupt heraus zulässig.
+
+\begin{listing}
+\begin{minted}{C}
+buffer_t *b = buffer_pool_get(pool);   // b->state == BUFFER_USED
+/* ... b fuellen und verbrauchen ... */
+b->state = BUFFER_READY;               // Benutzer gibt frei
+buffer_pool_return(pool, b);           // Pool prueft
+\end{minted}
+\caption{Lebenszyklus eines Pool-Puffers}
+\label{buffer_pool_lifecycle}
+\end{listing}
 
 \begin{listing}
 \begin{minted}{C}
@@ -40,17 +76,24 @@ typedef struct buffer_pool_s {
   \verb|buffer_pool_t *| (\verb|NULL| bei Fehler).
 \item[\texttt{buffer\_pool\_free(pool)}] Gibt alle Puffer und den Pool selbst
   frei. Rückgabe: \verb|void|.
-\item[\texttt{buffer\_pool\_get(bp)}] Liefert den ersten freien Puffer und
-  markiert ihn als \verb|BUFFER_USED|. Rückgabe: \verb|buffer_t *|
-  (\verb|NULL|, wenn kein Puffer frei ist).
+\item[\texttt{buffer\_pool\_get(bp)}] Liefert einen freien Puffer, setzt ihn
+  mit \verb|buffer_reset()| zurück und markiert ihn als \verb|BUFFER_USED|.
+  Bei \verb|LINEAR| ist es der erste freie, bei \verb|RING| der Puffer an
+  Position \verb|next| (danach wird \verb|next| weitergeschaltet). Rückgabe:
+  \verb|buffer_t *| (\verb|NULL|, wenn kein Puffer frei bzw.\ bei
+  \verb|RING| der nächste noch belegt ist).
+\item[\texttt{buffer\_pool\_next\_used(bp, after)}] Liefert den ersten
+  belegten Puffer, der im Ring auf \verb|after| folgt (\verb|after| selbst
+  ausgenommen). Bei einem \verb|RING|-Pool ist das der älteste noch nicht
+  verbrauchte Puffer. Rückgabe: \verb|buffer_t *| (\verb|NULL|, wenn kein
+  weiterer Puffer belegt ist oder \verb|after| ungültig ist).
 \item[\texttt{buffer\_pool\_return(bp, buffer)}] Gibt einen Puffer an den Pool
-  zurück. Geprüft werden der Index-Bereich, die Zugehörigkeit zum Pool
-  (Pointer-Vergleich) und dass der Puffer nicht mehr belegt ist; danach wird er
-  mit \verb|buffer_reset()| zurückgesetzt. Ein noch als \verb|BUFFER_USED|
-  markierter Puffer wird abgelehnt -- der Inhalt muss also zuvor verbraucht
-  (z.\,B.\ per \verb|buffer_get()|) worden sein. Rückgabe: \verb|em_msg|
-  (\verb|EM_OK| nach erfolgreichem Zurücksetzen, \verb|EM_ERR| bei ungültigem,
-  fremdem oder noch belegtem Puffer).
+  zurück. Geprüft werden der Index-Bereich, dass der Puffer nicht mehr belegt
+  ist und die Zugehörigkeit zum Pool (Pointer-Vergleich). Die Funktion
+  verändert den Puffer nicht; freigegeben wird er durch den Benutzer (siehe
+  Freigabe-Vertrag). Ein noch als \verb|BUFFER_USED| markierter Puffer wird
+  abgelehnt. Rückgabe: \verb|em_msg| (\verb|EM_OK| bei gültigem, freiem
+  Puffer, \verb|EM_ERR| bei ungültigem, fremdem oder noch belegtem Puffer).
 \item[\texttt{buffer\_pool\_print(bp, title)}] Gibt die Puffer des Pools zu
   Debug-Zwecken aus. Rückgabe: \verb|em_msg| (\verb|EM_ERR| bei
   \verb|NULL|-Pool, sonst \verb|EM_OK|).

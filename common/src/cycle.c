@@ -37,6 +37,7 @@ typedef struct cycle_s {
     volatile int8_t   lSlot;
     volatile int8_t   sSlot;
     volatile uint16_t cycle;
+    volatile uint16_t lcycle; // cycle at the last role ageing (cycle_increment)
     int8_t            slot; // Configured slot of device
     dev_handle_t      hdl;
     int8_t            master;
@@ -104,6 +105,7 @@ em_msg cycle_init(cycle_t *cycle, dev_handle_t hdl, int8_t tx_ss, int8_t rx_ss, 
     cycle->master   = SLOT_NOT_SET;
     cycle->cycle    = UINT16_MAX;
     cycle->hdl      = hdl;
+    cycle->lcycle   = cycle->cycle; // no ageing before the first real cycle
     cycle->sync_state = SYNC_RESET;
     cycle->psync_state = SYNC_RESET;
     cycle->init     = true;
@@ -452,7 +454,7 @@ int8_t cycle_check_slot(int8_t slot) {
     if (((slot > 0) && (slot <= CYCLE_SLOT_CNT)) && (slot % 2 == 1)) {
         return slot;
     }
-    return slot;
+    return -1;
 }
 
 em_msg cycle_set_idx(cycle_t *cycle, uint8_t idx) {
@@ -559,8 +561,11 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, bool isKa) {
                     cycle->psubSlot  = (cycle->master* CYCLE_SUB_SLOT_CNT + CYCLE_MODULO +cycle_rx_ss(cycle)) % CYCLE_MODULO;
                     cycle->masterAge = 0;
                     cycle->slaveAge  = 0;
-                    if (cycle->cycle == UINT16_MAX){
+                    if (cycle->cycle==UINT16_MAX){
+                        // lcycle mit: sonst sieht cycle_increment() den Sprung
+                        // 65535 -> 0 als neuen Zyklus und altert die Rolle sofort.
                         cycle->cycle     = 0;
+                        cycle->lcycle    = 0;
                     }
                     cycle->isSlave   = false;
                     cycle->isMaster  = true;
@@ -574,12 +579,15 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, bool isKa) {
                     // cycle_set_my_slot() from the EEPROM.  rxSlot is the
                     // master's slot: taking it made every slave transmit there.
                     cycle->psubSlot = (rxSlot* CYCLE_SUB_SLOT_CNT + CYCLE_MODULO +cycle_rx_ss(cycle)) % CYCLE_MODULO;
+                    if (cycle->cycle==UINT16_MAX){
+                        // lcycle mit: sonst sieht cycle_increment() den Sprung
+                        // 65535 -> 0 als neuen Zyklus und altert die Rolle sofort.
+                        cycle->cycle     = 0;
+                        cycle->lcycle    = 0;
+                    }
                     cycle->masterAge= 0;
                     cycle->slaveAge = 0;
                     cycle->isSlave  = true;
-                    if (cycle->cycle == UINT16_MAX){
-                        cycle->cycle    = 0;
-                    }
                     cycle->isMaster = false;
                     if (cycle_set_master(cycle, rxSlot) == EM_OK){
                         printf("Newly set master to %x"NL, rxSlot);
@@ -746,7 +754,6 @@ void cycle_increment(cycle_t *cycle) {
     if (!cycle) return;
     if (!cycle->init) return;
     // clang-format on
-    static uint16_t lcycle;
 	if (cycle->psync_state > SYNC_RESET){
 		cycle->sync_state = cycle->psync_state;
 		cycle->psync_state = SYNC_RESET;
@@ -760,17 +767,17 @@ void cycle_increment(cycle_t *cycle) {
 					cycle->subSlot = cycle->psubSlot;
 				}
 				else {
-					assert(1);
+				    cycle->subSlot = cycle->slot*CYCLE_SUB_SLOT_CNT-1;
 				}
 				cycle->psubSlot = 0;
 #ifndef UNIT_TEST
 				stateled_dtoggle_pin(cycle->hdl, cycle_upd);
 #endif
             }
-			if (lcycle != cycle->cycle){
+			if (cycle->lcycle != cycle->cycle){
                 cycle->set = true;
                 cycle_age_role(cycle);
-                lcycle = cycle->cycle;
+                cycle->lcycle = cycle->cycle;
 			}
 			cycle->subSlot++;
 			uint16_t s = cycle->subSlot;
@@ -811,7 +818,7 @@ void cycle_increment(cycle_t *cycle) {
 #if OPTION_SHOW_TIMING == 1
                 stateled_toggle_pin(cycle->hdl, cycle_toggle);
 #endif
-                lcycle = cycle->cycle;
+                cycle->lcycle = cycle->cycle;
                 cycle->cycle += 1;
              }
 	      }

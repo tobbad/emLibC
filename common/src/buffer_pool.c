@@ -57,10 +57,25 @@ void buffer_pool_free(buffer_pool_t *pool) {
 buffer_t *buffer_pool_get(buffer_pool_t *bp) {
     if (bp == NULL)
         return NULL;
-    buffer_t *buffer = NULL;
+    if (bp->type == RING) {
+        /* Strikter Ring: Puffer werden in fester Reihenfolge vergeben.  Ist der
+           nächste noch belegt, ist der Pool voll; es wird nicht übersprungen,
+           damit die Vergabereihenfolge gleich der Verbrauchsreihenfolge bleibt
+           (siehe buffer_pool_next_used()). */
+        if ((bp->next < 0) || (bp->next >= bp->buffer_cnt))
+            bp->next = 0;
+        buffer_t *buffer = bp->buffer[bp->next];
+        if (buffer_is_used(buffer))
+            return NULL;
+        buffer_reset(buffer);
+        buffer->state = BUFFER_USED;
+        buffer->id = (uint8_t)bp->next;
+        bp->next = (int8_t)((bp->next + 1) % bp->buffer_cnt);
+        return buffer;
+    }
     for (uint8_t i = 0; i < bp->buffer_cnt; i++) {
         if (!buffer_is_used(bp->buffer[i])) {
-            buffer = bp->buffer[i];
+            buffer_t *buffer = bp->buffer[i];
             buffer_reset(buffer);
             buffer->state = BUFFER_USED;
             buffer->id = i;
@@ -69,6 +84,21 @@ buffer_t *buffer_pool_get(buffer_pool_t *bp) {
     }
     return NULL;
 }
+
+/* Liefert den ersten belegten Puffer, der im Ring nach 'after' kommt ('after'
+   selbst ausgenommen), oder NULL.  Bei einem RING-Pool ist das der als nächstes
+   vergebene, also der älteste noch nicht verbrauchte Puffer. */
+buffer_t *buffer_pool_next_used(buffer_pool_t *bp, const buffer_t *after) {
+    if ((bp == NULL) || (after == NULL) || (after->id >= bp->buffer_cnt))
+        return NULL;
+    for (uint8_t i = 1; i < bp->buffer_cnt; i++) {
+        buffer_t *b = bp->buffer[(after->id + i) % bp->buffer_cnt];
+        if (buffer_is_used(b))
+            return b;
+    }
+    return NULL;
+}
+
 em_msg buffer_pool_return(buffer_pool_t *bp, buffer_t *buffer) {
     em_msg res = EM_ERR;
     if (!bp) {

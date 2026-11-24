@@ -9,9 +9,45 @@ makes the memory footprint deterministic at run time.
 \subsubsection*{State}
 The pool is described by \verb|buffer_pool_t| (Listing \ref{buffer_pool_t}).
 \verb|buffer| is the array of the managed \verb|buffer_cnt| buffers;
-\verb|type| denotes the operating mode of the pool and \verb|next| the index
-of the next element (negative if a linear buffer is used in a ring).
-\verb|sbuffer| is a second field, currently reserved for extensions.
+\verb|type| denotes the operating mode of the pool and \verb|next|, for a
+\verb|RING| pool, the index of the buffer \verb|buffer_pool_get()| hands out
+next (negative for \verb|LINEAR|). \verb|sbuffer| is a second field,
+currently reserved for extensions.
+
+\subsubsection*{Operating modes}
+{\sloppy\emergencystretch=3em
+\begin{description}
+\item[\texttt{LINEAR}] \verb|buffer_pool_get()| hands out the first free
+  buffer. The allocation order is unspecified.
+\item[\texttt{RING}] Buffers are handed out strictly in turn
+  ($0, 1, \dots, n-1, 0, \dots$), starting at \verb|next|. If the buffer at
+  \verb|next| is still in use, the pool counts as full -- it deliberately does
+  not skip ahead. The allocation order is therefore also the consumption
+  order: a consumer always finds the oldest not yet consumed buffer with
+  \verb|buffer_pool_next_used()|. Without any extra data structure the pool
+  thus works as a FIFO, e.g.\ as the transmit queue of the \verb|serial|
+  module (Section \ref{serial}).
+\end{description}
+\par}
+
+\subsubsection*{Release contract}
+The user of a buffer releases it by setting its \verb|state| to
+\verb|BUFFER_READY| -- from that moment on \verb|buffer_pool_get()| may hand
+it out again. \verb|buffer_pool_return()| does not release anything itself;
+it only checks that the buffer is valid, no longer in use and really belongs
+to this pool. Releasing is thus a single write access and is allowed from an
+interrupt as well.
+
+\begin{listing}
+\begin{minted}{C}
+buffer_t *b = buffer_pool_get(pool);   // b->state == BUFFER_USED
+/* ... fill and consume b ... */
+b->state = BUFFER_READY;               // user releases
+buffer_pool_return(pool, b);           // pool checks
+\end{minted}
+\caption{Life cycle of a pool buffer}
+\label{buffer_pool_lifecycle}
+\end{listing}
 
 \begin{listing}
 \begin{minted}{C}
@@ -38,16 +74,24 @@ typedef struct buffer_pool_s {
   (\verb|NULL| on failure).
 \item[\texttt{buffer\_pool\_free(pool)}] Frees all buffers and the pool itself.
   Returns: \verb|void|.
-\item[\texttt{buffer\_pool\_get(bp)}] Returns the first free buffer and marks
-  it \verb|BUFFER_USED|. Returns: \verb|buffer_t *| (\verb|NULL| if no buffer
-  is free).
+\item[\texttt{buffer\_pool\_get(bp)}] Returns a free buffer, resets it with
+  \verb|buffer_reset()| and marks it \verb|BUFFER_USED|. For \verb|LINEAR|
+  it is the first free one, for \verb|RING| the buffer at position
+  \verb|next| (which is then advanced). Returns: \verb|buffer_t *|
+  (\verb|NULL| if no buffer is free or, for \verb|RING|, the next one is
+  still in use).
+\item[\texttt{buffer\_pool\_next\_used(bp, after)}] Returns the first used
+  buffer following \verb|after| in the ring (\verb|after| itself excluded).
+  For a \verb|RING| pool this is the oldest not yet consumed buffer. Returns:
+  \verb|buffer_t *| (\verb|NULL| if no other buffer is in use or
+  \verb|after| is invalid).
 \item[\texttt{buffer\_pool\_return(bp, buffer)}] Returns a buffer to the pool.
-  The index range, the membership of the pool (pointer comparison) and that
-  the buffer is no longer in use are checked; it is then reset with
-  \verb|buffer_reset()|. A buffer still marked \verb|BUFFER_USED| is rejected
-  -- so the content must have been consumed beforehand (e.g.\ via
-  \verb|buffer_get()|). Returns: \verb|em_msg| (\verb|EM_OK| after a successful
-  reset, \verb|EM_ERR| for an invalid, foreign or still-used buffer).
+  The index range, that the buffer is no longer in use and the membership of
+  the pool (pointer comparison) are checked. The function does not modify the
+  buffer; the user releases it (see release contract). A buffer still marked
+  \verb|BUFFER_USED| is rejected. Returns: \verb|em_msg| (\verb|EM_OK| for a
+  valid, free buffer, \verb|EM_ERR| for an invalid, foreign or still-used
+  buffer).
 \item[\texttt{buffer\_pool\_print(bp, title)}] Prints the pool's buffers for
   debugging. Returns: \verb|em_msg| (\verb|EM_ERR| on a \verb|NULL| pool,
   otherwise \verb|EM_OK|).
