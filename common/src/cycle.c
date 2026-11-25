@@ -11,7 +11,7 @@
 #ifndef UNIT_TEST
 #include "options.h"
 #include "stateled.h"
-
+#include "rb_system.h"
 #if defined(STM32F303xC)
 #include "stm32f4xx_hal_tim.h"
 #elif defined(STM32F407xx) || defined(STM32F401xE)
