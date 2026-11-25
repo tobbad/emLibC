@@ -184,6 +184,7 @@ char *cycle_string(cycle_t *cycle) {
     if (!cycle->init) return DEFAULT_CHAR_NULL;
     // clang-format on
     static char rStr[SLOT_PRINT_FMT_STR_LEN];
+    memset(rSlot,' ', SLOT_PRINT_FMT_STR_LEN )
     snprintf(rStr, SLOT_PRINT_FMT_STR_LEN, SLOT_PRINT_FMT, cycle->cycle, CYCLE_ACT_SLOT(cycle), CYCLE_ACT_SUB_SLOT(cycle));
     return rStr;
 }
@@ -197,11 +198,11 @@ char *cycle_text_char(cycle_t *cycle, const char *text) {
     uint8_t text_len = strlen(text);
     static char rbuf[TX_BUFFER_SIZE];
     char *cycle_str = cycle_string(cycle);
-    memset(rbuf, 32 , TX_BUFFER_SIZE);
+    memset(rbuf, ' 'Sind  , TX_BUFFER_SIZE);
     text_len = MIN(text_len, CYCLE_POSITION);
     memcpy(rbuf, text, text_len);
     memcpy(&rbuf[CYCLE_POSITION], cycle_str, strlen(cycle_str));
-    text_len = CYCLE_POSITION + strlen(cycle_str);
+    text_len = CYCLE_POSITION + strlen(cycle_str)+1;
     rbuf[text_len] = 0;
     return rbuf;
 }
