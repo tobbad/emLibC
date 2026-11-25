@@ -443,6 +443,7 @@ em_msg cycle_doSend(cycle_t *cycle) {
     } else {
         res = (actSlot == cycle->slot - 1) && ((CYCLE_SUB_SLOT_CNT - subSlot) < abs(cycle->tx_ss));
     }
+    res = res&&!rb_system.doSend;
 #if OPTION_VERBOSE == 1
     if (res) {
         cycle_text_print(cycle, "Ready to send");
