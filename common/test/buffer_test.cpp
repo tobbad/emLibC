@@ -181,7 +181,7 @@ TEST_F(BufferTest, GetFromEmptyReturnsZeroSize) {
 
 TEST_F(BufferTest, ResetWipesDataAndRewindsFirst) {
     int16_t wsize = 16;
-    buf->id = 7; // soll von reset genullt werden
+    buf->id = 7; // reset darf die id NICHT nullen (Pool-Zuordnung, siehe buffer_pool)
     EXPECT_EQ(buffer_set(buf, rbuffer, wsize), EM_OK);
     EXPECT_EQ(buffer_used(buf), wsize);
     EXPECT_EQ(buf->state, BUFFER_USED);
@@ -191,7 +191,7 @@ TEST_F(BufferTest, ResetWipesDataAndRewindsFirst) {
     EXPECT_EQ(buffer_used(buf), 0);
     EXPECT_EQ(buf->state, BUFFER_READY);
     EXPECT_EQ(buf->first, 0); // zurück auf 0 (vs. clear: vorgeschoben)
-    EXPECT_EQ(buf->id, 0);
+    EXPECT_EQ(buf->id, 7);
     EXPECT_EQ(buf->pl, buf->mem);
     EXPECT_EQ(buffer_writeable(buf), buf->size);
 

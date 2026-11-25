@@ -98,7 +98,7 @@ typedef struct isio_s {
     dev_handle_t    devh;
     state_t         state;
     bool            init;
-     uint32_t       ser_overflow;
+    uint32_t        ser_overflow;
     uint32_t        usb_drop_cnt;
     uint32_t        cTxBytePerSecond;
 } isio_t;
@@ -111,6 +111,7 @@ print_e  serial_mode_get();
 int32_t   serial_waitForNumber(char **key);
 void      serial_set_line_mode(bool on);   // Rx: hand on input only at CR/LF
 void      serial_rx_watchdog(void);
+em_msg    serial_tx_flush(uint32_t timeout_ms); // wait until the DMA TX queue is empty
 uint32_t serial_uart_printf(char *line , uint16_t len);
 
 extern kybd_t serial_dev;

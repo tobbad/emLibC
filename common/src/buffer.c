@@ -82,7 +82,7 @@ buffer_t *buffer_new_buffer_t(buffer_t *buffer) {
     if (!buffer->mem) return NULL;
     buffer->size = size;
     // clang-format on
-    return buffer_init(buffer, buffer->size, buffer->type);
+    return buffer_init(buffer, buffer->size, type); // buffer->type ist nach memset 0
 }
 
 buffer_t *buffer_reset(buffer_t *buffer) {
@@ -94,7 +94,7 @@ buffer_t *buffer_reset(buffer_t *buffer) {
     buffer->pl = buffer->mem;
     buffer->used = 0;
     buffer->first = 0;
-    buffer->id = 0;
+    //buffer->id = 0; darf nicht gemacht werden weil sonst der buffer poll verschossen wird
     buffer->state = BUFFER_READY;
     return buffer;
 }

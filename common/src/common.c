@@ -152,7 +152,16 @@ uint32_t csss2uint32(uint32_t cycle, uint8_t slot, uint8_t sSlot) {
     return res;
 };
 
-int in_interrupt(void) { return false; }
+// Liefert true, wenn der Code in einem Interrupt-Handler läuft (IPSR enthält
+// dann die Exception-Nummer).  _write() verwirft damit printf aus ISRs: newlib-
+// printf und die statischen Puffer in serial.c sind nicht reentrant.
+int in_interrupt(void) {
+#ifndef UNIT_TEST
+    return (__get_IPSR() != 0U);
+#else
+    return false;
+#endif
+}
 
 uint16_t to_hex(char *out, uint16_t out_size, uint8_t *buffer, uint16_t buffer_size, bool write_asci) {
     // hex data (without addr/asci) contains in maximum:
