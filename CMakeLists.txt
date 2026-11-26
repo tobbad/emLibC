@@ -43,6 +43,15 @@ cmake_minimum_required(VERSION 3.10)
 # wird dabei ausgewertet) -> muss vor der Fallunterscheidung stehen.
 project(emLibC C)
 
+# Setze C++ Standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_DEBUG_POSTFIX d)
+SET(CMAKE_BUILD_TYPE  Debug)
+#SET(CMAKE_CXX_FLAGS_DEBUG "-g")
+# Definiere eine optionaldebuge Compiler-Definition
+option(DEBUG "Aktiviere die benutzerdefinierte Funktion" ON)
+
 if(CMAKE_CROSSCOMPILING)
     # Achtung: set(... CACHE ...) loescht beim ersten Configure eine bereits
     # vorhandene normale Variable gleichen Namens. Das Elternprojekt setzt diese
@@ -203,15 +212,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
     add_link_options(-fsanitize=address)
 endif()
-
-# Setze C++ Standard
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_DEBUG_POSTFIX d)
-SET(CMAKE_BUILD_TYPE  Debug)
-#SET(CMAKE_CXX_FLAGS_DEBUG "-g")
-# Definiere eine optionaldebuge Compiler-Definition
-option(DEBUG "Aktiviere die benutzerdefinierte Funktion" ON)
 
 # Pfade zur Bibliothek
 set(COMMON_SRC_DIR "${CMAKE_SOURCE_DIR}/common/src")

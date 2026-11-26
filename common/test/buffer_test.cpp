@@ -5,6 +5,7 @@
  *      Author: badi
  */
 #include "buffer.h"
+#include "common.h"
 #include "buffer_pool.h"
 #include <assert.h>
 #include <stdint.h>
@@ -17,8 +18,9 @@
 #define ACNT 2
 
 #include "gtest/gtest.h"
-uint16_t rBufLine = 5;
-uint16_t rBufCharCnt = 48;
+namespace {
+    uint16_t rBufCharCnt = 48;
+}  // namespace
 
 class BufferTest : public ::testing::Test {
   protected:
@@ -40,7 +42,7 @@ class BufferTest : public ::testing::Test {
         // pool = buffer_pool_new(rBufLine, rBufCharCnt, LINEAR, LINEAR);
     }
 
-    void TearDown() {
+    void TearDown() override {
         if (buf) {
             buffer_free(buf);
             buf = nullptr;
@@ -80,9 +82,9 @@ TEST_F(BufferTest, NewBufferTest) {
 
 TEST_F(BufferTest, SetDataToBufferAndReadItBack) {
     // TEST_F(BufferTest, DISABLED_SetDataToBufferAndReadItBack) {
-    int16_t size = rBufCharCnt;
+    const int16_t size = rBufCharCnt;
     int16_t rsize = rBufCharCnt;
-    int16_t wsize = 16;
+    const int16_t wsize = 16;
     for (uint8_t i = 0; i < rBufCharCnt; i++) {
         buf->mem[i] = 0x30 + i;
     }
@@ -111,6 +113,18 @@ TEST_F(BufferTest, SetDataToBufferAndReadItBack) {
     }
 }
 
+TEST_F(BufferTest, AppendString) {
+    const char toSet[] = "This is some text";
+    const int16_t len = (int16_t)strlen(toSet);
+    for (int16_t i = 0; i < len; i++) {
+        ASSERT_EQ(buffer_set(buf, (const uint8_t *)&toSet[i], 1), EM_OK);
+        // Nach dem Anhängen von toSet[i] liegen i+1 Zeichen im Buffer
+        EXPECT_EQ(buffer_used(buf), i + 1);
+        EXPECT_EQ(memcmp(buf->mem, toSet, i + 1), 0);
+    }
+    EXPECT_EQ(std::string((char *)buf->mem, buffer_used(buf)), toSet);
+}
+
 TEST_F(BufferTest, ArrayNewBufferTest) {
     // TEST_F(BufferTest, DISABLED_ArrayNewBufferTest) {
     for (uint8_t i = 0; i < ACNT; i++) {
@@ -126,7 +140,7 @@ TEST_F(BufferTest, ArrayNewBufferTest) {
 
 TEST_F(BufferTest, ArraySetDataToBufferAndReadItBack) {
     // TEST_F(BufferTest, DISABLED_SetArrayDataToBufferAndReadItBack) {
-    int16_t size = rBufCharCnt;
+    const int16_t size = rBufCharCnt;
     int16_t rsize = size;
     em_msg res;
     for (uint8_t i = 0; i < ACNT; i++) {
@@ -180,7 +194,7 @@ TEST_F(BufferTest, GetFromEmptyReturnsZeroSize) {
 }
 
 TEST_F(BufferTest, ResetWipesDataAndRewindsFirst) {
-    int16_t wsize = 16;
+    const int16_t wsize = 16;
     buf->id = 7; // reset darf die id NICHT nullen (Pool-Zuordnung, siehe buffer_pool)
     EXPECT_EQ(buffer_set(buf, rbuffer, wsize), EM_OK);
     EXPECT_EQ(buffer_used(buf), wsize);
@@ -202,7 +216,7 @@ TEST_F(BufferTest, ResetWipesDataAndRewindsFirst) {
 }
 
 TEST_F(BufferTest, ClearEmptiesButKeepsDataAndAdvancesFirst) {
-    int16_t wsize = 16;
+    const int16_t wsize = 16;
     EXPECT_EQ(buffer_set(buf, wbuffer, wsize), EM_OK);
     EXPECT_EQ(buffer_used(buf), wsize);
     EXPECT_EQ(buf->state, BUFFER_USED);
@@ -223,7 +237,7 @@ TEST_F(BufferTest, ClearEmptiesButKeepsDataAndAdvancesFirst) {
 TEST_F(BufferTest, ToLowerOnlyAffectsUppercaseLetters) {
     const uint8_t in[] = "0ABZ@[7+}-'&%|";     // @ und [ liegen in 0x40-0x5F, sind aber keine Buchstaben
     const uint8_t expect[] = "0abz@[7+}-'&%|"; // nur A--Z klein, Rest unverändert
-    int16_t n = (int16_t)(sizeof(in) - 1);
+    const int16_t n = (int16_t)(sizeof(in) - 1);
 
     EXPECT_EQ(buffer_set(buf, in, n), EM_OK);
     EXPECT_EQ(buffer_tolower(buf), EM_OK);
@@ -274,7 +288,7 @@ class RingBufferTest : public ::testing::Test {
         }
     }
 
-    void TearDown() {
+    void TearDown() override {
         if (buf) {
             buffer_free(buf);
             buf = nullptr;
@@ -330,7 +344,7 @@ TEST_F(RingBufferTest, NewBufferTest) {
 
 TEST_F(RingBufferTest, SetDataTwoToBufferAndReadItBack) {
     // TEST_F(RingBufferTest, DISABLED_SetDataToBufferAndReadItBack) {
-    int16_t size = rBufCharCnt;
+    const int16_t size = rBufCharCnt;
     int16_t rsize = size;
     EXPECT_EQ(buffer_used(buf), 0);
     buffer_print(buf, (char *)"Initial");
@@ -361,7 +375,7 @@ TEST_F(RingBufferTest, SetDataTwoToBufferAndReadItBack) {
 
 TEST_F(RingBufferTest, WrapAroundWriteAndReadItBack) {
     // TEST_F(RingBufferTest, DISABLED_WrapAroundWriteAndReadItBack) {
-    int16_t size = rBufCharCnt; // 48
+    const int16_t size = rBufCharCnt; // 48
     int16_t rsize;
     em_msg res;
 
@@ -400,7 +414,8 @@ TEST_F(RingBufferTest, WrapAroundWriteAndReadItBack) {
 // ---------------------------------------------------------------------------
 
 // Helper: move `first` to `off` through the public API, leaving the ring empty.
-static void ring_seek(buffer_t *b, int16_t off, uint8_t *scratch) {
+namespace {
+void ring_seek(buffer_t *b, int16_t off, uint8_t *scratch) {
     if (off == 0) {
         return;
     }
@@ -411,6 +426,7 @@ static void ring_seek(buffer_t *b, int16_t off, uint8_t *scratch) {
     ASSERT_EQ(b->first, off);
     ASSERT_EQ(b->used, 0);
 }
+}  // namespace
 
 // buffer_get_till_end hands the caller a pointer into the ring plus a length.
 // That length must describe the *contiguous* run from `first` to the end of the
@@ -576,7 +592,7 @@ class BufferPoolTest : public ::testing::Test {
 
     void SetUp() override {}
 
-    void TearDown() { buffer_pool_free(pool); }
+    void TearDown() override { buffer_pool_free(pool); }
 };
 
 /*
@@ -594,10 +610,12 @@ TEST_F(BufferPoolTest, CreateBufferPool) {
 }
 
 // Freigabe-Vertrag: der Benutzer setzt BUFFER_READY, buffer_pool_return() prüft.
-static void pool_release(buffer_pool_t *bp, buffer_t *b) {
-    b->state = BUFFER_READY;
-    ASSERT_EQ(buffer_pool_return(bp, b), EM_OK);
-}
+namespace {
+    void pool_release(buffer_pool_t *bp, buffer_t *b) {
+        b->state = BUFFER_READY;
+        ASSERT_EQ(buffer_pool_return(bp, b), EM_OK);
+    }
+}  // namespace
 
 TEST_F(BufferPoolTest, ReturnRejectsUsedBuffer) {
     pool = buffer_pool_new(line_cnt, column_cnt, LINEAR, RING);
@@ -605,6 +623,8 @@ TEST_F(BufferPoolTest, ReturnRejectsUsedBuffer) {
     buffer_t *b = buffer_pool_get(pool);
     ASSERT_NE(b, nullptr);
     EXPECT_EQ(buffer_pool_return(pool, b), EM_ERR); // noch BUFFER_USED
+    b->state = BUFFER_READY;
+    EXPECT_EQ(buffer_pool_return(pool, b), EM_OK); // is now BUFFER_READY
     pool_release(pool, b);
 }
 
