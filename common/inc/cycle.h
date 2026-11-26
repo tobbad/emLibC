@@ -116,7 +116,7 @@ extern cycle_t cycle;
 extern cycle_t mcycle; //debug cycle
 
 em_msg cycle_reset(cycle_t *cycle);
-em_msg cycle_init(cycle_t *cycle, dev_handle_t hdl, int8_t master_ss, int8_t slave_ss, uint8_t postrx, uint8_t kaCnt, TIM_HandleTypeDef *htim);
+em_msg cycle_init(cycle_t *cycle, dev_handle_t hdl, int8_t master_ss, int8_t slave_ss, int8_t postrx, uint8_t kaCnt, TIM_HandleTypeDef *htim);
 em_msg cycle_timer_add(cycle_t *cycle, int8_t add);
 size_t cycle_size();
 em_msg cycle_reset_role(cycle_t *cycle);

@@ -88,7 +88,7 @@ cycle_t mcycle;
 #define SLOT_PRINT_FMT "(c:%5d, %1x, %1x)" // length is 19
 #define SLOT_PRINT_FMT_STR_LEN 16 + 2
 
-em_msg cycle_init(cycle_t *cycle, dev_handle_t hdl, int8_t tx_ss, int8_t rx_ss, uint8_t postrx, uint8_t kaCnt, TIM_HandleTypeDef *htim) {
+em_msg cycle_init(cycle_t *cycle, dev_handle_t hdl, int8_t tx_ss, int8_t rx_ss, int8_t postrx, uint8_t kaCnt, TIM_HandleTypeDef *htim) {
     em_msg res = EM_ERR;
     // clang-format off
     if (!cycle) return res;

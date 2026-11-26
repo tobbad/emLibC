@@ -151,7 +151,10 @@ int16_t    buffer_add_char(buffer_t *buffer, char c){
     if (!buffer) return EM_ERR;
     em_msg res = buffer_check(buffer, false);
     if (res == EM_ERR) return EM_ERR;
-    return buffer_set(buffer, (uint8_t*)&c, sizeof(char));
+    int16_t len = buffer->used;
+    buffer->mem[len] = c;
+    buffer->used++;
+    return EM_OK;
 };
 
 
