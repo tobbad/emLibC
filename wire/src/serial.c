@@ -586,7 +586,7 @@ static void serial_rx_collect_line(const uint8_t *data, uint16_t size) {
                 isio.buffer[SIO_RX]->used--;
             }
         } else if (isio.buffer[SIO_RX]->used < isio.buffer[SIO_RX]->size) {
-            buffer_add_char(isio.buffer[SIO_RX], c);
+            buffer_add_char(isio.buffer[SIO_RX], &c);
         }
     }
 }

@@ -147,14 +147,11 @@ em_msg buffer_tolower(buffer_t *buffer) {
     return res;
 }
 
-int16_t    buffer_add_char(buffer_t *buffer, char c){
+int16_t    buffer_add_char(buffer_t *buffer, char *c){
     if (!buffer) return EM_ERR;
     em_msg res = buffer_check(buffer, false);
     if (res == EM_ERR) return EM_ERR;
-    int16_t len = buffer->used;
-    buffer->mem[len] = c;
-    buffer->used++;
-    return EM_OK;
+    return buffer_set(buffer, c, 1);
 };
 
 
@@ -185,7 +182,7 @@ int16_t buffer_transfer(buffer_t *from, buffer_t *to) {
         if (to->type == LINEAR) {
             memcpy(to->mem, from->mem, len);
             to->first = 0;
-            to->used = len;
+            to->used+= len;
             to->state = BUFFER_USED;
         } else {                            /* LINEAR -> RING */
             buffer_set(to, from->mem, len); /* kann nach der Prüfung nicht scheitern;
@@ -193,10 +190,9 @@ int16_t buffer_transfer(buffer_t *from, buffer_t *to) {
         }
     } else { /* from == RING */
         if (to->type == LINEAR) {
-            int16_t n = len;
-            buffer_get(from, to->mem, &n); /* de-wrapt direkt nach to->mem, kein Scratch */
+            buffer_get(from, to->mem, &len); /* de-wrapt direkt nach to->mem, kein Scratch */
             to->first = 0;
-            to->used = n;
+            to->used = len;
             to->state = BUFFER_USED;
         } else { /* RING -> RING */
             /* Kein VLA (scratch[len] wäre bei großem 'used' ein Stack-Overflow):
@@ -230,7 +226,6 @@ em_msg buffer_set(buffer_t *buffer, const uint8_t *data, int16_t size) {
     if (res == EM_ERR){
         return res;
     }
-
     if (size <= 0)
         return EM_ERR;
 
@@ -239,9 +234,8 @@ em_msg buffer_set(buffer_t *buffer, const uint8_t *data, int16_t size) {
         return EM_ERR;
 
     if (buffer->type == LINEAR) {
-        memcpy(buffer->mem, data, size);
+        memcpy(&buffer->mem[buffer->used], data, size);
         buffer->first = 0;
-        buffer->used  = size;
     } else {
         int16_t write_pos = (buffer->first + buffer->used) % buffer->size;
         int16_t space_to_end = buffer->size - write_pos;
@@ -252,9 +246,8 @@ em_msg buffer_set(buffer_t *buffer, const uint8_t *data, int16_t size) {
             memcpy(&buffer->mem[write_pos], data, space_to_end);
             memcpy(&buffer->mem[0], data + space_to_end, size - space_to_end);
         }
-
-        buffer->used += size;
     }
+    buffer->used += size;
 
     buffer->state = BUFFER_USED;
     return EM_OK;
