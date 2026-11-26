@@ -86,6 +86,7 @@ typedef struct cycle_s {
     volatile int8_t   sSlot;
     volatile uint16_t cycle;
     volatile uint16_t lcycle; // cycle at the last role ageing (cycle_increment)
+    bool              cycleIsSet;
     int8_t            slot; // Configured slot of device
     dev_handle_t      hdl;
     int8_t            master;

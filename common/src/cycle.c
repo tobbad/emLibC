@@ -38,6 +38,7 @@ typedef struct cycle_s {
     volatile int8_t   sSlot;
     volatile uint16_t cycle;
     volatile uint16_t lcycle; // cycle at the last role ageing (cycle_increment)
+    bool              cycleIsSet;
     int8_t            slot; // Configured slot of device
     dev_handle_t      hdl;
     int8_t            master;
@@ -563,11 +564,12 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, bool isKa) {
                     cycle->psubSlot  = (cycle->master* CYCLE_SUB_SLOT_CNT + CYCLE_MODULO +cycle_rx_ss(cycle)) % CYCLE_MODULO;
                     cycle->masterAge = 0;
                     cycle->slaveAge  = 0;
-                    if (cycle->cycle==UINT16_MAX){
+                    if (!cycle->cycleIsSet){
                         // lcycle mit: sonst sieht cycle_increment() den Sprung
                         // 65535 -> 0 als neuen Zyklus und altert die Rolle sofort.
                         cycle->cycle     = 0;
                         cycle->lcycle    = 0;
+                        cycle->cycleIsSet= true;
                     }
                     cycle->isSlave   = false;
                     cycle->isMaster  = true;
@@ -581,11 +583,12 @@ em_msg cycle_set_slot(cycle_t *cycle, int8_t rxSlot, bool isKa) {
                     // cycle_set_my_slot() from the EEPROM.  rxSlot is the
                     // master's slot: taking it made every slave transmit there.
                     cycle->psubSlot = (rxSlot* CYCLE_SUB_SLOT_CNT + CYCLE_MODULO +cycle_rx_ss(cycle)) % CYCLE_MODULO;
-                    if (cycle->cycle==UINT16_MAX){
+                    if (!cycle->cycleIsSet){
                         // lcycle mit: sonst sieht cycle_increment() den Sprung
                         // 65535 -> 0 als neuen Zyklus und altert die Rolle sofort.
                         cycle->cycle     = 0;
                         cycle->lcycle    = 0;
+                        cycle->cycleIsSet= true;
                     }
                     cycle->masterAge= 0;
                     cycle->slaveAge = 0;
