@@ -67,7 +67,7 @@ em_msg state_reset(state_t *state) {
     if (state_check(state)==EM_ERR)
         return res;
     for (uint8_t i = 0; i < MAX_STATE_CNT; i++) {
-        state_set_key_by_idx(state, i, OFF);
+        state->state[i] = OFF;
     }
     state->dirty = false;
     res = EM_OK;
@@ -167,10 +167,12 @@ em_msg state_set_key(state_t *state, uint8_t nr, key_state_e ns) {
     em_msg res = EM_ERR;
     // clang-format off
     if (state_check(state)==EM_ERR) return res;
-    if (nr>= state->cnt) return res;
+    if ((idx < state->first) || (idx >= state->first + state->cnt)) return res;
     // clang-format on
-    snprintf(cBuf, "%x", nr);
-    state_set_key_by_lbl(state, cBuf[0],ns);
+    if (state->state[nr] != ns) {
+        state->state[nr] = ns;
+        state->dirty = true;
+    }
     return EM_OK;
 }
 
