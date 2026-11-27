@@ -102,19 +102,6 @@ em_msg state_register(const state_t *state) {
     return common_crc_register(&history, crc);
 }
 
-em_msg state_set_key(state_t *state, uint8_t nr, key_state_e ns) {
-    em_msg res = EM_ERR;
-    // clang-format off
-    if (state_check(state)==EM_ERR) return res;
-    if (nr>= state->cnt) return res;
-    // clang-format on
-    if (state->state[nr] != ns) {
-        state->state[nr] = ns;
-        state->dirty = true;
-    }
-    return EM_OK;
-}
-
 char *state_key_string(key_state_e nr) { return idxa2str(&kstatea2str, nr); }
 
 char *state_keys_string(key_state_e nr) { return idxa2str(&kstateas2str, nr); }
@@ -176,6 +163,27 @@ em_msg state_set_key_by_idx_unchecked(state_t *state, uint8_t nr, uint8_t new_st
 }
 #endif
 
+em_msg state_set_key(state_t *state, uint8_t nr, key_state_e ns) {
+    em_msg res = EM_ERR;
+    // clang-format off
+    if (state_check(state)==EM_ERR) return res;
+    if (nr>= state->cnt) return res;
+    // clang-format on
+    snprintf(cBuf, "%x", nr);
+    state_set_key_by_lbl(state, cBuf[0],ns);
+    return EM_OK;
+}
+
+
+key_state_e state_get_key_by_idx(const state_t *state, uint8_t idx) {
+    // clang-format off
+    key_state_e res = KEY_STATE_CNT;
+    if (state_check(state)==EM_ERR) return res;
+    // clang-format on
+    res = state_get(state, idx);
+    return res;
+}
+
 em_msg state_set_key_by_lbl(state_t *state, char lbl, key_state_e new_state) {
     // clang-format off
     em_msg res = EM_ERR;
@@ -196,15 +204,6 @@ key_state_e state_get_key_by_lbl(const state_t *state, char ch) {
     if (idx < 0) return res;
     // clang-format on
 
-    res = state_get(state, idx);
-    return res;
-}
-
-key_state_e state_get_key_by_idx(const state_t *state, uint8_t idx) {
-    // clang-format off
-    key_state_e res = KEY_STATE_CNT;
-    if (state_check(state)==EM_ERR) return res;
-    // clang-format on
     res = state_get(state, idx);
     return res;
 }
