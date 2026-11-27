@@ -167,7 +167,7 @@ em_msg state_set_key(state_t *state, uint8_t nr, key_state_e ns) {
     em_msg res = EM_ERR;
     // clang-format off
     if (state_check(state)==EM_ERR) return res;
-    if ((idx < state->first) || (idx >= state->first + state->cnt)) return res;
+    if ((nr < state->first) || (nr >= state->first + state->cnt)) return res;
     // clang-format on
     if (state->state[nr] != ns) {
         state->state[nr] = ns;
