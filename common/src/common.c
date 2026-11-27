@@ -289,49 +289,6 @@ char int2hchar(uint8_t nr) {
     return ret;
 }
 
-type_e uin82type(uint8_t * mmem) {
-    char* str = (char*) mmem;
-    type_e res = nonasci;
-    if (str == NULL) {
-        return res;
-    }
-    uint8_t len = strlen(str);
-
-    bool itIs = true;
-    bool itIs_n;
-    for (uint8_t i = 0; i < len; i++) {
-        for (uint8_t j = 0; j < ASCIHEX_LEN; j++) {
-            itIs_n = ascihex[j] == str[i];
-            if (itIs_n) {
-                break;
-            }
-        }
-        itIs &= itIs_n;
-    }
-    if (itIs) {
-        return hexnum;
-    }
-
-    itIs = true;
-    for (uint8_t i = 0; i < len; i++) {
-        itIs &= isascii(str[i]);
-    }
-    if (itIs) {
-        return ascii;
-    }
-
-    itIs = true;
-    for (uint8_t i = 0; i < len; i++) {
-        char c = str[i];
-        itIs &= ((c >= '0') && (c <= '9')) || (c == '.');
-    }
-    if (itIs) {
-        return _float;
-    }
-
-    return res;
-}
-
 int8_t hchar2int(char ch) {
     for (int8_t i = 0; i < ASCIHEX_LEN; i++) { /* ascihex[] hat ASCIHEX_LEN Einträge */
         if (ascihex[i] == ch) {
